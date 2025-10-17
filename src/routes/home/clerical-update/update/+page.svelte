@@ -1,0 +1,1153 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { ApplicationStatuses, baseURL, FileTypes } from '$lib/helpers';
+	import { page } from '$app/stores';
+	import { get } from 'svelte/store';
+	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button/index';
+	import { text } from 'd3';
+	import { showTreatUpdateAppButton } from '../../../dataview/datahelpers';
+	import { toast } from 'svelte-sonner';
+	import { countriesMap } from '$lib/constants';
+	interface FileInfo {
+		fileTitle: string;
+		representation: File | null;
+		representationUrl: string | null;
+		fileClass: number;
+		fileStatus: ApplicationStatuses | null;
+		classDescription: string | null;
+		fileId: string | null;
+		paymentRRR: string | null;
+		cost: number | null;
+		serviceFee: number | null;
+		applicantName: string;
+		applicantPhone: string | null;
+		applicantEmail: string | null;
+		applicantAddress: string | null;
+		applicantNationality: string | null;
+		correspondenceName: string | null;
+		correspondencePhone: string | null;
+		correspondenceEmail: string | null;
+		correspondenceAddress: string | null;
+		updateType: string;
+		fileType: FileTypes | null;
+		trademarkLogo: string | null;
+		disclaimer: string | null;
+	}
+	interface NewData {
+		fileTitle: string;
+		Representation: File | null;
+		representationUrl: string | null;
+		PowerOfAttorney: File | null;
+		OtherAttachment: File | null;
+		fileClass: number;
+		classDescription: string | null;
+		fileId: string | null;
+		paymentRRR: string | null;
+		cost: number | null;
+		serviceFee: number | null;
+		applicantName: string;
+		applicantPhone: string | null;
+		applicantEmail: string | null;
+		applicantAddress: string | null;
+		applicantNationality: string | null;
+		correspondenceName: string | null;
+		correspondencePhone: string | null;
+		correspondenceEmail: string | null;
+		correspondenceAddress: string | null;
+		updateType: string;
+		trademarkLogo: string | null;
+		wordMark: string | null;
+		disclaimer: string | null;
+	}
+
+	let fileInfo: FileInfo = {
+		fileTitle: '',
+		representation: null,
+		representationUrl: null,
+		fileClass: 0,
+		fileStatus: null,
+		classDescription: null,
+		fileId: null,
+		paymentRRR: null,
+		cost: null,
+		serviceFee: null,
+		applicantName: '',
+		applicantPhone: null,
+		applicantEmail: null,
+		applicantAddress: null,
+		applicantNationality: null,
+		correspondenceName: null,
+		correspondencePhone: null,
+		correspondenceEmail: null,
+		correspondenceAddress: null,
+		updateType: '',
+		trademarkLogo: null,
+		fileType: null,
+		disclaimer: null
+	};
+	let error: string | null = null;
+	let isProcessing = false;
+	let isLoading = false;
+	let updateType = '';
+	let fileType = '';
+	const pageData = get(page);
+
+	onMount(async () => {
+		const fileNumber = pageData.url.searchParams.get('fileId') ?? '';
+		fileType = pageData.url.searchParams.get('fileType') ?? '';
+		updateType = pageData.url.searchParams.get('updateType') ?? '';
+		console.log('File Number:', fileNumber);
+		console.log('File Type:', fileType);
+		console.log('Update Type:', updateType);
+		sessionStorage.setItem('updateType', updateType);
+		await setData(fileNumber, fileType, updateType);
+	});
+	interface ClassOption {
+		id: number;
+		name: string;
+	}
+	const classOptions: ClassOption[] = [
+		{ id: 1, name: 'Class 1 - Chemicals used in industry, science, agriculture, etc.' },
+		{ id: 2, name: 'Class 2 - Paints, varnishes, preservatives, colorants' },
+		{ id: 3, name: 'Class 3 - Cleaning, cosmetics, soaps, perfumery' },
+		{ id: 4, name: 'Class 4 - Industrial oils, greases, candles, fuels' },
+		{ id: 5, name: 'Class 5 - Pharmaceuticals, veterinary, disinfectants' },
+		{ id: 6, name: 'Class 6 - Common metals, building materials, safes' },
+		{ id: 7, name: 'Class 7 - Machines, motors (not for land vehicles)' },
+		{ id: 8, name: 'Class 8 - Hand tools, cutlery, razors' },
+		{ id: 9, name: 'Class 9 - Scientific, electrical, computer apparatus' },
+		{ id: 10, name: 'Class 10 - Medical, surgical, dental instruments' },
+		{ id: 11, name: 'Class 11 - Lighting, heating, cooking appliances' },
+		{ id: 12, name: 'Vehicles, locomotion apparatus' },
+		{ id: 13, name: 'Class 13 - Firearms, ammunition, fireworks' },
+		{ id: 14, name: 'Class 14 - Jewelry, watches, precious metals' },
+		{ id: 15, name: 'Class 15 - Musical instruments and accessories' },
+		{ id: 16, name: 'Class 16 - Paper, printed matter, stationery' },
+		{ id: 17, name: 'Class 17 - Rubber, plastics, insulation materials' },
+		{ id: 18, name: 'Class 18 - Leather goods, bags, umbrellas' },
+		{ id: 19, name: 'Class 19 - Non-metallic building materials' },
+		{ id: 20, name: 'Class 20 - Furniture, mirrors, non-metal articles' },
+		{ id: 21, name: 'Class 21 - Household utensils, glassware, brushes' },
+		{ id: 22, name: 'Class 22 - Ropes, tents, padding materials' },
+		{ id: 23, name: 'Class 23 - Yarns and threads for textile use' },
+		{ id: 24, name: 'Class 24 - Textiles, bed and table covers' },
+		{ id: 25, name: 'Class 25 - Clothing, footwear, headgear' },
+		{ id: 26, name: 'Class 26 - Lace, embroidery, buttons' },
+		{ id: 27, name: 'Class 27 - Carpets, rugs, wall hangings' },
+		{ id: 28, name: 'Class 28 - Games, toys, sports equipment' },
+		{ id: 29, name: 'Class 29 - Meat, fish, dairy, prepared meals' },
+		{ id: 30, name: 'Class 30 - Coffee, tea, bakery, spices' },
+		{ id: 31, name: 'Class 31 - Agriculture, live animals, plants' },
+		{ id: 32, name: 'Class 32 - Beers, non-alcoholic beverages' },
+		{ id: 33, name: 'Class 33 - Alcoholic beverages (except beer)' },
+		{ id: 34, name: "Class 34 - Tobacco, smokers' articles" },
+		{ id: 35, name: 'Class 35 - Advertising, business management' },
+		{ id: 36, name: 'Class 36 - Insurance, financial, real estate' },
+		{ id: 37, name: 'Class 37 - Construction, repair, installation' },
+		{ id: 38, name: 'Class 38 - Telecommunications' },
+		{ id: 39, name: 'Class 39 - Transport, packaging, travel' },
+		{ id: 40, name: 'Class 40 - Treatment of materials, printing' },
+		{ id: 41, name: 'Class 41 - Education, entertainment, training' },
+		{ id: 42, name: 'Class 42 - Scientific, tech services, software dev' },
+		{ id: 43, name: 'Class 43 - Food services, temporary accommodation' },
+		{ id: 44, name: 'Class 44 - Medical, veterinary, agriculture' },
+		{ id: 45, name: 'Class 45 - Legal, security, social services' }
+	];
+
+	async function setData(fileNumber: string, fileType: string, updateType: string): Promise<void> {
+		isLoading = true;
+		try {
+			const res = await fetch(
+				`${baseURL}/api/files/GetClericalUpdateCost?fileId=${fileNumber}&fileType=${fileType}&updateType=${updateType}`
+			);
+			if (!res.ok) {
+				error = 'Unable to retrieve cost info.';
+				return;
+			}
+			const data = await res.json();
+
+			// Assign to fileInfo using the FileInfo interface
+			fileInfo = {
+				fileTitle: data.fileTitle ?? '',
+				representation: null,
+				fileClass: data.fileClass ?? null,
+				classDescription: data.classDescription ?? null,
+				fileId: data.fileId ?? null,
+				fileStatus: Number(data.fileStatus) as ApplicationStatuses,
+				fileType: data.fileType,
+				paymentRRR: data.paymentRRR ?? null,
+				cost: data.cost ?? null,
+				serviceFee: data.serviceFee ?? null,
+				applicantName: data.applicantName ?? '',
+				applicantPhone: data.applicantPhone ?? null,
+				applicantEmail: data.applicantEmail ?? null,
+				applicantAddress: data.applicantAddress ?? '',
+				applicantNationality: data.applicantNationality ?? '',
+				correspondenceName: data.correspondenceName ?? null,
+				correspondencePhone: data.correspondencePhone ?? null,
+				correspondenceEmail: data.correspondenceEmail ?? null,
+				correspondenceAddress: data.correspondenceAddress ?? null,
+				representationUrl: data.representationUrl ?? null,
+				updateType: updateType,
+				trademarkLogo: data.trademarkLogo ?? null,
+				disclaimer: data.disclaimer ?? null
+			};
+		} catch (err) {
+			error = 'Error fetching change of name cost.';
+			console.error(err);
+		} finally {
+			isLoading = false;
+		}
+	}
+	let newData: NewData = {
+		fileTitle: '',
+		Representation: null,
+		representationUrl: null,
+		PowerOfAttorney: null,
+		fileClass: 0,
+		classDescription: null,
+		fileId: null,
+		paymentRRR: null,
+		cost: null,
+		serviceFee: null,
+		applicantName: '',
+		applicantPhone: null,
+		applicantEmail: null,
+		applicantAddress: null,
+		applicantNationality: null,
+		correspondenceName: null,
+		correspondencePhone: null,
+		correspondenceEmail: null,
+		correspondenceAddress: null,
+		updateType: '',
+		trademarkLogo: null,
+		wordMark: null,
+		disclaimer: null,
+		OtherAttachment: null
+	};
+
+	function getFormTitle(type: string): string {
+		switch (type) {
+			case 'ApplicantName':
+				return 'Application for Clerical Update Of Applicant Name';
+			case 'ApplicantAddress':
+				return 'Application for Clerical Update Of Applicant Address';
+			case 'FileClass':
+				return 'Application for Clerical Update of File Class/Description';
+			case 'Correspondence':
+				return 'Application for Clerical Update of Correspondence';
+			case 'FileTitle':
+				return 'Application for Clerical Update of File Title/Representation';
+			default:
+				return 'Application for Clerical Update';
+		}
+	}
+
+	function getFormNumber(type: string): string {
+		switch (type) {
+			case 'Name':
+				return '[Form 22]';
+			case 'Address':
+				return '[Form 19]';
+			default:
+				return '';
+		}
+	}
+	// Computed properties for section visibility
+	$: showNameSection = fileInfo.updateType === 'ApplicantName';
+	$: showAddressSection = fileInfo.updateType === 'ApplicantAddress';
+	$: showCorrespondenceSection = fileInfo.updateType === 'Correspondence';
+	$: showClassSection = fileInfo.updateType === 'FileClass';
+	$: showTitleSection = fileInfo.updateType === 'FileTitle';
+	$: formTitle = getFormTitle(fileInfo.updateType);
+	$: formNumber = getFormNumber(fileInfo.updateType);
+	function validateForm(): boolean {
+		if (showNameSection && !newData.applicantName) {
+			error = 'Please enter the new applicant name.';
+			return false;
+		}
+		if (
+			showAddressSection &&
+			!(
+				(newData.applicantAddress && newData.applicantAddress.trim()) ||
+				(newData.applicantPhone && newData.applicantPhone.trim()) ||
+				(newData.applicantEmail && newData.applicantEmail.trim())
+			)
+		) {
+			error = 'Please provide at least one of: new applicant address, phone, or email.';
+			return false;
+		}
+		error = null;
+		return true;
+	}
+	function fileToBase64(file: File): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as string);
+			reader.onerror = reject;
+			reader.readAsDataURL(file);
+		});
+	}
+
+	async function handleImageUpload(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		// Check file size (max 10MB)
+		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+		if (file.size > maxSizeInBytes) {
+			error = 'File size exceeds the maximum limit of 10MB.';
+			newData.Representation = null;
+			return;
+		}
+
+		// Check that file is actually an image
+		if (!file.type.startsWith('image/')) {
+			error = 'Only image files (e.g., JPG, PNG) are allowed.';
+			newData.Representation = null;
+			return;
+		}
+		newData.Representation = file;
+		error = '';
+	}
+
+	async function handleFileChange(event: Event, field: 'PowerOfAttorney' | 'OtherAttachment') {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		if (!file) return;
+
+		// Check file size (max 10MB)
+		const maxSizeInBytes = 10 * 1024 * 1024; // 10MB
+		if (file.size > maxSizeInBytes) {
+			error = 'File size exceeds the maximum limit of 10MB.';
+			newData[field] = null;
+			return;
+		}
+
+		if (file.type !== 'application/pdf') {
+			error = 'Only PDF files are allowed.';
+			newData[field] = null;
+			return;
+		}
+
+		newData[field] = file;
+		error = '';
+	}
+
+	let showSuccessToast = false;
+
+	async function handleSubmit() {
+		if (!validateForm()) return;
+		isProcessing = true;
+		const fileNumber = pageData.url.searchParams.get('fileId') ?? '';
+
+		try {
+			console.log(fileInfo.fileType, updateType, fileNumber);
+			const formObj: Record<string, any> = {
+				FileId: fileNumber,
+				UpdateType: updateType,
+				FileType: fileInfo.fileType ?? '',
+				PaymentRRR: fileInfo.paymentRRR ?? '',
+				OldApplicantName: fileInfo.applicantName
+			};
+			// Convert files to Base64 for temporary storage
+			if (updateType === 'FileTitle') {
+				if (newData.Representation) {
+					formObj.Representation = await fileToBase64(newData.Representation);
+					formObj.RepresentationName = newData.Representation.name;
+					// formObj.RepresentationType = newData.Representation.type;
+				}
+				if (newData.trademarkLogo) {
+					formObj.TrademarkLogo = newData.trademarkLogo;
+				}
+				if (newData.fileTitle) {
+					formObj.FileTitle = newData.fileTitle;
+				}
+			} else if (updateType === 'ApplicantName') {
+				formObj.ApplicantName = newData.applicantName;
+			} else if (updateType === 'ApplicantAddress') {
+				formObj.ApplicantAddress = newData.applicantAddress ?? '';
+				formObj.ApplicantPhone = newData.applicantPhone ?? '';
+				formObj.ApplicantEmail = newData.applicantEmail ?? '';
+				formObj.ApplicantNationality = newData.applicantNationality ?? '';
+			} else if (updateType === 'FileClass') {
+				formObj.FileClass = String(newData.fileClass);
+				formObj.ClassDescription = newData.classDescription ?? '';
+				formObj.Disclaimer = newData.disclaimer ?? '';
+			} else if (updateType === 'Correspondence') {
+				formObj.CorrespondenceName = newData.correspondenceName ?? '';
+				formObj.CorrespondencePhone = newData.correspondencePhone ?? '';
+				formObj.CorrespondenceEmail = newData.correspondenceEmail ?? '';
+				formObj.CorrespondenceAddress = newData.correspondenceAddress ?? '';
+				if (newData.PowerOfAttorney) {
+					formObj.PowerOfAttorney = await fileToBase64(newData.PowerOfAttorney);
+				}
+				if (newData.OtherAttachment) {
+					formObj.OtherAttachment = await fileToBase64(newData.OtherAttachment);
+				}
+			}
+
+			localStorage.setItem('formData', JSON.stringify(formObj));
+
+			if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
+				const formData = new FormData();
+				for (const key in formObj) {
+					if (
+						Object.prototype.hasOwnProperty.call(formObj, key) &&
+						formObj[key] !== undefined &&
+						formObj[key] !== null
+					) {
+						formData.append(key, formObj[key]);
+					}
+				}
+				// setTimeout(() => (showSuccessToast = false), 5000);
+				await freeUpdate(formData);
+				showSuccessToast = true;
+				setTimeout(() => {
+					goto(`/home/dashboard`);
+				}, 5000);
+				return; // Prevent further execution (skip handlePayment)
+			}
+			await handlePayment();
+		} catch (err) {
+			error = 'Form submission failed.';
+			console.error(err);
+		} finally {
+			isProcessing = false;
+		}
+	}
+	async function freeUpdate(data: FormData) {
+		if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
+			const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+				method: 'POST',
+				body: data
+			});
+			if (!result.ok) {
+				const error = await result.json();
+				toast.error(`Error submitting clerical update: ${error.message}`);
+				// isStatusUpdating = false;
+				return;
+			}
+		}
+	}
+	async function handlePayment() {
+		if (fileInfo.cost && fileInfo.paymentRRR) {
+			await goto(`/payment/?type=clerical&rrr=${fileInfo.paymentRRR}&amount=${fileInfo.cost}`);
+		}
+	}
+
+	function goBack() {
+		window.history.back();
+	}
+	$: isAwaitingSearch = fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch;
+	$: isReadyForPayment =
+		fileInfo.fileStatus != null && fileInfo.fileStatus !== ApplicationStatuses.AwaitingSearch;
+</script>
+
+<!-- Success Toast Modal -->
+{#if showSuccessToast}
+	<div class="fixed inset-0 flex items-end justify-center z-50 pointer-events-none">
+		<div
+			class="mb-8 bg-green-600 text-white px-6 py-4 rounded shadow-lg flex items-center gap-2 pointer-events-auto animate-fade-in-up"
+		>
+			<Icon icon="lucide:check-circle" width="1.5rem" height="1.5rem" />
+			<span>Clerical update submitted successfully!</span>
+		</div>
+	</div>
+{/if}
+<div class="min-h-screen py-4 px-4">
+	<div class="w-full mx-auto">
+		<!-- Header -->
+		<div class="flex items-center">
+			<Button variant="outline" on:click={goBack} class="flex items-center gap-2">
+				<Icon icon="lucide:arrow-left" width="1rem" height="1rem" />
+				Back
+			</Button>
+			<div class="flex-1 flex flex-col items-center justify-center">
+				<h1 class="text-xl font-bold">
+					{formTitle}
+					{formNumber}
+				</h1>
+				<p class="font-light">Fill in the new information</p>
+			</div>
+		</div>
+
+		<!-- Form -->
+		<div class="px-6 py-6">
+			{#if error}
+				<div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded">
+					<p class="text-sm text-red-700">{error}</p>
+				</div>
+			{/if}
+
+			<!-- Section 1: Current Trademark Information -->
+			<!-- svelte-ignore a11y-label-has-associated-control -->
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">CURRENT INFORMATION</div>
+				{#if isLoading}
+					<div class="flex items-center justify-center p-12">
+						<div class="flex flex-col items-center gap-2">
+							<Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" />
+							<span class="text-sm text-gray-500">Loading Trademark Information...</span>
+						</div>
+					</div>
+				{:else}
+					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Applicant Name:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.applicantName}
+								placeholder={fileInfo.applicantName}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								File Number:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.fileId}
+								placeholder={fileInfo.fileId}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+
+						<div>
+							<label for="title" class="block text-sm font-medium text-gray-700 mb-1">
+								Title:
+							</label>
+							<input
+								id="title"
+								type="text"
+								bind:value={fileInfo.fileTitle}
+								placeholder={fileInfo.fileTitle}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+
+						<div>
+							<label for="productClass" class="block text-sm font-medium text-gray-700 mb-1">
+								Class:
+							</label>
+							<input
+								type="text"
+								id="productClass"
+								bind:value={fileInfo.fileClass}
+								placeholder={String(fileInfo.fileClass)}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Applicant Email:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.applicantEmail}
+								placeholder={fileInfo.applicantEmail}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Applicant Phone:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.applicantPhone}
+								placeholder={fileInfo.applicantPhone}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Applicant Nationality:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.applicantNationality}
+								placeholder={fileInfo.applicantNationality}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Applicant Address:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.applicantAddress}
+								placeholder={fileInfo.applicantAddress}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Disclaimer:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.disclaimer}
+								placeholder={fileInfo.disclaimer}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div class="md:col-span-2">
+							<label class="block text-sm font-medium text-gray-700 mb-1">
+								Current Representation:
+							</label>
+							<img
+								src={fileInfo.representationUrl}
+								alt="Current Representation"
+								class="max-h-48 max-w-full rounded border border-gray-300 bg-white object-contain"
+							/>
+						</div>
+					</div>
+				{/if}
+			</div>
+			<!-- Section 2: New Name Information (conditionally rendered) -->
+			{#if showNameSection}
+				<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+					<div class="bg-blue-100 px-4 py-2 font-medium text-blue-900">NEW INFORMATION</div>
+					<div class="p-4">
+						<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+							<div>
+								<!-- svelte-ignore a11y-label-has-associated-control -->
+								<label class="block text-sm font-medium text-gray-700 mb-1">
+									New Applicant Name: <span class="text-red-500">*</span>
+								</label>
+								<input
+									type="text"
+									bind:value={newData.applicantName}
+									placeholder="Enter new applicant name"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+									required
+								/>
+								<p class="text-xs text-gray-500 mt-1">
+									This will replace the current applicant name shown above.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			{#if showCorrespondenceSection}
+				<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+					<div class="bg-gray-300 px-4 py-2 font-medium text-black">CORRESPONDENCE INFORMATION</div>
+
+					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Correspondence Name:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.correspondenceName}
+								placeholder={fileInfo.correspondenceName}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Correspondence Email:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.correspondenceEmail}
+								placeholder={fileInfo.correspondenceEmail}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Correspondence Phone:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.correspondencePhone}
+								placeholder={fileInfo.correspondencePhone}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								Correspondence Address:
+							</label>
+							<input
+								type="text"
+								bind:value={fileInfo.correspondenceAddress}
+								placeholder={fileInfo.correspondenceAddress}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+					</div>
+				</div>
+				<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+					<div class="bg-green-300 px-4 py-2 font-medium text-black">
+						NEW CORRESPONDENCE INFORMATION
+					</div>
+
+					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								New Correspondence Name:
+							</label>
+							<input
+								type="text"
+								bind:value={newData.correspondenceName}
+								placeholder={fileInfo.correspondenceName}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								New Correspondence Email:
+							</label>
+							<input
+								type="text"
+								bind:value={newData.correspondenceEmail}
+								placeholder={fileInfo.correspondenceEmail}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								New Correspondence Phone:
+							</label>
+							<input
+								type="text"
+								bind:value={newData.correspondencePhone}
+								placeholder={fileInfo.correspondencePhone}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+							/>
+						</div>
+						<div>
+							<label for="" class="block text-sm font-medium text-gray-700 mb-1">
+								New Correspondence Address:
+							</label>
+							<input
+								type="text"
+								bind:value={newData.correspondenceAddress}
+								placeholder={fileInfo.correspondenceAddress}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+							/>
+						</div>
+					</div>
+				</div>
+				<!-- Power of Attorney Upload -->
+				<div>
+					<!-- svelte-ignore a11y-label-has-associated-control -->
+					<label class="block text-sm font-medium text-gray-700 mb-1">
+						Upload New Power of Attorney (PDF):
+					</label>
+					<input
+						type="file"
+						accept=".pdf"
+						on:change={(e) => handleFileChange(e, 'PowerOfAttorney')}
+						class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+						required
+					/>
+
+					<p class="text-xs text-gray-500 mt-1">
+						Please upload a PDF of the Power of Attorney (max 10MB).
+					</p>
+					{#if newData.PowerOfAttorney}
+						<div class="mt-2 flex items-center gap-2 text-green-600">
+							<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
+							<span class="text-sm">File uploaded: {newData.PowerOfAttorney.name}</span>
+						</div>
+					{/if}
+				</div>
+				<!-- Other Attachment Upload -->
+				<div class="mt-4">
+					<!-- svelte-ignore a11y-label-has-associated-control -->
+					<label class="block text-sm font-medium text-gray-700 mb-1">
+						Upload Other Attachment (PDF):
+					</label>
+					<input
+						type="file"
+						accept=".pdf"
+						on:change={(e) => handleFileChange(e, 'OtherAttachment')}
+						class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+					/>
+
+					<p class="text-xs text-gray-500 mt-1">
+						Optional: Upload any other relevant document (max 10MB).
+					</p>
+
+					{#if newData.OtherAttachment}
+						<div class="mt-2 flex items-center gap-2 text-green-600">
+							<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
+							<span class="text-sm">File uploaded: {newData.OtherAttachment.name}</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
+			<!-- Section 3: New Address Information (conditionally rendered) -->
+			<!-- svelte-ignore a11y-label-has-associated-control -->
+
+			{#if showAddressSection}
+				<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+					<div class="bg-green-100 px-4 py-2 font-medium text-green-900">
+						NEW ADDRESS INFORMATION
+					</div>
+					<div class="p-4">
+						<div class="grid grid-cols-1 gap-4">
+							<!-- Address -->
+							<div>
+								<!-- svelte-ignore a11y-label-has-associated-control -->
+								<label class="block text-sm font-medium text-gray-700 mb-1">
+									New Applicant Address:
+								</label>
+								<textarea
+									bind:value={newData.applicantAddress}
+									placeholder="Enter new applicant address"
+									rows="3"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+								></textarea>
+								<p class="text-xs text-gray-500 mt-1">Enter the new address for the applicant.</p>
+							</div>
+
+							<!-- Email -->
+							<div>
+								<label class="block text-sm font-medium text-gray-700 mb-1">
+									New Applicant Email:
+								</label>
+								<input
+									type="email"
+									bind:value={newData.applicantEmail}
+									placeholder={fileInfo.applicantEmail}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+								/>
+								<p class="text-xs text-gray-500 mt-1">
+									Optional: Enter new email address for the applicant.
+								</p>
+							</div>
+
+							<!-- Container -->
+							<div class="flex gap-6">
+								<!-- Phone -->
+								<div class="w-1/2">
+									<label class="block text-sm font-medium text-gray-700 mb-1">
+										New Applicant Phone:
+									</label>
+									<input
+										type="tel"
+										bind:value={newData.applicantPhone}
+										placeholder={fileInfo.applicantPhone}
+										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+									/>
+									<p class="text-xs text-gray-500 mt-1">
+										Optional: Enter new phone number for the applicant.
+									</p>
+								</div>
+
+								<!-- Nationality -->
+								<div class="w-1/2">
+									<label class="block text-sm font-medium text-gray-700 mb-1">
+										New Applicant Country:
+									</label>
+									<select
+										bind:value={newData.applicantNationality}
+										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900"
+										required
+									>
+										<option value="" disabled selected>Select nationality</option>
+										{#each Object.entries(countriesMap) as [code, name]}
+											<option value={name}>{name}</option>
+										{/each}
+									</select>
+									<p class="text-xs text-gray-500 mt-1">
+										Optional: Select new country for the applicant.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			<!-- Section 3: New Class/Description (conditionally rendered) -->
+			<!-- svelte-ignore a11y-label-has-associated-control -->
+
+			{#if showClassSection}
+				<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+					<div class="bg-green-100 px-4 py-2 font-medium text-green-900">
+						NEW CLASS INFORMATION / DISCLAIMER
+					</div>
+					<div class="p-4">
+						<div class="grid grid-cols-1 gap-4">
+							<!-- Class -->
+							{#if fileInfo.fileStatus !== ApplicationStatuses.AwaitingCertification && fileInfo.fileStatus !== ApplicationStatuses.Publication}
+								<div>
+									<label class="block text-sm font-medium text-gray-700 mb-1"
+										>Select New Class:
+									</label>
+									<select
+										bind:value={newData.fileClass}
+										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+									>
+										<option value="" disabled selected>Select class</option>
+										{#each classOptions as option}
+											<option value={option.id}>{option.name}</option>
+										{/each}
+									</select>
+									<p class="text-xs text-gray-500 mt-1">Enter the new class for the file.</p>
+								</div>
+
+								<!-- Description -->
+								<div>
+									<label class="block text-sm font-medium text-gray-700 mb-1">
+										New Description:
+									</label>
+									<textarea
+										bind:value={newData.classDescription}
+										placeholder={fileInfo.classDescription}
+										class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+									></textarea>
+									<p class="text-xs text-gray-500 mt-1">Optional: Enter new description.</p>
+								</div>
+							{/if}
+							<!-- Disclaimer -->
+							<div>
+								<label class="block text-sm font-medium text-gray-700 mb-1">
+									New Disclaimer:
+								</label>
+								<textarea
+									bind:value={newData.disclaimer}
+									placeholder={fileInfo.disclaimer}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+								></textarea>
+								<p class="text-xs text-gray-500 px-4 pb-4 mt-1 italic text-center md:text-left">
+									Note: Files in Publication and Awaiting Certification can only update disclaimer.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			{/if}
+			<!-- Section 4: Title/Representation -->
+			{#if showTitleSection}
+				<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+					<div class="bg-yellow-100 px-4 py-2 font-medium text-yellow-900">NEW INFORMATION</div>
+
+					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+						<!-- New File Title -->
+						{#if fileInfo.fileStatus !== ApplicationStatuses.AwaitingCertification && fileInfo.fileStatus !== ApplicationStatuses.Publication}
+							<div class="md:col-span-1">
+								<!-- svelte-ignore a11y-label-has-associated-control -->
+								<label class="block text-sm font-medium text-gray-700 mb-1">
+									New File Title:
+								</label>
+								<input
+									type="text"
+									bind:value={newData.fileTitle}
+									placeholder="Enter new file title/wordmark"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+								/>
+							</div>
+						{/if}
+						<!-- Trademark Logo Type Dropdown -->
+						<div>
+							<!-- svelte-ignore a11y-label-has-associated-control -->
+							<label class="block text-sm font-medium text-gray-700 mb-1">
+								New Representation Type:
+							</label>
+							<select
+								bind:value={newData.trademarkLogo}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+							>
+								<option value="" disabled selected>--Select type--</option>
+								<option value="WordMark">Wordmark</option>
+								<option value="WordAndDevice">Word and Device</option>
+								<option value="Device">Device</option>
+							</select>
+							<p class="text-xs text-gray-500 mt-1">Select the type of trademark logo.</p>
+						</div>
+
+						{#if newData.trademarkLogo === 'Device' || newData.trademarkLogo === 'WordAndDevice'}
+							<!-- Representation Upload -->
+							<div>
+								<!-- svelte-ignore a11y-label-has-associated-control -->
+								<label class="block text-sm font-medium text-gray-700 mb-1">
+									Upload New Representation : <span class="text-red-500">*</span>
+								</label>
+								<input
+									type="file"
+									accept="image/*"
+									on:change={handleImageUpload}
+									class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+									required
+								/>
+
+								<p class="text-xs text-gray-500 mt-1">Only image files allowed (jpgmax 10MB).</p>
+								{#if newData.Representation}
+									<div class="mt-2 flex items-center gap-2 text-green-600">
+										<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
+										<span class="text-sm">File uploaded: {newData.Representation.name}</span>
+									</div>
+									{#if newData.Representation.type.startsWith('image/')}
+										<div class="mt-2">
+											<img
+												src={URL.createObjectURL(newData.Representation)}
+												alt="Preview"
+												class="max-h-40 max-w-full rounded border border-gray-300 object-contain"
+												on:load={(e) => {
+													// Revoke the object URL after image loads to avoid memory leaks
+													URL.revokeObjectURL(e.target.src);
+												}}
+											/>
+										</div>
+									{/if}
+								{/if}
+							</div>
+						{/if}
+					</div>
+					<p class="text-xs text-gray-500 px-4 pb-4 mt-1 italic text-center md:text-left">
+						Note: Files in Publication and Awaiting Certification can only update representation.
+					</p>
+				</div>
+			{/if}
+
+			<!-- <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-orange-100 px-4 py-2 font-medium text-orange-900">SUPPORTING DOCUMENTS</div>
+				<div class="p-4">
+					<div class="grid grid-cols-1 gap-4">
+						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-1">
+								Upload Supporting Document:
+							</label>
+							<input
+								type="file"
+								accept=".pdf"
+								on:change={handleFileChange}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
+							/>
+							<p class="text-xs text-gray-500 mt-1">
+								Please upload a PDF document supporting your request (max 10MB).
+							</p>
+							{#if newData.document}
+								<div class="mt-2 flex items-center gap-2 text-green-600">
+									<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
+									<span class="text-sm">File uploaded: {newData.document.name}</span>
+								</div>
+							{/if}
+						</div>
+					</div>
+				</div>
+			</div> -->
+
+			<!-- Submit Button -->
+			<div class="flex justify-end">
+				{#if isAwaitingSearch}
+					<!-- Submit Button -->
+					<button
+						on:click={handleSubmit}
+						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+						disabled={isProcessing}
+					>
+						{#if isProcessing}
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								/>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291..."
+								/>
+							</svg>
+							Processing...
+						{:else}
+							Submit
+						{/if}
+					</button>
+				{:else if isReadyForPayment}
+					<!-- Pay Button -->
+					<button
+						on:click={handleSubmit}
+						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+						disabled={isProcessing}
+					>
+						{#if isProcessing}
+							<svg
+								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+							>
+								<circle
+									class="opacity-25"
+									cx="12"
+									cy="12"
+									r="10"
+									stroke="currentColor"
+									stroke-width="4"
+								/>
+								<path
+									class="opacity-75"
+									fill="currentColor"
+									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291..."
+								/>
+							</svg>
+							Processing...
+						{:else}
+							Pay
+						{/if}
+					</button>
+				{:else}
+					<!-- Disabled Button -->
+					<button class="bg-gray-400 text-white px-6 py-2 rounded-md cursor-not-allowed" disabled>
+						Pay
+					</button>
+				{/if}
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	@keyframes fade-in-up {
+		from {
+			opacity: 0;
+			transform: translateY(40px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	.animate-fade-in-up {
+		animation: fade-in-up 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+</style>
