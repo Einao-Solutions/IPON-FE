@@ -1,0 +1,35 @@
+trigger:
+- dev  # change to 'main' or your real branch if needed
+
+pool:
+  name: 'IISPool'   # must match your agent pool name exactly
+
+stages:
+- stage: Build
+  displayName: 'Build Svelte frontend'
+  jobs:
+  - job: BuildJob
+    steps:
+    - task: NodeTool@0
+      inputs:
+        versionSpec: '18.x'   # use your Node.js version
+      displayName: 'Install Node.js'
+
+    - script: npm install
+      displayName: 'Install dependencies'
+
+    - script: npm run build
+      displayName: 'Build Svelte app'
+
+    - task: PowerShell@2
+      displayName: 'Deploy to IIS folder'
+      inputs:
+        targetType: 'inline'
+        script: |
+          Write-Host "Removing old files..."
+          Remove-Item -Path 'C:\Users\einaoadmin\Desktop\UpLinks\build\*' -Recurse -Force -ErrorAction SilentlyContinue
+
+          Write-Host "Copying new build..."
+          Copy-Item -Path "$(System.DefaultWorkingDirectory)\build\*" `
+                    -Destination "C:\Users\einaoadmin\Desktop\UpLinks\build" `
+                    -Recurse -Force
