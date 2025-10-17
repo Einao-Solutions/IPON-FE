@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="../logo.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		
+		<link href="../_app/immutable/assets/0.L7ljuk3q.css" rel="stylesheet">
+		<link href="../_app/immutable/assets/62.BACuqy2L.css" rel="stylesheet">
+		<link rel="modulepreload" href="../_app/immutable/entry/start.DbXg406b.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/sTQiEMwh.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/qLIpCCSV.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/CWqQW7tL.js">
+		<link rel="modulepreload" href="../_app/immutable/entry/app.BmCRte9s.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/C1FmrZbK.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/Bpqo0lwe.js">
+		<link rel="modulepreload" href="../_app/immutable/nodes/0.c6laBny2.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/DP4lk95k.js">
+		<link rel="modulepreload" href="../_app/immutable/nodes/62.BGVN6XOu.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/Dvl1x7Q7.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/CwF-pnTc.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/DxaiNGYP.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/CgU5AtxT.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/WhpeioxD.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/DvhB1z8p.js">
+		<link rel="modulepreload" href="../_app/immutable/chunks/WlDbmOKK.js"><!-- HEAD_svelte-1nen96w_START --> <!-- HTML_TAG_START --><script>(function setInitialMode({ defaultMode, themeColors: themeColors2, darkClassNames: darkClassNames2 = ["dark"], lightClassNames: lightClassNames2 = [], defaultTheme = "" }) {
+  const rootEl = document.documentElement;
+  const mode = localStorage.getItem("mode-watcher-mode") || defaultMode;
+  const theme = localStorage.getItem("mode-watcher-theme") || defaultTheme;
+  const light = mode === "light" || mode === "system" && window.matchMedia("(prefers-color-scheme: light)").matches;
+  if (light) {
+    if (darkClassNames2.length)
+      rootEl.classList.remove(...darkClassNames2);
+    if (lightClassNames2.length)
+      rootEl.classList.add(...lightClassNames2);
+  } else {
+    if (lightClassNames2.length)
+      rootEl.classList.remove(...lightClassNames2);
+    if (darkClassNames2.length)
+      rootEl.classList.add(...darkClassNames2);
+  }
+  rootEl.style.colorScheme = light ? "light" : "dark";
+  if (themeColors2) {
+    const themeMetaEl = document.querySelector('meta[name="theme-color"]');
+    if (themeMetaEl) {
+      themeMetaEl.setAttribute("content", mode === "light" ? themeColors2.light : themeColors2.dark);
+    }
+  }
+  if (theme) {
+    rootEl.setAttribute("data-theme", theme);
+    localStorage.setItem("mode-watcher-theme", theme);
+  }
+  localStorage.setItem("mode-watcher-mode", mode);
+})({"defaultMode":"light","darkClassNames":["dark"],"lightClassNames":[],"defaultTheme":"dracula","modeStorageKey":"mode-watcher-mode","themeStorageKey":"mode-watcher-theme"});</script><!-- HTML_TAG_END --><!-- HEAD_svelte-1nen96w_END -->
+	</head>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">   <div class="flex h-screen"> <div class="w-80 fixed top-0 left-0 h-screen z-10 bg-white border-r"><aside class="w-80 min-h-screen bg-white border-r border-gray-200 px-6 py-8 flex flex-col justify-between shadow-sm"><div><h1 class="text-2xl font-medium text-black mb-10 mt-2" data-svelte-h="svelte-1pp5o9j">Patent Application Menu</h1> <ul class="space-y-3"><li><button class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition mb-5 bg-green-500 text-white shadow-sm"> Patent Information</button> </li><li><button class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition mb-5 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"> Applicants Information</button> </li><li><button class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition mb-5 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"> Inventors Information</button> </li><li><button class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition mb-5 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"> Correspondence Information</button> </li><li><button class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition mb-5 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"> Attachments</button> </li><li><button class="w-full flex items-center gap-3 px-4 py-2 rounded-lg text-sm font-medium transition mb-5 bg-gray-50 text-gray-600 hover:bg-gray-100 border border-gray-200"> Review and Submit</button> </li></ul></div> <div class="pt-8"><button class="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded-md transition" data-svelte-h="svelte-vxgfpy">Cancel Application</button></div></aside>  </div>  <main class="ml-80 flex-1 h-screen overflow-y-auto px-8 py-10 bg-gray-50"><div class="max-w-5xl mx-auto"><div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-md space-y-6"><h2 class="text-2xl font-semibold text-gray-800" data-svelte-h="svelte-13guy0m">Patent Information</h2>  <div><label class="block font-medium mb-2" data-svelte-h="svelte-l5vl4s">Filing Origin</label> <div class="flex space-x-4"><button type="button" class="px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-200 bg-black text-white">Local </button><button type="button" class="px-4 py-2 rounded-md border text-sm font-medium transition-colors duration-200 bg-white text-gray-700 border-gray-300 hover:bg-gray-100">Foreign </button></div></div> <div class="max-w-md relative"><label class="block font-medium mb-1" data-svelte-h="svelte-18nk0dg">Nationality</label> <div class="relative"><input type="text" class="input w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 border-gray-300 focus:ring-black" placeholder="Search Nationality..." disabled value="Nigeria"> </div>  </div>  <div><label class="block font-medium mb-2" data-svelte-h="svelte-1yv7v1t">Patent Type</label> <div class="border rounded-lg divide-y"><div class="px-4 py-2 hover:bg-white cursor-pointer transition relative bg-white"><div class="flex justify-between items-center"><span>Non-Conventional</span> </div>  </div></div> </div>  <div><label class="block font-medium mb-2" data-svelte-h="svelte-1enoprl">Application Type</label> <select class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 border-gray-300 focus:ring-black"><option value="" disabled selected data-svelte-h="svelte-f3ayf7">Select application type</option><option value="Patent">Patent</option><option value="Utility Model">Utility Model</option><option value="Business Method">Business Method</option></select> </div>  <div><label class="block font-medium mb-2" data-svelte-h="svelte-jqvwbq">Title of Invention</label> <input type="text" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 border-gray-300 focus:ring-black" placeholder="e.g. Improved Solar Cell" value=""> </div>  <div><label class="block font-medium mb-2" data-svelte-h="svelte-1m4fnjr">Patent Abstract</label> <textarea rows="4" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 border-gray-300 focus:ring-black" placeholder="A brief summary of your invention..."></textarea>  <p class="text-sm mt-1 text-gray-500">0 / 500 words</p> </div>  <div class="pt-4"><button type="button" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 transition justify-end w-full md:w-auto" data-svelte-h="svelte-1swu05c">Next</button></div></div></div></main></div> 
+			
+			<script>
+				{
+					__sveltekit_1vuis38 = {
+						base: new URL("..", location).pathname.slice(0, -1)
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("../_app/immutable/entry/start.DbXg406b.js"),
+						import("../_app/immutable/entry/app.BmCRte9s.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 62],
+							data: [{"type":"data","data":null,"uses":{},"slash":"always"},null],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>
