@@ -40,7 +40,7 @@
 		},
 		{ icon: 'cil:search', location: 'Publications' },
 		{ icon: 'fluent:person-support-20-filled', location: 'Support' },
-		// { icon: 'cil:search', location: 'Opposition' },
+		{ icon: 'cil:search', location: 'Opposition' },
 		{ icon: 'arcticons:yahoo-japan-finance', location: 'Finance' },
 		{ icon: 'mi:notification', location: 'Performance' },
 		{ icon: 'octicon:people-24', location: 'Users' },

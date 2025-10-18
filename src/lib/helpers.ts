@@ -1,5 +1,5 @@
 import { countriesMap } from '$lib/constants';
-import type { DesignTypes } from '$lib/designutils';
+import type { Types } from '$lib/designutils';
 import * as valid from 'validator';
 import { isValidPhoneNumber } from 'libphonenumber-js';
 import { loggedInUser } from '$lib/store';
@@ -9,8 +9,8 @@ import type { A } from 'vitest/dist/chunks/environment.LoooBwUu.js';
 // export const baseURL = 'http://localhost:5044';
 // export const baseURL="https://benin.azure-api.net";
 // export const baseURL="https://uatlb-int.iponigeria.com";
-//  export const baseURL="https://backend.einaotest.com";
-export const baseURL="https://integration.iponigeria.com";
+ export const baseURL="https://backend.einaotest.com";
+// export const baseURL="https://integration.iponigeria.com";
 export const localhost = 'http://localhost:5044';
 
 export const nonConventionalDescription =
@@ -749,4 +749,3 @@ export function mapRoleToString(type: number) {
 			return 'Trademark Acceptance';
 	}
 }
-//testing

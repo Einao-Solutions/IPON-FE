@@ -231,7 +231,7 @@
 					applicantEmail: applicant?.email || data.applicantEmail,
 					applicantPhone: applicant?.phone || data.applicantPhone
 				};
-
+				console.log('Payment Details:', paymentDetails);
 				// Set applicant details from the response
 				applicantDetails = {
 					name: applicant?.name || 'N/A',
@@ -239,7 +239,7 @@
 					phone: applicant?.phone || 'N/A',
 					fileId: applicationHistory?.id || ''
 				};
-
+				console.log('Applicant Details:', applicantDetails);
 				// Pre-populate correspondence details with applicant information if available
 				if (applicant) {
 					correspondenceDetails = {
@@ -252,14 +252,25 @@
 				}
 
 				// Update session storage
-				let markData = JSON.parse(sessionStorage.getItem('markInfo') || '[]');
+				let markData = JSON.parse(sessionStorage.getItem('markInfo') || '[]') as SearchResult[];
 				if (!Array.isArray(markData)) {
 					markData = [markData];
 				}
-				markData = markData.map((m) => ({
-					...m,
-					paymentDetails: paymentDetails
-				}));
+				markData = markData.map((m: SearchResult) => {
+					if (selectedResult && m.fileNumber === selectedResult.fileNumber) {
+						return {
+							title: m.title,
+							class: m.class,
+							markType: m.markType,
+							filingDate: m.filingDate,
+							fileNumber: m.fileNumber,
+							applicant: (data.applicants ?? [applicant]) || null,
+							applicationHistory: data.applicationHistory || null
+						};
+					}
+					return m;
+				});
+				console.log('Updated Mark Data with Payment Details:', markData);
 				sessionStorage.setItem('markInfo', JSON.stringify(markData));
 
 				// Success - close payment dialog and open claim dialog
@@ -355,7 +366,10 @@
 			const formData = new FormData();
 
 			// Prepare form data for file uploads
-			const markData = JSON.parse(sessionStorage.getItem('markInfo') || '[]');
+			let markData = JSON.parse(sessionStorage.getItem('markInfo') || '[]');
+			if (!Array.isArray(markData)) {
+				markData = [markData];
+			}
 			formData.append('markInfo', JSON.stringify(markData));
 
 			if (!markData) {

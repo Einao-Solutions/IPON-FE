@@ -92,7 +92,7 @@
 						// Existing logic for trademark and patent
 						(result.fileTypes === 2 && [4, 6, 7].includes(result.fileStatus)) ||
 						// New logic for patent files with status 3
-						(result.fileTypes === 0 && [4, 6, 7, 14].includes(result.fileStatus))
+						(result.fileTypes === 0 && [4, 6, 7, 14, 11].includes(result.fileStatus))
 				);
 			} else {
 				error = 'Search parameters are missing';
@@ -164,7 +164,7 @@
 				class="mx-auto mb-2 text-yellow-600"
 			/>
 			<h3 class="text-lg font-medium text-gray-800 mb-1">No results found</h3>
-			<p class="text-gray-600">Please ensure that your file status is not 'Active'.</p>
+			<p class="text-gray-600">Please ensure that your file status can file for Clerical Updates before using the module.</p>
 		</div>
 	{:else}
 		<div class="bg-white rounded-md shadow overflow-hidden">
@@ -287,6 +287,16 @@
 													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=EditInventors`
 												);
 											}
+											else if (selectedValue === 'priorityinfo') {
+												goto(
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=PriorityInfo`
+												);
+											}
+											else if (selectedValue === 'correspondence') {
+												goto(
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=Correspondence`
+												);
+											}
 										}
 									}}
 								>
@@ -301,9 +311,11 @@
 									{:else if result.fileTypes === 0}
 										<option value="update-name">Update Applicant Name</option>
 										<option value="update-address">Update Applicant Address</option>
-										<option value="update-title">Update Title Of Invention</option>
+										<option value="update-title">Update Abstract/Application Type/Title Of Invention</option>
 										<option value="addorremove-applicant">Add/Remove Applicant</option>
 										<option value="edit-inventors">Update Inventors</option>
+										<option value="priorityinfo">Update Priority Information</option>
+										<option value="correspondence">Update Correspondence</option>
 									{/if}
 								</select>
 							</Table.Cell>

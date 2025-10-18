@@ -56,6 +56,7 @@
 			await updateClerical();
 		}
 	});
+
 	function base64ToFile(base64: string, filename: string, mimeType: string): File {
 		const byteString = atob(base64.split(',')[1]);
 		const ab = new ArrayBuffer(byteString.length);
@@ -96,6 +97,23 @@
 			payload.append('PowerOfAttorney', file);
 		}
 
+		if (Array.isArray(formData.PriorityInfo)) {
+			formData.PriorityInfo.forEach((item, i) => {
+				payload.append(`PriorityInfo[${i}].number`, item.number);
+				payload.append(`PriorityInfo[${i}].country`, item.country);
+				payload.append(`PriorityInfo[${i}].date`, item.date);
+				if (item.id) payload.append(`PriorityInfo[${i}].id`, item.id);
+			});
+		}
+		if (Array.isArray(formData.FirstPriorityInfo)) {
+			formData.FirstPriorityInfo.forEach((item, i) => {
+				payload.append(`FirstPriorityInfo[${i}].number`, item.number);
+				payload.append(`FirstPriorityInfo[${i}].country`, item.country);
+				payload.append(`FirstPriorityInfo[${i}].date`, item.date);
+				if (item.id) payload.append(`FirstPriorityInfo[${i}].id`, item.id);
+			});
+		}
+
 		// --- FIX: Append NewApplicants fields individually ---
 		if (Array.isArray(formData.NewApplicants)) {
 			formData.NewApplicants.forEach((apps, i) => {
@@ -129,9 +147,39 @@
 			});
 		}
 
+		if (formData.CorrespondenceName) {
+			payload.append('CorrespondenceName', formData.CorrespondenceName);
+		}
+		if (formData.CorrespondenceAddress) {
+			payload.append('CorrespondenceAddress', formData.CorrespondenceAddress);
+		}
+		if (formData.CorrespondencePhone) {
+			payload.append('CorrespondencePhone', formData.CorrespondencePhone);
+		}
+		if (formData.CorrespondenceEmail) {
+			payload.append('CorrespondenceEmail', formData.CorrespondenceEmail);
+		}
+		if (formData.CorrespondenceState) {
+			payload.append('CorrespondenceState', formData.CorrespondenceState);
+		}
+		if (formData.CorrespondenceNationality) {
+			payload.append('CorrespondenceNationality', formData.CorrespondenceNationality);
+		}
+
+		if (formData.PatentAbstract) {
+			payload.append('PatentAbstract', formData.PatentAbstract);
+		}
+		if (
+			formData.PatentApplicationType !== undefined &&
+			formData.PatentApplicationType !== null &&
+			formData.PatentApplicationType !== ''
+		) {
+			payload.append('PatentApplicationType', formData.PatentApplicationType);
+		}
+
 		// Append all other fields (skip NewApplicants)
 		for (const key in formData) {
-			if (key === 'NewApplicants' || key === 'RemoveApplicantIds' || key === 'NewInventors') continue; // skip, already handled above
+			if (key === 'NewApplicants' || key === 'RemoveApplicantIds' || key === 'NewInventors' || key === 'PriorityInfo' || key === 'FirstPriorityInfo') continue; // skip, already handled above
 			if (Array.isArray(formData[key])) {
 				formData[key].forEach((item) => {
 					payload.append(`${key}[]`, item);

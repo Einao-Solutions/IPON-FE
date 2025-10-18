@@ -559,17 +559,19 @@
 			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
 
 			// Determine applicant name for display
-			if (parsed?.FileType === 0 ) {
-				// For patent, get first applicant name from array if available
-				    if (parsed.OldApplicantNames && Array.isArray(parsed.OldApplicantNames) && parsed.OldApplicantNames.length > 0) {
-							fileApplicant = parsed.OldApplicantNames[0];
-						} else {
-							fileApplicant = '';
-						}
-					} else {
-				// For trademark and others, use OldApplicantName
-				fileApplicant = parsed?.OldApplicantName ?? '';
-			}
+			// if (parsed?.FileType === 0 ) {
+			// 	// For patent, get first applicant name from array if available
+			// 	    if (parsed.OldApplicantNames && Array.isArray(parsed.OldApplicantNames) && parsed.OldApplicantNames.length > 0) {
+			// 				fileApplicant = parsed.OldApplicantNames[0];
+			// 			} else {
+			// 				fileApplicant = '';
+			// 			}
+			// 		} else {
+			// 	// For trademark and others, use OldApplicantName
+			// 	fileApplicant = parsed?.OldApplicantName ?? '';
+			// }
+
+			fileApplicant = parsed?.FileApplicant ?? '';
 
 			// const requestId = crypto.randomUUID();
 			console.log('Payment ID:', paymentId);

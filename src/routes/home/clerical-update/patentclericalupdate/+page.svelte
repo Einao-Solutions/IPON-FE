@@ -18,7 +18,7 @@
         state?: string;
         city?: string;
     }
-
+    
     interface InventorInfo {
         name: string;
         address?: string;
@@ -54,6 +54,8 @@
         applicantStates?: string[];
         applicantCities?: string[];
         fileTitle?: string | null;
+        patentAbstract?: string | null;
+        patentApplicationType?: number | null;
     }
 
     let fileInfo: PatentFileInfo = {
@@ -72,6 +74,15 @@
         patentAbstract: null
     };
 
+    interface PriorityInfo {
+        number: string;
+        country: string;
+        date: string;
+    }
+
+    // Use Priority for your state
+    let firstPriorityInfo: PriorityInfo = { number: '', country: '', date: '' };
+    let priorityInfoList: PriorityInfo[] = [];
     let inventorsMarkedForDeletion: number[] = [];
 
     let error: string | null = null;
@@ -80,6 +91,16 @@
     let updateType: string | null = null;
     let fileType = '';
     const pageData = get(page);
+    let patentTypeValue: number | null = null;
+
+    let correspondenceName: string = '';
+    let correspondenceAddress: string = '';
+    let correspondencePhone: string = '';
+    let correspondenceEmail: string = '';
+    let correspondenceState: string = '';
+    let correspondenceNationality: string = '';
+    // let editablePatentAbstract: string = '';
+    // let editablePatentApplicationType: number | null = null;
 
     let newData: NewData = {};
 
@@ -123,6 +144,17 @@
                 patentAbstract: data.patentAbstract ?? null
             };
 
+            patentTypeValue = Number(data.patentType);
+
+            if (updateType === 'Correspondence' && data.correspondenceName) {
+                correspondenceName = data.correspondenceName ?? '';
+                correspondenceAddress = data.correspondenceAddress ?? '';
+                correspondencePhone = data.correspondencePhone ?? '';
+                correspondenceEmail = data.correspondenceEmail ?? '';
+                correspondenceState = data.correspondenceState ?? '';
+                correspondenceNationality = data.correspondenceNationality ?? '';
+            }
+
             if(updateType === 'EditInventors' && data.inventors) {
                 inventors = data.inventors;
 
@@ -145,12 +177,28 @@
                     newData.applicantCities = fileInfo.applicants.map(() => '');
                 }
             }
+
+            if (isPCTorConventional() && Array.isArray(data.firstPriorityInfo) && data.firstPriorityInfo.length > 0) {
+                    firstPriorityInfo = { ...data.firstPriorityInfo[0] };
+                } else {
+                    firstPriorityInfo = { number: '', country: '', date: '' };
+                }
+                if (Array.isArray(data.priorityInfo) && data.priorityInfo.length > 0) {
+                    priorityInfoList = data.priorityInfo.map(p => ({ ...p }));
+                } else {
+                    priorityInfoList = [{ number: '', country: '', date: '' }];
+            }
+
         } catch (err) {
             error = 'Error fetching clerical update cost.';
             console.error(err);
         } finally {
             isLoading = false;
         }
+    }
+
+   function isPCTorConventional() {
+        return patentTypeValue === 0 || patentTypeValue === 2;
     }
 
     function getFormTitle(type: string): string {
@@ -164,6 +212,14 @@
             default:
                 return 'Application for Clerical Update';
         }
+    }
+
+        // Add, edit, delete handlers for Priority Info
+    function addPriorityInfo() {
+        priorityInfoList = [...priorityInfoList, { number: '', country: '', date: '' }];
+    }
+    function removePriorityInfo(index: number) {
+        priorityInfoList = priorityInfoList.filter((_, i) => i !== index);
     }
 
     // Show sections for Patent clerical update
@@ -295,8 +351,14 @@
                 FileType: fileInfo.fileType ?? '',
                 PaymentRRR: fileInfo.paymentRRR ?? ''
             };
-
+            
            // console.log('fileType', fileInfo.fileType);
+           if (updateType === 'PriorityInfo') {
+                if (isPCTorConventional()) {
+                    formObj.FirstPriorityInfo = [firstPriorityInfo];
+                }
+                formObj.PriorityInfo = priorityInfoList;
+            }
 
            if (updateType === 'EditInventors') {
                 // Remove inventors marked for deletion before sending
@@ -335,6 +397,25 @@
                 formObj.ApplicantCities = newData.applicantCities;
             } else if (updateType === 'FileTitle') {
                 formObj.FileTitle = newData.fileTitle ?? '';
+                formObj.PatentAbstract = newData.patentAbstract ?? '';
+                if (newData.patentApplicationType !== undefined && newData.patentApplicationType !== null && newData.patentApplicationType !== '') {
+                    formObj.PatentApplicationType = Number(newData.patentApplicationType);
+                }
+            }
+
+            if (updateType === 'Correspondence') {
+                formObj.CorrespondenceName = correspondenceName;
+                formObj.CorrespondenceAddress = correspondenceAddress;
+                formObj.CorrespondencePhone = correspondencePhone;
+                formObj.CorrespondenceEmail = correspondenceEmail;
+                formObj.CorrespondenceState = correspondenceState;
+                formObj.CorrespondenceNationality = correspondenceNationality;  
+            }
+
+            if (fileInfo.applicants && fileInfo.applicants.length > 0) {
+                formObj.FileApplicant = fileInfo.applicants[0].name;
+            } else {
+                formObj.FileApplicant = '';
             }
 
             localStorage.setItem('formData', JSON.stringify(formObj));
@@ -482,8 +563,8 @@
                 return 'Patent';
             case PatentApplicationTypes.Business_Method:
                 return 'Business Method';
-            case PatentApplicationTypes.Utility_Method:
-                return 'Utility Method';
+            case PatentApplicationTypes.Utility_Model:
+                return 'Utility Model';
             default:
                 return '';
         }
@@ -540,31 +621,31 @@
                     <div class="p-4">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">File Number:</label>
-                                <input type="text" value={fileInfo.fileId} placeholder={fileInfo.fileId} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
+                                <label for="file-number" class="block text-sm font-medium text-gray-700 mb-1">File Number:</label>
+                                <input id="file-number" type="text" value={fileInfo.fileId} placeholder={fileInfo.fileId} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">File Origin:</label>
-                                <input type="text" value={fileInfo.fileOrigin} placeholder={fileInfo.fileOrigin} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
+                                <label for="file-origin" class="block text-sm font-medium text-gray-700 mb-1">File Origin:</label>
+                                <input id="file-origin" type="text" value={fileInfo.fileOrigin} placeholder={fileInfo.fileOrigin} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Patent Type:</label>
-                                <input type="text" value={getPatentTypeLabel(fileInfo.patentType)} placeholder={getPatentTypeLabel(fileInfo.patentType)} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
+                                <label for="patent-type" class="block text-sm font-medium text-gray-700 mb-1">Patent Type:</label>
+                                <input id="patent-type" type="text" value={getPatentTypeLabel(fileInfo.patentType)} placeholder={getPatentTypeLabel(fileInfo.patentType)} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Patent Application Type:</label>
-                                <input type="text" value={getPatentApplicationTypeLabel(fileInfo.patentApplicationType)} placeholder={getPatentApplicationTypeLabel(fileInfo.patentApplicationType)} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
+                                <label for="patent-application-type" class="block text-sm font-medium text-gray-700 mb-1">Patent Application Type:</label>
+                                <input id="patent-application-type" type="text" value={getPatentApplicationTypeLabel(fileInfo.patentApplicationType)} placeholder={getPatentApplicationTypeLabel(fileInfo.patentApplicationType)} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
                             </div>
                            
                         </div>
                          <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Title of Invention:</label>
-                            <input type="text" value={fileInfo.fileTitle} placeholder={fileInfo.fileTitle} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
+                            <label for="title-of-invention" class="block text-sm font-medium text-gray-700 mb-1">Title of Invention:</label>
+                            <input id="title-of-invention" type="text" value={fileInfo.fileTitle} placeholder={fileInfo.fileTitle} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled />
                         </div>
                         <!-- Patent Abstract as a full-width row below -->
                         <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Patent Abstract:</label>
-                            <textarea value={fileInfo.patentAbstract} placeholder={fileInfo.patentAbstract} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled></textarea>
+                            <label for="patent-abstract" class="block text-sm font-medium text-gray-700 mb-1">Patent Abstract:</label>
+                            <textarea id="patent-abstract" value={fileInfo.patentAbstract} placeholder={fileInfo.patentAbstract} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled></textarea>
                         </div>
                     </div>
                 {/if}
@@ -578,10 +659,11 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {#each fileInfo.applicants as applicant, i}
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                    <label for={`applicant-name-${i}`} class="block text-sm font-medium text-gray-700 mb-1">
                                         Applicant Name {i + 1}:
                                     </label>
                                     <input
+                                        id={`applicant-name-${i}`}
                                         type="text"
                                         bind:value={newData.applicantNames[i]}
                                         placeholder={`Enter new name for applicant ${i + 1}`}
@@ -610,8 +692,9 @@
                                 <div class="mt-2 grid grid-cols-1 gap-4">
                                     <!-- Name -->
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">Applicant Name:</label>
+                                        <label for={`applicant-name-${i}`} class="block text-sm font-medium text-gray-700 mb-1">Applicant Name:</label>
                                         <input
+                                            id={`applicant-name-${i}`}
                                             type="text"
                                             value={applicant.name}
                                             class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -621,8 +704,9 @@
                                     </div>
                                     <!-- Address -->
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">New Address:</label>
+                                        <label for={`applicant-address-${i}`} class="block text-sm font-medium text-gray-700 mb-1">New Address:</label>
                                         <textarea
+                                            id={`applicant-address-${i}`}
                                             bind:value={newData.applicantAddresses[i]}
                                             placeholder="Enter new address"
                                             rows="2"
@@ -634,8 +718,9 @@
                                     <!-- Email & Phone side by side -->
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">New Email:</label>
+                                            <label for={`applicant-email-${i}`} class="block text-sm font-medium text-gray-700 mb-1">New Email:</label>
                                             <input
+                                                id={`applicant-email-${i}`}
                                                 type="email"
                                                 bind:value={newData.applicantEmails[i]}
                                                 placeholder={applicant.email}
@@ -645,8 +730,9 @@
                                             <p class="text-xs text-gray-500 mt-1">Current email: <b>{applicant.email}</b></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">New Phone:</label>
+                                            <label for={`applicant-phone-${i}`} class="block text-sm font-medium text-gray-700 mb-1">New Phone:</label>
                                             <input
+                                                id={`applicant-phone-${i}`}
                                                 type="tel"
                                                 bind:value={newData.applicantPhones[i]}
                                                 placeholder={applicant.phone}
@@ -659,8 +745,9 @@
                                     <!-- State & Country side by side -->
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">New State:</label>
+                                            <label for={`applicant-state-${i}`} class="block text-sm font-medium text-gray-700 mb-1">New State:</label>
                                             <input
+                                                id={`applicant-state-${i}`}
                                                 type="text"
                                                 bind:value={newData.applicantStates[i]}
                                                 placeholder={applicant.state}
@@ -670,8 +757,9 @@
                                             <p class="text-xs text-gray-500 mt-1">Current state: <b>{applicant.state}</b></p>
                                         </div>
                                         <div>
-                                            <label class="block text-sm font-medium text-gray-700 mb-1">New Country:</label>
+                                            <label for={`applicant-country-${i}`} class="block text-sm font-medium text-gray-700 mb-1">New Country:</label>
                                             <select
+                                                id={`applicant-country-${i}`}
                                                 bind:value={newData.applicantNationalities[i]}
                                                 class="w-full px-3 py-2 border rounded-md focus:ring-gray-900 focus:border-gray-900"
                                                 class:border-red-500={error && showAddressSection}
@@ -687,8 +775,9 @@
                                     </div>
                                     <!-- City alone -->
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">New City:</label>
+                                        <label for={`applicant-city-${i}`} class="block text-sm font-medium text-gray-700 mb-1">New City:</label>
                                         <input
+                                            id={`applicant-city-${i}`}
                                             type="text"
                                             bind:value={newData.applicantCities[i]}
                                             placeholder={applicant.city}
@@ -707,20 +796,49 @@
             <!-- Section 4: New Title of Invention -->
             {#if showTitleOfInventionSection}
                 <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-                    <div class="bg-yellow-100 px-4 py-2 font-medium text-yellow-900">NEW TITLE OF INVENTION</div>
+                    <div class="bg-yellow-300 px-4 py-2 font-medium text-yellow-900">NEW PATENT ABSTRACT</div>
                     <div class="p-4">
                         <div class="grid grid-cols-1 gap-4">
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">New Title of Invention:</label>
-                                <input
-                                    type="text"
-                                    bind:value={newData.fileTitle}
-                                    placeholder="Enter new title of invention"
+                                <label for={`patent-abstract`} class="block text-sm font-medium text-gray-700 mb-1">New Patent Abstract:</label>
+                                <textarea
+                                    id={`patent-abstract`}
+                                    bind:value={newData.patentAbstract}
+                                    placeholder="Enter new patent abstract"
                                     class="w-full px-3 py-2 border rounded-md focus:ring-yellow-500 focus:border-yellow-500"
-                                    class:border-red-500={error && showTitleOfInventionSection}
-                                />
-                                <p class="text-xs text-gray-500 mt-1">This will replace the current title of invention shown above.</p>
+                                    rows="3"
+                                ></textarea>
+                                <p class="text-xs text-gray-500 mt-1">This will replace the current patent abstract shown above.</p>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+                    <div class="bg-yellow-200 px-4 py-2 font-medium text-yellow-900">NEW TITLE OF INVENTION & APPLICATION TYPE</div>
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <div>
+                            <label for={`title-of-invention`} class="block text-sm font-medium text-gray-700 mb-1">New Title of Invention:</label>
+                            <input
+                                type="text"
+                                bind:value={newData.fileTitle}
+                                placeholder="Enter new title of invention"
+                                class="w-full px-3 py-2 border rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+                                class:border-red-500={error && showTitleOfInventionSection}
+                            />
+                            <p class="text-xs text-gray-500 mt-1">This will replace the current title of invention shown above.</p>
+                        </div>
+                        <div>
+                            <label for={`patent-application-type`} class="block text-sm font-medium text-gray-700 mb-1">New Patent Application Type:</label>
+                            <select
+                                bind:value={newData.patentApplicationType}
+                                class="w-full px-3 py-2 border rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+                            >
+                                <option value="" disabled selected>Select application type</option>
+                                <option value={PatentApplicationTypes.Patent}>Patent</option>
+                                <option value={PatentApplicationTypes.Business_Method}>Business Method</option>
+                                <option value={PatentApplicationTypes.Utility_Model}>Utility Model</option>
+                            </select>
+                            <p class="text-xs text-gray-500 mt-1">This will replace the current application type shown above.</p>
                         </div>
                     </div>
                 </div>
@@ -740,19 +858,7 @@
                         {#each fileInfo.applicants as applicant, i}
                             <details class="mb-4 border border-gray-300 rounded-lg shadow-sm overflow-hidden">
                                 <summary class="cursor-pointer font-semibold text-lg bg-gray-200 px-4 py-2 flex items-center justify-between">
-                                    <!-- <span class="flex items-center gap-2">
-                                        <svg
-                                            class="w-4 h-4 transition-transform"
-                                            style="transform: rotate({openApplicants[i] ? 90 : 0}deg);"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            stroke-width="2"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-                                        </svg>
-                                        Applicant {i + 1}
-                                    </span> -->
+                                 
                                     <span>Applicant {i + 1}</span>
                                     {#if selectedRemoveIds.includes(applicant.id)}
                                         <span class="ml-2 px-2 py-1 bg-red-100 text-red-700 rounded text-xs">To be deleted</span>
@@ -942,6 +1048,107 @@
                         <button type="button" class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors mt-4" on:click={addInventorForm}>
                             Add Inventor
                         </button>
+                    </div>
+                </div>
+            {/if}
+
+            {#if isLoading}
+                <!-- Show loading spinner or nothing -->
+                <div class="flex items-center justify-center p-12">
+                    <div class="flex flex-col items-center gap-2">
+                        <Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" />
+                        <span class="text-sm text-gray-500">Loading...</span>
+                    </div>
+                </div>
+            {:else if updateType === 'PriorityInfo' && patentTypeValue !== null && fileInfo.patentType !== 1}
+                 {#if isPCTorConventional()}
+                    <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+                        <div class="bg-blue-100 px-4 py-2 font-medium text-blue-900">FIRST PRIORITY INFORMATION</div>
+                        <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for={`first-priority-number`} class="block text-sm font-medium text-gray-700 mb-1">Priority Number</label>
+                                <input id={`first-priority-number`} type="text" bind:value={firstPriorityInfo.number} class="w-full px-3 py-2 border rounded-md" />
+                            </div>
+                            <div>
+                                <label for={`first-priority-country`} class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                                <select id={`first-priority-country`} bind:value={firstPriorityInfo.country} class="w-full px-3 py-2 border rounded-md">
+                                    <option value="" disabled selected>Select country</option>
+                                    {#each Object.entries(countriesMap) as [code, name]}
+                                        <option value={name}>{name}</option>
+                                    {/each}
+                                </select>
+                            </div>
+                            <div>
+                                <label for={`first-priority-date`} class="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                <input id={`first-priority-date`} type="date" bind:value={firstPriorityInfo.date} class="w-full px-3 py-2 border rounded-md" />
+                            </div>
+                        </div>
+                    </div>
+                {/if}
+
+                <!-- Priority Info Section -->
+                <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+                    <div class="bg-green-100 px-4 py-2 font-medium text-green-900">PRIORITY INFORMATION</div>
+                    <div class="p-4">
+                        {#each priorityInfoList as info, i}
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2 items-center">
+                                <input type="text" bind:value={info.number} placeholder="Priority Number" class="px-3 py-2 border rounded-md" />
+                                <select bind:value={info.country} class="w-full px-3 py-2 border rounded-md">
+                                    <option value="" disabled selected>Select country</option>
+                                    {#each Object.entries(countriesMap) as [code, name]}
+                                        <option value={name}>{name}</option>
+                                    {/each}
+                                </select>
+                                <input type="date" bind:value={info.date} class="px-3 py-2 border rounded-md" />
+                                <div class="flex justify-end">
+                                    <button type="button" class="bg-red-600 hover:bg-red-700 text-white px-1 py-1 rounded-md transition-colors" on:click={() => removePriorityInfo(i)}>
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        {/each}
+                        <button type="button" class="bg-blue-600 text-white px-4 py-2 rounded-md mt-2" on:click={addPriorityInfo}>
+                            Add Priority Info
+                        </button>
+                    </div>
+                </div>
+            {:else if updateType === 'PriorityInfo' && patentTypeValue !== null && fileInfo.patentType === 1}
+                <div class="mb-6 border border-red-300 rounded-md overflow-hidden">
+                    <div class="bg-red-100 px-4 py-2 font-medium text-red-900">NOT ALLOWED</div>
+                    <div class="p-4 text-red-700">
+                        Clerical update for Priority Information is not allowed for Non-Conventional patent files.
+                    </div>
+                </div>
+            {/if}
+
+            {#if updateType === 'Correspondence'}
+                <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+                    <div class="bg-indigo-100 px-4 py-2 font-medium text-indigo-900">CORRESPONDENCE INFORMATION</div>
+                    <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="correspondenceName" class="block text-sm font-medium text-gray-700 mb-1">Correspondence Name</label>
+                            <input type="text" bind:value={correspondenceName} class="w-full px-3 py-2 border rounded-md" />
+                        </div>
+                        <div>
+                            <label for="correspondenceAddress"  class="block text-sm font-medium text-gray-700 mb-1">Correspondence Address</label>
+                            <input type="text" bind:value={correspondenceAddress} class="w-full px-3 py-2 border rounded-md" />
+                        </div>
+                        <div>
+                            <label for="correspondencePhone"  class="block text-sm font-medium text-gray-700 mb-1">Correspondence Phone</label>
+                            <input type="text" bind:value={correspondencePhone} class="w-full px-3 py-2 border rounded-md" />
+                        </div>
+                        <div>
+                            <label for="correspondenceEmail" class="block text-sm font-medium text-gray-700 mb-1">Correspondence Email</label>
+                            <input type="email" bind:value={correspondenceEmail} class="w-full px-3 py-2 border rounded-md" />
+                        </div>
+                        <div>
+                            <label for="correspondenceNationality" class="block text-sm font-medium text-gray-700 mb-1">Correspondence Country</label>
+                           <input type="text" bind:value={correspondenceNationality} class="w-full px-3 py-2 border rounded-md" readonly/>
+                        </div>
+                        <div>
+                            <label for="correspondenceState" class="block text-sm font-medium text-gray-700 mb-1">Correspondence State</label>
+                            <input type="text" bind:value={correspondenceState} class="w-full px-3 py-2 border rounded-md" />
+                        </div>
                     </div>
                 </div>
             {/if}

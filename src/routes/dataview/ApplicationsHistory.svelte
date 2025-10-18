@@ -389,11 +389,6 @@
 			showToast('error', 'An error occurred while fetching appeal details');
 		}
 	}
-// Props and existing variables
-	// export let showAppealRequest = false;
-	// export let appealDocs: string[] = [];
-	// export let recordalLoading = false;
-
 	// New variables for appeal treatment
 	let appealReason = '';
 	let appealReasonError = '';
@@ -430,7 +425,7 @@
 					reason: appealReason.trim(),
 					isApproved: true
 				})
-				});
+			});
 
 			if (!response.ok) {
 				const errorData = await response.json().catch(() => null);
@@ -446,7 +441,7 @@
 				showAppealRequest = false;
 				appealReason = '';
 				appealReasonError = '';
-				
+
 				// Refresh your data or emit an event
 				// Example: dispatch('appealTreated', { approved: true });
 			} else {
@@ -467,8 +462,6 @@
 
 	async function handleDenyAppeal(application: ApplicationHistoryType) {
 		if (!validateReason()) return;
-
-		
 
 		isApproving = false;
 		submittingAppeal = true;
@@ -501,7 +494,7 @@
 				showAppealRequest = false;
 				appealReason = '';
 				appealReasonError = '';
-				
+
 				// Refresh your data or emit an event
 				// Example: dispatch('appealTreated', { approved: false });
 			} else {
@@ -983,17 +976,24 @@
 					<!-- Clerical Update Details -->
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{#each Object.entries(recordalData) as [key, value]}
-							{#if !['id', 'isApproved', 'documentUrl'].includes(key) && value != null}
+							{#if value != null  && !['id', 'isApproved', 'documentUrl'].includes(key)}
 								<div>
 									<Label class="font-semibold capitalize">
-										{key.replace(/([A-Z])/g, ' $1').trim()}:
+										{key.replace(/([A-Z])/g, ' $1').replace('Url', '').trim()}:
 									</Label>
 									{#if typeof value === 'string' && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
 										<img src={value} alt={key} class="mt-1 max-w-full h-auto rounded border" />
+									{:else if key.endsWith('Url') && typeof value === 'string' && value}
+										<Button
+											on:click={() => window.open(String(value), '_blank')}
+											variant="outline"
+											class="flex items-center gap-1"
+										>
+											<Icon icon="mdi:file-document-outline" />
+											View Document
+										</Button>
 									{:else}
-										<p class="mt-1 p-2 bg-gray-50 rounded border">
-											{value}
-										</p>
+										<p class="mt-1 p-2 bg-gray-50 rounded border">{value}</p>
 									{/if}
 								</div>
 							{/if}
@@ -1071,9 +1071,7 @@
 	<Dialog.Content class="w-11/12 max-w-4xl mx-auto my-4 max-h-[90vh]">
 		<Dialog.Header>
 			<Dialog.Title>Treat Appeal Request</Dialog.Title>
-			<Dialog.Description>
-				Review the appeal documents and provide your decision
-			</Dialog.Description>
+			<Dialog.Description>Review the appeal documents and provide your decision</Dialog.Description>
 		</Dialog.Header>
 
 		{#if recordalLoading}
@@ -1082,8 +1080,6 @@
 			</div>
 		{:else if appealDocs}
 			<div class="overflow-auto max-h-[60vh] p-4 space-y-4">
-				
-
 				<!-- Appeal Documents Section -->
 				<div class="border rounded-lg p-4 space-y-2">
 					<h3 class="font-semibold text-sm text-gray-700">Appeal Documents</h3>
@@ -1122,49 +1118,48 @@
 					{/if}
 				</div>
 				{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.roles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.roles?.includes(UserRoles.Support)}
-				<!-- Action Buttons -->
-				<div class="flex gap-3 justify-end pt-2 border-t">
-					<Button
-						on:click={() => {
-							showAppealRequest = false;
-							appealReason = '';
-							appealReasonError = '';
-						}}
-						variant="outline"
-						disabled={submittingAppeal}
-					>
-						Cancel
-					</Button>
-					<Button
-						on:click={handleDenyAppeal}
-						variant="destructive"
-						disabled={submittingAppeal || !appealReason?.trim()}
-						class="flex items-center gap-2"
-					>
-						{#if submittingAppeal && !isApproving}
-							<Icon icon="line-md:loading-loop" class="animate-spin" />
-							Denying...
-						{:else}
-							<Icon icon="mdi:close-circle-outline" />
-							Deny Appeal
-						{/if}
-					</Button>
-					<Button
-						on:click={handleApproveAppeal}
-						disabled={submittingAppeal || !appealReason?.trim()}
-						class="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-					>
-						{#if submittingAppeal && isApproving}
-							<Icon icon="line-md:loading-loop" class="animate-spin" />
-							Approving...
-						{:else}
-							<Icon icon="mdi:check-circle-outline" />
-							Approve Appeal
-						{/if}
-					</Button>
-				</div>
+					<!-- Action Buttons -->
+					<div class="flex gap-3 justify-end pt-2 border-t">
+						<Button
+							on:click={() => {
+								showAppealRequest = false;
+								appealReason = '';
+								appealReasonError = '';
+							}}
+							variant="outline"
+							disabled={submittingAppeal}
+						>
+							Cancel
+						</Button>
+						<Button
+							on:click={handleDenyAppeal}
+							variant="destructive"
+							disabled={submittingAppeal || !appealReason?.trim()}
+							class="flex items-center gap-2"
+						>
+							{#if submittingAppeal && !isApproving}
+								<Icon icon="line-md:loading-loop" class="animate-spin" />
+								Denying...
+							{:else}
+								<Icon icon="mdi:close-circle-outline" />
+								Deny Appeal
+							{/if}
+						</Button>
+						<Button
+							on:click={handleApproveAppeal}
+							disabled={submittingAppeal || !appealReason?.trim()}
+							class="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+						>
+							{#if submittingAppeal && isApproving}
+								<Icon icon="line-md:loading-loop" class="animate-spin" />
+								Approving...
+							{:else}
+								<Icon icon="mdi:check-circle-outline" />
+								Approve Appeal
+							{/if}
+						</Button>
+					</div>
 				{/if}
-				
 			</div>
 		{:else}
 			<div class="text-center py-8">

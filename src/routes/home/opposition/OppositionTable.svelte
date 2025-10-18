@@ -526,7 +526,7 @@
 						{/if}
 					</div>
 				</div>
-				{#if parseInt(opposition.status) === 29}
+				{#if parseInt(opposition.status) === 30}
 					<button
 						type="submit"
 						disabled={isLoading}
