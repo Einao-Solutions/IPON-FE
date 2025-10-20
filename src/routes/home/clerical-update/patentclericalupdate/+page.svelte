@@ -98,7 +98,7 @@
     let correspondencePhone: string = '';
     let correspondenceEmail: string = '';
     let correspondenceState: string = '';
-    let correspondenceNationality: string = '';
+    let correspondenceNationality: string = 'Nigeria';
     // let editablePatentAbstract: string = '';
     // let editablePatentApplicationType: number | null = null;
 
@@ -152,7 +152,14 @@
                 correspondencePhone = data.correspondencePhone ?? '';
                 correspondenceEmail = data.correspondenceEmail ?? '';
                 correspondenceState = data.correspondenceState ?? '';
-                correspondenceNationality = data.correspondenceNationality ?? '';
+                correspondenceNationality = data.correspondenceNationality ?? 'Nigeria';
+            }
+
+            // Ensure nationality defaults to Nigeria for correspondence updates
+            if (updateType === 'Correspondence') {
+                if (!correspondenceNationality || correspondenceNationality.trim() === '') {
+                    correspondenceNationality = 'Nigeria';
+                }
             }
 
             if(updateType === 'EditInventors' && data.inventors) {
@@ -572,6 +579,7 @@
 
     $: isWithdrawn = fileInfo.fileStatus === ApplicationStatuses.Withdrawn;
     $: isReadyForPayment = fileInfo.fileStatus != null && fileInfo.fileStatus !== ApplicationStatuses.Withdrawn;
+    $: isPriorityInfoNotAllowed = updateType === 'PriorityInfo' && patentTypeValue !== null && fileInfo.patentType === 1;
 </script>
 
 {#if showSuccessToast}
@@ -1163,7 +1171,7 @@
                             Submit
                         {/if}
                     </button>
-                {:else if isReadyForPayment}
+                {:else if isReadyForPayment && !isPriorityInfoNotAllowed}
                     <button on:click={handleSubmit} class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center" disabled={isProcessing}>
                         {#if isProcessing}
                             Processing...
