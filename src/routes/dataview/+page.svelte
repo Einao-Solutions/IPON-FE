@@ -535,7 +535,7 @@
 		<Tabs.List class="grid w-full grid-cols-3">
 			<Tabs.Trigger value="data">Data View</Tabs.Trigger>
 			<Tabs.Trigger value="applications">Application History</Tabs.Trigger>
-			<Tabs.Trigger value="oppositions">Oppositions</Tabs.Trigger>
+			<!-- <Tabs.Trigger value="oppositions">Oppositions</Tabs.Trigger> -->
 			<!-- <Tabs.Trigger value="assignment">Assignment Applications</Tabs.Trigger> -->
 		</Tabs.List>
 		<Tabs.Content value="data">
@@ -555,9 +555,9 @@
 				isAdmin={$loggedInUser?.roles?.includes(UserRoles.Support)}
 			/>
 		</Tabs.Content>
-		<Tabs.Content value="oppositions">
+		<!-- <Tabs.Content value="oppositions">
 			<OppositionHistory allOppositions={fileData.oppositions} {fileData} />
-		</Tabs.Content>
+		</Tabs.Content> -->
 		<!-- <Tabs.Content value="assignment">
 			{#if fileData.applicationHistory.find(x=>x.applicationType===5)}
 				<AssignmentApplication allApplications="{fileData.applicationHistory.filter(x=>x.applicationType===5)}" {fileData}
