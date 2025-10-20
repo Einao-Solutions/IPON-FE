@@ -3,7 +3,7 @@ trigger:
 
 pool:
   name: 'IISPool'   # must match your agent pool name exactly
-
+pr: none
 stages:
 - stage: Build
   displayName: 'Build Svelte frontend'
