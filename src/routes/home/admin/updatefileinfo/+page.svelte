@@ -66,15 +66,6 @@
   const saveChanges = async () => {
     try {
       isLoading = true;
-      // // ...existing code...
-      // const validPatentTypes = ["Patent", "Business_Method", "Utility_Model"];
-      // if (
-      //   filing.patentApplicationType &&
-      //   !validPatentTypes.includes(filing.patentApplicationType)
-      // ) {
-      //   filing.patentApplicationType = null;
-      // }
-      // // ...existing code...
       filing.updatedBy = userName;
       const res = await fetch(`${baseURL}/api/files/update-filing`, {
         method: 'PUT',
@@ -83,8 +74,6 @@
       });
 
       if (!res.ok) throw new Error('Update failed');
-    
-      //toast.success('File updated successfully');
 
       showSuccessModal = true;
 
@@ -142,32 +131,105 @@
 
   {#if showForm && filing}
     <div in:fade>
-      <!-- File Metadata Section -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">File Metadata</summary>
-        <div class="grid gap-2 mt-2">
-          <label>Last Request Date</label>
-          <input class="input" bind:value={filing.lastRequestDate} placeholder="Last Request Date" />
+      
+      <!-- PATENT FILES (fileType = 0) -->
+      {#if filing.type === 0}
+        <!-- Patent Information Section -->
+        <details class="border rounded p-3 mb-4 open">
+          <summary class="font-normal cursor-pointer">Patent Information</summary>
+          <div class="grid gap-2 mt-2">
+            <label>Filing Origin</label>
+            <select class="input" bind:value={filing.filingOrigin}>
+              <option value="">Select Filing Origin</option>
+              <option value="Local">Local</option>
+              <option value="Foreign">Foreign</option>
+            </select>
 
-          <label>Creator Account</label>
-          <input class="input" bind:value={filing.creatorAccount} placeholder="Creator Account" />
+            <label>Filing Country</label>
+            <input class="input" bind:value={filing.filingCountry} placeholder="Filing Country" />
 
-          <label>File Status</label>
-          <input class="input" bind:value={filing.fileStatus} placeholder="File Status" />
+            <label>Patent Type</label>
+            <select class="input" bind:value={filing.patentType}>
+              <option value="">Select Patent Type</option>
+              <option value="Patent">Patent</option>
+              <option value="Utility_Model">Utility Model</option>
+              <option value="Business_Method">Business Method</option>
+            </select>
 
-          <label>Date Created</label>
-          <input class="input" bind:value={filing.dateCreated} placeholder="Date Created" />
+            <label>Patent Application Type</label>
+            <select class="input" bind:value={filing.patentApplicationType}>
+              <option value="">Select Application Type</option>
+              <option value="Patent">Patent</option>
+              <option value="Business_Method">Business Method</option>
+              <option value="Utility_Model">Utility Model</option>
+            </select>
 
-          <label>Type</label>
-          <input class="input" bind:value={filing.type} placeholder="Type" />
+            <label>Title of Invention</label>
+            <input class="input" bind:value={filing.titleOfInvention} placeholder="Title of Invention" />
 
-          <label>Title of Invention</label>
-          <input class="input" bind:value={filing.titleOfInvention} placeholder="Title of Invention" />
+            <label>Patent Abstract</label>
+            <textarea class="input" bind:value={filing.patentAbstract} placeholder="Patent Abstract" />
+          </div>
+        </details>
+      {/if}
 
-          <label>Patent Abstract</label>
-          <textarea class="input" bind:value={filing.patentAbstract} placeholder="Patent Abstract" />
-        </div>
-      </details>
+      <!-- DESIGN FILES (fileType = 1) -->
+      {#if filing.type === 1}
+        <!-- Design Information Section -->
+        <details class="border rounded p-3 mb-4 open">
+          <summary class="font-normal cursor-pointer">Design Information</summary>
+          <div class="grid gap-2 mt-2">
+            <label>Design Type</label>
+            <select class="input" bind:value={filing.designType}>
+              <option value="">Select Design Type</option>
+              <option value="Textile">Textile</option>
+              <option value="NonTextile">None</option>
+            </select>
+
+            <label>Title of Design</label>
+            <input class="input" bind:value={filing.titleOfDesign} placeholder="Enter Design Title" />
+
+            <label>Statement of Novelty</label>
+            <textarea class="input" rows="3" bind:value={filing.statementOfNovelty} placeholder="Enter novelty statement" />
+          </div>
+        </details>
+      {/if}
+
+      <!-- TRADEMARK FILES (fileType = 2) -->
+      {#if filing.type === 2}
+        <!-- Trademark Information Section -->
+        <details class="border rounded p-3 mb-4 open">
+          <summary class="font-normal cursor-pointer">Trademark Information</summary>
+          <div class="grid gap-2 mt-2">
+            <label>Trademark Class (1-45)</label>
+            <input class="input" type="number" min="1" max="45" bind:value={filing.trademarkClass} placeholder="Trademark Class (1-45)" />
+
+            <label>Trademark Type</label>
+            <select class="input" bind:value={filing.trademarkType}>
+              <option value="">Select Trademark Type</option>
+              <option value={0}>Local</option>
+              <option value={1}>Foreign</option>
+            </select>
+
+            <label>Logo Description</label>
+            <select class="input" bind:value={filing.trademarkLogo}>
+              <option value="">Select Logo Description</option>
+              <option value={0}>Device</option>
+              <option value={1}>Word Mark</option>
+              <option value={2}>Word and Device</option>
+            </select>
+
+            <label>Claims and Disclaimer</label>
+            <textarea class="input" bind:value={filing.trademarkDisclaimer} placeholder="Claims and Disclaimer" />
+
+            <label>Title of Trademark</label>
+            <input class="input" bind:value={filing.titleOfTradeMark} placeholder="Title of Trademark" />
+
+            <label>Trademark Class Description</label>
+            <textarea class="input" bind:value={filing.trademarkClassDescription} placeholder="Trademark Class Description" />
+          </div>
+        </details>
+      {/if}
 
       <!-- Correspondence Section -->
       <details class="border rounded p-3 mb-4 open">
@@ -190,16 +252,7 @@
         </div>
       </details>
 
-      <!-- Last Request Date -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Last Request</summary>
-        <div class="grid gap-2 mt-2">
-          <label class="text-sm font-medium">Last Request Date</label>
-          <input class="input" type="date" bind:value={filing.lastRequest} />
-        </div>
-      </details>
-
-      <!-- Applicants -->
+      <!-- Applicants (Common for all file types) -->
       <details class="border rounded p-3 mb-4 open">
         <summary class="font-normal cursor-pointer">Applicants</summary>
         <div class="grid gap-4 mt-2">
@@ -215,8 +268,11 @@
                 <label class="block text-sm">Name</label>
                 <input class="input" bind:value={applicant.name} placeholder="Name" />
 
-                <label class="block text-sm">Country</label>
-                <input class="input" bind:value={applicant.country} placeholder="Country" />
+                <label class="block text-sm">Nationality</label>
+                <input class="input" bind:value={applicant.nationality} placeholder="Nationality" />
+
+                <label class="block text-sm">State</label>
+                <input class="input" bind:value={applicant.state} placeholder="State" />
 
                 <label class="block text-sm">City</label>
                 <input class="input" bind:value={applicant.city} placeholder="City" />
@@ -234,133 +290,53 @@
           {/each}
         </div>
       </details>
+        <!-- </div>
+      </details> -->
 
+      <!-- ATTACHMENTS SECTIONS -->
+      <!-- Patent Attachments (Only for Patents) -->
+      {#if filing.type === 0}
+        <details class="border rounded p-3 mb-4 open">
+          <summary class="font-normal cursor-pointer">Attachments (Patent)</summary>
+          <div class="grid gap-4 mt-2">
+            <p class="text-sm text-gray-600">POA, CS, Patent Drawing, Other Supporting Documents</p>
+            {#each filing.attachments as attachment, index (attachment.name)}
+              <div class="border p-3 rounded space-y-2 bg-gray-50">
+                <label class="text-sm font-normal">Attachment {index + 1}</label>
+                <input class="input" bind:value={attachment.name} placeholder="Attachment Name (POA, CS, Patent Drawing, etc.)" />
+                
+                {#each attachment.url as link, linkIndex}
+                  <div class="flex items-center gap-2">
+                    <input class="input" bind:value={attachment.url[linkIndex]} placeholder="Attachment URL" />
+                  </div>
+                {/each}
+              </div>
+            {/each}
+          </div>
+        </details>
+      {/if}
 
-      <!-- Patent Application Type -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Patent Application Type</summary>
-        <div class="grid gap-2 mt-2">
-          <label class="text-sm font-medium">Select Type</label>
-          <select class="input" bind:value={filing.patentApplicationType}>
-            <option value={null} disabled selected>Select...</option>
-            <option value="Patent">Patent</option>
-            <option value="Business_Method">Business_Method</option>
-            <option value="Utility_Model">Utility_Model</option>
-          </select>
-        </div>
-      </details>
-
-      <!-- Revisions -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Revisions</summary>
-        <div class="grid gap-4 mt-2">
-          {#each filing.revisions as revision, index (revision.id)}
-            <div class="border p-3 rounded space-y-2 bg-gray-50">
-              <label class="text-sm font-normal">Revision {index + 1}</label>
-              <input class="input" bind:value={revision.description} placeholder="Description" />
-              <input class="input" type="date" bind:value={revision.date} placeholder="Date" />
-              <!-- <Button variant="destructive" on:click={() => filing.revisions.splice(index, 1)}>Remove</Button> -->
-            </div>
-          {/each}
-        </div>
-      </details>
-
-      <!-- Patent Type -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Patent Type</summary>
-        <div class="grid gap-2 mt-2">
-          <label class="text-sm font-medium">Select Type</label>
-          <select class="input" bind:value={filing.patentType}>
-            <option value={null} disabled selected>Select...</option>
-            <option value="Patent">Patent</option>
-            <option value="Design">Design</option>
-            <option value="TradeMark">TradeMark</option>
-          </select>
-        </div>
-      </details>
-
-      <!-- Inventors -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Inventors</summary>
-        <div class="grid gap-4 mt-2">
-          {#each filing.inventors as inventor, index (inventor.id)}
-            <div class="border p-3 rounded space-y-2 bg-gray-50">
-              <label class="text-sm font-normal">Inventor {index + 1}</label>
-              <input class="input" bind:value={inventor.name} placeholder="Name" />
-              <input class="input" bind:value={inventor.country} placeholder="Country" />
-              <input class="input" bind:value={inventor.city} placeholder="City" />
-              <input class="input" bind:value={inventor.phone} placeholder="Phone" />
-              <input class="input" bind:value={inventor.email} placeholder="Email" />
-              <input class="input" bind:value={inventor.address} placeholder="Address" />
-            </div>
-          {/each}
-        </div>
-      </details>
-
-      <!-- Priority Info -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Priority Info</summary>
-        <div class="grid gap-4 mt-2">
-          {#each filing.priorityInfo as priority, index (priority.id)}
-            <div class="border p-3 rounded space-y-2 bg-gray-50">
-              <label class="text-sm font-normal">Priority {index + 1}</label>
-              <input class="input" bind:value={priority.country} placeholder="Country" />
-              <input class="input" bind:value={priority.filingNumber} placeholder="Filing Number" />
-              <input class="input" type="date" bind:value={priority.filingDate} placeholder="Filing Date" />
-            </div>
-          {/each}
-        </div>
-      </details>
-
-  
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Design Type</summary>
-        <div class="grid gap-2 mt-2">
-          <label class="text-sm font-medium">Select Design Type</label>
-          <select class="input" bind:value={filing.designType}>
-            <option value={null} disabled selected>Select...</option>
-            <option value="Textile">Textile</option>
-            <option value="NonTextile">NonTextile</option>
-          </select>
-        </div>
-      </details>
-
-      <!-- Title of Design -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Title of Design</summary>
-        <div class="grid gap-2 mt-2">
-          <label class="text-sm font-medium">Title</label>
-          <input class="input" bind:value={filing.titleOfDesign} placeholder="Enter Design Title" />
-        </div>
-      </details>
-
-      <!-- Statement of Novelty -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Statement of Novelty</summary>
-        <div class="grid gap-2 mt-2">
-          <label class="text-sm font-medium">Novelty Statement</label>
-          <textarea class="input" rows="3" bind:value={filing.statementOfNovelty} placeholder="Enter novelty statement" />
-        </div>
-      </details>
-
-      <!-- Design Creators -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Design Creators</summary>
-        <div class="grid gap-4 mt-2">
-          {#each filing.designCreators as creator, index (creator.id)}
-            <div class="border p-3 rounded space-y-2 bg-gray-50">
-              <label class="text-sm font-normal">Creator {index + 1}</label>
-              <input class="input" bind:value={creator.name} placeholder="Name" />
-              <input class="input" bind:value={creator.country} placeholder="Country" />
-              <input class="input" bind:value={creator.city} placeholder="City" />
-              <input class="input" bind:value={creator.phone} placeholder="Phone" />
-              <input class="input" bind:value={creator.email} placeholder="Email" />
-              <input class="input" bind:value={creator.address} placeholder="Address" />
-              <!-- <Button variant="destructive" on:click={() => filing.designCreators.splice(index, 1)}>Remove</Button> -->
-            </div>
-          {/each}
-        </div>
-      </details>
+      <!-- Trademark Attachments (Only for Trademarks) -->
+      {#if filing.type === 2}
+        <details class="border rounded p-3 mb-4 open">
+          <summary class="font-normal cursor-pointer">Attachments (Trademark)</summary>
+          <div class="grid gap-4 mt-2">
+            <p class="text-sm text-gray-600">POA, Proposed Trademark Representation, Supporting Document 1, Supporting Document 2</p>
+            {#each filing.attachments as attachment, index (attachment.name)}
+              <div class="border p-3 rounded space-y-2 bg-gray-50">
+                <label class="text-sm font-normal">Attachment {index + 1}</label>
+                <input class="input" bind:value={attachment.name} placeholder="Attachment Name (POA, Trademark Rep, Supporting Doc, etc.)" />
+                
+                {#each attachment.url as link, linkIndex}
+                  <div class="flex items-center gap-2">
+                    <input class="input" bind:value={attachment.url[linkIndex]} placeholder="Attachment URL" />
+                  </div>
+                {/each}
+              </div>
+            {/each}
+          </div>
+        </details>
+      {/if}
 
       <!-- Attachments Section -->
       <details class="border rounded p-3 mb-4 open">
@@ -382,255 +358,7 @@
           {/each}
         </div>
       </details>
-
-      <!-- Field Status Section -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Field Status</summary>
-        <div class="grid gap-4 mt-2">
-          {#each Object.entries(filing.fieldStatus) as [key, value], index (key)}
-            <div class="grid gap-2">
-              <label class="text-sm font-normal">{key}</label>
-              <select class="input" bind:value={filing.fieldStatus[key]}>
-                <option disabled value="">Select Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="AwaitingPayment">Awaiting Payment</option>
-                <option value="AwaitingSearch">Awaiting Search</option>
-                <option value="AwaitingExaminer">Awaiting Examiner</option>
-                <option value="RejectedByExaminer">Rejected By Examiner</option>
-                <option value="Re_conduct">Re-conduct</option>
-                <option value="FormalityFail">Formality Fail</option>
-                <option value="KivSearch">KIV Search</option>
-                <option value="KivExaminer">KIV Examiner</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-                <option value="None">None</option>
-                <option value="AutoApproved">Auto Approved</option>
-                <option value="Publication">Publication</option>
-                <option value="Opposition">Opposition</option>
-                <option value="AwaitingResponse">Awaiting Response</option>
-                <option value="AwaitingOppositionStaff">Awaiting Opposition Staff</option>
-                <option value="AwaitingResolution">Awaiting Resolution</option>
-                <option value="Resolved">Resolved</option>
-                <option value="AwaitingCertification">Awaiting Certification</option>
-                <option value="AwaitingConfirmation">Awaiting Confirmation</option>
-                <option value="AwaitingSave">Awaiting Save</option>
-                <option value="AwaitingCertificateConfirmation">Awaiting Certificate Confirmation</option>
-                <option value="Withdrawn">Withdrawn</option>
-                <option value="AwaitingCertificatePayment">Awaiting Certificate Payment</option>
-                <option value="AwaitingRecordalProcess">Awaiting Recordal Process</option>
-              </select>
-            </div>
-          {/each}
-        </div>
-      </details>
-
-        <!-- Application History Section -->
-        <!-- <details class="border rounded p-3 mb-4 open">
-          <summary class="font-normal cursor-pointer">Application History</summary>
-          <div class="space-y-4 mt-2">
-            {#each filing.applicationHistory as history (history.id)}
-              <div class="border p-3 rounded bg-gray-50 space-y-2">
-                <label class="block text-sm font-medium">Application Type</label>
-                <input class="input" bind:value={history.applicationType} />
-
-                <label class="block text-sm font-medium">Current Status</label>
-                <input class="input" bind:value={history.currentStatus} />
-
-                <label class="block text-sm font-medium">Expiry Date</label>
-                <input class="input" type="date" bind:value={history.expiryDate} />
-
-                <label class="block text-sm font-medium">Payment ID</label>
-                <input class="input" bind:value={history.paymentId} />
-
-                <label class="block text-sm font-medium">Certificate Payment ID</label>
-                <input class="input" bind:value={history.certificatePaymentId} />
-
-                <label class="block text-sm font-medium">Application Date</label>
-                <input class="input" type="datetime-local" bind:value={history.applicationDate} />
-
-                <label class="block text-sm font-medium">License Type</label>
-                <input class="input" bind:value={history.licenseType} />
-
-                <label class="block text-sm font-medium">Old Value</label>
-                <textarea class="input" bind:value={history.oldValue} />
-
-                <label class="block text-sm font-medium">New Value</label>
-                <textarea class="input" bind:value={history.newValue} />
-
-                <label class="block text-sm font-medium">Field To Change</label>
-                <input class="input" bind:value={history.fieldToChange} />
-
-              
-                <div>
-                  <label class="block text-sm font-medium">Status History</label>
-                  <ul class="list-disc list-inside text-sm">
-                    {#each history.statusHistory as status}
-                      <li>
-                        <span class="font-normal">{status.date}</span> – {status.message} (by {status.user})
-                      </li>
-                    {/each}
-                  </ul>
-                </div>
-
-                 
-                <div>
-                  <label class="block text-sm font-medium">Application Letters</label>
-                  <div class="flex flex-wrap gap-2">
-                    {#each history.applicationLetters as letter}
-                      <span class="bg-gray-200 px-2 py-1 rounded text-xs">{letter}</span>
-                    {/each}
-                  </div>
-                </div>
-              </div>
-            {/each}
-          </div>
-        </details> -->
-
-      <!-- Trademark Info Section -->
-      <details class="border rounded p-3 mb-4 open">
-        <summary class="font-normal cursor-pointer">Trademark Info</summary>
-        <div class="grid gap-2 mt-2">
-          <label>
-            Title of Trademark
-            <input class="input" bind:value={filing.titleOfTradeMark} placeholder="Title of Trademark" />
-          </label>
-
-          <label>
-            Trademark Class
-            <input class="input" type="number" bind:value={filing.trademarkClass} placeholder="Trademark Class" />
-          </label>
-
-          <label>
-            Trademark Class Description
-            <textarea class="input" bind:value={filing.trademarkClassDescription} placeholder="Trademark Class Description" />
-          </label>
-
-          <label>
-            Trademark Logo
-            <select class="input" bind:value={filing.trademarkLogo}>
-              <option value={0}>Device</option>
-              <option value={1}>WordMark</option>
-              <option value={2}>Word and Device</option>
-            </select>
-          </label>
-
-          <label>
-            Trademark Type
-            <select class="input" bind:value={filing.trademarkType}>
-              <option value={0}>Local</option>
-              <option value={1}>Foreign</option>
-            </select>
-          </label>
-
-          <label>
-            Trademark Disclaimer
-            <input class="input" bind:value={filing.trademarkDisclaimer} placeholder="Trademark Disclaimer" />
-          </label>
-
-          <label>
-            RTM Number
-            <input class="input" bind:value={filing.rtmNumber} placeholder="RTM Number" />
-          </label>
-
-          <label>
-            Comment
-            <textarea class="input" bind:value={filing.comment} placeholder="Comment" />
-          </label>
-        </div>
-      </details>
-
-      <!-- Registered Users -->
-      <details class="border rounded p-3 mb-4">
-        <summary class="font-normal cursor-pointer">Registered Users</summary>
-        {#each filing.registered_Users as user, i}
-          <div class="grid gap-2 mb-3 p-2 border rounded">
-            <label>Name <input class="input" bind:value={user.name} /></label>
-            <label>Address <input class="input" bind:value={user.address} /></label>
-            <label>Email <input class="input" bind:value={user.email} /></label>
-            <label>Phone <input class="input" bind:value={user.phone} /></label>
-            <label>Nationality <input class="input" bind:value={user.nationality} /></label>
-            <label>Is Approved
-              <select class="input" bind:value={user.isApproved}>
-                <option value={true}>Yes</option>
-                <option value={false}>No</option>
-              </select>
-            </label>
-          </div>
-        {/each}
-      </details>
-
-      <!-- RegisteredUsers -->
-      <details class="border rounded p-3 mb-4">
-        <summary class="font-normal cursor-pointer">Registered Users (Alt)</summary>
-        {#each filing.registeredUsers as user, i}
-          <div class="grid gap-2 mb-3 p-2 border rounded">
-            <label>Name <input class="input" bind:value={user.name} /></label>
-            <label>Address <input class="input" bind:value={user.address} /></label>
-            <label>Email <input class="input" bind:value={user.email} /></label>
-            <label>Phone <input class="input" bind:value={user.phone} /></label>
-            <label>Nationality <input class="input" bind:value={user.nationality} /></label>
-            <label>Is Approved
-              <select class="input" bind:value={user.isApproved}>
-                <option value={true}>Yes</option>
-                <option value={false}>No</option>
-              </select>
-            </label>
-          </div>
-        {/each}
-      </details>
-
-      <!-- Assignees -->
-      <details class="border rounded p-3 mb-4">
-        <summary class="font-normal cursor-pointer">Assignees</summary>
-        {#each filing.assignees as assign, i}
-          <div class="grid gap-2 mb-3 p-2 border rounded">
-            <label>Name <input class="input" bind:value={assign.name} /></label>
-            <label>Address <input class="input" bind:value={assign.address} /></label>
-            <label>Email <input class="input" bind:value={assign.email} /></label>
-            <label>Phone <input class="input" bind:value={assign.phone} /></label>
-            <label>Nationality <input class="input" bind:value={assign.nationality} /></label>
-            <label>RRR <input class="input" bind:value={assign.rrr} /></label>
-            <label>Authorization Letter URL <input class="input" bind:value={assign.authorizationLetterUrl} /></label>
-            <label>Assignment Deed URL <input class="input" bind:value={assign.assignmentDeedUrl} /></label>
-            <label>Is Approved
-              <select class="input" bind:value={assign.isApproved}>
-                <option value={true}>Yes</option>
-                <option value={false}>No</option>
-              </select>
-            </label>
-          </div>
-        {/each}
-      </details>
-
-      <!-- Post Registration Applications -->
-      <details class="border rounded p-3 mb-4">
-        <summary class="font-normal cursor-pointer">Post Registration Applications</summary>
-        {#each filing.postRegApplications as post, i}
-          <div class="grid gap-2 mb-3 p-2 border rounded">
-            <label>Recordal Type <input class="input" bind:value={post.recordalType} /></label>
-            <label>File Number <input class="input" bind:value={post.fileNumber} /></label>
-            <label>Filing Date <input class="input" bind:value={post.filingDate} type="date" /></label>
-            <label>Date Treated <input class="input" bind:value={post.dateTreated} type="date" /></label>
-            <label>Reason <input class="input" bind:value={post.reason} /></label>
-            <label>Name <input class="input" bind:value={post.name} /></label>
-            <label>Email <input class="input" bind:value={post.email} /></label>
-            <label>Date of Recordal <input class="input" bind:value={post.dateOfRecordal} type="date" /></label>
-            <label>Address <input class="input" bind:value={post.address} /></label>
-            <label>Phone <input class="input" bind:value={post.phone} /></label>
-            <label>Nationality <input class="input" bind:value={post.nationality} /></label>
-            <label>Document URL <input class="input" bind:value={post.documentUrl} /></label>
-            <label>Document2 URL <input class="input" bind:value={post.document2Url} /></label>
-            <label>Receipt URL <input class="input" bind:value={post.receiptUrl} /></label>
-            <label>Certificate URL <input class="input" bind:value={post.certificateUrl} /></label>
-            <label>Rejection URL <input class="input" bind:value={post.rejectionUrl} /></label>
-            <label>Acknowledgement URL <input class="input" bind:value={post.acknowledgementUrl} /></label>
-            <label>Message <textarea class="input" bind:value={post.message} /></label>
-            <label>RRR <input class="input" bind:value={post.rrr} /></label>
-          </div>
-        {/each}
-      </details>
-
+  
       <!-- Save Changes Button -->  
       <Button class="mt-4" on:click={saveChanges}>Save</Button>
     </div>
