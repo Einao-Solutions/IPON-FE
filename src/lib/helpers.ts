@@ -249,7 +249,8 @@ export enum FormApplicationTypes {
 	AppealRequest = 13,
 	PublicationStatusUpdate = 14,
 	WithdrawalRequest = 15,
-	NewOpposition = 16
+	NewOpposition = 16,
+	Amendment = 17
 }
 
 export enum ApplicationLetters {
@@ -443,7 +444,7 @@ export function MapAttachmentToString(attachmentName: string) {
 		case 'deed_of_assignment':
 			return 'Deed of assignment';
 		default:
-			return 'null';
+			return 'Supporting Document';
 	}
 }
 

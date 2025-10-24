@@ -290,6 +290,7 @@
 					endpoint = `/api/files/GetChangeDataRecordal`;
 					break;
 				case 11:
+				case 17:
 					endpoint = `/api/files/GetClericalUpdateApp`;
 					break;
 				default:
@@ -341,7 +342,30 @@
 			showToast('error', 'Approval failed');
 		}
 	}
+	async function approveAmendment(application: ApplicationHistoryType) {
+		try {
+			const body = {
+				fileId: fileData?.fileId,
+				appId: application.id,
+				reason: reason
+			};
 
+			const res = await fetch(`${baseURL}/api/files/approve-amendment`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(body)
+			});
+
+			if (res.ok) {
+				showToast('success', 'Amendment approved successfully');
+				showRecordalDialog = false;
+				location.reload();
+			}
+		} catch (error) {
+			console.error('Amendment approval error:', error);
+			showToast('error', 'Failed to approve amendment');
+		}
+	}
 	async function denyRecordal(application: ApplicationHistoryType) {
 		try {
 			const body = {
@@ -972,7 +996,7 @@
 							</Button>
 						{/if}
 					</div>
-				{:else if selectedApplication?.applicationType === 11}
+				{:else if selectedApplication?.applicationType === 11 || selectedApplication?.applicationType === 17}
 					<!-- Clerical Update Details -->
 					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 						{#each Object.entries(recordalData) as [key, value]}
@@ -1014,7 +1038,7 @@
 		{/if}
 
 		{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
-			{#if [5, 7, 8, 9, 10].includes(selectedApplication?.applicationType)}
+			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected)}
 				<div class="mt-4">
 					<Label for="approval-reason">Decision Reason</Label>
 					<Textarea
@@ -1026,10 +1050,21 @@
 				</div>
 			{/if}
 		{/if}
-
+		<!-- {#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.Approved || selectedApplication?.currentStatus == ApplicationStatuses.Rejected)}
+				<div class="mt-4">
+					<Label for="approval-reason">Decision Reason</Label>
+					<Textarea
+						id="approval-reason"
+						class="min-w-full min-h-32 mt-1"
+						placeholder={selectedApplication.reason}
+					/>
+				</div>
+			{/if}
+		{/if}		 -->
 		<Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
 			{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
-				{#if [5, 7, 8, 9, 10].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess}
+				{#if [5, 7, 8, 9, 10, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
 					<Button
 						on:click={() => {
 							switch (selectedApplication?.applicationType) {
@@ -1041,6 +1076,9 @@
 									break;
 								case 8:
 									approveMerger(selectedApplication);
+									break;
+								case 17:
+									approveAmendment(selectedApplication);
 									break;
 								case 9:
 								case 10:
@@ -1712,7 +1750,7 @@
 										<DropdownMenu.Item on:click={() => mergerReceipt(application)}
 											>Payment Receipt</DropdownMenu.Item
 										>-->
-									{#if application.applicationType == 11 && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+									{#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
 										{#if $loggedInUser?.roles?.includes(UserRoles.BackOffice || UserRoles.Support)}
 											<DropdownMenu.Item on:click={() => viewRecordalData(application)}
 												>View Application</DropdownMenu.Item
