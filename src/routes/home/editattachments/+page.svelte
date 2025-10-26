@@ -46,66 +46,6 @@
     return ApplicationStatuses[value] ?? value;
   }
 
-  // async function searchFile() {
-  //   if (!fileId) return;
-  //   loading = true;
-  //   errorModal = null;
-  //   fileData = null;
-  //   try {
-  //     const res = await fetch(`${baseURL}/api/files/${encodeURIComponent(fileId)}/getattachments`);
-  //     if (!res.ok) {
-  //       const err = await res.json();
-  //       errorModal = err.message || "File not found.";
-  //       return;
-  //     }
-  //     const data = await res.json();
-  //     if (data.fileType != 0 && data.fileType != 1) {
-  //       errorModal = "File not found or not a Patent or Design file.";
-  //       return;
-  //     }
-
-  //     if (data.fileType === 0 && (data.fileStatus === ApplicationStatuses.Active || data.fileStatus === ApplicationStatuses.Expired)) {
-  //       errorModal = "The update attachment module does not work for Patent files with Active and InActive status.";
-  //       return;
-  //     }else if (data.fileType === 1) {       
-  //       // Design file logic
-  //       if (data.fileStatus === ApplicationStatuses.Active || data.fileStatus === ApplicationStatuses.Expired) {
-  //         errorModal = "The update attachment module does not work for Design files with Active and Expired status.";
-  //         return;
-  //       }
-  //       fileData = data;
-  //       newUploads = {};
-  //       renderedKeys = [
-  //         'statementOfNovelty',
-  //         'designDrawings',
-  //         'designPriorityDocument',
-  //         'noveltyStatement'
-  //       ];
-  //     }
-
-  //     fileData = data;
-  //     newUploads = {};
-  //     // Set renderedKeys based on patent type number
-  //     if (typeof fileData.patentType === 'number') {
-  //       if (fileData.patentType === PatentTypes.Non_Conventional) {
-  //         renderedKeys = ['poa', 'cs', 'drawings', 'others'];
-  //       } else if (fileData.patentType === PatentTypes.Conventional) {
-  //         renderedKeys = ['poa', 'cs', 'drawings', 'others', 'priorityDocument'];
-  //       } else if (fileData.patentType === PatentTypes.PCT) {
-  //         renderedKeys = ['poa', 'cs', 'drawings', 'others', 'priorityDocument', 'pct'];
-  //       } else {
-  //         renderedKeys = [];
-  //       }
-  //     } else {
-  //       renderedKeys = [];
-  //     }
-  //   } catch (err) {
-  //     errorModal = "Error fetching file.";
-  //   } finally {
-  //     loading = false;
-  //   }
-  // }
-
   // ...existing code...
 async function searchFile() {
   if (!fileId) return;
