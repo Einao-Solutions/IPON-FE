@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 		import Input from '../../lib/components/ui/input/input.svelte';
 		import * as Form from "$lib/components/ui/form"
 		import {zodClient} from "sveltekit-superforms/adapters";
@@ -52,4 +52,4 @@
 	<p>Dont have an account, sign up <button on:click={()=>SignUp()}>here</button></p>
 	<p>forgotten password? click <button on:click={()=>ForgotPassword()}>here</button></p>
 	<Form.Button>Submit</Form.Button>
-</form>
+</form> -->
