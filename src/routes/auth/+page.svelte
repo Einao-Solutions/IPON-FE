@@ -8,7 +8,13 @@
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import Icon from "@iconify/svelte";
-  import { type AuthUser, baseURL, UserRoles, type UsersType, UserTypes } from "$lib/helpers";
+  import {
+    type AuthUser,
+    baseURL,
+    UserRoles,
+    type UsersType,
+    UserTypes,
+  } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
@@ -25,7 +31,6 @@
   interface AuthResponse {
     token?: string;
     user?: UsersType;
-    message?: string;
   }
 
   let createUser: CreateUserRequest = {
@@ -48,7 +53,7 @@
     const url = $page.url;
     const token = getTokenFromCookie();
 
-    if (token && (await validateToken(token))) {
+    if (token) {
       await goto("/home/dashboard");
     }
 
@@ -66,22 +71,14 @@
 
   function setAuthCookies(data: AuthUser) {
     const maxAge = 7 * 24 * 60 * 60; // 7 days
-    // set raw token cookie
     document.cookie = `auth_token=${data.token}; path=/; max-age=${maxAge}; secure; samesite=strict`;
 
     // map AuthUser to the UsersType-ish shape used across the app
-    const userForStore = {
-      id: data.id,
-      uuid: data.id,
-      name: `${data.firstName} ${data.lastName}`,
-      email: data.email,
-      defaultCorrespondence: undefined,
-      roles: data.userRoles,
-    };
+    const userForStore = data.user;
 
     // update in-memory stores for immediate use
     loggedInToken.set(data.token);
-    loggedInUser.set(data);
+    loggedInUser.set(data.user);
 
     // also persist user object as a cookie (encoded)
     const encoded = encodeURIComponent(JSON.stringify(userForStore));
@@ -90,7 +87,6 @@
 
   function clearAuthCookies() {
     document.cookie = "auth_token=; path=/; max-age=0";
-    document.cookie = "refresh_token=; path=/; max-age=0";
     document.cookie = "user=; path=/; max-age=0";
   }
 
@@ -305,16 +301,16 @@
       });
 
       if (response.ok) {
-        const data: AuthUser = await response.json();
+        const data: AuthResponse = await response.json();
 
         if (!data.token) {
           toast.error("Failed to Login", {
-          position: "top-right",
-        });
+            position: "top-right",
+          });
         }
 
-  // Set auth tokens and user info (stores + cookies)
-  setAuthCookies(data);
+        // Set auth tokens and user info (stores + cookies)
+        setAuthCookies(data);
 
         toast.success("Login successful", {
           position: "top-right",
