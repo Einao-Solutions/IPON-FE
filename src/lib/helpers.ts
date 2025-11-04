@@ -593,7 +593,7 @@ export type UsersType = {
   firstName: string;
   lastName: string;
   email: string;
-  userRoles: number[];
+  userRoles: UserRoles[];
   accountType: AccountType;
 };
 
@@ -796,10 +796,10 @@ export function mapRoleToString(type: number) {
       return "Trademark Acceptance";
   }
 }
-export function setAuthToken(token: string | null) {
-  if (token) {
-    localStorage.setItem("authToken", token);
-  } else {
-    localStorage.removeItem("authToken");
-  }
-}
+// export function setAuthToken(token: string | null) {
+//   if (token) {
+//     localStorage.setItem("authToken", token);
+//   } else {
+//     localStorage.removeItem("authToken");
+//   }
+// }

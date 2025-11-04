@@ -772,7 +772,7 @@
 			</div>
 		{/if}
 
-		{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+		{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
 			{#if [5, 7, 8, 9, 10].includes(selectedApplication?.applicationType)}
 				<div class="mt-4">
 					<Label for="approval-reason">Decision Reason</Label>
@@ -787,7 +787,7 @@
 		{/if}
 
 		<Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-			{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+			{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
 				{#if [5, 7, 8, 9, 10].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess}
 					<Button
 						on:click={() => {

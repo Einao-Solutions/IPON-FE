@@ -163,7 +163,7 @@
 
 	let isApplicationSaving: boolean = false;
 	function showAutoSave(){
-		return $loggedInUser.roles.includes(UserRoles.Support)
+		return $loggedInUser.userRoles.includes(UserRoles.Support)
 	}
 	async function ProceedToNext() {
 		if (selectedRevision?.status === ApplicationStatuses.AwaitingConfirmation) {
@@ -544,13 +544,13 @@
 								{getActionButtonType(revision)}
 							</Button>
 						</Table.Cell>
-						{#if $loggedInUser.roles.includes(UserRoles.Support)}
+						{#if $loggedInUser.userRoles.includes(UserRoles.Support)}
 						<Table.Cell>
 							<Button on:click={()=>{selectedRevision=revision;autoUpdate(revision)}} >Auto-update</Button>
 						</Table.Cell>
 							{/if}
 						<Table.Cell class={isStaffOrAdmin ? '' : 'hidden'}>
-							{#if showTreatUpdateAppButton(revision.status, $applicationData.type, $loggedInUser.roles)}
+							{#if showTreatUpdateAppButton(revision.status, $applicationData.type, $loggedInUser.userRoles)}
 								<Button
 									on:click={() => {
 										selectedRevision = revision;

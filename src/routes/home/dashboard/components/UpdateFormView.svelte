@@ -25,7 +25,7 @@ async function fetchResult()
 	}
 	isSearching=true;
 	// const searchId = '4474';
-	const searchId =  $loggedInUser?.roles?.includes(UserRoles.Support)? '': $loggedInUser?.id;
+	const searchId =  $loggedInUser?.userRoles?.includes(UserRoles.Support)? '': $loggedInUser?.id;
 	const response=await fetch(`${baseURL}/api/files/search?fileNumber=${fileNumber}&userId=${searchId}`);
 	if (response.ok)
 	{

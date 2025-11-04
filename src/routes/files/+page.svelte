@@ -69,7 +69,7 @@
 		const quantity = quantityString ? parseInt(quantityString) : 10;
 		const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
 		const body = {
-			userType: $loggedInUser?.roles.includes(UserRoles.BackOffice) ? 1 : 0,
+			userType: $loggedInUser?.userRoles.includes(UserRoles.BackOffice) ? 1 : 0,
 			userId,
 			types: typeconverted,
 			status: statusConverted,

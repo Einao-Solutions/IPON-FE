@@ -54,7 +54,7 @@
 	let groupedData={}
 	onMount(async()=>{
 		await decodeUser()
-		isAdmin = $loggedInUser.roles.includes(UserRoles.Support)
+		isAdmin = $loggedInUser.userRoles.includes(UserRoles.Support)
 		ticketLoading=true;
 		await getTickets()
 		ticketLoading=false;
@@ -62,7 +62,7 @@
 
 	async function getStats() {
 		const userId = $loggedInUser?.id;
-		const url=$loggedInUser?.roles.includes(UserRoles.Support)?`${baseURL}/api/tickets/GetStats`:`${baseURL}/api/tickets/GetStats?userId=${userId}`;
+		const url=$loggedInUser?.userRoles.includes(UserRoles.Support)?`${baseURL}/api/tickets/GetStats`:`${baseURL}/api/tickets/GetStats?userId=${userId}`;
 		let response = await fetch(url, {
 			method: 'GET'
 		})
@@ -83,7 +83,7 @@
 			var user = cookieUser.trimStart();
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-			isAdmin = $loggedInUser?.roles.includes(UserRoles.Support)
+			isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Support)
 		}
 		if ($loggedInUser===null){
 			return;
@@ -95,7 +95,7 @@
 				let body={
 					creatorId:  userId
 				}
-				if($loggedInUser.roles.includes(UserRoles.Support)){
+				if($loggedInUser.userRoles.includes(UserRoles.Support)){
 					body={
 						creatorId: 'null'
 					}
@@ -278,7 +278,7 @@
 		ticketLoading=true;
 		const userId = $loggedInUser?.id;
 		let body={
-			creatorId: $loggedInUser.roles.includes(UserRoles.Support)==false ? userId : 'null',
+			creatorId: $loggedInUser.userRoles.includes(UserRoles.Support)==false ? userId : 'null',
 		}
 		if (type!=null){
 			body['status']=type

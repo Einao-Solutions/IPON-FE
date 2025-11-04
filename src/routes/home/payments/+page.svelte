@@ -51,7 +51,7 @@
 		paymentHistoryLoading = true;
 		let url = '';
 		if ($loggedInUser!==null) {
-			if ($loggedInUser?.roles.some((y)=>[
+			if ($loggedInUser?.userRoles.some((y)=>[
 				UserRoles.StaffMenu,
 			].includes(y))) {
 				url = `${baseURL}/api/payments/GetOtherPayment?&count=${count}&skip=${skip}`;
@@ -445,7 +445,7 @@
 		</div>
 	{/if}
 
-	{#if $loggedInUser?.roles.includes(UserRoles.Support)}
+	{#if $loggedInUser?.userRoles.includes(UserRoles.Support)}
 		<Button on:click={()=>showNewPaymentForm()}>Add new Payment</Button>
 	{/if}
 

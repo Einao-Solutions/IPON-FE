@@ -57,10 +57,10 @@
       await goto("/home/dashboard");
     }
 
-    const verify_user = url.searchParams.get("verify_user") ?? null;
-    if (verify_user !== null) {
-      await verifyUser(verify_user);
-    }
+    // const verify_user = url.searchParams.get("verify_user") ?? null;
+    // if (verify_user !== null) {
+    //   await verifyUser(verify_user);
+    // }
   });
 
   function getTokenFromCookie(): string | null {
@@ -85,10 +85,7 @@
     document.cookie = `user=${encoded}; path=/; max-age=${maxAge}; secure; samesite=strict`;
   }
 
-  function clearAuthCookies() {
-    document.cookie = "auth_token=; path=/; max-age=0";
-    document.cookie = "user=; path=/; max-age=0";
-  }
+
 
   async function validateToken(token: string): Promise<boolean> {
     try {
@@ -292,7 +289,7 @@
     }
 
     isLoading = true;
-
+    
     try {
       const response = await fetch(`${baseURL}/api/auth/login`, {
         method: "POST",
@@ -338,8 +335,10 @@
         }
       }
     } catch (error) {
-      toast.error("An error occurred during login", {
+     console.error("Login error:", error);
+      toast.error(" Login failed", {
         position: "top-right",
+        description: "Invalid email or password. Please try again.",
       });
     } finally {
       isLoading = false;

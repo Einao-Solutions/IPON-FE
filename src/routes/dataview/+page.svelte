@@ -55,7 +55,7 @@
 	}
 	onMount(() => {
 		isUser = true;
-		// isUser = $loggedInUser?.roles.includes(UserRoles.Agent)
+		// isUser = $loggedInUser?.userRoles.includes(UserRoles.Agent)
 	});
 	let showAssignForm = false;
 	let assignForm = undefined;
@@ -492,15 +492,15 @@
 									Assign Application
 								</DropdownMenu.Item>
 								{/if} -->
-							{#if $loggedInUser?.roles.includes(UserRoles.Support)}
+							{#if $loggedInUser?.userRoles.includes(UserRoles.Support)}
 								<DropdownMenu.Item on:click={async () => await showOwnershipForm()}>
 									Change Ownership
 								</DropdownMenu.Item>
 							{/if}
-							<!-- {#if $loggedInUser?.roles?.includes(UserRoles.Support) }
+							<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.Support) }
 								<DropdownMenu.Item on:click={()=>viewMetadata()} >Metadata</DropdownMenu.Item>
 							{/if}
-							{#if $loggedInUser?.roles?.includes(UserRoles.Support) }
+							{#if $loggedInUser?.userRoles?.includes(UserRoles.Support) }
 								<DropdownMenu.Item on:click={()=>ViewHistory()} >Update Record</DropdownMenu.Item>
 							{/if} -->
 						</DropdownMenu.Content>
@@ -552,7 +552,7 @@
 				allApplications={fileData.applicationHistory}
 				{fileData}
 				showMissingDetailsForm={() => (showCorrespondenceRequest = true)}
-				isAdmin={$loggedInUser?.roles?.includes(UserRoles.Support)}
+				isAdmin={$loggedInUser?.userRoles?.includes(UserRoles.Support)}
 			/>
 		</Tabs.Content>
 		<Tabs.Content value="oppositions">
@@ -561,7 +561,7 @@
 		<!-- <Tabs.Content value="assignment">
 			{#if fileData.applicationHistory.find(x=>x.applicationType===5)}
 				<AssignmentApplication allApplications="{fileData.applicationHistory.filter(x=>x.applicationType===5)}" {fileData}
-															 isAdmin={$loggedInUser?.roles?.includes(UserRoles.Support)}
+															 isAdmin={$loggedInUser?.userRoles?.includes(UserRoles.Support)}
 				/>
 				{:else }
 			<div class="h-full w-full items-center justify-between mt-20">

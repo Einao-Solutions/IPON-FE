@@ -141,7 +141,7 @@
 			url = url + `&type=${oppositionType}`;
 		}
 		if (
-			$loggedInUser?.roles.some((role) =>
+			$loggedInUser?.userRoles.some((role) =>
 				[
 					UserRoles.TrademarkCertification,
 					UserRoles.TrademarkSearch,
@@ -307,8 +307,8 @@
 
 	function canResolve(row: []) {
 		return (
-			($loggedInUser.roles.includes(UserRoles.Support) ||
-				$loggedInUser.roles.includes(UserRoles.TrademarkOpposition)) &&
+			($loggedInUser.userRoles.includes(UserRoles.Support) ||
+				$loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
 			parseInt(row.find((x) => x.id === 'currentStatus').value) === 17
 		);
 	}
@@ -317,7 +317,7 @@
 		const canResond =
 			$loggedInUser.id ===
 				dataList.find((x) => x.id === row.find((x) => x.id === 'id').value).fileCreatorId ||
-			$loggedInUser.roles.includes(UserRoles.Support);
+			$loggedInUser.userRoles.includes(UserRoles.Support);
 		return status == 16 && canResond;
 	}
 	function yetToNotify(row: []) {
@@ -329,7 +329,7 @@
 		const isCreator =
 			$loggedInUser.id ===
 				dataList.find((x) => x.id === row.find((x) => x.id === 'id').value).creatorId ||
-			$loggedInUser.roles.includes(UserRoles.Support);
+			$loggedInUser.userRoles.includes(UserRoles.Support);
 		return status == 18 && isCreator;
 	}
 

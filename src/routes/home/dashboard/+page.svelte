@@ -69,8 +69,8 @@
 	let isStaff: boolean = false;
 	function canCreateApplication() {
 		return (
-			$loggedInUser?.roles.includes(UserRoles.Agent) ||
-			$loggedInUser?.roles.includes(UserRoles.Support)
+			$loggedInUser?.userRoles.includes(UserRoles.Agent) ||
+			$loggedInUser?.userRoles.includes(UserRoles.Support)
 		);
 	}
 	onMount(async () => {
@@ -85,7 +85,7 @@
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
 			isStaff =
-				$loggedInUser?.roles.some((e) => [UserRoles.Support, UserRoles.Agent].includes(e)) == false;
+				$loggedInUser?.userRoles.some((e) => [UserRoles.Support, UserRoles.Agent].includes(e)) == false;
 		}
 		if (isStaff) {
 			typecomponent = (await import('../components/StaffDashboard.svelte')).default;

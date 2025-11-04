@@ -1037,7 +1037,7 @@
 			</div>
 		{/if}
 
-		{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+		{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
 			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected)}
 				<div class="mt-4">
 					<Label for="approval-reason">Decision Reason</Label>
@@ -1050,7 +1050,7 @@
 				</div>
 			{/if}
 		{/if}
-		<!-- {#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+		<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
 			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.Approved || selectedApplication?.currentStatus == ApplicationStatuses.Rejected)}
 				<div class="mt-4">
 					<Label for="approval-reason">Decision Reason</Label>
@@ -1063,7 +1063,7 @@
 			{/if}
 		{/if}		 -->
 		<Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-			{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+			{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
 				{#if [5, 7, 8, 9, 10, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
 					<Button
 						on:click={() => {
@@ -1155,7 +1155,7 @@
 						</p>
 					{/if}
 				</div>
-				{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.roles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.roles?.includes(UserRoles.Support)}
+				{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.Support)}
 					<!-- Action Buttons -->
 					<div class="flex gap-3 justify-end pt-2 border-t">
 						<Button
@@ -1674,8 +1674,8 @@
 										on:click={async () => await checkPayment(application, application.paymentId)}
 										>Verify Payment ({application.paymentId ?? '-'})</DropdownMenu.Item
 									>
-									{#if ($loggedInUser?.roles?.includes(UserRoles.Support || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
-										<!-- {#if $loggedInUser?.roles?.includes(UserRoles.Admin || UserRoles.Support || UserRoles.TrademarkCertification)}	 -->
+									{#if ($loggedInUser?.userRoles?.includes(UserRoles.Support || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
+										<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.Admin || UserRoles.Support || UserRoles.TrademarkCertification)}	 -->
 										<DropdownMenu.Item
 											on:click={() => {
 												viewRecordalData(application);
@@ -1730,13 +1730,13 @@
 											>New Application Receipt</DropdownMenu.Item
 										> -->
 									{#if application.certificatePaymentId != null && application.currentStatus === ApplicationStatuses.Active}
-										{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
 											<DropdownMenu.Item on:click={() => certificate(application)}
 												>Certificate</DropdownMenu.Item
 											>
 										{/if}
 									{:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-										{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
 											<DropdownMenu.Item on:click={() => renewalCertificate(application)}>
 												Renewal Certificate</DropdownMenu.Item
 											>
@@ -1751,7 +1751,7 @@
 											>Payment Receipt</DropdownMenu.Item
 										>-->
 									{#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-										{#if $loggedInUser?.roles?.includes(UserRoles.BackOffice || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.BackOffice || UserRoles.Support)}
 											<DropdownMenu.Item on:click={() => viewRecordalData(application)}
 												>View Application</DropdownMenu.Item
 											>
@@ -1811,7 +1811,7 @@
 										<!-- {#if application.applicationLetters}
 										<DropdownMenu.Separator />
 										{#each application.applicationLetters as letter}
-											{#if letter === 3 && $loggedInUser?.roles.includes(UserRoles.BackOffice) === false}
+											{#if letter === 3 && $loggedInUser?.userRoles.includes(UserRoles.BackOffice) === false}
 												<p></p>
 											{:else}
 												<DropdownMenu.Item on:click={() => validateMove(application, letter)}
@@ -1819,14 +1819,14 @@
 												>
 											{/if}
 										{/each}
-										{#if $loggedInUser?.roles?.includes(UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.Support)}
 											<DropdownMenu.Item on:click={() => loadMetadata(application)}
 												>Metadata</DropdownMenu.Item
 											>
 										{/if}-->
 									{/if}
 
-									<!-- {#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14}
+									<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14}
 										<DropdownMenu.Item
 											   on:click={() =>goto(`/home/publications/viewapplication/${fileData?.fileId}/${application.id}`)}
 										>
@@ -1834,7 +1834,7 @@
 										</DropdownMenu.Item>
 									{/if} -->
 
-									{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
+									{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
 										<DropdownMenu.Item
 											on:click={() => openPublicationDialog(fileData?.fileId, application.id)}
 										>
@@ -1843,20 +1843,20 @@
 									{/if}
 
 									{#if application.applicationType === 15 && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
-										<!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.roles)}</pre>`} -->
-										{#if fileData.type === 0 && $loggedInUser?.roles?.includes(UserRoles.PatentExaminer)}
+										<!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.userRoles)}</pre>`} -->
+										{#if fileData.type === 0 && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>
 												View Withdrawal Application
 											</DropdownMenu.Item>
-										{:else if fileData.type === 1 && $loggedInUser?.roles?.includes(UserRoles.DesignExaminer)}
+										{:else if fileData.type === 1 && $loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>
 												View Withdrawal Application
 											</DropdownMenu.Item>
-										{:else if fileData.type === 2 && $loggedInUser?.roles?.includes(UserRoles.TrademarkAcceptance)}
+										{:else if fileData.type === 2 && $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>

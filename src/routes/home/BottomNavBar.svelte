@@ -18,7 +18,7 @@
 		// 	location:"Notifications",
 		// },
 		{
-			icon:"ooui:user-avatar-outline",
+			icon:"mdi:account-circle",
 			location:"Profile",
 		},];
 </script>

@@ -20,7 +20,7 @@
 	async function loadCounter() {
 		let url = `${baseURL}/api/opposition/count`;
 		if (
-			$loggedInUser?.roles.some((role) =>
+			$loggedInUser?.userRoles.some((role) =>
 				[
 					UserRoles.TrademarkCertification,
 					UserRoles.TrademarkSearch,
@@ -51,7 +51,7 @@
 			url = url + `&type=${type}`;
 			oppositionType = type;
 		}
-		// if ($loggedInUser.roles.includes(UserRoles.StaffMenu)==false) {
+		// if ($loggedInUser.userRoles.includes(UserRoles.StaffMenu)==false) {
 		// 	url = url + `&userId=${$loggedInUser.id}`;
 		// }
 		const response = await fetch(url);

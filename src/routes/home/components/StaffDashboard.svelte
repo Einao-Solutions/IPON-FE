@@ -20,7 +20,7 @@
 	import { goto } from '$app/navigation';
 import * as Card from "$lib/components/ui/card"
 	let isLoading: boolean = true;
-	export let user
+	export let user: UsersType;
 	let isStaff:boolean=true;
 	onMount(async()=>{
 		if ($DashStats===null)
@@ -50,7 +50,7 @@ import * as Card from "$lib/components/ui/card"
 	}
 
 	function isPatentRelated() {
-		const show= user.roles?.some((x) =>
+		const show= user.userRoles?.some((x) =>
 			[
 				UserRoles.PatentSearch,
 				UserRoles.PatentExaminer,
@@ -61,7 +61,7 @@ return show;
 	}
 
 	function isDesignRelated() {
-		return user.roles?.some((x) =>
+		return user.userRoles?.some((x) =>
 			[
 				UserRoles.DesignSearch,
 				UserRoles.DesignExaminer,
@@ -71,7 +71,7 @@ return show;
 	}
 
 	function isTradeMarkRelated(){
-		return user.roles?.some((x) =>
+		return user.userRoles?.some((x) =>
 			[
 				UserRoles.TrademarkSearch,
 				UserRoles.TrademarkExaminer,

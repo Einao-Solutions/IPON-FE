@@ -34,14 +34,14 @@
 		userLoading=true;
 		const result= await fetch(`${baseURL}/api/users/GetUserById?userId=${id}`)
 		selectedUser=await result.json()
-		updatedRoles.set(selectedUser?.roles??[])
+		updatedRoles.set(selecteduser?.userRoles??[])
 		userLoading=false;
 		viewUserDetails=true;
 	}
 	let isUpdatingUser=false;
 	async function saveRoles(){
 		isUpdatingUser=true;
-		selectedUser.roles=$updatedRoles
+		selectedUser.userRoles=$updatedRoles
 		await fetch(`${baseURL}/api/users/UpdateUser`, {
 			method: 'POST',
 			headers:{"Content-Type":"application/json"},
@@ -155,7 +155,7 @@
 		</div>
 		<div>
 			<Label>User Roles</Label>
-			{#each selectedUser?.roles as userole}
+			{#each selecteduser?.userRoles as userole}
 					<div class="border border-blue-950 p-2 m-2">{mapRoleToString(userole)}</div>
 				{/each}
 		</div>

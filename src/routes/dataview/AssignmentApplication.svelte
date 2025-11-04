@@ -82,14 +82,14 @@
 		if ([3, 6, 7].includes(application.currentStatus)){
 			if (fileData?.type===0) {
 				// patent
-				return $loggedInUser?.roles?.some(x=>[
+				return $loggedInUser?.userRoles?.some(x=>[
 					UserRoles.PatentSearch,
 				].includes(x))
 			}
 
 			if (fileData.type===1){
 				//design
-				 return $loggedInUser?.roles?.some(x=>[
+				 return $loggedInUser?.userRoles?.some(x=>[
 					UserRoles.DesignSearch,
 				].includes(x))
 			}
@@ -99,14 +99,14 @@
 		if ([4,5].includes(application.currentStatus)){
 			if (fileData.type===0) {
 				// patent
-				return $loggedInUser?.roles?.some(x=>[
+				return $loggedInUser?.userRoles?.some(x=>[
 					UserRoles.PatentExaminer,
 				].includes(x))
 			}
 
 			if (fileData.type===1){
 				//design
-				return $loggedInUser?.roles?.some(x=>[
+				return $loggedInUser?.userRoles?.some(x=>[
 					UserRoles.DesignExaminer,
 				].includes(x))
 			}
@@ -454,7 +454,7 @@ let options:ApplicationStatuses[] =[];
 									{#each application.applicationLetters as letter}
 											<DropdownMenu.Item href="{baseURL}/api/letters/generate?fileId={fileData?.id}&letterType={letter}&applicationId={application.id}" target="_blank" >{getLetterName(letter)}</DropdownMenu.Item>
 										{/each}
-									{#if $loggedInUser?.roles?.includes(UserRoles.Support) }
+									{#if $loggedInUser?.userRoles?.includes(UserRoles.Support) }
 										<DropdownMenu.Item on:click={()=>loadMetadata(application)}>Metadata</DropdownMenu.Item>
 									{/if}
 								</DropdownMenu.Group>

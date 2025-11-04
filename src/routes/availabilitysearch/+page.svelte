@@ -253,7 +253,7 @@
 						<Table.Header>
 							<Table.Row>
 								<Table.Head class="w-16">S/N</Table.Head>
-								{#if $loggedInUser.roles?.some( (x) => [UserRoles.BackOffice, UserRoles.Support].includes(x) )}
+								{#if $loggedInUser.userRoles?.some( (x) => [UserRoles.BackOffice, UserRoles.Support].includes(x) )}
 									<Table.Head>File Number</Table.Head>
 								{/if}
 								<Table.Head>File Title</Table.Head>
@@ -269,7 +269,7 @@
 							{#each results as result, index}
 								<Table.Row class="hover:bg-gray-50 transition-colors duration-150">
 									<Table.Cell class="font-medium">{index + 1}</Table.Cell>
-									{#if $loggedInUser.roles?.some( (x) => [UserRoles.BackOffice, UserRoles.Support].includes(x) )}
+									{#if $loggedInUser.userRoles?.some( (x) => [UserRoles.BackOffice, UserRoles.Support].includes(x) )}
 										<Table.Cell class="font-mono text-sm">{result.fileId}</Table.Cell>
 									{/if}
 									<Table.Cell class="font-medium">{result.titleOfTradeMark}</Table.Cell>
@@ -308,7 +308,7 @@
 								<div class="flex items-start justify-between mb-2">
 									<div class="flex items-center gap-2">
 										<span class="text-xs font-medium text-gray-500">#{index + 1}</span>
-										{#if $loggedInUser.roles?.some( (x) => [UserRoles.BackOffice, UserRoles.Support].includes(x) )}
+										{#if $loggedInUser.userRoles?.some( (x) => [UserRoles.BackOffice, UserRoles.Support].includes(x) )}
 											<span class="text-xs font-mono text-gray-400">{result.fileId}</span>
 										{/if}
 									</div>
