@@ -385,28 +385,29 @@ export enum UserTypes {
   Admin = "Admin",
   SuperAdmin = "SuperAdmin",
 }
+export enum AccountTypes {
+  Individual = 0,
+  Corporate = 1,
+  Officer = 2,
+  Tech = 3,
+}
 export enum UserRoles {
-  PatentExaminer = 0,
-  PatentSearch = 1,
-  TrademarkExaminer = 2,
-  TrademarkSearch = 3,
-  DesignSearch = 4,
-  DesignExaminer = 5,
-  TrademarkOpposition = 6,
-  TrademarkCertification = 7,
-  Finance = 8,
-  Tickets = 9,
-  Users = 10,
-  Agent = 11,
-  Productivity = 12,
-  Support = 13,
-  PublicationMenu = 14,
-  OppositionMenu = 15,
-  StaffMenu = 16,
-  BackOffice = 17,
-  AppealExaminer = 18,
-  SuperAdmin = 19,
-  TrademarkAcceptance = 20,
+  TrademarkSearch,
+  TrademarkExaminer,
+  TrademarkOpposition,
+  TrademarkAcceptance,
+  TrademarkCertification,
+  TrademarkRegistrar,
+  PatentSearch,
+  PatentExaminer,
+  PatentCertification,
+  DesignSearch,
+  DesignExaminer,
+  DesignCertification,
+  PatentDesignRegistrar,
+  Ministry,
+  Tech,
+  SuperAdmin,
 }
 
 export enum FilingType {
@@ -590,6 +591,7 @@ export type SupportForm = {
 
 export type UsersType = {
   id: string;
+  creatorId: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -752,54 +754,39 @@ export function setDefaultCorr(data) {
 
 export function mapRoleToString(type: number) {
   switch (type) {
-    case 0:
-      return "Patent Examiner";
-    case 1:
-      return "Patent Search";
-    case 2:
-      return "Trademark Examiner";
-    case 3:
+    case UserRoles.TrademarkSearch:
       return "Trademark Search";
-    case 4:
-      return "Design Search";
-    case 5:
-      return "Design Examiner";
-    case 6:
+    case UserRoles.TrademarkExaminer:
+      return "Trademark Examiner";
+    case UserRoles.TrademarkOpposition:
       return "Trademark Opposition";
-    case 7:
-      return "Trademark Certification";
-    case 8:
-      return "Finance";
-    case 9:
-      return "Tickets";
-    case 10:
-      return "Users";
-    case 11:
-      return "Agent";
-    case 12:
-      return "Productivity";
-    case 13:
-      return "Support";
-    case 14:
-      return "Publication Menu";
-    case 15:
-      return "Opposition Menu";
-    case 16:
-      return "Staff Menu";
-    case 17:
-      return "Back office";
-    case 18:
-      return "Appeal Examiner";
-    case 19:
-      return "Super Admin";
-    case 20:
+    case UserRoles.TrademarkAcceptance:
       return "Trademark Acceptance";
+    case UserRoles.TrademarkCertification:
+      return "Trademark Certification";
+    case UserRoles.TrademarkRegistrar:
+      return "Trademark Registrar";
+    case UserRoles.PatentSearch:
+      return "Patent Search";
+    case UserRoles.PatentExaminer:
+      return "Patent Examiner";
+    case UserRoles.PatentCertification:
+      return "Patent Certification";
+    case UserRoles.DesignSearch:
+      return "Design Search";
+    case UserRoles.DesignExaminer:
+      return "Design Examiner";
+    case UserRoles.DesignCertification:
+      return "Design Certification";
+    case UserRoles.PatentDesignRegistrar:
+      return "Patent/Design Registrar";
+    case UserRoles.Ministry:
+      return "Ministry Admin";
+    case UserRoles.Tech:
+      return "Tech/Support";
+    case UserRoles.SuperAdmin:
+      return "Super Admin";
+    default:
+      return "Unknown";
   }
 }
-// export function setAuthToken(token: string | null) {
-//   if (token) {
-//     localStorage.setItem("authToken", token);
-//   } else {
-//     localStorage.removeItem("authToken");
-//   }
-// }

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { appattachmentsData, DashStats, loggedInUser, newApplicationType } from '$lib/store';
+	import { appattachmentsData, DashStats, loggedInUser, loggedInToken, newApplicationType } from '$lib/store';
 	import { DataMapper, FileStatsData, mapStatusToColor, mapTypeToString } from './dashboardutils';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import {
@@ -19,6 +19,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { goto } from '$app/navigation';
 import * as Card from "$lib/components/ui/card"
+  import { User } from 'lucide-svelte';
 	let isLoading: boolean = true;
 	export let user: UsersType;
 	let isStaff:boolean=true;
@@ -39,7 +40,9 @@ import * as Card from "$lib/components/ui/card"
 		const showId= true;
 		const id=showId?null:userId;
 		const url=`${baseURL}/api/files/FileStatistics?userId=${id}`;
-		const data=await fetch(url);
+		const data=await fetch(url,{headers:{
+			'Authorization':`Bearer ${$loggedInToken}`
+		}});
 		if (data.ok)
 		{
 			const body=await data.json();
@@ -54,7 +57,11 @@ import * as Card from "$lib/components/ui/card"
 			[
 				UserRoles.PatentSearch,
 				UserRoles.PatentExaminer,
-				UserRoles.Support,
+				UserRoles.PatentCertification,
+				UserRoles.PatentDesignRegistrar,
+				UserRoles.Ministry,
+				UserRoles.Tech,
+				UserRoles.SuperAdmin
 			].includes(x)
 		);
 return show;
@@ -65,7 +72,11 @@ return show;
 			[
 				UserRoles.DesignSearch,
 				UserRoles.DesignExaminer,
-				UserRoles.Support,
+				UserRoles.DesignCertification,
+				UserRoles.Tech,
+				UserRoles.Ministry,
+				UserRoles.Tech,
+				UserRoles.SuperAdmin
 			].includes(x)
 		);
 	}
@@ -76,8 +87,12 @@ return show;
 				UserRoles.TrademarkSearch,
 				UserRoles.TrademarkExaminer,
 				UserRoles.TrademarkOpposition,
+				UserRoles.TrademarkAcceptance,
 				UserRoles.TrademarkCertification,
-				UserRoles.Support,
+				UserRoles.TrademarkRegistrar,
+				UserRoles.Ministry,
+				UserRoles.Tech,
+				UserRoles.SuperAdmin
 			].includes(x)
 		);
 	}

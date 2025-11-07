@@ -142,7 +142,11 @@
     if (showSupportTickets) url += `&staffTickets=true`;
     if (showAllOpposition) url += `&showAllOpposition=true`;
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${$loggedInToken}`,
+      },
+    });
     if (response.ok) notifications.set(await response.json());
     notificationsLoading = false;
   }

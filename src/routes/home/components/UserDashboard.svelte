@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { BackgroundGradient } from '$lib/components/ui/BackgroundGradient';
-	import { DashStats } from '$lib/store';
+	import { DashStats, loggedInToken, loggedInUser } from '$lib/store';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
 	import { baseURL, type DashBoardStats, FileTypes, UserRoles, type UsersType } from '$lib/helpers';
@@ -23,7 +23,11 @@
 		const showId = user.userRoles.includes(UserRoles.Support)
 		let id = showId ? null : userId;
 		const url = `${baseURL}/api/files/FileStatistics?userId=${id}`;
-		const data = await fetch(url);
+		const data = await fetch(url, {
+			headers: {
+				'Authorization': `Bearer ${$loggedInToken}`
+			}
+		});
 		if (data.ok) {
 			const body = await data.json();
 			const values = body as DashBoardStats[];

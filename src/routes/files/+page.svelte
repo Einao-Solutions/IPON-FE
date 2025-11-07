@@ -9,7 +9,7 @@
 	import { baseURL, UserRoles } from '$lib/helpers';
 	import { fileTypeToString, mapTypeToString } from '../home/components/dashboardutils';
 	import { writable } from 'svelte/store';
-	import { listOfIds, loggedInUser, queryBody } from '$lib/store';
+	import { listOfIds, loggedInUser, queryBody, loggedInToken } from '$lib/store';
 
 	export let dataList: [] | null = null;
 	let count: number = 0;
@@ -87,7 +87,8 @@
 		const result = await fetch(fileUrl, {
 			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Authorization' : `Bearer ${$loggedInToken}`
 			},
 			body: JSON.stringify({ ...body })
 		});

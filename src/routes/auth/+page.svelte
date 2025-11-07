@@ -29,8 +29,8 @@
   }
 
   interface AuthResponse {
-    token?: string;
-    user?: UsersType;
+    token: string;
+    user: UsersType;
   }
 
   let createUser: CreateUserRequest = {
@@ -69,7 +69,7 @@
     return tokenCookie ? tokenCookie.split("=")[1] : null;
   }
 
-  function setAuthCookies(data: AuthUser) {
+  function setAuthCookies(data: AuthResponse) {
     const maxAge = 7 * 24 * 60 * 60; // 7 days
     document.cookie = `auth_token=${data.token}; path=/; max-age=${maxAge}; secure; samesite=strict`;
 
