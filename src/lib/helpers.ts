@@ -333,7 +333,7 @@ export enum ApplicationStatuses {
 	RequestWithdrawal = 29,
 	NewOpposition = 30,
 	AwaitingCounter = 31,
-	Amendment = 32
+	AwaitingApproval = 32
 }
 export enum PatentTypes {
 	Conventional = 0,
