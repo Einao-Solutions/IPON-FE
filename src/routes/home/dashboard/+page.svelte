@@ -18,9 +18,10 @@
 	import { onMount } from 'svelte';
 	import RenewView from './components/RenewView.svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
-	import { ApplicationLetters, ApplicationStatuses, baseURL, UserRoles } from '$lib/helpers';
+	import { ApplicationLetters, ApplicationStatuses, baseURL, UserRoles, FileTypes, type DashBoardStats } from '$lib/helpers';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Card from '$lib/components/ui/card';
+	import { DashStats } from '$lib/store';
 	import AvailabilitySearchModal from '../../home/components/AvailabilitySearchModal.svelte';
 	import { Description } from 'formsnap';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
@@ -45,6 +46,39 @@
 	let typecomponent;
 	let data = {};
 	$: fileData = $applicationData;
+	
+	// New navigation state for IP category views
+	let currentView = 'main'; // 'main', 'trademark', 'patent', 'design'
+	let viewToggle = 'grid'; // 'grid' or 'list'
+	
+	// Function to get totals from DashStats
+	function getTotal(type: FileTypes) {
+		return $DashStats?.fileStats.find((x) => x.fileType === type)?.count ?? 0;
+	}
+
+	// Function to load agent dashboard statistics
+	async function loadAgentDashboardStats() {
+		try {
+			const userId = $loggedInUser?.id;
+			const showId = $loggedInUser?.roles.includes(UserRoles.Support);
+			let id = showId ? null : userId;
+			const url = `${baseURL}/api/files/FileStatistics?userId=${id}`;
+			const data = await fetch(url);
+			
+			if (data.ok) {
+				const body = await data.json();
+				const values = body as DashBoardStats[];
+				DashStats.set(values[0]);
+			}
+		} catch (error) {
+			console.error('Failed to load dashboard stats:', error);
+		}
+	}
+
+	// Reactive statements for totals
+	$: trademarkCount = getTotal(FileTypes.Trademark);
+	$: patentCount = getTotal(FileTypes.Patent);
+	$: designCount = getTotal(FileTypes.Design);
 	function openPreRegistrationDialog() {
 		showPreRegistrationDialog = true;
 	}
@@ -97,6 +131,12 @@
 		data = {
 			user: $loggedInUser
 		};
+		
+		// Load dashboard statistics for agent users
+		if (canCreateApplication()) {
+			await loadAgentDashboardStats();
+		}
+		
 		isLoading = false;
 	});
 	let isLoading: boolean = true;
@@ -1280,6 +1320,7 @@
 			
 		</div>
 	</div>
+{/if}
 
 	<style>
 		@keyframes marquee {
@@ -1294,6 +1335,137 @@
 			animation: marquee 25s linear infinite;
 		}
 	</style>
+	
+	<!-- DEBUG INFO - COMMENTED OUT
+	<div class="p-4 bg-yellow-100 border border-yellow-300 rounded mb-4">
+		<p>Debug Info:</p>
+		<p>canCreateApplication(): {canCreateApplication()}</p>
+		<p>currentView: {currentView}</p>
+		<p>User roles: {JSON.stringify($loggedInUser?.roles)}</p>
+		<p>User ID: {$loggedInUser?.id}</p>
+	</div>
+	-->
+	
+	<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
+	{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === 'main'}
+	<div class="min-h-screen bg-gray-50 px-6 py-8">
+		<div class="max-w-7xl mx-auto">
+			<!-- Header Section -->
+			<div class="mb-8">
+				<h1 class="text-2xl md:text-3xl lg:text-4xl mb-2">Intellectual Property Office Nigeria</h1>
+				<p class="text-gray-600 text-sm md:text-base">Select a category to explore available Services</p>
+			</div>
+
+			<!-- Three IP Category Cards -->
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+				<!-- Trademark Card -->
+				<button 
+					class="text-left w-full group"
+					on:click={() => (currentView = 'trademark')}
+				>
+					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
+						<div class="mb-6">
+							<div class="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-4">
+								<Icon icon="mdi:scale-balance" class="text-3xl text-green-600" />
+							</div>
+							<h3 class="text-2xl mb-2">Trademark</h3>
+							<p class="text-gray-600 text-sm leading-relaxed">Register and protect your brand identity</p>
+						</div>
+						<p class="text-sm text-gray-500">20 services available</p>
+					</div>
+				</button>
+
+				<!-- Patent Card -->
+				<button 
+					class="text-left w-full group"
+					on:click={() => (currentView = 'patent')}
+				>
+					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
+						<div class="mb-6">
+							<div class="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-4">
+								<Icon icon="mdi:file-document-outline" class="text-3xl text-green-600" />
+							</div>
+							<h3 class="text-2xl mb-2">Patent</h3>
+							<p class="text-gray-600 text-sm leading-relaxed">Protect your inventions and innovations</p>
+						</div>
+						<p class="text-sm text-gray-500">16 services available</p>
+					</div>
+				</button>
+
+				<!-- Design Card -->
+				<button 
+					class="text-left w-full group"
+					on:click={() => (currentView = 'design')}
+				>
+					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
+						<div class="mb-6">
+							<div class="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-4">
+								<Icon icon="mdi:palette-outline" class="text-3xl text-green-600" />
+							</div>
+							<h3 class="text-2xl mb-2">Design</h3>
+							<p class="text-gray-600 text-sm leading-relaxed">Safeguard your creative designs</p>
+						</div>
+						<p class="text-sm text-gray-500">16 services available</p>
+					</div>
+				</button>
+			</div>		
+
+			<!-- Total Count Cards (Below IP Categories) - CLICKABLE -->
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<!-- Total Trademarks -->
+				<button 
+					class="text-left w-full"
+					on:click={() => goto('/files?fileType=2&titleType=specific')}
+				>
+					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+						<p class="text-sm text-gray-500 mb-2">Total Trademarks</p>
+						<p class="text-2xl md:text-3xl">{trademarkCount.toLocaleString()}</p>
+					</div>
+				</button>
+
+				<!-- Total Patents -->
+				<button 
+					class="text-left w-full"
+					on:click={() => goto('/files?fileType=0&titleType=specific')}
+				>
+					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+						<p class="text-sm text-gray-500 mb-2">Total Patents</p>
+						<p class="text-2xl md:text-3xl">{patentCount.toLocaleString()}</p>
+					</div>
+				</button>
+
+				<!-- Total Designs -->
+				<button 
+					class="text-left w-full"
+					on:click={() => goto('/files?fileType=1&titleType=specific')}
+				>
+					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
+						<p class="text-sm text-gray-500 mb-2">Total Designs</p>
+						<p class="text-2xl md:text-3xl">{designCount.toLocaleString()}</p>
+					</div>
+				</button>
+			</div>
+		</div>
+	</div>
+	{:else}
+		<!-- FALLBACK WHEN CONDITIONS NOT MET - COMMENTED OUT FOR CLEAN VIEW
+		<div class="p-4 bg-red-100 border border-red-300 rounded">
+			<h3 class="text-lg font-semibold text-red-800">Dashboard Not Showing</h3>
+			<p class="text-red-600">Conditions not met:</p>
+			<ul class="text-red-600">
+				<li>isLoading: {isLoading}</li>
+				<li>loggedInUser exists: {!!$loggedInUser}</li>
+				<li>canCreateApplication(): {canCreateApplication()}</li>
+				<li>currentView: {currentView}</li>
+				<li>Expected: !isLoading AND loggedInUser AND canCreateApplication() AND currentView = 'main'</li>
+			</ul>
+		</div>
+		-->
+	{/if}
+
+	{#if canCreateApplication()}
+	<!-- COMMENTED OUT - ORIGINAL 17 ACTION CARDS GRID (TO BE REORGANIZED BY IP TYPE) -->
+	{#if false}
 	<div
 		class="overflow-y-auto sm:space-y-10 space-y-3 bg-accent {canCreateApplication()
 			? ''
@@ -1496,7 +1668,255 @@
 			<AvailabilitySearchModal isOpen={isModalOpen} on:close={() => (isModalOpen = false)} />
 		</div>
 	</div>
+	{/if}
+	<!-- END COMMENTED OUT ACTION CARDS -->
+	{/if}
+
+<!-- TRADEMARK SERVICES VIEW -->
+{#if currentView === 'trademark'}
+	<div class="min-h-screen bg-gray-50 px-6 py-8">
+		<div class="max-w-7xl mx-auto space-y-6">
+			<!-- Header with back button -->
+			<div class="flex items-center justify-between">
+				<button on:click={() => (currentView = 'main')} class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+					<Icon icon="mdi:arrow-left" class="text-xl" />
+					<span class="font-medium">Back to Dashboard</span>
+				</button>
+			
+			<div class="flex items-center space-x-2">
+				<button 
+					class="px-4 py-2 rounded-md {viewToggle === 'grid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
+					on:click={() => (viewToggle = 'grid')}
+				>
+					<Icon icon="mdi:grid" class="text-sm" /> Grid
+				</button>
+				<button 
+					class="px-4 py-2 rounded-md {viewToggle === 'list' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
+					on:click={() => (viewToggle = 'list')}
+				>
+					<Icon icon="mdi:format-list-bulleted" class="text-sm" /> List
+				</button>
+			</div>
+		</div>
+
+		<!-- Service Header -->
+		<div class="flex items-center space-x-3">
+			<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+				<Icon icon="mdi:scale-balance" class="text-green-600" />
+			</div>
+			<div>
+				<h2 class="text-2xl font-bold text-gray-900">Trademark Services</h2>
+				<p class="text-gray-600">Register and protect your brand identity</p>
+			</div>
+		</div>
+
+		<!-- Services Grid -->
+		{#if viewToggle === 'grid'}
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				<!-- New Registration -->
+				<button on:click={() => goto('/application?type=2')} class="text-left">
+					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
+						<div class="flex items-center space-x-3 mb-2">
+							<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+								<Icon icon="mdi:file-plus-outline" class="text-green-600" />
+							</div>
+							<div>
+								<h3 class="font-semibold text-gray-900">New Registration</h3>
+								<p class="text-green-600 font-medium text-sm">₦15,000</p>
+							</div>
+						</div>
+						<p class="text-gray-600 text-xs">File new Trademark applications</p>
+					</div>
+				</button>
+
+				<!-- Clerical Update -->
+				<button on:click={() => goto('/home/clerical-update')} class="text-left">
+					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
+						<div class="flex items-center space-x-3 mb-2">
+							<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+								<Icon icon="mdi:file-edit-outline" class="text-green-600" />
+							</div>
+							<div>
+								<h3 class="font-semibold text-gray-900">Clerical Update</h3>
+								<p class="text-green-600 font-medium text-sm">₦2000</p>
+							</div>
+						</div>
+						<p class="text-gray-600 text-xs">Edit/Update existing applications</p>
+					</div>
+				</button>
+
+				<!-- Trademark Journal -->
+				<button on:click={() => goto('/home/trademarkpubs')} class="text-left">
+					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
+						<div class="flex items-center space-x-3 mb-2">
+							<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+								<Icon icon="mdi:newspaper" class="text-green-600" />
+							</div>
+							<div>
+								<h3 class="font-semibold text-gray-900">Trademark Journal</h3>
+								<p class="text-green-600 font-medium text-sm">₦15,500</p>
+							</div>
+						</div>
+						<p class="text-gray-600 text-xs">View trademark journal</p>
+					</div>
+				</button>
+
+				<!-- Add more trademark services here following the same pattern -->
+			</div>
+		{:else}
+			<!-- List View -->
+			<div class="space-y-2">
+				<button on:click={() => goto('/application?type=2')} class="w-full text-left">
+					<div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+						<div class="flex items-center justify-between">
+							<div class="flex items-center space-x-4">
+								<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+									<Icon icon="mdi:file-plus-outline" class="text-green-600" />
+								</div>
+								<div>
+									<h3 class="font-semibold text-gray-900">New Registration</h3>
+									<p class="text-gray-600 text-sm">File new Trademark applications</p>
+								</div>
+							</div>
+							<p class="text-green-600 font-medium">₦15,000</p>
+						</div>
+					</div>
+				</button>
+				<!-- Add more list items here -->
+			</div>
+		{/if}
+		</div>
+	</div>
+
+{:else if currentView === 'patent'}
+	<!-- PATENT SERVICES VIEW -->
+	<div class="min-h-screen bg-gray-50 px-6 py-8">
+		<div class="max-w-7xl mx-auto space-y-6">
+			<!-- Header with back button -->
+			<div class="flex items-center justify-between">
+				<button on:click={() => (currentView = 'main')} class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+					<Icon icon="mdi:arrow-left" class="text-xl" />
+					<span class="font-medium">Back to Dashboard</span>
+				</button>
+			
+			<div class="flex items-center space-x-2">
+				<button 
+					class="px-4 py-2 rounded-md {viewToggle === 'grid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
+					on:click={() => (viewToggle = 'grid')}
+				>
+					<Icon icon="mdi:grid" class="text-sm" /> Grid
+				</button>
+				<button 
+					class="px-4 py-2 rounded-md {viewToggle === 'list' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
+					on:click={() => (viewToggle = 'list')}
+				>
+					<Icon icon="mdi:format-list-bulleted" class="text-sm" /> List
+				</button>
+			</div>
+		</div>
+
+		<!-- Service Header -->
+		<div class="flex items-center space-x-3">
+			<div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+				<Icon icon="mdi:lightbulb-outline" class="text-blue-600" />
+			</div>
+			<div>
+				<h2 class="text-2xl font-bold text-gray-900">Patent Services</h2>
+				<p class="text-gray-600">Protect your inventions and innovations</p>
+			</div>
+		</div>
+
+		<!-- Services Grid -->
+		{#if viewToggle === 'grid'}
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				<!-- New Registration -->
+				<button on:click={() => goto('/application?type=0')} class="text-left">
+					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
+						<div class="flex items-center space-x-3 mb-2">
+							<div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+								<Icon icon="mdi:lightbulb-outline" class="text-blue-600" />
+							</div>
+							<div>
+								<h3 class="font-semibold text-gray-900">New Registration</h3>
+								<p class="text-blue-600 font-medium text-sm">₦25,000</p>
+							</div>
+						</div>
+						<p class="text-gray-600 text-xs">File new Patent applications</p>
+					</div>
+				</button>
+
+				<!-- Add more patent services here -->
+			</div>
+		{/if}
+		</div>
+	</div>
+
+{:else if currentView === 'design'}
+	<!-- DESIGN SERVICES VIEW -->
+	<div class="min-h-screen bg-gray-50 px-6 py-8">
+		<div class="max-w-7xl mx-auto space-y-6">
+			<!-- Header with back button -->
+			<div class="flex items-center justify-between">
+				<button on:click={() => (currentView = 'main')} class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
+					<Icon icon="mdi:arrow-left" class="text-xl" />
+					<span class="font-medium">Back to Dashboard</span>
+				</button>
+			
+			<div class="flex items-center space-x-2">
+				<button 
+					class="px-4 py-2 rounded-md {viewToggle === 'grid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
+					on:click={() => (viewToggle = 'grid')}
+				>
+					<Icon icon="mdi:grid" class="text-sm" /> Grid
+				</button>
+				<button 
+					class="px-4 py-2 rounded-md {viewToggle === 'list' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
+					on:click={() => (viewToggle = 'list')}
+				>
+					<Icon icon="mdi:format-list-bulleted" class="text-sm" /> List
+				</button>
+			</div>
+		</div>
+
+		<!-- Service Header -->
+		<div class="flex items-center space-x-3">
+			<div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+				<Icon icon="mdi:palette-outline" class="text-purple-600" />
+			</div>
+			<div>
+				<h2 class="text-2xl font-bold text-gray-900">Design Services</h2>
+				<p class="text-gray-600">Safeguard your creative designs</p>
+			</div>
+		</div>
+
+		<!-- Services Grid -->
+		{#if viewToggle === 'grid'}
+			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+				<!-- New Registration -->
+				<button on:click={() => goto('/application?type=1')} class="text-left">
+					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
+						<div class="flex items-center space-x-3 mb-2">
+							<div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+								<Icon icon="mdi:palette-outline" class="text-purple-600" />
+							</div>
+							<div>
+								<h3 class="font-semibold text-gray-900">New Registration</h3>
+								<p class="text-purple-600 font-medium text-sm">₦20,000</p>
+							</div>
+						</div>
+						<p class="text-gray-600 text-xs">File new Design applications</p>
+					</div>
+				</button>
+
+				<!-- Add more design services here -->
+			</div>
+		{/if}
+		</div>
+	</div>
 {/if}
+
+<!-- COMMENTED OUT - ORIGINAL USER DASHBOARD STATISTICS (FOR LATER) -->
+<!--
 {#if !isLoading}
 	<div class="rounded-md p-2 mt-4 bg-accent">
 		<svelte:component this={typecomponent} {...data} />
@@ -1504,3 +1924,4 @@
 {:else}
 	<p>loading....</p>
 {/if}
+-->

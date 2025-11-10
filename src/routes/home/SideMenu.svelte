@@ -6,6 +6,11 @@
 	import { baseURL, decodeUser, type NotificationsType, UserRoles } from '$lib/helpers';
 	import { goto } from '$app/navigation';
 	import { writable } from 'svelte/store';
+	import { Button } from '$lib/components/ui/button';
+
+	// Mobile props
+	export let isOpen: boolean = false;
+	export let onClose: (() => void) | undefined = undefined;
 
 	let notifications = writable<NotificationsType | null>(null);
 	let notificationsLoading = false;
@@ -108,6 +113,11 @@
 			activeSubmenu = null;
 			goto(`/home/${menu.location.trim().toLowerCase()}`);
 		}
+		
+		// Close mobile sidebar after navigation
+		if (onClose) {
+			onClose();
+		}
 	}
 
 	async function loadNotifications() {
@@ -185,8 +195,18 @@
 </script>
 
 <div class="w-56 h-screen bg-white shadow-lg flex flex-col">
-	<!-- Logo -->
-	<div class="flex justify-center py-4 border-b border-gray-100">
+	<!-- Mobile Close Button (only visible on mobile) -->
+	{#if onClose}
+		<div class="sm:hidden flex justify-between items-center p-4 border-b border-gray-100">
+			<img src="/logo.png" alt="logo" class="h-12 w-12" />
+			<Button variant="ghost" size="sm" on:click={onClose}>
+				<Icon icon="mdi:close" width="20" height="20" />
+			</Button>
+		</div>
+	{/if}
+
+	<!-- Desktop Logo (hidden on mobile when mobile close is present) -->
+	<div class="flex justify-center py-4 border-b border-gray-100 {onClose ? 'hidden sm:flex' : ''}">
 		<img src="/logo.png" alt="logo" class="h-16 w-16" />
 	</div>
 
