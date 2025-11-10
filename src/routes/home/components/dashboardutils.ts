@@ -467,7 +467,7 @@ export function mapTypeToString(type: number) {
     case 16:
       return "New Opposition";
     case 17:
-      return "Amendment";
+      return "Clerical Update";
     default:
       return "";
   }
@@ -522,7 +522,7 @@ export function mapStatusToString(status: number) {
     case 22:
       return "Awaiting Save";
     case 23:
-      return "Awaiting Certificate confirmation";
+      return "Awaiting Certificate Confirmation";
     case 24:
       return "Withdrawn";
     case 25:
@@ -540,7 +540,7 @@ export function mapStatusToString(status: number) {
     case 31:
       return "Awaiting Counter";
     case 32:
-      return "Amendment";
+      return "Awaiting Approval";
     default:
       return "";
   }

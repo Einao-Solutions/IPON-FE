@@ -553,27 +553,28 @@
 			const appData = localStorage.getItem('formData');
 			const parsed = appData ? JSON.parse(appData) : null;
 			title = 'Clerical Update';
-			//fileApplicant = parsed.OldApplicantName;
+			fileApplicant = parsed.OldApplicantName;
 			fileNumber = parsed.FileId;
 			cost = $page.url.searchParams.get('amount') ?? undefined;
 			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
 
 			// Determine applicant name for display
-			// if (parsed?.FileType === 0 ) {
-			// 	// For patent, get first applicant name from array if available
-			// 	    if (parsed.OldApplicantNames && Array.isArray(parsed.OldApplicantNames) && parsed.OldApplicantNames.length > 0) {
-			// 				fileApplicant = parsed.OldApplicantNames[0];
-			// 			} else {
-			// 				fileApplicant = '';
-			// 			}
-			// 		} else {
-			// 	// For trademark and others, use OldApplicantName
-			// 	fileApplicant = parsed?.OldApplicantName ?? '';
-			// }
+			if (parsed?.FileType === 0 ) {
+				// For patent, get first applicant name from array if available
+				    if (parsed.OldApplicantNames && Array.isArray(parsed.OldApplicantNames) && parsed.OldApplicantNames.length > 0) {
+							fileApplicant = parsed.OldApplicantNames[0];
+						} else {
+							fileApplicant = '';
+						}
+					} else {
+				// For trademark and others, use OldApplicantName
+				fileApplicant = parsed?.OldApplicantName ?? '';
+			}
 
-			fileApplicant = parsed?.FileApplicant ?? '';
+			// fileApplicant = parsed?. ?? '';
 
 			// const requestId = crypto.randomUUID();
+			console.log('File Applicant:', fileApplicant);
 			console.log('Payment ID:', paymentId);
 			console.log('Cost:', cost);
 			if (cost == undefined || paymentId == undefined) {
