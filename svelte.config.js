@@ -87,6 +87,7 @@ const config = {
 				'/home/file-withdrawal/search',
 				'/home/file-withdrawal/withdrawalform',
 				'/home/file-withdrawal/file-withdrawal-result',
+				'/home/profile/update'
 			]
 		}
 	}
