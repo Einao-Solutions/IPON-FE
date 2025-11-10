@@ -1089,32 +1089,42 @@
 				</div>
 			{/if}
 
-			{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
-				{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected)}
-					<div class="p-4 border-t bg-yellow-50">
-						<Label for="approval-reason" class="text-sm font-semibold text-gray-900">
+		{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
+			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected)}
+				<div class="mt-4">
+					<Label for="approval-reason" class="text-sm font-semibold text-gray-900">
 							Decision Reason <span class="text-red-500">*</span>
 						</Label>
-						<Textarea
-							id="approval-reason"
-							class="w-full min-h-32 mt-2"
-							placeholder="Enter detailed reason for approval or denial (minimum 10 characters)..."
-							bind:value={reason}
-						/>
-						{#if reason && reason.trim().length > 0 && reason.trim().length < 10}
+					<Textarea
+						id="approval-reason"
+						class="min-w-full min-h-32 mt-1"
+						placeholder="Enter detailed reason for approval or denial..."
+						bind:value={reason}
+					/>
+					{#if reason && reason.trim().length > 0 && reason.trim().length < 10}
 							<p class="text-xs text-red-500 mt-1 flex items-center gap-1">
 								<Icon icon="mdi:alert-circle" width="14" />
 								Reason must be at least 10 characters
 							</p>
 						{/if}
-					</div>
-				{/if}
+				</div>
 			{/if}
-		</div>
-
-		<Dialog.Footer class="flex flex-wrap gap-2 justify-end border-t pt-4 mt-4 bg-white">
-			{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
-				{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.AwaitingApproval)}
+		{/if}
+		<!-- {#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.Approved || selectedApplication?.currentStatus == ApplicationStatuses.Rejected)}
+				<div class="mt-4">
+					<Label for="approval-reason">Decision Reason</Label>
+					<Textarea
+						id="approval-reason"
+						class="min-w-full min-h-32 mt-1"
+						placeholder={selectedApplication.reason}
+					/>
+				</div>
+			{/if}
+		{/if}		 -->
+		<Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
+			{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
+				{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
 					<Button
 						on:click={() => {
 							if (!reason || reason.trim().length < 10) {
@@ -1228,7 +1238,7 @@
 						</p>
 					{/if}
 				</div>
-				{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.roles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.roles?.includes(UserRoles.Support)}
+				{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.Tech)}
 					<!-- Action Buttons -->
 					<div class="flex gap-3 justify-end pt-2 border-t">
 						<Button
@@ -1747,8 +1757,8 @@
 										on:click={async () => await checkPayment(application, application.paymentId)}
 										>Verify Payment ({application.paymentId ?? '-'})</DropdownMenu.Item
 									>
-									{#if ($loggedInUser?.roles?.includes(UserRoles.Support || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
-										<!-- {#if $loggedInUser?.roles?.includes(UserRoles.Admin || UserRoles.Support || UserRoles.TrademarkCertification)}	 -->
+									{#if ($loggedInUser?.userRoles?.includes(UserRoles.Tech || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
+										<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.Admin || UserRoles.Tech || UserRoles.TrademarkCertification)}	 -->
 										<DropdownMenu.Item
 											on:click={() => {
 												viewRecordalData(application);
@@ -1803,13 +1813,13 @@
 											>New Application Receipt</DropdownMenu.Item
 										> -->
 									{#if application.certificatePaymentId != null && application.currentStatus === ApplicationStatuses.Active}
-										{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => certificate(application)}
 												>Certificate</DropdownMenu.Item
 											>
 										{/if}
 									{:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-										{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => renewalCertificate(application)}>
 												Renewal Certificate</DropdownMenu.Item
 											>
@@ -1824,7 +1834,7 @@
 											>Payment Receipt</DropdownMenu.Item
 										>-->
 									{#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-										{#if $loggedInUser?.roles?.includes(UserRoles.BackOffice || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.BackOffice || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => viewRecordalData(application)}
 												>View Application</DropdownMenu.Item
 											>
@@ -1884,7 +1894,7 @@
 										<!-- {#if application.applicationLetters}
 										<DropdownMenu.Separator />
 										{#each application.applicationLetters as letter}
-											{#if letter === 3 && $loggedInUser?.roles.includes(UserRoles.BackOffice) === false}
+											{#if letter === 3 && $loggedInUser?.userRoles.includes(UserRoles.BackOffice) === false}
 												<p></p>
 											{:else}
 												<DropdownMenu.Item on:click={() => validateMove(application, letter)}
@@ -1892,14 +1902,14 @@
 												>
 											{/if}
 										{/each}
-										{#if $loggedInUser?.roles?.includes(UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => loadMetadata(application)}
 												>Metadata</DropdownMenu.Item
 											>
 										{/if}-->
 									{/if}
 
-									<!-- {#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14}
+									<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14}
 										<DropdownMenu.Item
 											   on:click={() =>goto(`/home/publications/viewapplication/${fileData?.fileId}/${application.id}`)}
 										>
@@ -1907,7 +1917,7 @@
 										</DropdownMenu.Item>
 									{/if} -->
 
-									{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
+									{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
 										<DropdownMenu.Item
 											on:click={() => openPublicationDialog(fileData?.fileId, application.id)}
 										>
@@ -1916,20 +1926,20 @@
 									{/if}
 
 									{#if application.applicationType === 15 && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
-										<!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.roles)}</pre>`} -->
-										{#if fileData.type === 0 && $loggedInUser?.roles?.includes(UserRoles.PatentExaminer)}
+										<!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.userRoles)}</pre>`} -->
+										{#if fileData.type === 0 && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>
 												View Withdrawal Application
 											</DropdownMenu.Item>
-										{:else if fileData.type === 1 && $loggedInUser?.roles?.includes(UserRoles.DesignExaminer)}
+										{:else if fileData.type === 1 && $loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>
 												View Withdrawal Application
 											</DropdownMenu.Item>
-										{:else if fileData.type === 2 && $loggedInUser?.roles?.includes(UserRoles.TrademarkAcceptance)}
+										{:else if fileData.type === 2 && $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>

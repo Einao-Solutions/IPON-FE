@@ -109,7 +109,7 @@
 			newStatusReason.set(null);
 			selectedStatus = null;
 			const loggeduser = $loggedInUser.id.toString();
-			const userRoles = $loggedInUser.roles;
+			const userRoles = $loggedInUser.userRoles;
 			const filingType = $applicationData.type;
 			const appStatus = $applicationData.fileStatus;
 			canUpdate = CanUpdateApplication(
@@ -175,7 +175,7 @@
 		const loggeduser = $loggedInUser.id.toString();
 		const res = await fetch(`${baseURL}/api/files/${id}`);
 		const file = await res.json();
-		const userRoles = $loggedInUser.roles;
+		const userRoles = $loggedInUser.userRoles;
 		const filingType = file.type;
 		const appStatus = file.fileStatus;
 		applicationData.set(file);
@@ -403,7 +403,7 @@
 		</div>
 		<div class="flex justify-between p-4 basis-1/12">
 			<Button on:click={() => gotoPrevious()}>Previous</Button>
-			{#if $loggedInUser.roles?.some((x) => [UserRoles.BackOffice, UserRoles.Support].includes(x))}
+			{#if $loggedInUser.userRoles?.some((x) => [UserRoles.BackOffice, UserRoles.Tech].includes(x))}
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						<Button>Treat Applications</Button>
@@ -420,7 +420,7 @@
 							>
 						{/if} -->
 						<!-- {#each fileData.applicationHistory.filter(x=>x.applicationType===1) as renewal, i}
-							{#if CanTreatApplication($loggedInUser.roles, fileData.type, renewal.currentStatus, [])}
+							{#if CanTreatApplication($loggedInUser.userRoles, fileData.type, renewal.currentStatus, [])}
 								<DropdownMenu.Item on:click={() => treatApplication(renewal)}
 									>Treat Renewal Application {i+1}</DropdownMenu.Item
 								>
@@ -430,7 +430,7 @@
 				</DropdownMenu.Root>
 			{/if}
 
-			{#if $loggedInUser.roles?.includes(UserRoles.Support) && fileData.type === FilingType.Design}
+			{#if $loggedInUser.userRoles?.includes(UserRoles.Tech) && fileData.type === FilingType.Design}
 				<Button class={canUpdate ? 'block' : 'hidden'} on:click={() => updateApplication()}>
 					Update Record
 				</Button>

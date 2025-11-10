@@ -25,7 +25,7 @@
 			return;
 		}
 		isSearching = true;
-		const searchId =  $loggedInUser?.roles?.includes(UserRoles.Support)? '': $loggedInUser?.id;
+		const searchId =  $loggedInUser?.userRoles?.includes(UserRoles.Tech)? '': $loggedInUser?.id;
 		const response = await fetch(`${baseURL}/api/files/searchForRenewal?fileNumber=${fileNumber}&userId=${searchId}`);
 			const _searchResponse = await response.json();
 		if (response.ok) {

@@ -388,7 +388,7 @@
 					>
 						Close
 					</button>
-					{#if ($loggedInUser?.roles?.includes(UserRoles.SuperAdmin))}
+					{#if ($loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
 									
 					<button 
 						on:click={() => migrate(selectedClaim?.fileNumber)}

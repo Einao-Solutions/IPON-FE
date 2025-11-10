@@ -6,6 +6,32 @@ import type {
 	TicketSummary,
 	UsersType
 } from '$lib/helpers';
+
+function getCookie(name: string): string | null {
+    if (typeof document === 'undefined') return null;
+    const match = document.cookie
+        .split(';')
+        .map((c) => c.trim())
+        .find((c) => c.startsWith(`${name}=`));
+    return match ? decodeURIComponent(match.split('=')[1]) : null;
+}
+
+let initialToken: string | null = null;
+let initialUser: UsersType | null = null;
+
+if (typeof document !== 'undefined') {
+    const token = getCookie('auth_token');
+    if (token) initialToken = token;
+
+    const userCookie = getCookie('user');
+    if (userCookie) {
+        try {
+            initialUser = JSON.parse(userCookie) as UsersType;
+        } catch {
+            initialUser = null;
+        }
+    }
+}
 export const currentScreen = writable(0);
 export const newApplicationType = writable<number|null>(null);
 export const applicationScreen = writable(0);
@@ -21,8 +47,8 @@ export const changesMade = writable<{ name:string, hasChanges:boolean }[] | null
 export const adjustmentType = writable<number|null>(null);
 export const adjustmentsMade = writable<string[]|null>(null)
 export const newDataApp = writable<PatentData|null>(null);
-export const loggedInUser= writable<UsersType|null>(null);
-export const loggedInToken= writable<string|null>(null);
+export const loggedInUser= writable<UsersType|null>(initialUser);
+export const loggedInToken= writable<string|null>(initialToken);
 export const validatePage = writable<string|null>(null);
 export const validatedPages = writable<{ name:string, status:boolean}[] | null>([]);
 export const createdData = writable<PatentData|null>(null);

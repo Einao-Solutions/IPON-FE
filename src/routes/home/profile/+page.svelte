@@ -2,7 +2,7 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import { Label } from '$lib/components/ui/label/index';
 	import { onMount, tick } from 'svelte';
-	import {  loggedInUser } from '$lib/store.js';
+	import {  loggedInToken, loggedInUser } from '$lib/store.js';
 	import * as Dialog from "$lib/components/ui/dialog"
 	import {
 		arrayBufferToBase64,
@@ -33,11 +33,18 @@
 	let profileLoading: boolean = true;
 	onMount(async () => {
 		profileLoading = true;
+		 if (typeof window !== 'undefined' && window.location.pathname.startsWith('/auth')) {
+      return;
+    }
 		if ($loggedInUser !== null) {
 			user = $loggedInUser;
 		} else {
 			const user = parseLoggedInUser(document.cookie);
+			const name = user?.firstName + " " + user?.lastName;
 			if (!user) {
+				toast.error("Please login", {
+					position: 'top-right'
+				});
 				await goto('/auth');
 			} else {
 				loggedInUser.set(user);
@@ -47,15 +54,19 @@
 		profileLoading = false;
 	});
 
-	async function logout() {
-		await goto('/logout');
-	}
+	  function logout() {
+    document.cookie = "auth_token=; path=/; max-age=0";
+    document.cookie = "user=; path=/; max-age=0";
+    loggedInToken.set(null);
+    loggedInUser.set(null);
+    goto('/auth');
+  }
 
 	function userIsExaminer(): boolean {
 		return (
-			user?.roles.includes(UserRoles.PatentExaminer) ||
-			user?.roles.includes(UserRoles.DesignExaminer) ||
-			user?.roles.includes(UserRoles.TrademarkExaminer)
+			user?.userRoles.includes(UserRoles.PatentExaminer) ||
+			user?.userRoles.includes(UserRoles.DesignExaminer) ||
+			user?.userRoles.includes(UserRoles.TrademarkExaminer)
 		);
 	}
 	let showCorrDialog=false;
@@ -140,11 +151,11 @@
 
 	function loadDefaultCorr() {
 
-		name = $loggedInUser.defaultCorrespondence?.name ?? "";
-		address = $loggedInUser.defaultCorrespondence?.address ?? "";
-		email = $loggedInUser.defaultCorrespondence?.email ?? "";
-		phoneNumber = $loggedInUser.defaultCorrespondence?.phone ?? "";
-		state = $loggedInUser.defaultCorrespondence?.state ?? "";
+		name = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
+		address = $loggedInUser?.address ?? "";
+		email = $loggedInUser?.email ?? "";
+		phoneNumber = $loggedInUser?.defaultCorrespondence?.phone ?? "";
+		state = $loggedInUser?.defaultCorrespondence?.state ?? "";
 	}
 
 	let isCorrLoading=false
@@ -206,37 +217,62 @@
 <Toaster />
 
 <Dialog.Root bind:open={showCorrDialog}>
-	<Dialog.Content>
+	<Dialog.Content class="max-w-2xl">
 		<Dialog.Header>
-			<Dialog.Title>
-				<p>Default Correspondence</p>
+			<Dialog.Title class="text-2xl font-semibold">
+				Default Correspondence
 			</Dialog.Title>
-			<Dialog.Description>
-				<p>{correspondenceDescription}</p>
+			<Dialog.Description class="text-muted-foreground">
+				{correspondenceDescription}
 			</Dialog.Description>
 		</Dialog.Header>
-		<div class="space-y-3 p-3 m-3">
-			<div class="flex flex-col space-y-1.5">
-				<Label for="name">Correspondence Name</Label>
-				<Input bind:value={name} id="name" />
-				<Label class="{showNameError===false?'hidden':'block'}" style="color: darkred">Name is required</Label>
+		<div class="space-y-4 py-4">
+			<div class="space-y-2">
+				<Label for="name" class="text-sm font-medium">Correspondence Name</Label>
+				<Input bind:value={name} id="name" class="transition-all" placeholder="Enter full name" />
+				{#if showNameError}
+					<p class="text-sm text-red-600 flex items-center gap-1">
+						<Icon icon="ph:warning-circle" width="1rem" height="1rem" />
+						Name is required
+					</p>
+				{/if}
 			</div>
-			<div class="flex flex-col space-y-1.5">
-				<Label for="name">Correspondence Phone Number</Label>
-				<Input bind:value={phoneNumber} id="number" />
-				<Label class="{showPhoneError===false?'hidden':'block'}" style="color: darkred">invalid Nigerian Phone number </Label>
+			
+			<div class="space-y-2">
+				<Label for="number" class="text-sm font-medium">Phone Number</Label>
+				<Input bind:value={phoneNumber} id="number" class="transition-all" placeholder="+234 xxx xxx xxxx" />
+				{#if showPhoneError}
+					<p class="text-sm text-red-600 flex items-center gap-1">
+						<Icon icon="ph:warning-circle" width="1rem" height="1rem" />
+						Invalid Nigerian phone number
+					</p>
+				{/if}
 			</div>
-			<div class="flex flex-col space-y-1.5">
-				<Label for="name">Correspondence Email address</Label>
-				<Input bind:value={email} id="email" />
-				<Label class="{showEmailError===false?'hidden':'block'}" style="color: darkred">Invalid Email</Label>
+			
+			<div class="space-y-2">
+				<Label for="email" class="text-sm font-medium">Email Address</Label>
+				<Input bind:value={email} id="email" type="email" class="transition-all" placeholder="name@example.com" />
+				{#if showEmailError}
+					<p class="text-sm text-red-600 flex items-center gap-1">
+						<Icon icon="ph:warning-circle" width="1rem" height="1rem" />
+						Invalid email address
+					</p>
+				{/if}
 			</div>
-			<div class="flex flex-col space-y-1.5">
-				<Label for="address">Correspondence address</Label>
-				<Textarea bind:value={address} id="address" />
-				<Label class="{showAddressError===false?'hidden':'block'}" style="color: darkred">Address is required</Label>
+			
+			<div class="space-y-2">
+				<Label for="address" class="text-sm font-medium">Address</Label>
+				<Textarea bind:value={address} id="address" class="transition-all min-h-[80px]" placeholder="Enter full address" />
+				{#if showAddressError}
+					<p class="text-sm text-red-600 flex items-center gap-1">
+						<Icon icon="ph:warning-circle" width="1rem" height="1rem" />
+						Address is required
+					</p>
+				{/if}
 			</div>
-			<div class="flex flex-col space-y-1.5">
+			
+			<div class="space-y-2">
+				<Label class="text-sm font-medium">State</Label>
 				<Popover.Root open="{$openCitySelection}" let:ids>
 					<Popover.Trigger asChild let:builder>
 						<Button
@@ -244,28 +280,31 @@
 							variant="outline"
 							role="combobox"
 							aria-expanded={$openCitySelection}
-							class="w-[200px] justify-between"
+							class="w-full justify-between font-normal"
 						>
-							{(state!=="" && state!==null) ?state:"Select a state"}
-							<Icon icon="ph:caret-up-down-thin" width="1.2rem" height="1.2rem" class="opacity-50 shrink-0 ml-2" />
+							<span class={cn(!state && "text-muted-foreground")}>
+								{(state!=="" && state!==null) ? state : "Select a state"}
+							</span>
+							<Icon icon="ph:caret-up-down" width="1.2rem" height="1.2rem" class="opacity-50 shrink-0" />
 						</Button>
 					</Popover.Trigger>
-					<Popover.Content class="w-[250px] h-[250px] p-0 z-50">
+					<Popover.Content class="w-full p-0">
 						<Command.Root>
-							<Command.Input placeholder="Search countries..." />
+							<Command.Input placeholder="Search states..." class="h-9" />
 							<Command.Empty>No states found.</Command.Empty>
-							<Command.Group class="overflow-y-auto">
+							<Command.Group class="max-h-[200px] overflow-y-auto">
 								{#each nigeriaStates as stateselect}
 									<Command.Item
 										value={stateselect}
 										onSelect={(currentValue) => {
-              state = currentValue;
-              closeCountryAndFocusTrigger(ids.trigger);}}>
-										<Icon icon="basil:check-solid"
-													class={cn(
-                "mr-2 h-4 w-4",
-                state !== stateselect && "text-transparent"
-              )}
+											state = currentValue;
+											closeCountryAndFocusTrigger(ids.trigger);
+										}}>
+										<Icon icon="ph:check"
+											class={cn(
+												"mr-2 h-4 w-4",
+												state !== stateselect && "text-transparent"
+											)}
 										/>
 										{stateselect}
 									</Command.Item>
@@ -274,64 +313,161 @@
 						</Command.Root>
 					</Popover.Content>
 				</Popover.Root>
-				<Label class="{showStateError===false?'hidden':'block'}" style="color: darkred">State is required</Label>
+				{#if showStateError}
+					<p class="text-sm text-red-600 flex items-center gap-1">
+						<Icon icon="ph:warning-circle" width="1rem" height="1rem" />
+						State is required
+					</p>
+				{/if}
 			</div>
-
-			<Button on:click={()=>saveNewCorrespondence()}>
-				<Icon class="{isCorrLoading?'':'hidden'}" icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
-				Save updated default correspondence </Button>
-
 		</div>
-
+		<Dialog.Footer>
+			<Button on:click={()=>saveNewCorrespondence()} disabled={isCorrLoading} class="w-full sm:w-auto">
+				{#if isCorrLoading}
+					<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" class="mr-2" />
+				{/if}
+				Save Changes
+			</Button>
+		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
+
 {#if !profileLoading}
-	<div class="space-y-2 p-2 m-2 flex flex-col">
-		<div class="p-2 rounded-md border">
-			<Label>Name</Label>
-			<p>{user?.name}</p>
-		</div>
-		<div class="p-2 rounded-md border">
-			<Label>Email</Label>
-			<p>{user?.email}</p>
-		</div>
-		{#if userIsExaminer()}
-			<Label>Signature</Label>
-			{#if user.signatureUrl}
-				<a class="p-2 border rounded-md" href={user.signatureUrl}>View signature</a>
-			{/if}
-			<div class="flex">
-			<Label>Change signature</Label>
-			<Input
-				id="signatureUrl"
-				accept=".png, .jpeg, .jpg"
-				multiple={false}
-				type="file"
-				on:change={(event) => fileSelected(event)}
-			/>
+	<div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+		<div class="max-w-4xl mx-auto p-6 md:p-8 space-y-6">
+			<!-- Header -->
+			<div class="flex items-center justify-between">
+				<div>
+					<h1 class="text-3xl font-bold tracking-tight">Profile Settings</h1>
+					<p class="text-muted-foreground mt-1">Manage your account information and preferences</p>
+				</div>
 			</div>
-			{#if selectedSignatureUrl}
-				<a class="flex p-2 border rounded-md" target="_blank" href={selectedSignatureUrl}
-					>View uploaded signature</a
-				>
-				<Button class="w-fit" on:click={() => saveSignature()}>
-					<Icon
-						class={isSignatureSaving ? '' : 'hidden'}
-						icon="line-md:loading-loop"
-						width="1.2rem"
-						height="1.2rem"
-					/>
-					Save new Signature</Button
-				>
-			{/if}
-		{/if}
-		<!--{#if $loggedInUser?.roles.includes(UserRoles.Agent)}-->
-			<Button on:click={()=>defaultCorrespondence()}>Change Default Correspondence</Button>
-		<!--{/if}-->
-		<Button class="w-fit" on:click={() => logout()}>Logout</Button>
+
+			<!-- Main Content Card -->
+			<div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+				<!-- Profile Info Section -->
+				<div class="p-6 md:p-8 space-y-6">
+					<div>
+						<h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+							<Icon icon="ph:user-circle" width="1.5rem" height="1.5rem" />
+							Personal Information
+						</h2>
+						<div class="grid gap-4 md:grid-cols-2">
+							<div class="space-y-2 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 transition-all hover:shadow-md">
+								<Label class="text-xs uppercase tracking-wide text-muted-foreground font-medium">Name</Label>
+								<p class="text-base font-medium">{name}</p>
+							</div>
+							<div class="space-y-2 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 transition-all hover:shadow-md">
+								<Label class="text-xs uppercase tracking-wide text-muted-foreground font-medium">Email</Label>
+								<p class="text-base font-medium break-all">{user?.email}</p>
+							</div>
+						</div>
+					</div>
+
+					{#if userIsExaminer()}
+						<div class="pt-6 border-t border-slate-200 dark:border-slate-800">
+							<h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+								<Icon icon="ph:signature" width="1.5rem" height="1.5rem" />
+								Digital Signature
+							</h2>
+							
+							<div class="space-y-4">
+								{#if user.signatureUrl}
+									<div class="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+										<Label class="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block">Current Signature</Label>
+										<a 
+											class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors" 
+											href={user.signatureUrl}
+											target="_blank"
+										>
+											<Icon icon="ph:file-image" width="1.2rem" height="1.2rem" />
+											View signature
+											<Icon icon="ph:arrow-square-out" width="1rem" height="1rem" />
+										</a>
+									</div>
+								{/if}
+								
+								<div class="space-y-3">
+									<Label class="text-sm font-medium flex items-center gap-2">
+										<Icon icon="ph:upload-simple" width="1.2rem" height="1.2rem" />
+										Upload New Signature
+									</Label>
+									<div class="flex flex-col sm:flex-row gap-3">
+										<Input
+											id="signatureUrl"
+											accept=".png, .jpeg, .jpg"
+											multiple={false}
+											type="file"
+											on:change={(event) => fileSelected(event)}
+											class="flex-1"
+										/>
+									</div>
+									<p class="text-xs text-muted-foreground">PNG or JPEG format, maximum 5MB</p>
+								</div>
+								
+								{#if selectedSignatureUrl}
+									<div class="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900">
+										<a 
+											class="flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors mb-3" 
+											target="_blank" 
+											href={selectedSignatureUrl}
+										>
+											<Icon icon="ph:file-image" width="1.2rem" height="1.2rem" />
+											Preview uploaded signature
+											<Icon icon="ph:arrow-square-out" width="1rem" height="1rem" />
+										</a>
+										<Button 
+											on:click={() => saveSignature()} 
+											disabled={isSignatureSaving}
+											class="w-full sm:w-auto"
+										>
+											{#if isSignatureSaving}
+												<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" class="mr-2" />
+											{:else}
+												<Icon icon="ph:check-circle" width="1.2rem" height="1.2rem" class="mr-2" />
+											{/if}
+											Save Signature
+										</Button>
+									</div>
+								{/if}
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Actions Section -->
+				<div class="p-6 md:p-8 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800">
+					<h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+						<Icon icon="ph:gear" width="1.5rem" height="1.5rem" />
+						Account Actions
+					</h2>
+					<div class="flex flex-col sm:flex-row gap-3">
+						<Button 
+							on:click={()=>defaultCorrespondence()} 
+							variant="outline"
+							class="flex items-center gap-2"
+						>
+							<Icon icon="ph:envelope" width="1.2rem" height="1.2rem" />
+							Update Correspondence
+						</Button>
+						<Button 
+							on:click={logout} 
+							variant="destructive"
+							class="flex items-center gap-2"
+						>
+							<Icon icon="ph:sign-out" width="1.2rem" height="1.2rem" />
+							Logout
+						</Button>
+					</div>
+				</div>
+			</div>
+		</div>
 	</div>
 {:else}
-	<div class="items-center justify-center flex h-screen">
-		<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+	<div class="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
+		<div class="text-center space-y-4">
+			<Icon icon="line-md:loading-loop" width="3rem" height="3rem" class="text-blue-600 dark:text-blue-400" />
+			<p class="text-muted-foreground">Loading profile...</p>
+		</div>
 	</div>
 {/if}

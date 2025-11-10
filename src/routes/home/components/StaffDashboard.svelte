@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { appattachmentsData, DashStats, loggedInUser, newApplicationType } from '$lib/store';
+	import { appattachmentsData, DashStats, loggedInUser, loggedInToken, newApplicationType } from '$lib/store';
 	import { DataMapper, FileStatsData, mapStatusToColor, mapTypeToString } from './dashboardutils';
 	import * as Accordion from '$lib/components/ui/accordion';
 	import {
@@ -19,8 +19,9 @@
 	import { Input } from '$lib/components/ui/input';
 	import { goto } from '$app/navigation';
 import * as Card from "$lib/components/ui/card"
+  import { User } from 'lucide-svelte';
 	let isLoading: boolean = true;
-	export let user
+	export let user: UsersType;
 	let isStaff:boolean=true;
 	onMount(async()=>{
 		if ($DashStats===null)
@@ -39,7 +40,9 @@ import * as Card from "$lib/components/ui/card"
 		const showId= true;
 		const id=showId?null:userId;
 		const url=`${baseURL}/api/files/FileStatistics?userId=${id}`;
-		const data=await fetch(url);
+		const data=await fetch(url,{headers:{
+			'Authorization':`Bearer ${$loggedInToken}`
+		}});
 		if (data.ok)
 		{
 			const body=await data.json();
@@ -50,34 +53,50 @@ import * as Card from "$lib/components/ui/card"
 	}
 
 	function isPatentRelated() {
-		const show= user.roles?.some((x) =>
+		const show= user.userRoles?.some((x) =>
 			[
 				UserRoles.PatentSearch,
 				UserRoles.PatentExaminer,
-				UserRoles.Support,
+				UserRoles.PatentCertification,
+				UserRoles.PatentDesignRegistrar,
+				UserRoles.PermSec,
+				UserRoles.Minister,
+				UserRoles.Tech,
+				UserRoles.SuperAdmin
 			].includes(x)
 		);
 return show;
 	}
 
 	function isDesignRelated() {
-		return user.roles?.some((x) =>
+		return user.userRoles?.some((x) =>
 			[
 				UserRoles.DesignSearch,
 				UserRoles.DesignExaminer,
-				UserRoles.Support,
+				UserRoles.DesignCertification,
+				UserRoles.PatentDesignRegistrar,
+				UserRoles.Tech,
+				UserRoles.Minister,
+				UserRoles.PermSec,
+				UserRoles.Tech,
+				UserRoles.SuperAdmin
 			].includes(x)
 		);
 	}
 
 	function isTradeMarkRelated(){
-		return user.roles?.some((x) =>
+		return user.userRoles?.some((x) =>
 			[
 				UserRoles.TrademarkSearch,
 				UserRoles.TrademarkExaminer,
 				UserRoles.TrademarkOpposition,
+				UserRoles.TrademarkAcceptance,
 				UserRoles.TrademarkCertification,
-				UserRoles.Support,
+				UserRoles.TrademarkRegistrar,
+				UserRoles.PermSec,
+				UserRoles.Minister,
+				UserRoles.Tech,
+				UserRoles.SuperAdmin
 			].includes(x)
 		);
 	}

@@ -191,27 +191,27 @@ export function showTreatUpdateAppButton(
 ) {
   let hasRequiredPatentSearchPatentRoles = [
     UserRoles.PatentSearch,
-    UserRoles.Support,
+    UserRoles.Tech,
   ];
   let hasRequiredTrademarkSearchPatentRoles = [
     UserRoles.TrademarkSearch,
-    UserRoles.Support,
+    UserRoles.Tech,
   ];
   let hasRequiredDesignSearchPatentRoles = [
     UserRoles.DesignSearch,
-    UserRoles.Support,
+    UserRoles.Tech,
   ];
   let hasRequiredPatentExamRoles = [
     UserRoles.PatentExaminer,
-    UserRoles.Support,
+    UserRoles.Tech,
   ];
   let hasRequiredTrademarkExamRoles = [
     UserRoles.TrademarkExaminer,
-    UserRoles.Support,
+    UserRoles.Tech,
   ];
   let hasRequiredDesignExamRoles = [
     UserRoles.DesignExaminer,
-    UserRoles.Support,
+    UserRoles.Tech,
   ];
   let searchOffice = [
     ApplicationStatuses.KivSearch,
@@ -346,7 +346,7 @@ export function CanUpdateApplication(
 ) {
   // can only update if user is creator or support
   const isCreator = creatorId === loggedInId;
-  const isAdminSupport = userRoles.includes(UserRoles.Support);
+  const isAdminSupport = userRoles.includes(UserRoles.Tech);
   return isCreator || isAdminSupport;
   const canUpdate =
     (isCreator &&
@@ -382,13 +382,13 @@ export function CanTreatApplication(
     }
     if (type === FilingType.Patent) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.PatentSearch, UserRoles.Support].includes(x)
+        [UserRoles.PatentSearch, UserRoles.Tech].includes(x)
       );
     }
 
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkSearch, UserRoles.Support].includes(x)
+        [UserRoles.TrademarkSearch, UserRoles.Tech].includes(x)
       );
     }
   }
@@ -400,7 +400,7 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Patent) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.PatentExaminer, UserRoles.Support].includes(x)
+        [UserRoles.PatentExaminer, UserRoles.Tech].includes(x)
       );
     }
 
@@ -410,7 +410,7 @@ export function CanTreatApplication(
 
     if (type == FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkExaminer, UserRoles.Support].includes(x)
+        [UserRoles.TrademarkExaminer, UserRoles.Tech].includes(x)
       );
     }
   }
@@ -419,7 +419,7 @@ export function CanTreatApplication(
       hasRole = userRoles.some((x) =>
         [
           UserRoles.PatentExaminer,
-          UserRoles.Support,
+          UserRoles.Tech,
           UserRoles.AppealExaminer,
         ].includes(x)
       );
@@ -435,7 +435,7 @@ export function CanTreatApplication(
       hasRole = userRoles.some((x) =>
         [
           UserRoles.TrademarkExaminer,
-          UserRoles.Support,
+          UserRoles.Tech,
           UserRoles.AppealExaminer,
         ].includes(x)
       );
@@ -447,7 +447,7 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkCertification, UserRoles.Support].includes(x)
+        [UserRoles.TrademarkCertification, UserRoles.Tech].includes(x)
       );
     }
   }
