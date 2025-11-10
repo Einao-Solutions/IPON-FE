@@ -26,7 +26,7 @@
 					UserRoles.TrademarkSearch,
 					UserRoles.TrademarkOpposition,
 					UserRoles.TrademarkExaminer,
-					UserRoles.Support
+					UserRoles.Tech
 				].includes(role)
 			) == false
 		) {

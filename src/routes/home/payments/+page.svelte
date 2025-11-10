@@ -445,7 +445,7 @@
 		</div>
 	{/if}
 
-	{#if $loggedInUser?.userRoles.includes(UserRoles.Support)}
+	{#if $loggedInUser?.userRoles.includes(UserRoles.Tech)}
 		<Button on:click={()=>showNewPaymentForm()}>Add new Payment</Button>
 	{/if}
 

@@ -17,7 +17,7 @@
 	import TicketTag from '$lib/components/ui/ticketTag/ticketTag.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { faker } from '@faker-js/faker';
-	import { ChevronsUpDown } from 'lucide-svelte';
+	import { ChevronsUpDown, User } from 'lucide-svelte';
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import CreateTicket from '../components/CreateTicket.svelte';
 	import SupportFilter from './SupportFilter.svelte';
@@ -54,7 +54,7 @@
 	let groupedData={}
 	onMount(async()=>{
 		await decodeUser()
-		isAdmin = $loggedInUser.userRoles.includes(UserRoles.Support)
+		isAdmin = $loggedInUser.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)
 		ticketLoading=true;
 		await getTickets()
 		ticketLoading=false;
@@ -62,7 +62,7 @@
 
 	async function getStats() {
 		const userId = $loggedInUser?.id;
-		const url=$loggedInUser?.userRoles.includes(UserRoles.Support)?`${baseURL}/api/tickets/GetStats`:`${baseURL}/api/tickets/GetStats?userId=${userId}`;
+		const url=$loggedInUser?.userRoles.includes(UserRoles.Tech)?`${baseURL}/api/tickets/GetStats`:`${baseURL}/api/tickets/GetStats?userId=${userId}`;
 		let response = await fetch(url, {
 			method: 'GET'
 		})
@@ -83,7 +83,7 @@
 			var user = cookieUser.trimStart();
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-			isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Support)
+			isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Tech)
 		}
 		if ($loggedInUser===null){
 			return;
@@ -95,7 +95,7 @@
 				let body={
 					creatorId:  userId
 				}
-				if($loggedInUser.userRoles.includes(UserRoles.Support)){
+				if($loggedInUser.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)){
 					body={
 						creatorId: 'null'
 					}
@@ -278,7 +278,7 @@
 		ticketLoading=true;
 		const userId = $loggedInUser?.id;
 		let body={
-			creatorId: $loggedInUser.userRoles.includes(UserRoles.Support)==false ? userId : 'null',
+			creatorId: $loggedInUser.userRoles.includes(UserRoles.Tech)==false ? userId : 'null',
 		}
 		if (type!=null){
 			body['status']=type

@@ -92,7 +92,7 @@
 			let _requiresPayment: boolean = false;
 			const updateMade = get(viewUpdatesMade);
 			const user = get(loggedInUser);
-			const isStaffOrAdmin: boolean = user?.userRoles.includes(UserRoles.Support) || user?.userRoles.includes(UserRoles.BackOffice)
+			const isStaffOrAdmin: boolean = user?.userRoles.includes(UserRoles.Tech) || user?.userRoles.includes(UserRoles.SuperAdmin)
 			if ([0, 11, 12].includes(oldData?.fileStatus)) {
 				if (
 					oldData?.fieldStatus[updateMade?.fieldToChange] == undefined ||
@@ -120,7 +120,7 @@
 				canPassFormality: false,
 				canPassApproval: false,
 				isStaffOrAdmin: isStaffOrAdmin,
-				isUserOrAdmin: [UserRoles.Support, UserRoles.Agent].some(x=>$loggedInUser.userRoles.includes(x))
+				isUserOrAdmin: [UserRoles.Tech, UserRoles.Agent].some(x=>$loggedInUser.userRoles.includes(x))
 			}
 			// changesData.set(rev_data);
 			localStorage.setItem("revisions", JSON.stringify(rev_data))

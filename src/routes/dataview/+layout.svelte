@@ -403,7 +403,7 @@
 		</div>
 		<div class="flex justify-between p-4 basis-1/12">
 			<Button on:click={() => gotoPrevious()}>Previous</Button>
-			{#if $loggedInUser.userRoles?.some((x) => [UserRoles.BackOffice, UserRoles.Support].includes(x))}
+			{#if $loggedInUser.userRoles?.some((x) => [UserRoles.BackOffice, UserRoles.Tech].includes(x))}
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						<Button>Treat Applications</Button>
@@ -430,7 +430,7 @@
 				</DropdownMenu.Root>
 			{/if}
 
-			{#if $loggedInUser.userRoles?.includes(UserRoles.Support) && fileData.type === FilingType.Design}
+			{#if $loggedInUser.userRoles?.includes(UserRoles.Tech) && fileData.type === FilingType.Design}
 				<Button class={canUpdate ? 'block' : 'hidden'} on:click={() => updateApplication()}>
 					Update Record
 				</Button>

@@ -454,7 +454,7 @@ let options:ApplicationStatuses[] =[];
 									{#each application.applicationLetters as letter}
 											<DropdownMenu.Item href="{baseURL}/api/letters/generate?fileId={fileData?.id}&letterType={letter}&applicationId={application.id}" target="_blank" >{getLetterName(letter)}</DropdownMenu.Item>
 										{/each}
-									{#if $loggedInUser?.userRoles?.includes(UserRoles.Support) }
+									{#if $loggedInUser?.userRoles?.includes(UserRoles.Tech) }
 										<DropdownMenu.Item on:click={()=>loadMetadata(application)}>Metadata</DropdownMenu.Item>
 									{/if}
 								</DropdownMenu.Group>

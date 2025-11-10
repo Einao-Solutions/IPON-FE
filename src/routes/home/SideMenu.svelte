@@ -65,7 +65,7 @@
     loadOppositionsCount();
     if ($loggedInUser) {
       // Filter menus based on roles
-      if (!$loggedInUser.userRoles.includes(UserRoles.Support)) {
+      if (!$loggedInUser.userRoles.includes(UserRoles.Tech)) {
         menus = menus.filter(
           (x) => x.location !== "Performance" && x.location !== "Users"
         );
@@ -78,12 +78,10 @@
       if (
         !$loggedInUser.userRoles.some((role) =>
           [
-            UserRoles.TrademarkCertification,
-            UserRoles.TrademarkSearch,
-            UserRoles.Agent,
+            UserRoles.SuperAdmin,
             UserRoles.TrademarkOpposition,
-            UserRoles.TrademarkExaminer,
-            UserRoles.Support,
+            UserRoles.TrademarkRegistrar,
+            UserRoles.Tech,
           ].includes(role)
         )
       ) {
@@ -92,7 +90,7 @@
 
       if (
         !$loggedInUser.userRoles.some((role) =>
-          [UserRoles.SuperAdmin, UserRoles.Support].includes(role)
+          [UserRoles.SuperAdmin, UserRoles.Tech].includes(role)
         )
       ) {
         menus = menus.filter((x) => x.location !== "Admin");
@@ -132,10 +130,10 @@
     notificationsLoading = true;
 
     let showSupportTickets = $loggedInUser.userRoles?.includes(
-      UserRoles.Support
+      UserRoles.Tech, UserRoles.SuperAdmin
     );
     let showAllOpposition = $loggedInUser.userRoles?.some((role) =>
-      [UserRoles.TrademarkOpposition, UserRoles.Support].includes(role)
+      [UserRoles.TrademarkOpposition, UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
     );
 
     let url = `${baseURL}/api/files/UserNotifications?userId=${$loggedInUser.id}`;

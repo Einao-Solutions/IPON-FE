@@ -53,7 +53,7 @@ async function fetchResult() {
 	let body={
 		fileNumber:fileNumber,
 	}
-	// if($loggedInUser?.userRoles?.includes(UserRoles.Support)==false){
+	// if($loggedInUser?.userRoles?.includes(UserRoles.Tech)==false){
 	// 	body['userId']=$loggedInUser.id;
 	// }
 	// if ($loggedInUser?.userRoles.includes(UserRoles.BackOffice) ===false){

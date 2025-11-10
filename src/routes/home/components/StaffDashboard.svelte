@@ -59,7 +59,8 @@ import * as Card from "$lib/components/ui/card"
 				UserRoles.PatentExaminer,
 				UserRoles.PatentCertification,
 				UserRoles.PatentDesignRegistrar,
-				UserRoles.Ministry,
+				UserRoles.PermSec,
+				UserRoles.Minister,
 				UserRoles.Tech,
 				UserRoles.SuperAdmin
 			].includes(x)
@@ -73,8 +74,10 @@ return show;
 				UserRoles.DesignSearch,
 				UserRoles.DesignExaminer,
 				UserRoles.DesignCertification,
+				UserRoles.PatentDesignRegistrar,
 				UserRoles.Tech,
-				UserRoles.Ministry,
+				UserRoles.Minister,
+				UserRoles.PermSec,
 				UserRoles.Tech,
 				UserRoles.SuperAdmin
 			].includes(x)
@@ -90,7 +93,8 @@ return show;
 				UserRoles.TrademarkAcceptance,
 				UserRoles.TrademarkCertification,
 				UserRoles.TrademarkRegistrar,
-				UserRoles.Ministry,
+				UserRoles.PermSec,
+				UserRoles.Minister,
 				UserRoles.Tech,
 				UserRoles.SuperAdmin
 			].includes(x)

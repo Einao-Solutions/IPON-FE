@@ -1,6 +1,7 @@
 <script lang="ts">
   import Input from "$lib/components/ui/input/input.svelte";
   import ministry from "$lib/assets/ministry.png";
+  import cld from "$lib/assets/cld.png";
   import logo from "$lib/assets/logo.png";
   import { page } from "$app/stores";
   import { Button } from "$lib/components/ui/button";
@@ -8,13 +9,7 @@
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import Icon from "@iconify/svelte";
-  import {
-    type AuthUser,
-    baseURL,
-    UserRoles,
-    type UsersType,
-    UserTypes,
-  } from "$lib/helpers";
+  import { baseURL, UserRoles, type UsersType, UserTypes } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
@@ -48,7 +43,8 @@
   let showVerificationEmail: boolean = false;
   let isLoading: boolean = false;
   let resetEmail: string | undefined = undefined;
-
+  let showPassword: boolean = false;
+  let showConfirmPassword: boolean = false;
   onMount(async () => {
     const url = $page.url;
     const token = getTokenFromCookie();
@@ -84,8 +80,6 @@
     const encoded = encodeURIComponent(JSON.stringify(userForStore));
     document.cookie = `user=${encoded}; path=/; max-age=${maxAge}; secure; samesite=strict`;
   }
-
-
 
   async function validateToken(token: string): Promise<boolean> {
     try {
@@ -232,22 +226,21 @@
           password: createUser.password,
           firstName: createUser.firstName,
           lastName: createUser.lastName,
-          phoneNumber: createUser.phoneNumber,
-          roles: [UserRoles.Agent],
+          phone: createUser.phoneNumber
         }),
       });
 
       if (response.ok) {
-        const data: AuthResponse = await response.json();
-        await sendVerificationEmail(createUser.email, data.user.id);
+        const data = await response.json();
+        // await sendVerificationEmail(createUser.email, data.user.id);
 
-        toast.success("Account created successfully", {
+        toast.success("Registration Successful", {
           position: "top-right",
-          description: `Verification email has been sent to ${createUser.email}`,
+          description: `Account Created successfully`,
         });
 
         currentScreen = 0;
-        showVerificationEmail = true;
+        // showVerificationEmail = true;
 
         // Clear form
         createUser = {
@@ -289,7 +282,7 @@
     }
 
     isLoading = true;
-    
+
     try {
       const response = await fetch(`${baseURL}/api/auth/login`, {
         method: "POST",
@@ -335,7 +328,7 @@
         }
       }
     } catch (error) {
-     console.error("Login error:", error);
+      console.error("Login error:", error);
       toast.error(" Login failed", {
         position: "top-right",
         description: "Invalid email or password. Please try again.",
@@ -427,8 +420,22 @@
     <!-- Left side - Information -->
     <div class="hidden lg:flex lg:w-1/2 space-y-8 pr-12">
       <div class="space-y-6">
-        <img alt="logo" src={logo} class="object-contain h-24" />
-
+        <div class="flex items-center gap-4 md:gap-6">
+          <img
+            src={ministry}
+            alt="Nigerian Coat of Arms"
+            class="h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105 md:h-24"
+            on:error={(e) => (e.currentTarget.style.display = "none")}
+          />
+          <div class="h-20 w-px bg-gray-300 md:h-24"></div>
+          <img
+            src={cld}
+            alt="Commercial Law Department"
+            class="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105 md:h-20"
+            loading="lazy"
+            on:error={(e) => (e.currentTarget.style.display = "none")}
+          />
+        </div>
         <div class="space-y-6 text-slate-700">
           <div
             class="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm"
@@ -546,13 +553,27 @@
 
               <div>
                 <Label class="text-slate-700">Password</Label>
-                <Input
-                  type="password"
-                  bind:value={password}
-                  placeholder="••••••••"
-                  class="mt-1"
-                  disabled={isLoading}
-                />
+                <div class="mt-1 flex items-center">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    bind:value={password}
+                    placeholder="••••••••"
+                    class="flex-1"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    class="ml-2 p-2 rounded hover:bg-slate-100 text-slate-600"
+                    on:click={() => (showPassword = !showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    <Icon
+                      icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                      width="1.2rem"
+                      height="1.2rem"
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -646,13 +667,29 @@
 
               <div>
                 <Label class="text-slate-700">Password</Label>
-                <Input
-                  type="password"
-                  bind:value={createUser.password}
-                  placeholder="••••••••"
-                  class="mt-1"
-                  disabled={isLoading}
-                />
+                <div class="mt-1 flex items-center">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    bind:value={createUser.password}
+                    placeholder="••••••••"
+                    class="flex-1"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    class="ml-2 p-2 rounded hover:bg-slate-100 text-slate-600"
+                    on:click={() => (showPassword = !showPassword)}
+                    aria-label={showPassword
+                      ? "Hide password"
+                      : "Show password"}
+                  >
+                    <Icon
+                      icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                      width="1.2rem"
+                      height="1.2rem"
+                    />
+                  </button>
+                </div>
                 <p class="mt-1 text-xs text-slate-500">
                   Must be 8+ characters with uppercase, lowercase, and numbers
                 </p>
@@ -660,13 +697,30 @@
 
               <div>
                 <Label class="text-slate-700">Confirm Password</Label>
-                <Input
-                  type="password"
-                  bind:value={createUser.verifypassword}
-                  placeholder="••••••••"
-                  class="mt-1"
-                  disabled={isLoading}
-                />
+                <div class="mt-1 flex items-center">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    bind:value={createUser.verifypassword}
+                    placeholder="••••••••"
+                    class="flex-1"
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    class="ml-2 p-2 rounded hover:bg-slate-100 text-slate-600"
+                    on:click={() =>
+                      (showConfirmPassword = !showConfirmPassword)}
+                    aria-label={showConfirmPassword
+                      ? "Hide confirm password"
+                      : "Show confirm password"}
+                  >
+                    <Icon
+                      icon={showConfirmPassword ? "mdi:eye-off" : "mdi:eye"}
+                      width="1.2rem"
+                      height="1.2rem"
+                    />
+                  </button>
+                </div>
               </div>
             </div>
 

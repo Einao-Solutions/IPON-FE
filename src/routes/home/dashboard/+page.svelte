@@ -28,6 +28,7 @@
 	import { fileTypeToString, mapDateToString } from '../components/dashboardutils';
 	import { getLetterName } from '../../dataview/datahelpers';
 	import { toast } from 'svelte-sonner';
+  import { User } from 'lucide-svelte';
 	let isModalOpen = false;
 	function toggleModal(): void {
 		isModalOpen = !isModalOpen;
@@ -69,8 +70,8 @@
 	let isStaff: boolean = false;
 	function canCreateApplication() {
 		return (
-			$loggedInUser?.userRoles.includes(UserRoles.Agent) ||
-			$loggedInUser?.userRoles.includes(UserRoles.Support)
+			$loggedInUser?.userRoles.includes(UserRoles.User) ||
+			$loggedInUser?.userRoles.includes(UserRoles.Tech)
 		);
 	}
 	onMount(async () => {
@@ -85,7 +86,7 @@
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
 			isStaff =
-				$loggedInUser?.userRoles.some((e) => [UserRoles.Support, UserRoles.Agent].includes(e)) == false;
+				$loggedInUser?.userRoles.some((e) => [UserRoles.Tech, UserRoles.User, UserRoles.SuperAdmin].includes(e)) == false;
 		}
 		if (isStaff) {
 			typecomponent = (await import('../components/StaffDashboard.svelte')).default;

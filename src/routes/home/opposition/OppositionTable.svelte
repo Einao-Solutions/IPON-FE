@@ -147,7 +147,7 @@
 					UserRoles.TrademarkSearch,
 					UserRoles.TrademarkOpposition,
 					UserRoles.TrademarkExaminer,
-					UserRoles.Support
+					UserRoles.Tech
 				].includes(role)
 			) == false
 		) {
@@ -307,7 +307,7 @@
 
 	function canResolve(row: []) {
 		return (
-			($loggedInUser.userRoles.includes(UserRoles.Support) ||
+			($loggedInUser.userRoles.includes(UserRoles.Tech) ||
 				$loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
 			parseInt(row.find((x) => x.id === 'currentStatus').value) === 17
 		);
@@ -317,7 +317,7 @@
 		const canResond =
 			$loggedInUser.id ===
 				dataList.find((x) => x.id === row.find((x) => x.id === 'id').value).fileCreatorId ||
-			$loggedInUser.userRoles.includes(UserRoles.Support);
+			$loggedInUser.userRoles.includes(UserRoles.Tech);
 		return status == 16 && canResond;
 	}
 	function yetToNotify(row: []) {
@@ -329,7 +329,7 @@
 		const isCreator =
 			$loggedInUser.id ===
 				dataList.find((x) => x.id === row.find((x) => x.id === 'id').value).creatorId ||
-			$loggedInUser.userRoles.includes(UserRoles.Support);
+			$loggedInUser.userRoles.includes(UserRoles.Tech);
 		return status == 18 && isCreator;
 	}
 

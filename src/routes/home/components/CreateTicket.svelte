@@ -27,6 +27,8 @@
 	let selectedFile: File | null = null;
 	let reason: string = null;
 	let titleOfTicket: string = null;
+	let userName: string = null;
+	userName = $loggedInUser.firstName + ' ' + $loggedInUser.lastName;
 	function removeSelected(selected: AffectedFiles) {
 		let index = affectedFiles?.findIndex((x) => x.fileID === selected.fileID);
 		if (index !== undefined) {
@@ -103,22 +105,22 @@
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
 				title: titleOfTicket,
-				creatorId: $loggedInUser.id,
-				creatorName: $loggedInUser.name,
+				creatorId: $loggedInUser.creatorId,
+				creatorName: userName,
 				affectedFiles: affectedFiles!==null? affectedFiles.map(x=>({id:x.id, fileNumber:x.fileID})):null,
 				status: 1,
 				correspondences: [
 					attachmenturl == null
 						? {
 								message: reason,
-								senderId: $loggedInUser.id,
-								senderName: $loggedInUser.name
+								senderId: $loggedInUser?.creatorId,
+								senderName: userName
 							}
 						: {
 								attachment: attachmenturl[0],
 								message: reason,
-								senderId: $loggedInUser.id,
-								senderName: $loggedInUser.name
+								senderId: $loggedInUser?.creatorId,
+								senderName: userName
 							}
 				]
 			})

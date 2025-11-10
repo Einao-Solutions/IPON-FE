@@ -1155,7 +1155,7 @@
 						</p>
 					{/if}
 				</div>
-				{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.Support)}
+				{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.Tech)}
 					<!-- Action Buttons -->
 					<div class="flex gap-3 justify-end pt-2 border-t">
 						<Button
@@ -1674,8 +1674,8 @@
 										on:click={async () => await checkPayment(application, application.paymentId)}
 										>Verify Payment ({application.paymentId ?? '-'})</DropdownMenu.Item
 									>
-									{#if ($loggedInUser?.userRoles?.includes(UserRoles.Support || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
-										<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.Admin || UserRoles.Support || UserRoles.TrademarkCertification)}	 -->
+									{#if ($loggedInUser?.userRoles?.includes(UserRoles.Tech || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
+										<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.Admin || UserRoles.Tech || UserRoles.TrademarkCertification)}	 -->
 										<DropdownMenu.Item
 											on:click={() => {
 												viewRecordalData(application);
@@ -1730,13 +1730,13 @@
 											>New Application Receipt</DropdownMenu.Item
 										> -->
 									{#if application.certificatePaymentId != null && application.currentStatus === ApplicationStatuses.Active}
-										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => certificate(application)}
 												>Certificate</DropdownMenu.Item
 											>
 										{/if}
 									{:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => renewalCertificate(application)}>
 												Renewal Certificate</DropdownMenu.Item
 											>
@@ -1751,7 +1751,7 @@
 											>Payment Receipt</DropdownMenu.Item
 										>-->
 									{#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-										{#if $loggedInUser?.userRoles?.includes(UserRoles.BackOffice || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.BackOffice || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => viewRecordalData(application)}
 												>View Application</DropdownMenu.Item
 											>
@@ -1819,7 +1819,7 @@
 												>
 											{/if}
 										{/each}
-										{#if $loggedInUser?.userRoles?.includes(UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => loadMetadata(application)}
 												>Metadata</DropdownMenu.Item
 											>
