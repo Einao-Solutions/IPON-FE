@@ -66,18 +66,18 @@
 		height="1.6rem"
 	/>
 {:else}
-	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-		<a href="/files?fileType=2&titleType=specific" class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] text-left">
-			<p class="text-sm text-gray-500 font-medium mb-2">Total Trademarks</p>
-			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+		<a href="/files?fileType=2&titleType=specific" class="bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:scale-[1.02] text-left hover:border-green-300/50">
+			<p class="text-sm text-slate-500 font-medium mb-2">Total Trademarks</p>
+			<p class="text-2xl font-bold text-slate-800">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
 		</a>
-		<a href="/files?fileType=0&titleType=specific" class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] text-left">
-			<p class="text-sm text-gray-500 font-medium mb-2">Total Patents</p>
-			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Patent).toLocaleString()}</p>
+		<a href="/files?fileType=0&titleType=specific" class="bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:scale-[1.02] text-left hover:border-green-300/50">
+			<p class="text-sm text-slate-500 font-medium mb-2">Total Patents</p>
+			<p class="text-2xl font-bold text-slate-800">{getTotal(FileTypes.Patent).toLocaleString()}</p>
 		</a>
-		<a href="/files?fileType=1&titleType=specific" class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] text-left">
-			<p class="text-sm text-gray-500 font-medium mb-2">Total Designs</p>
-			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Design).toLocaleString()}</p>
+		<a href="/files?fileType=1&titleType=specific" class="bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:scale-[1.02] text-left hover:border-green-300/50">
+			<p class="text-sm text-slate-500 font-medium mb-2">Total Designs</p>
+			<p class="text-2xl font-bold text-slate-800">{getTotal(FileTypes.Design).toLocaleString()}</p>
 		</a>
 		
 

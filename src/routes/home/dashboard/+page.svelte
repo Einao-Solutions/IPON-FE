@@ -1318,30 +1318,30 @@
 	
 	<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
 	{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === 'main'}
-	<div class="bg-gray-50 h-full px-6 py-4 overflow-hidden">
+	<div class="bg-slate-50/50 h-full sm:h-full rounded-xl p-6 overflow-y-auto sm:overflow-hidden">
 		<div class="max-w-7xl mx-auto h-full flex flex-col">
 			<!-- Header Section -->
-			<div class="mb-4 flex-shrink-0">
-				<h1 class="text-2xl md:text-3xl lg:text-4xl mb-2">Intellectual Property Office Nigeria</h1>
-				<p class="text-gray-600 text-sm">Select a category to explore available services</p>
+			<div class="mb-6 flex-shrink-0">
+				<h1 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2">Intellectual Property Office Nigeria</h1>
+				<p class="text-slate-600 text-sm">Select a category to explore available services</p>
 			</div>
 
 			<!-- Three IP Category Cards -->
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-12 flex-shrink-0">
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 flex-shrink-0">
 				<!-- Trademark Card -->
 				<button 
 					class="text-left w-full group"
 					on:click={() => (currentView = 'trademark')}
 				>
-					<div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
+					<div class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.02] hover:border-green-300">
 						<div class="mb-4">
-							<div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-3">
+							<div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
 								<Icon icon="mdi:scale-balance" class="text-xl text-green-600" />
 							</div>
-							<h3 class="text-lg font-semibold mb-1">Trademark</h3>
-							<p class="text-gray-600 text-sm">Register and protect your brand identity</p>
+							<h3 class="text-lg font-semibold mb-1 text-slate-800">Trademark</h3>
+							<p class="text-slate-600 text-sm">Register and protect your brand identity</p>
 						</div>
-						<p class="text-xs text-gray-500">20 services available</p>
+						<p class="text-xs text-slate-500">20 services available</p>
 					</div>
 				</button>
 
@@ -1350,15 +1350,15 @@
 					class="text-left w-full group"
 					on:click={() => (currentView = 'patent')}
 				>
-					<div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
+					<div class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.02] hover:border-green-300">
 						<div class="mb-4">
-							<div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-3">
+							<div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
 								<Icon icon="mdi:lightbulb-outline" class="text-xl text-green-600" />
 							</div>
-							<h3 class="text-lg font-semibold mb-1">Patent</h3>
-							<p class="text-gray-600 text-sm">Protect your inventions and innovations</p>
+							<h3 class="text-lg font-semibold mb-1 text-slate-800">Patent</h3>
+							<p class="text-slate-600 text-sm">Protect your inventions and innovations</p>
 						</div>
-						<p class="text-xs text-gray-500">16 services available</p>
+						<p class="text-xs text-slate-500">16 services available</p>
 					</div>
 				</button>
 
@@ -1367,24 +1367,24 @@
 					class="text-left w-full group"
 					on:click={() => (currentView = 'design')}
 				>
-					<div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
+					<div class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.02] hover:border-green-300">
 						<div class="mb-4">
-							<div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-3">
+							<div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
 								<Icon icon="mdi:palette-outline" class="text-xl text-green-600" />
 							</div>
-							<h3 class="text-lg font-semibold mb-1">Design</h3>
-							<p class="text-gray-600 text-sm">Safeguard your creative designs</p>
+							<h3 class="text-lg font-semibold mb-1 text-slate-800">Design</h3>
+							<p class="text-slate-600 text-sm">Safeguard your creative designs</p>
 						</div>
-						<p class="text-xs text-gray-500">16 services available</p>
+						<p class="text-xs text-slate-500">16 services available</p>
 					</div>
 				</button>
 			</div>		
 
 			<!-- Totals Section -->
-			<div class="border-t border-gray-200 pt-3 flex-1 min-h-0">
+			<div class="border-t border-slate-200/60 pt-4 flex-1 sm:min-h-0">
 				<div class="mb-4">
-					<h2 class="text-lg font-semibold mb-1">Portfolio Summary</h2>
-					<p class="text-gray-600 text-xs">Track your intellectual property applications and registrations</p>
+					<h2 class="text-xl font-semibold text-slate-800 mb-2">Portfolio Summary</h2>
+					<p class="text-slate-600 text-sm">Track your intellectual property applications and registrations</p>
 				</div>
 				<div class="overflow-hidden">
 					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
