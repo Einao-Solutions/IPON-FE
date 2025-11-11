@@ -64,12 +64,12 @@
 		const startDate = url.searchParams.get("startDate")
 		const endDate = url.searchParams.get("endDate")
 		const title = url.searchParams.get('title');
-		const userId = $loggedInUser?.id.toString();
+		const userId = $loggedInUser?.creatorId.toString();
 		const index = indexString ? parseInt(indexString) : 0;
 		const quantity = quantityString ? parseInt(quantityString) : 10;
 		const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
 		const body = {
-			userType: $loggedInUser?.userRoles.includes(UserRoles.BackOffice) ? 1 : 0,
+			userType: $loggedInUser?.userRoles.includes(UserRoles.Tech) ? 1 : 0,
 			userId,
 			types: typeconverted,
 			status: statusConverted,
