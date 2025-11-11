@@ -20,6 +20,7 @@
 			isLoading=true;
 			usersTable = (await import ("./UsersTable.svelte")).default;
 			await loadData()
+			// await getAllUsers()
 			// usersList= {
 			// 	usersList:data.usersList
 			// }
@@ -55,7 +56,7 @@ async function loadData(){
 	usersList =await response.json()
 	var dt=(usersList.result as UsersType[]).map((e)=> {
 		return {'sn':usersList.result.indexOf(e),
-		'name':e.name,
+		'name':e.firstName + ' ' + e.lastName,
 		'email':e.email,
 		'id':e.id}
 	});
@@ -63,7 +64,19 @@ async function loadData(){
 	usersdata.count=usersList.count;
 		isLoading=false;
 }
-
+async function getAllUsers(){
+		const response=await fetch(`${baseURL}/api/users/GetAllUsers`)
+		const data = await response.json();
+		usersList = data.result;
+		var dt=(usersList.result as UsersType[]).map((e)=> {
+		return {'sn':usersList.result.indexOf(e),
+		'name':e.firstName + ' ' + e.lastName,
+		'email':e.email,
+		'id':e.id}
+	});
+	usersdata.usersList=dt;
+	usersdata.count=usersList.count;
+	}
 </script>
 
 {#if showAddUser}
