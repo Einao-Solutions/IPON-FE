@@ -901,7 +901,7 @@
 </Dialog.Root>
 
 <Dialog.Root bind:open={showRecordalDialog}>
-	<Dialog.Content class="w-11/12 max-w-4xl mx-auto my-4 max-h-[90vh]">
+	<Dialog.Content class="w-11/12 max-w-4xl mx-auto my-4 max-h-[90vh] overflow-hidden flex flex-col">
 		<Dialog.Header>
 			<Dialog.Title>
 				{selectedApplication?.applicationType === 8
@@ -914,139 +914,199 @@
 								? 'Change of Address Information'
 								: selectedApplication?.applicationType === 11
 									? 'Clerical Update Information'
-									: selectedApplication?.applicationType === 5
-										? 'Assignment Information'
-										: 'Application Details'}
+									: selectedApplication?.applicationType === 17
+										? 'Amendment Information'
+										: selectedApplication?.applicationType === 5
+											? 'Assignment Information'
+											: 'Application Details'}
 			</Dialog.Title>
 			<Dialog.Description>
 				{mapTypeToString(selectedApplication?.applicationType || 0)} Details
 			</Dialog.Description>
 		</Dialog.Header>
 
-		{#if recordalLoading}
-			<div class="flex justify-center items-center h-64">
-				<Icon icon="line-md:loading-loop" width="2.5rem" height="2.5rem" class="animate-spin" />
-			</div>
-		{:else if recordalData}
-			<div class="overflow-auto max-h-[60vh] p-4 space-y-4 border rounded-lg">
-				{#if [5, 7, 8, 9, 10].includes(selectedApplication?.applicationType ?? -1)}
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{#each Object.entries(recordalData) as [key, value]}
-							{#if !['id', 'isApproved', 'documentUrl', 'authorizationLetterUrl', 'assignmentDeedUrl'].includes(key) && value != null}
-								<div>
-									<Label class="font-semibold capitalize">
-										{key.replace(/([A-Z])/g, ' $1').trim()}:
-									</Label>
-									<p class="mt-1 p-2 bg-gray-50 rounded border">
-										{#if Array.isArray(value)}
-											<ul class="list-disc pl-5">
-												{#each value as item}
-													<li>{item}</li>
-												{/each}
-											</ul>
-										{:else}
-											{value}
-										{/if}
-									</p>
-								</div>
-							{/if}
-							{#if ['OldAttachmentUrl', 'NewAttachmentUrl'].includes(key) && key.endsWith('Url') && value}
-								<div>
-									<Label class="font-semibold capitalize">
-										{key.replace(/([A-Z])/g, ' $1').trim()}:
-									</Label>
-									<img src="value" alt="Attachment" class="mt-1 max-w-full h-auto rounded border" />
-								</div>
-							{/if}
-						{/each}
-					</div>
-
-					<div class="flex flex-wrap gap-2 pt-2">
-						{#if recordalData.documentUrl}
-							<Button
-								on:click={() => window.open(recordalData.documentUrl, '_blank')}
-								variant="outline"
-								class="flex items-center gap-1"
-							>
-								<Icon icon="mdi:file-document-outline" />
-								View Document
-							</Button>
-						{/if}
-						{#if recordalData.appealDocs}
-							{#each recordalData.appealDocs as docUrl, index}
-								<Button
-									on:click={() => window.open(docUrl, '_blank')}
-									variant="outline"
-									class="flex items-center gap-1"
-								>
-									<Icon icon="mdi:file-document-outline" />
-									View Appeal Document {index + 1}
-								</Button>
-							{/each}
-						{/if}
-
-						{#if recordalData.assignmentDeedUrl}
-							<Button
-								on:click={() => window.open(recordalData.assignmentDeedUrl, '_blank')}
-								variant="outline"
-								class="flex items-center gap-1"
-							>
-								<Icon icon="mdi:file-sign" />
-								View Assignment Deed
-							</Button>
-						{/if}
-					</div>
-				{:else if selectedApplication?.applicationType === 11 || selectedApplication?.applicationType === 17}
-					<!-- Clerical Update Details -->
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-						{#each Object.entries(recordalData) as [key, value]}
-							{#if value != null  && !['id', 'isApproved', 'documentUrl'].includes(key)}
-								<div>
-									<Label class="font-semibold capitalize">
-										{key.replace(/([A-Z])/g, ' $1').replace('Url', '').trim()}:
-									</Label>
-									{#if typeof value === 'string' && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
-										<img src={value} alt={key} class="mt-1 max-w-full h-auto rounded border" />
-									{:else if key.endsWith('Url') && typeof value === 'string' && value}
-										<Button
-											on:click={() => window.open(String(value), '_blank')}
-											variant="outline"
-											class="flex items-center gap-1"
-										>
-											<Icon icon="mdi:file-document-outline" />
-											View Document
-										</Button>
-									{:else}
-										<p class="mt-1 p-2 bg-gray-50 rounded border">{value}</p>
+		<div class="flex-1 overflow-auto">
+			{#if recordalLoading}
+				<div class="flex justify-center items-center h-64">
+					<Icon icon="line-md:loading-loop" width="2.5rem" height="2.5rem" class="animate-spin" />
+				</div>
+			{:else if recordalData}
+				<div class="p-4 space-y-4">
+					{#if [5, 7, 8, 9, 10].includes(selectedApplication?.applicationType ?? -1)}
+						<div class="border rounded-lg p-4 bg-gray-50">
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								{#each Object.entries(recordalData) as [key, value]}
+									{#if !['id', 'isApproved', 'documentUrl', 'authorizationLetterUrl', 'assignmentDeedUrl', 'appealDocs', 'oldAttachmentUrl', 'newAttachmentUrl'].includes(key.toLowerCase()) && value != null && !key.toLowerCase().endsWith('url')}
+										<div class="break-words">
+											<Label class="font-semibold capitalize text-sm text-gray-700">
+												{key.replace(/([A-Z])/g, ' $1').trim()}:
+											</Label>
+											<div class="mt-1 p-3 bg-white rounded border shadow-sm">
+												{#if Array.isArray(value)}
+													<ul class="list-disc pl-5 space-y-1">
+														{#each value as item}
+															<li class="break-words text-sm">{item}</li>
+														{/each}
+													</ul>
+												{:else}
+													<p class="text-sm text-gray-900">{value}</p>
+												{/if}
+											</div>
+										</div>
 									{/if}
+								{/each}
+							</div>
+							
+							<!-- Handle attachment images -->
+							{#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
+								<div class="mt-4">
+									<Label class="font-semibold text-sm text-gray-700 mb-2 block">Old Attachment:</Label>
+									<div class="border rounded-lg p-3 bg-white">
+										<img 
+											src={recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl} 
+											alt="Old Attachment" 
+											class="max-w-full h-auto rounded border mx-auto"
+											style="max-height: 400px; object-fit: contain;"
+										/>
+									</div>
 								</div>
 							{/if}
-						{/each}
-					</div>
-				{/if}
-			</div>
-		{:else}
-			<div class="text-center py-8">
-				<Icon
-					icon="mdi:file-alert-outline"
-					class="text-gray-400 mx-auto"
-					width="3rem"
-					height="3rem"
-				/>
-				<p class="text-gray-500 mt-2">No application data available</p>
-			</div>
-		{/if}
+							{#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+								<div class="mt-4">
+									<Label class="font-semibold text-sm text-gray-700 mb-2 block">New Attachment:</Label>
+									<div class="border rounded-lg p-3 bg-white">
+										<img 
+											src={recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl} 
+											alt="New Attachment" 
+											class="max-w-full h-auto rounded border mx-auto"
+											style="max-height: 400px; object-fit: contain;"
+										/>
+									</div>
+								</div>
+							{/if}
+						</div>
 
-		{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
+						<!-- Document Buttons Section -->
+						<div class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
+							{#if recordalData.documentUrl}
+								<Button
+									on:click={() => window.open(recordalData.documentUrl, '_blank')}
+									variant="outline"
+									size="sm"
+									class="flex items-center gap-2"
+								>
+									<Icon icon="mdi:file-document-outline" width="1.2em" />
+									View Document
+								</Button>
+							{/if}
+							{#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
+								{#each recordalData.appealDocs as docUrl, index}
+									<Button
+										on:click={() => window.open(docUrl, '_blank')}
+										variant="outline"
+										size="sm"
+										class="flex items-center gap-2"
+									>
+										<Icon icon="mdi:file-document-outline" width="1.2em" />
+										View Appeal Document {index + 1}
+									</Button>
+								{/each}
+							{/if}
+
+							{#if recordalData.assignmentDeedUrl}
+								<Button
+									on:click={() => window.open(recordalData.assignmentDeedUrl, '_blank')}
+									variant="outline"
+									size="sm"
+									class="flex items-center gap-2"
+								>
+									<Icon icon="mdi:file-sign" width="1.2em" />
+									View Assignment Deed
+								</Button>
+							{/if}
+							{#if recordalData.authorizationLetterUrl}
+								<Button
+									on:click={() => window.open(recordalData.authorizationLetterUrl, '_blank')}
+									variant="outline"
+									size="sm"
+									class="flex items-center gap-2"
+								>
+									<Icon icon="mdi:file-document" width="1.2em" />
+									View Authorization Letter
+								</Button>
+							{/if}
+						</div>
+					{:else if selectedApplication?.applicationType === 11 || selectedApplication?.applicationType === 17}
+						<!-- Clerical Update / Amendment Details -->
+						<div class="border rounded-lg p-4 bg-gray-50">
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								{#each Object.entries(recordalData) as [key, value]}
+									{#if value != null && !['id', 'isApproved', 'documentUrl'].includes(key)}
+										<div class="break-words">
+											<Label class="font-semibold capitalize text-sm text-gray-700">
+												{key.replace(/([A-Z])/g, ' $1').replace('Url', '').trim()}:
+											</Label>
+											{#if typeof value === 'string' && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
+												<div class="mt-1 border rounded-lg p-3 bg-white">
+													<img 
+														src={value} 
+														alt={key} 
+														class="max-w-full h-auto rounded border mx-auto"
+														style="max-height: 400px; object-fit: contain;"
+													/>
+												</div>
+											{:else if key.endsWith('Url') && typeof value === 'string' && value}
+												<Button
+													on:click={() => window.open(String(value), '_blank')}
+													variant="outline"
+													size="sm"
+													class="flex items-center gap-2 mt-1"
+												>
+													<Icon icon="mdi:file-document-outline" width="1.2em" />
+													View Document
+												</Button>
+											{:else}
+												<div class="mt-1 p-3 bg-white rounded border shadow-sm">
+													<p class="text-sm text-gray-900 break-all">{value}</p>
+												</div>
+											{/if}
+										</div>
+									{/if}
+								{/each}
+							</div>
+						</div>
+					{/if}
+				</div>
+			{:else}
+				<div class="text-center py-8">
+					<Icon
+						icon="mdi:file-alert-outline"
+						class="text-gray-400 mx-auto"
+						width="3rem"
+						height="3rem"
+					/>
+					<p class="text-gray-500 mt-2">No application data available</p>
+				</div>
+			{/if}
+
+		{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
 			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected)}
 				<div class="mt-4">
-					<Label for="approval-reason">Decision Reason</Label>
+					<Label for="approval-reason" class="text-sm font-semibold text-gray-900">
+							Decision Reason <span class="text-red-500">*</span>
+						</Label>
 					<Textarea
 						id="approval-reason"
 						class="min-w-full min-h-32 mt-1"
 						placeholder="Enter detailed reason for approval or denial..."
 						bind:value={reason}
 					/>
+					{#if reason && reason.trim().length > 0 && reason.trim().length < 10}
+							<p class="text-xs text-red-500 mt-1 flex items-center gap-1">
+								<Icon icon="mdi:alert-circle" width="14" />
+								Reason must be at least 10 characters
+							</p>
+						{/if}
 				</div>
 			{/if}
 		{/if}
@@ -1063,10 +1123,14 @@
 			{/if}
 		{/if}		 -->
 		<Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-			{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
-				{#if [5, 7, 8, 9, 10, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
+			{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
+				{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
 					<Button
 						on:click={() => {
+							if (!reason || reason.trim().length < 10) {
+								showToast('error', 'Please provide a detailed reason (at least 10 characters)');
+								return;
+							}
 							switch (selectedApplication?.applicationType) {
 								case 5:
 									approveAssignment(selectedApplication);
@@ -1084,23 +1148,42 @@
 								case 10:
 									approveChangeDataRecordal(selectedApplication);
 									break;
+								case 11:
+									approveRecordal('/api/files/ApproveClericalUpdate', selectedApplication, 'Clerical update approved successfully');
+									break;
 							}
 						}}
-						class="bg-green-600 hover:bg-green-700"
+						disabled={!reason || reason.trim().length < 10}
+						class="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
 					>
+						<Icon icon="mdi:check-circle-outline" class="mr-1" width="1.2em" />
 						Approve Application
 					</Button>
 
 					<Button
-						on:click={() => denyRecordal(selectedApplication)}
-						class="bg-red-600 hover:bg-red-700"
+						on:click={() => {
+							if (!reason || reason.trim().length < 10) {
+								showToast('error', 'Please provide a detailed reason (at least 10 characters)');
+								return;
+							}
+							denyRecordal(selectedApplication);
+						}}
+						disabled={!reason || reason.trim().length < 10}
+						class="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
 					>
+						<Icon icon="mdi:close-circle-outline" class="mr-1" width="1.2em" />
 						Deny Application
 					</Button>
 				{/if}
 			{/if}
 
-			<Button on:click={() => (showRecordalDialog = false)} variant="outline">Close</Button>
+			<Button on:click={() => {
+				showRecordalDialog = false;
+				reason = '';
+			}} variant="outline">
+				<Icon icon="mdi:close" class="mr-1" width="1.2em" />
+				Close
+			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
@@ -1155,7 +1238,7 @@
 						</p>
 					{/if}
 				</div>
-				{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.roles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.roles?.includes(UserRoles.Support)}
+				{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.Tech)}
 					<!-- Action Buttons -->
 					<div class="flex gap-3 justify-end pt-2 border-t">
 						<Button
@@ -1674,8 +1757,8 @@
 										on:click={async () => await checkPayment(application, application.paymentId)}
 										>Verify Payment ({application.paymentId ?? '-'})</DropdownMenu.Item
 									>
-									{#if ($loggedInUser?.roles?.includes(UserRoles.Support || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
-										<!-- {#if $loggedInUser?.roles?.includes(UserRoles.Admin || UserRoles.Support || UserRoles.TrademarkCertification)}	 -->
+									{#if ($loggedInUser?.userRoles?.includes(UserRoles.Tech || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
+										<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.Admin || UserRoles.Tech || UserRoles.TrademarkCertification)}	 -->
 										<DropdownMenu.Item
 											on:click={() => {
 												viewRecordalData(application);
@@ -1730,13 +1813,13 @@
 											>New Application Receipt</DropdownMenu.Item
 										> -->
 									{#if application.certificatePaymentId != null && application.currentStatus === ApplicationStatuses.Active}
-										{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => certificate(application)}
 												>Certificate</DropdownMenu.Item
 											>
 										{/if}
 									{:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-										{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => renewalCertificate(application)}>
 												Renewal Certificate</DropdownMenu.Item
 											>
@@ -1751,7 +1834,7 @@
 											>Payment Receipt</DropdownMenu.Item
 										>-->
 									{#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-										{#if $loggedInUser?.roles?.includes(UserRoles.BackOffice || UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.BackOffice || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => viewRecordalData(application)}
 												>View Application</DropdownMenu.Item
 											>
@@ -1811,7 +1894,7 @@
 										<!-- {#if application.applicationLetters}
 										<DropdownMenu.Separator />
 										{#each application.applicationLetters as letter}
-											{#if letter === 3 && $loggedInUser?.roles.includes(UserRoles.BackOffice) === false}
+											{#if letter === 3 && $loggedInUser?.userRoles.includes(UserRoles.BackOffice) === false}
 												<p></p>
 											{:else}
 												<DropdownMenu.Item on:click={() => validateMove(application, letter)}
@@ -1819,14 +1902,14 @@
 												>
 											{/if}
 										{/each}
-										{#if $loggedInUser?.roles?.includes(UserRoles.Support)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => loadMetadata(application)}
 												>Metadata</DropdownMenu.Item
 											>
 										{/if}-->
 									{/if}
 
-									<!-- {#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14}
+									<!-- {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14}
 										<DropdownMenu.Item
 											   on:click={() =>goto(`/home/publications/viewapplication/${fileData?.fileId}/${application.id}`)}
 										>
@@ -1834,7 +1917,7 @@
 										</DropdownMenu.Item>
 									{/if} -->
 
-									{#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
+									{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
 										<DropdownMenu.Item
 											on:click={() => openPublicationDialog(fileData?.fileId, application.id)}
 										>
@@ -1843,20 +1926,20 @@
 									{/if}
 
 									{#if application.applicationType === 15 && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
-										<!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.roles)}</pre>`} -->
-										{#if fileData.type === 0 && $loggedInUser?.roles?.includes(UserRoles.PatentExaminer)}
+										<!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.userRoles)}</pre>`} -->
+										{#if fileData.type === 0 && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>
 												View Withdrawal Application
 											</DropdownMenu.Item>
-										{:else if fileData.type === 1 && $loggedInUser?.roles?.includes(UserRoles.DesignExaminer)}
+										{:else if fileData.type === 1 && $loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>
 												View Withdrawal Application
 											</DropdownMenu.Item>
-										{:else if fileData.type === 2 && $loggedInUser?.roles?.includes(UserRoles.TrademarkAcceptance)}
+										{:else if fileData.type === 2 && $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance)}
 											<DropdownMenu.Item
 												on:click={() => openWithdrawalDialog(fileData.fileId, application.id)}
 											>

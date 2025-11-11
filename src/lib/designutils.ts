@@ -183,7 +183,7 @@ export function mapPatentAttStrToInt(index:string) {
 			case "RequestWithdrawal": return 29;
 			case "NewOpposition": return 30;
 			case "AwaitingCounter": return 31;
-			case "Amendment": return 32;
+			case "AwaitingApproval": return 32;
 
 		}
 }

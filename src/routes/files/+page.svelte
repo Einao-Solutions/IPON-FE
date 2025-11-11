@@ -9,7 +9,7 @@
 	import { baseURL, UserRoles } from '$lib/helpers';
 	import { fileTypeToString, mapTypeToString } from '../home/components/dashboardutils';
 	import { writable } from 'svelte/store';
-	import { listOfIds, loggedInUser, queryBody } from '$lib/store';
+	import { listOfIds, loggedInUser, queryBody, loggedInToken } from '$lib/store';
 
 	export let dataList: [] | null = null;
 	let count: number = 0;
@@ -69,7 +69,7 @@
 		const quantity = quantityString ? parseInt(quantityString) : 10;
 		const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
 		const body = {
-			userType: $loggedInUser?.roles.includes(UserRoles.BackOffice) ? 1 : 0,
+			userType: $loggedInUser?.userRoles.includes(UserRoles.BackOffice) ? 1 : 0,
 			userId,
 			types: typeconverted,
 			status: statusConverted,
@@ -87,7 +87,8 @@
 		const result = await fetch(fileUrl, {
 			method: 'POST',
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Authorization' : `Bearer ${$loggedInToken}`
 			},
 			body: JSON.stringify({ ...body })
 		});

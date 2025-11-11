@@ -53,10 +53,10 @@ async function fetchResult() {
 	let body={
 		fileNumber:fileNumber,
 	}
-	// if($loggedInUser?.roles?.includes(UserRoles.Support)==false){
+	// if($loggedInUser?.userRoles?.includes(UserRoles.Tech)==false){
 	// 	body['userId']=$loggedInUser.id;
 	// }
-	// if ($loggedInUser?.roles.includes(UserRoles.BackOffice) ===false){
+	// if ($loggedInUser?.userRoles.includes(UserRoles.BackOffice) ===false){
 	// }
 	const result=await fetch(`${baseURL}/api/assignment/SearchForFile`, {
 		method: "POST",
