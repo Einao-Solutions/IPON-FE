@@ -79,7 +79,8 @@
 	function canCreateApplication() {
 		return (
 			$loggedInUser?.userRoles.includes(UserRoles.User) ||
-			$loggedInUser?.userRoles.includes(UserRoles.Tech)
+			$loggedInUser?.userRoles.includes(UserRoles.Tech) ||
+			$loggedInUser?.userRoles.includes(UserRoles.SuperAdmin)
 		);
 	}
 	onMount(async () => {
