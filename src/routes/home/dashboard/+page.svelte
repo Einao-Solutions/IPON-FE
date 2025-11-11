@@ -23,6 +23,7 @@
 	import * as Card from '$lib/components/ui/card';
 	import { DashStats } from '$lib/store';
 	import AvailabilitySearchModal from '../../home/components/AvailabilitySearchModal.svelte';
+	import UserDashboard from '../components/UserDashboard.svelte';
 	import { Description } from 'formsnap';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { Result } from 'postcss';
@@ -51,34 +52,7 @@
 	let currentView = 'main'; // 'main', 'trademark', 'patent', 'design'
 	let viewToggle = 'grid'; // 'grid' or 'list'
 	
-	// Function to get totals from DashStats
-	function getTotal(type: FileTypes) {
-		return $DashStats?.fileStats.find((x) => x.fileType === type)?.count ?? 0;
-	}
-
-	// Function to load agent dashboard statistics
-	async function loadAgentDashboardStats() {
-		try {
-			const userId = $loggedInUser?.id;
-			const showId = $loggedInUser?.roles.includes(UserRoles.Support);
-			let id = showId ? null : userId;
-			const url = `${baseURL}/api/files/FileStatistics?userId=${id}`;
-			const data = await fetch(url);
-			
-			if (data.ok) {
-				const body = await data.json();
-				const values = body as DashBoardStats[];
-				DashStats.set(values[0]);
-			}
-		} catch (error) {
-			console.error('Failed to load dashboard stats:', error);
-		}
-	}
-
-	// Reactive statements for totals
-	$: trademarkCount = getTotal(FileTypes.Trademark);
-	$: patentCount = getTotal(FileTypes.Patent);
-	$: designCount = getTotal(FileTypes.Design);
+	// Dashboard statistics are now handled by UserDashboard component
 	function openPreRegistrationDialog() {
 		showPreRegistrationDialog = true;
 	}
@@ -131,11 +105,6 @@
 		data = {
 			user: $loggedInUser
 		};
-		
-		// Load dashboard statistics for agent users
-		if (canCreateApplication()) {
-			await loadAgentDashboardStats();
-		}
 		
 		isLoading = false;
 	});
@@ -1348,30 +1317,30 @@
 	
 	<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
 	{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === 'main'}
-	<div class="min-h-screen bg-gray-50 px-6 py-8">
-		<div class="max-w-7xl mx-auto">
+	<div class="bg-gray-50 h-full px-6 py-4 overflow-hidden">
+		<div class="max-w-7xl mx-auto h-full flex flex-col">
 			<!-- Header Section -->
-			<div class="mb-8">
+			<div class="mb-4 flex-shrink-0">
 				<h1 class="text-2xl md:text-3xl lg:text-4xl mb-2">Intellectual Property Office Nigeria</h1>
-				<p class="text-gray-600 text-sm md:text-base">Select a category to explore available Services</p>
+				<p class="text-gray-600 text-sm">Select a category to explore available services</p>
 			</div>
 
 			<!-- Three IP Category Cards -->
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-12 flex-shrink-0">
 				<!-- Trademark Card -->
 				<button 
 					class="text-left w-full group"
 					on:click={() => (currentView = 'trademark')}
 				>
-					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
-						<div class="mb-6">
-							<div class="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-4">
-								<Icon icon="mdi:scale-balance" class="text-3xl text-green-600" />
+					<div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
+						<div class="mb-4">
+							<div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-3">
+								<Icon icon="mdi:scale-balance" class="text-xl text-green-600" />
 							</div>
-							<h3 class="text-2xl mb-2">Trademark</h3>
-							<p class="text-gray-600 text-sm leading-relaxed">Register and protect your brand identity</p>
+							<h3 class="text-lg font-semibold mb-1">Trademark</h3>
+							<p class="text-gray-600 text-sm">Register and protect your brand identity</p>
 						</div>
-						<p class="text-sm text-gray-500">20 services available</p>
+						<p class="text-xs text-gray-500">20 services available</p>
 					</div>
 				</button>
 
@@ -1380,15 +1349,15 @@
 					class="text-left w-full group"
 					on:click={() => (currentView = 'patent')}
 				>
-					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
-						<div class="mb-6">
-							<div class="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-4">
-								<Icon icon="mdi:file-document-outline" class="text-3xl text-green-600" />
+					<div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
+						<div class="mb-4">
+							<div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-3">
+								<Icon icon="mdi:lightbulb-outline" class="text-xl text-green-600" />
 							</div>
-							<h3 class="text-2xl mb-2">Patent</h3>
-							<p class="text-gray-600 text-sm leading-relaxed">Protect your inventions and innovations</p>
+							<h3 class="text-lg font-semibold mb-1">Patent</h3>
+							<p class="text-gray-600 text-sm">Protect your inventions and innovations</p>
 						</div>
-						<p class="text-sm text-gray-500">16 services available</p>
+						<p class="text-xs text-gray-500">16 services available</p>
 					</div>
 				</button>
 
@@ -1397,53 +1366,28 @@
 					class="text-left w-full group"
 					on:click={() => (currentView = 'design')}
 				>
-					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 group-hover:scale-[1.02]">
-						<div class="mb-6">
-							<div class="w-16 h-16 bg-green-50 rounded-xl flex items-center justify-center mb-4">
-								<Icon icon="mdi:palette-outline" class="text-3xl text-green-600" />
+					<div class="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-lg transition-all duration-200">
+						<div class="mb-4">
+							<div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center mb-3">
+								<Icon icon="mdi:palette-outline" class="text-xl text-green-600" />
 							</div>
-							<h3 class="text-2xl mb-2">Design</h3>
-							<p class="text-gray-600 text-sm leading-relaxed">Safeguard your creative designs</p>
+							<h3 class="text-lg font-semibold mb-1">Design</h3>
+							<p class="text-gray-600 text-sm">Safeguard your creative designs</p>
 						</div>
-						<p class="text-sm text-gray-500">16 services available</p>
+						<p class="text-xs text-gray-500">16 services available</p>
 					</div>
 				</button>
 			</div>		
 
-			<!-- Total Count Cards (Below IP Categories) - CLICKABLE -->
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-				<!-- Total Trademarks -->
-				<button 
-					class="text-left w-full"
-					on:click={() => goto('/files?fileType=2&titleType=specific')}
-				>
-					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
-						<p class="text-sm text-gray-500 mb-2">Total Trademarks</p>
-						<p class="text-2xl md:text-3xl">{trademarkCount.toLocaleString()}</p>
-					</div>
-				</button>
-
-				<!-- Total Patents -->
-				<button 
-					class="text-left w-full"
-					on:click={() => goto('/files?fileType=0&titleType=specific')}
-				>
-					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
-						<p class="text-sm text-gray-500 mb-2">Total Patents</p>
-						<p class="text-2xl md:text-3xl">{patentCount.toLocaleString()}</p>
-					</div>
-				</button>
-
-				<!-- Total Designs -->
-				<button 
-					class="text-left w-full"
-					on:click={() => goto('/files?fileType=1&titleType=specific')}
-				>
-					<div class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]">
-						<p class="text-sm text-gray-500 mb-2">Total Designs</p>
-						<p class="text-2xl md:text-3xl">{designCount.toLocaleString()}</p>
-					</div>
-				</button>
+			<!-- Totals Section -->
+			<div class="border-t border-gray-200 pt-3 flex-1 min-h-0">
+				<div class="mb-4">
+					<h2 class="text-lg font-semibold mb-1">Portfolio Summary</h2>
+					<p class="text-gray-600 text-xs">Track your intellectual property applications and registrations</p>
+				</div>
+				<div class="overflow-hidden">
+					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
+				</div>
 			</div>
 		</div>
 	</div>

@@ -60,9 +60,9 @@
 {#if showFilterSheet}
 	<svelte:component this={filterFiles} {...filterData} />
 {/if}
-<div class="flex h-screen p-1 sm:p-4 w-full">
+<div class="flex h-screen w-full overflow-hidden">
 	<!-- Desktop Sidebar -->
-	<nav class="hidden sm:block backdrop-blur-sm bg-gray-100 rounded-md fixed h-[calc(100vh-2rem)]">
+	<nav class="hidden sm:block backdrop-blur-sm bg-gray-100 fixed h-screen w-56">
 		<SideMenu />
 	</nav>
 
@@ -83,29 +83,37 @@
 	</nav>
 
 	<!-- Main Content -->
-	<div class="sm:ml-56 w-full flex flex-col">
-		<div class="items-center mx-4 sm:justify-between flex rounded-md bg-gray-100 p-2">
+	<div class="sm:ml-56 w-full h-screen flex flex-col overflow-hidden">
+		<div class="flex-shrink-0 items-center mx-4 sm:justify-between flex gap-4 bg-white border border-gray-200 rounded-xl p-3 shadow-sm my-4">
 			<!-- Mobile hamburger button -->
 			<Button 
 				variant="ghost" 
 				size="sm" 
-				class="sm:hidden mr-2"
+				class="sm:hidden p-2 hover:bg-gray-100 rounded-lg"
 				on:click={toggleMobileSidebar}
 			>
 				<Icon icon="mdi:menu" width="20" height="20" />
 			</Button>
 
-			<Input 
-				placeholder="Search by title, file number or applicant name" 
-				bind:value={searchTitle} 
-				type="search" 
-				class="flex-1 sm:w-[320px]"
-				on:keypress={(event) => {if(event.key === 'Enter') goto(`/files?title=${searchTitle}`)}} 
-			/>
-			<p class="hidden sm:inline ml-4">{userName}</p>
+			<div class="flex-1 relative max-w-md">
+				<Input 
+					placeholder="Search by title, file number and applicant name" 
+					bind:value={searchTitle} 
+					type="search" 
+					class="w-full pl-10 pr-4 py-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+					on:keypress={(event) => {if(event.key === 'Enter') goto(`/files?title=${searchTitle}`)}} 
+				/>
+				<Icon icon="mdi:magnify" class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" width="18" height="18" />
+			</div>
+			
+			<div class="hidden sm:flex items-center gap-3">
+				<div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+					<Icon icon="mdi:account" class="text-blue-600" width="18" height="18" />
+				</div>
+				<span class="font-medium text-gray-700">{userName}</span>
+			</div>
 		</div>
-		<br />
-		<div class="px-5">
+		<div class="flex-1 px-5 overflow-hidden">
 			<slot />
 		</div>
 	</div>

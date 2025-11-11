@@ -8,6 +8,7 @@
 	import { mapTypeToString } from './dashboardutils';
 	import * as Accordion from "$lib/components/ui/accordion"
 	export let user: UsersType ;
+	export let showOnlyTotals: boolean = false;
 	let isLoading: boolean = true;
 	onMount(async () => {
 		if ($DashStats === null) {
@@ -61,19 +62,20 @@
 		height="1.6rem"
 	/>
 {:else}
-	<div class="grid md:grid-cols-3 grid-cols-2 md:gap-x-10 gap-x-5 md:gap-y-10 gap-y-5 mb-2">
-		<a href="/files?fileType=0&titleType=specific" class="border rounded-md flex flex-col p-4 bg-white">
-			<p class="text-lg">Total Patents</p>
-			<strong class="text-2xl">{getTotal(FileTypes.Patent)}</strong>
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+		<a href="/files?fileType=2&titleType=specific" class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] text-left">
+			<p class="text-sm text-gray-500 font-medium mb-2">Total Trademarks</p>
+			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
 		</a>
-		<a href="/files?fileType=1&titleType=specific" class="border rounded-md flex flex-col p-4 bg-white">
-			<p class="text-lg">Total Designs</p>
-			<strong class="text-2xl">{getTotal(FileTypes.Design)}</strong>
+		<a href="/files?fileType=0&titleType=specific" class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] text-left">
+			<p class="text-sm text-gray-500 font-medium mb-2">Total Patents</p>
+			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Patent).toLocaleString()}</p>
 		</a>
-		<a href="/files?fileType=2&titleType=specific" class="border rounded-md flex flex-col p-4 bg-white">
-			<p class="text-lg">Total Trademarks</p>
-			<strong class="text-2xl">{getTotal(FileTypes.Trademark)}</strong>
+		<a href="/files?fileType=1&titleType=specific" class="bg-white border border-gray-200 rounded-xl p-8 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] text-left">
+			<p class="text-sm text-gray-500 font-medium mb-2">Total Designs</p>
+			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Design).toLocaleString()}</p>
 		</a>
+		
 
 		<!-- <a href="/files?status=1&titleType=renew">
 			<BackgroundGradient className="rounded-md p-2  bg-white dark:bg-zinc-900">
@@ -84,6 +86,8 @@
 			</BackgroundGradient>
 		</a> -->
 	</div>
+	
+	{#if !showOnlyTotals}
 	<Accordion.Root>
 		<Accordion.Item value="pending" class="border rounded-md p-3 bg-white">
 			<Accordion.Trigger>
@@ -195,4 +199,5 @@
 				</Accordion.Content>
 			</Accordion.Item>
 		</Accordion.Root>
+	{/if}
 {/if}
