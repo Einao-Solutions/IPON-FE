@@ -11,6 +11,7 @@
 		applicationScreen,
 		changesMade,
 		formsData, loggedInUser,
+		loggedInToken,
 		newApplicationType, newDataApp,
 		pageValidationStatus,
 		savePageData,
@@ -148,9 +149,9 @@
 					const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
 							method: 'POST',
 							headers: {
-								'Content-Type': 'application/json'
+								'Content-Type': 'application/json',
+								'Authorization': `Bearer ${$loggedInToken}`
 							},
-
 							body: JSON.stringify(attachmentsLists)
 						}
 					);
@@ -325,9 +326,11 @@
 			}
 		}
 		testing___['attachments']= attachmentsLists;
-		const result=await fetch(`${baseURL}/api/files/createNew`, {method:'POST',
+		const result=await fetch(`${baseURL}/api/files/createNew`, { 
+			method:'POST',
 			headers: {
-				'Content-Type': 'application/json'
+				'Content-Type': 'application/json',
+				'Authorization': `Bearer ${$loggedInToken}`
 			},
 			body:JSON.stringify(testing___)}
 		)
