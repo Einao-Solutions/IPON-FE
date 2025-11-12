@@ -25,70 +25,125 @@
     }
   }
 
-  function getCategoryColor(category: string): string {
-    const colors: Record<string, string> = {
-      filing: 'text-blue-600',
-      search: 'text-green-600',
-      management: 'text-orange-600',
-      financial: 'text-purple-600',
-      administrative: 'text-gray-600'
+  function getServiceIcon(service: IPService): string {
+    // Map service IDs to specific icons to match the design
+    const iconMap: Record<string, string> = {
+      'pre-registration': 'mdi:file-plus-outline',
+      'clerical-update': 'mdi:file-edit-outline',
+      'trademark-journal': 'mdi:book-open-variant',
+      'status-search': 'mdi:magnify',
+      'availability-search': 'mdi:file-search-outline',
+      'renewal': 'mdi:refresh',
+      'assignment': 'mdi:account-switch',
+      'registered-user': 'mdi:account-group',
+      'merger': 'mdi:merge',
+      'change-applicant-name': 'mdi:account-edit',
+      'change-applicant-address': 'mdi:map-marker-radius',
+      'pay-certificate': 'mdi:cash-fast',
+      'verify-payment': 'mdi:cash-sync',
+      'change-agent': 'mdi:account-switch',
+      'print-documents': 'mdi:printer-outline',
+      'update-file': 'mdi:update',
+      'update-publication-status': 'mdi:newspaper-variant-outline',
+      'withdrawal': 'mdi:close-circle-outline',
+      'claim-files': 'mdi:file-document-multiple',
+      'appeal': 'mdi:information-outline'
     };
-    return colors[category] || 'text-gray-600';
+    return iconMap[service.id] || service.icon;
+  }
+
+  function getIconColor(service: IPService): string {
+    // Color mapping based on the screenshot
+    const colorMap: Record<string, string> = {
+      'pre-registration': 'text-green-600',
+      'clerical-update': 'text-green-600',
+      'trademark-journal': 'text-green-600',
+      'status-search': 'text-green-600',
+      'availability-search': 'text-green-600',
+      'renewal': 'text-green-600',
+      'assignment': 'text-green-600',
+      'registered-user': 'text-green-600',
+      'merger': 'text-green-600',
+      'change-applicant-name': 'text-green-600',
+      'change-applicant-address': 'text-green-600',
+      'pay-certificate': 'text-green-600',
+      'verify-payment': 'text-green-600',
+      'change-agent': 'text-green-600',
+      'print-documents': 'text-green-600',
+      'update-file': 'text-green-600',
+      'update-publication-status': 'text-green-600',
+      'withdrawal': 'text-green-600',
+      'claim-files': 'text-green-600',
+      'appeal': 'text-green-600'
+    };
+    return colorMap[service.id] || 'text-green-600';
   }
 </script>
 
 {#if viewMode === 'grid'}
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {#each filteredServices as service (service.id)}
       <button
         on:click={() => handleServiceClick(service)}
-        class="flex flex-col items-center justify-center text-center bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.02] hover:border-green-300 min-h-[140px] space-y-3"
+        class="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 text-left group hover:border-green-200"
       >
-        <Icon 
-          icon={service.icon} 
-          width="2.5em" 
-          height="2.5em" 
-          class="text-green-600" 
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold text-slate-800">{service.name}</Card.Title>
-          <Card.Description class="text-xs text-slate-600 leading-relaxed">
-            {service.description}
-          </Card.Description>
+        <div class="flex items-start justify-between mb-4">
+          <div class="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors">
+            <Icon 
+              icon={getServiceIcon(service)} 
+              width="24" 
+              height="24" 
+              class={getIconColor(service)} 
+            />
+          </div>
+          {#if service.price}
+            <div class="text-right">
+              <div class="text-lg font-semibold text-green-600">{service.price}</div>
+              <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
+            </div>
+          {:else}
+            <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
+          {/if}
         </div>
-        {#if service.category}
-          <span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 {getCategoryColor(service.category)} capitalize">
-            {service.category}
-          </span>
-        {/if}
+        
+        <div>
+          <h3 class="font-semibold text-gray-900 text-sm mb-2">{service.name}</h3>
+          <p class="text-xs text-gray-600 leading-relaxed">{service.description}</p>
+        </div>
       </button>
     {/each}
   </div>
 {:else}
-  <div class="space-y-2">
+  <div class="space-y-3">
     {#each filteredServices as service (service.id)}
       <button
         on:click={() => handleServiceClick(service)}
-        class="w-full flex items-center space-x-4 bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg p-4 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:border-green-300 text-left"
+        class="w-full bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-all duration-200 text-left group hover:border-green-200"
       >
-        <div class="flex-shrink-0">
-          <Icon 
-            icon={service.icon} 
-            width="2em" 
-            height="2em" 
-            class="text-green-600" 
-          />
-        </div>
-        <div class="flex-1 min-w-0">
-          <h3 class="text-sm font-semibold text-slate-800 truncate">{service.name}</h3>
-          <p class="text-xs text-slate-600 mt-1">{service.description}</p>
-        </div>
-        <div class="flex-shrink-0">
-          {#if service.category}
-            <span class="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 {getCategoryColor(service.category)} capitalize">
-              {service.category}
-            </span>
-          {/if}
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-4 flex-1">
+            <div class="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center group-hover:bg-green-100 transition-colors flex-shrink-0">
+              <Icon 
+                icon={getServiceIcon(service)} 
+                width="20" 
+                height="20" 
+                class={getIconColor(service)} 
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="font-semibold text-gray-900 text-sm">{service.name}</h3>
+              <p class="text-xs text-gray-600 mt-1">{service.description}</p>
+            </div>
+          </div>
+          
+          <div class="flex items-center space-x-4 flex-shrink-0">
+            {#if service.price}
+              <div class="text-right">
+                <div class="text-lg font-semibold text-green-600">{service.price}</div>
+              </div>
+            {/if}
+            <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
+          </div>
         </div>
       </button>
     {/each}

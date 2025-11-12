@@ -5,6 +5,7 @@ export interface IPService {
   icon: string;
   route: string | ((ipType?: string) => string);
   category: 'filing' | 'search' | 'management' | 'financial' | 'administrative';
+  price?: string;
   isCommon?: boolean; // Services available across all IP types
 }
 
@@ -122,40 +123,183 @@ export const commonServices: IPService[] = [
   }
 ];
 
-// Trademark-specific services
+// Trademark-specific services with prices
 export const trademarkServices: IPService[] = [
-  ...commonServices,
+  {
+    id: 'pre-registration',
+    name: 'New Registration',
+    description: 'File new Trademark applications',
+    icon: 'mdi:file-plus-outline',
+    route: '/application?type=2',
+    category: 'filing',
+    price: '₦15,000'
+  },
   {
     id: 'clerical-update',
-    name: 'CLERICAL UPDATE',
-    description: 'Edit/Update existing trademark application',
+    name: 'Clerical Update',
+    description: 'Edit/Update existing applications',
     icon: 'mdi:file-edit-outline',
     route: '/home/clerical-update',
-    category: 'management'
+    category: 'management',
+    price: '₦2000'
   },
   {
     id: 'trademark-journal',
-    name: 'TRADEMARK JOURNAL',
-    description: 'View trademarks in publication',
-    icon: 'mdi:file',
+    name: 'Trademark Journal',
+    description: 'View trademark journal',
+    icon: 'mdi:book-open-variant',
     route: '/home/trademarkpubs',
-    category: 'search'
+    category: 'search',
+    price: '₦15,500'
   },
   {
-    id: 'post-registration',
-    name: 'POST-REGISTRATION',
-    description: 'File Recordal Applications',
-    icon: 'mdi:file',
-    route: '/home/postregistration',
-    category: 'filing'
+    id: 'status-search',
+    name: 'Status Search',
+    description: 'Search file status',
+    icon: 'mdi:magnify',
+    route: '/statussearch',
+    category: 'search',
+    price: '₦9,500'
   },
   {
-    id: 'publication-status-update',
-    name: 'PUBLICATION STATUS UPDATE',
-    description: 'File for publication status updates for Trademark files in Publication',
+    id: 'availability-search',
+    name: 'Availability Search',
+    description: 'Check trademark availability',
+    icon: 'mdi:file-search-outline',
+    route: '/availabilitysearch',
+    category: 'search',
+    price: '₦2,500'
+  },
+  {
+    id: 'renewal',
+    name: 'Renewal',
+    description: 'Renew your trademark',
+    icon: 'mdi:refresh',
+    route: '/home/renewal',
+    category: 'management',
+    price: '₦15,500'
+  },
+  {
+    id: 'assignment',
+    name: 'Assignment',
+    description: 'Assign trademark rights',
+    icon: 'mdi:account-switch',
+    route: '/home/assignment',
+    category: 'administrative',
+    price: '₦18,500'
+  },
+  {
+    id: 'registered-user',
+    name: 'Registered User',
+    description: 'Manage registered users',
+    icon: 'mdi:account-group',
+    route: '/home/registered-user',
+    category: 'administrative',
+    price: '₦18,500'
+  },
+  {
+    id: 'merger',
+    name: 'Merger',
+    description: 'Merge trademark applications',
+    icon: 'mdi:merge',
+    route: '/home/merger',
+    category: 'management',
+    price: '₦18,500'
+  },
+  {
+    id: 'change-applicant-name',
+    name: 'Change of Applicant Name',
+    description: 'Update applicant name',
+    icon: 'mdi:account-edit',
+    route: '/home/change-applicant-name',
+    category: 'administrative',
+    price: '₦2,000'
+  },
+  {
+    id: 'change-applicant-address',
+    name: 'Change of Applicant Address',
+    description: 'Update applicant address',
+    icon: 'mdi:map-marker-radius',
+    route: '/home/change-applicant-address',
+    category: 'administrative',
+    price: '₦2,000'
+  },
+  {
+    id: 'pay-certificate',
+    name: 'Pay for Certificate',
+    description: 'Pay for registration certificate',
+    icon: 'mdi:cash-fast',
+    route: '/home/payment',
+    category: 'financial',
+    price: '₦18,500'
+  },
+  {
+    id: 'verify-payment',
+    name: 'Verify Payment',
+    description: 'Verify payments using RRR',
+    icon: 'mdi:cash-sync',
+    route: '/home/payment/verify',
+    category: 'financial'
+  },
+  {
+    id: 'change-agent',
+    name: 'Change of Agent',
+    description: 'Update agent information',
+    icon: 'mdi:account-switch',
+    route: '/home/agent/change',
+    category: 'administrative'
+  },
+  {
+    id: 'print-documents',
+    name: 'Print Documents',
+    description: 'Print trademark documents',
+    icon: 'mdi:printer-outline',
+    route: '/home/documents/print',
+    category: 'administrative'
+  },
+  {
+    id: 'update-file',
+    name: 'Update File',
+    description: 'Update file information',
+    icon: 'mdi:update',
+    route: '/home/update-files',
+    category: 'management',
+    price: '₦2,000'
+  },
+  {
+    id: 'update-publication-status',
+    name: 'Update Publication Status',
+    description: 'Update publication status',
     icon: 'mdi:newspaper-variant-outline',
     route: '/home/publications/publicationstatusupdate',
-    category: 'management'
+    category: 'management',
+    price: '₦8,500'
+  },
+  {
+    id: 'withdrawal',
+    name: 'Withdrawal',
+    description: 'Withdraw application',
+    icon: 'mdi:file-remove-outline',
+    route: '/home/file-withdrawal',
+    category: 'management',
+    price: '₦5,000'
+  },
+  {
+    id: 'claim-files',
+    name: 'Claim Files',
+    description: 'Manage claim files',
+    icon: 'mdi:file-document-multiple',
+    route: '/home/claim-files',
+    category: 'administrative'
+  },
+  {
+    id: 'appeal',
+    name: 'Appeal',
+    description: 'File an appeal',
+    icon: 'mdi:gavel',
+    route: '/home/appeal',
+    category: 'management',
+    price: '₦5,000'
   }
 ];
 
