@@ -24,6 +24,7 @@
 	import { DashStats } from '$lib/store';
 	import AvailabilitySearchModal from '../../home/components/AvailabilitySearchModal.svelte';
 	import UserDashboard from '../components/UserDashboard.svelte';
+	import IPServiceView from '../components/IPServiceView.svelte';
 	import { Description } from 'formsnap';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { Result } from 'postcss';
@@ -56,6 +57,10 @@
 	// Dashboard statistics are now handled by UserDashboard component
 	function openPreRegistrationDialog() {
 		showPreRegistrationDialog = true;
+	}
+
+	function goBackToMain() {
+		currentView = 'main';
 	}
 
 	function NewApplication() {
@@ -1319,7 +1324,7 @@
 	
 	<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
 	{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === 'main'}
-	<div class="bg-slate-50/50 h-full sm:h-full rounded-xl p-6 overflow-y-auto sm:overflow-hidden">
+	<div class="bg-slate-100/80 h-full sm:h-full rounded-xl p-6 overflow-hidden">
 		<div class="max-w-7xl mx-auto h-full flex flex-col">
 			<!-- Header Section -->
 			<div class="mb-6 flex-shrink-0">
@@ -1620,245 +1625,13 @@
 
 <!-- TRADEMARK SERVICES VIEW -->
 {#if currentView === 'trademark'}
-	<div class="min-h-screen bg-gray-50 px-6 py-8">
-		<div class="max-w-7xl mx-auto space-y-6">
-			<!-- Header with back button -->
-			<div class="flex items-center justify-between">
-				<button on:click={() => (currentView = 'main')} class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
-					<Icon icon="mdi:arrow-left" class="text-xl" />
-					<span class="font-medium">Back to Dashboard</span>
-				</button>
-			
-			<div class="flex items-center space-x-2">
-				<button 
-					class="px-4 py-2 rounded-md {viewToggle === 'grid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
-					on:click={() => (viewToggle = 'grid')}
-				>
-					<Icon icon="mdi:grid" class="text-sm" /> Grid
-				</button>
-				<button 
-					class="px-4 py-2 rounded-md {viewToggle === 'list' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
-					on:click={() => (viewToggle = 'list')}
-				>
-					<Icon icon="mdi:format-list-bulleted" class="text-sm" /> List
-				</button>
-			</div>
-		</div>
-
-		<!-- Service Header -->
-		<div class="flex items-center space-x-3">
-			<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-				<Icon icon="mdi:scale-balance" class="text-green-600" />
-			</div>
-			<div>
-				<h2 class="text-2xl font-bold text-gray-900">Trademark Services</h2>
-				<p class="text-gray-600">Register and protect your brand identity</p>
-			</div>
-		</div>
-
-		<!-- Services Grid -->
-		{#if viewToggle === 'grid'}
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				<!-- New Registration -->
-				<button on:click={() => goto('/application?type=2')} class="text-left">
-					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
-						<div class="flex items-center space-x-3 mb-2">
-							<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-								<Icon icon="mdi:file-plus-outline" class="text-green-600" />
-							</div>
-							<div>
-								<h3 class="font-semibold text-gray-900">New Registration</h3>
-								<p class="text-green-600 font-medium text-sm">₦15,000</p>
-							</div>
-						</div>
-						<p class="text-gray-600 text-xs">File new Trademark applications</p>
-					</div>
-				</button>
-
-				<!-- Clerical Update -->
-				<button on:click={() => goto('/home/clerical-update')} class="text-left">
-					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
-						<div class="flex items-center space-x-3 mb-2">
-							<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-								<Icon icon="mdi:file-edit-outline" class="text-green-600" />
-							</div>
-							<div>
-								<h3 class="font-semibold text-gray-900">Clerical Update</h3>
-								<p class="text-green-600 font-medium text-sm">₦2000</p>
-							</div>
-						</div>
-						<p class="text-gray-600 text-xs">Edit/Update existing applications</p>
-					</div>
-				</button>
-
-				<!-- Trademark Journal -->
-				<button on:click={() => goto('/home/trademarkpubs')} class="text-left">
-					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
-						<div class="flex items-center space-x-3 mb-2">
-							<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-								<Icon icon="mdi:newspaper" class="text-green-600" />
-							</div>
-							<div>
-								<h3 class="font-semibold text-gray-900">Trademark Journal</h3>
-								<p class="text-green-600 font-medium text-sm">₦15,500</p>
-							</div>
-						</div>
-						<p class="text-gray-600 text-xs">View trademark journal</p>
-					</div>
-				</button>
-
-				<!-- Add more trademark services here following the same pattern -->
-			</div>
-		{:else}
-			<!-- List View -->
-			<div class="space-y-2">
-				<button on:click={() => goto('/application?type=2')} class="w-full text-left">
-					<div class="border rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
-						<div class="flex items-center justify-between">
-							<div class="flex items-center space-x-4">
-								<div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-									<Icon icon="mdi:file-plus-outline" class="text-green-600" />
-								</div>
-								<div>
-									<h3 class="font-semibold text-gray-900">New Registration</h3>
-									<p class="text-gray-600 text-sm">File new Trademark applications</p>
-								</div>
-							</div>
-							<p class="text-green-600 font-medium">₦15,000</p>
-						</div>
-					</div>
-				</button>
-				<!-- Add more list items here -->
-			</div>
-		{/if}
-		</div>
-	</div>
+	<IPServiceView ipType="trademark" onBack={goBackToMain} />
 
 {:else if currentView === 'patent'}
-	<!-- PATENT SERVICES VIEW -->
-	<div class="min-h-screen bg-gray-50 px-6 py-8">
-		<div class="max-w-7xl mx-auto space-y-6">
-			<!-- Header with back button -->
-			<div class="flex items-center justify-between">
-				<button on:click={() => (currentView = 'main')} class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
-					<Icon icon="mdi:arrow-left" class="text-xl" />
-					<span class="font-medium">Back to Dashboard</span>
-				</button>
-			
-			<div class="flex items-center space-x-2">
-				<button 
-					class="px-4 py-2 rounded-md {viewToggle === 'grid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
-					on:click={() => (viewToggle = 'grid')}
-				>
-					<Icon icon="mdi:grid" class="text-sm" /> Grid
-				</button>
-				<button 
-					class="px-4 py-2 rounded-md {viewToggle === 'list' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
-					on:click={() => (viewToggle = 'list')}
-				>
-					<Icon icon="mdi:format-list-bulleted" class="text-sm" /> List
-				</button>
-			</div>
-		</div>
-
-		<!-- Service Header -->
-		<div class="flex items-center space-x-3">
-			<div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-				<Icon icon="mdi:lightbulb-outline" class="text-blue-600" />
-			</div>
-			<div>
-				<h2 class="text-2xl font-bold text-gray-900">Patent Services</h2>
-				<p class="text-gray-600">Protect your inventions and innovations</p>
-			</div>
-		</div>
-
-		<!-- Services Grid -->
-		{#if viewToggle === 'grid'}
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				<!-- New Registration -->
-				<button on:click={() => goto('/application?type=0')} class="text-left">
-					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
-						<div class="flex items-center space-x-3 mb-2">
-							<div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-								<Icon icon="mdi:lightbulb-outline" class="text-blue-600" />
-							</div>
-							<div>
-								<h3 class="font-semibold text-gray-900">New Registration</h3>
-								<p class="text-blue-600 font-medium text-sm">₦25,000</p>
-							</div>
-						</div>
-						<p class="text-gray-600 text-xs">File new Patent applications</p>
-					</div>
-				</button>
-
-				<!-- Add more patent services here -->
-			</div>
-		{/if}
-		</div>
-	</div>
+	<IPServiceView ipType="patent" onBack={goBackToMain} />
 
 {:else if currentView === 'design'}
-	<!-- DESIGN SERVICES VIEW -->
-	<div class="min-h-screen bg-gray-50 px-6 py-8">
-		<div class="max-w-7xl mx-auto space-y-6">
-			<!-- Header with back button -->
-			<div class="flex items-center justify-between">
-				<button on:click={() => (currentView = 'main')} class="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors">
-					<Icon icon="mdi:arrow-left" class="text-xl" />
-					<span class="font-medium">Back to Dashboard</span>
-				</button>
-			
-			<div class="flex items-center space-x-2">
-				<button 
-					class="px-4 py-2 rounded-md {viewToggle === 'grid' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
-					on:click={() => (viewToggle = 'grid')}
-				>
-					<Icon icon="mdi:grid" class="text-sm" /> Grid
-				</button>
-				<button 
-					class="px-4 py-2 rounded-md {viewToggle === 'list' ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-700'}"
-					on:click={() => (viewToggle = 'list')}
-				>
-					<Icon icon="mdi:format-list-bulleted" class="text-sm" /> List
-				</button>
-			</div>
-		</div>
-
-		<!-- Service Header -->
-		<div class="flex items-center space-x-3">
-			<div class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-				<Icon icon="mdi:palette-outline" class="text-purple-600" />
-			</div>
-			<div>
-				<h2 class="text-2xl font-bold text-gray-900">Design Services</h2>
-				<p class="text-gray-600">Safeguard your creative designs</p>
-			</div>
-		</div>
-
-		<!-- Services Grid -->
-		{#if viewToggle === 'grid'}
-			<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				<!-- New Registration -->
-				<button on:click={() => goto('/application?type=1')} class="text-left">
-					<div class="border rounded-lg p-4 hover:shadow-lg transition-shadow bg-white">
-						<div class="flex items-center space-x-3 mb-2">
-							<div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-								<Icon icon="mdi:palette-outline" class="text-purple-600" />
-							</div>
-							<div>
-								<h3 class="font-semibold text-gray-900">New Registration</h3>
-								<p class="text-purple-600 font-medium text-sm">₦20,000</p>
-							</div>
-						</div>
-						<p class="text-gray-600 text-xs">File new Design applications</p>
-					</div>
-				</button>
-
-				<!-- Add more design services here -->
-			</div>
-		{/if}
-		</div>
-	</div>
+	<IPServiceView ipType="design" onBack={goBackToMain} />
 {/if}
 
 <!-- COMMENTED OUT - ORIGINAL USER DASHBOARD STATISTICS (FOR LATER) -->

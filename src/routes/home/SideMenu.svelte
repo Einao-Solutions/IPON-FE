@@ -205,7 +205,7 @@
       case "low":
         return "bg-blue-500 text-white border-blue-600";
       case "feature":
-        return "bg-green-500 text-white border-green-600";
+        return "bg-green-600 text-white border-green-600";
       default:
         return "bg-gray-500 text-white border-gray-600";
     }
@@ -230,17 +230,17 @@
               : handleMenuClick(menu)}
         >
           <div
-            class={`flex items-center justify-between rounded-md py-2 px-3 ${activeMenu === menu.location ? "bg-[#287F71] text-white" : "hover:bg-gray-100"}`}
+            class={`flex items-center justify-between rounded-md py-2 px-3 ${activeMenu === menu.location ? "bg-green-600 text-white" : "hover:bg-gray-100"}`}
           >
             <div class="flex items-center space-x-3">
               <Icon
                 icon={menu.icon}
-                class={`text-xl ${activeMenu === menu.location ? "text-white" : "text-gray-500"}`}
+                class={`text-xl ${activeMenu === menu.location ? "text-white" : "text-slate-500"}`}
               />
               <span
-                class={`${activeMenu === menu.location ? "text-white" : "text-gray-700"}`}
-                >{menu.name ?? menu.location}</span
-              >
+                class={`text-base ${activeMenu === menu.location ? "text-white" : "text-slate-600"}`}
+                >{menu.name ?? menu.location}</span>
+              
             </div>
             <div class="flex items-center">
               {#if menu.location === "Support" && !notificationsLoading}
@@ -267,7 +267,7 @@
               {#if menu.submenus}
                 <Icon
                   icon="heroicons:chevron-down"
-                  class={`transition-transform duration-200 ${activeMenu === menu.location ? "rotate-180 text-white" : "text-gray-400"}`}
+                  class={`transition-transform duration-200 ${activeMenu === menu.location ? "rotate-180 text-white" : "text-slate-400"}`}
                   width="16"
                 />
               {/if}
@@ -278,10 +278,10 @@
           <div class="ml-10 mt-1 space-y-1">
             {#each menu.submenus as submenu}
               <button
-                class="w-full text-left block py-2 px-3 rounded-md text-sm {activeSubmenu ===
+                class="w-full text-left block py-2 px-3 rounded-md text-base {activeSubmenu ===
                 submenu.name
                   ? 'font-medium text-[#287F71] bg-gray-50'
-                  : 'text-gray-600 hover:bg-gray-50'}"
+                  : 'text-slate-600 hover:bg-gray-50'}"
                 on:click={() => handleMenuClick(menu, submenu)}
               >
                 {submenu.name}
@@ -307,7 +307,7 @@
               icon={getNotificationIcon(systemNotification.type)}
               class="text-lg flex-shrink-0"
             />
-            <span class="font-semibold text-xs">{systemNotification.title}</span
+            <span class="font-semibold text-base">{systemNotification.title}</span
             >
           </div>
           <button
@@ -324,7 +324,7 @@
         </div>
         {#if showSystemNotifications}
           <div class="p-3">
-            <ul class="list-disc pl-5 text-xs text-white/90 leading-relaxed">
+            <ul class="list-disc pl-5 text-base text-white/90 leading-relaxed">
               {#each systemNotification.message as line}
                 <li>{line}</li>
               {/each}
