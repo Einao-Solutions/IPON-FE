@@ -1623,16 +1623,18 @@
 	<!-- END COMMENTED OUT ACTION CARDS -->
 	{/if}
 
-<!-- TRADEMARK SERVICES VIEW -->
-{#if currentView === 'trademark'}
-	<IPServiceView ipType="trademark" onBack={goBackToMain} />
-
-{:else if currentView === 'patent'}
-	<IPServiceView ipType="patent" onBack={goBackToMain} />
-
-{:else if currentView === 'design'}
-	<IPServiceView ipType="design" onBack={goBackToMain} />
-{/if}
+	<!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->
+	{#if currentView === 'trademark' || currentView === 'patent' || currentView === 'design'}
+	<div class="h-full">
+		{#if currentView === 'trademark'}
+			<IPServiceView ipType="trademark" onBack={goBackToMain} />
+		{:else if currentView === 'patent'}
+			<IPServiceView ipType="patent" onBack={goBackToMain} />
+		{:else if currentView === 'design'}
+			<IPServiceView ipType="design" onBack={goBackToMain} />
+		{/if}
+	</div>
+	{/if}
 
 <!-- COMMENTED OUT - ORIGINAL USER DASHBOARD STATISTICS (FOR LATER) -->
 <!--

@@ -33,30 +33,26 @@
     isActive: true,
   };
 
-  let menus = [
-    { icon: "radix-icons:dashboard", location: "Dashboard" },
-    {
-      icon: "tabler:forms",
-      location: "Post Registration",
-      submenus: [
-        { name: "Trademark", location: "PostRegistration/" },
-        { name: "Patent", location: "PostRegistration/" },
-      ],
-    },
-    { icon: "cil:search", location: "Publications" },
-    { icon: "fluent:person-support-20-filled", location: "Support" },
-    { icon: "cil:search", location: "Opposition" },
-    { icon: "arcticons:yahoo-japan-finance", location: "Finance" },
-    { icon: "mi:notification", location: "Performance" },
-    { icon: "octicon:people-24", location: "Users" },
-    { icon: "ooui:user-avatar-outline", location: "Profile" },
-    { icon: "mdi:shield-crown-outline", location: "Admin" },
-    {
-      icon: "mdi:file-plus",
-      name: "Claim Requests",
-      location: "ClaimRequests",
-    },
-  ];
+	let menus = [
+		{ icon: 'radix-icons:dashboard', location: 'Dashboard' },
+		{
+			icon: 'tabler:forms',
+			location: 'Post Registration',
+			submenus: [
+				{ name: 'Trademark', location: 'PostRegistration/' },
+				{ name: 'Patent', location: 'PostRegistration/' }
+			]
+		},
+		{ icon: 'cil:search', location: 'Publications' },
+		{ icon: 'fluent:person-support-20-filled', location: 'Support' },
+		// { icon: 'cil:search', location: 'Opposition' },
+		{ icon: 'arcticons:yahoo-japan-finance', location: 'Finance' },
+		{ icon: 'mi:notification', location: 'Performance' },
+		{ icon: 'octicon:people-24', location: 'Users' },
+		{ icon: 'ooui:user-avatar-outline', location: 'Profile' },
+		{ icon: 'mdi:shield-crown-outline', location: 'Admin' },
+		{ icon: 'mdi:file-plus', name:'Claim Requests',location: 'ClaimRequests' }
+	];
 
   onMount(async () => {
     await decodeUser();

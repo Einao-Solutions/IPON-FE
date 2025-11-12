@@ -14,6 +14,15 @@
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
 
+  // show a maintenance popup on page load
+  let showMaintenance: boolean = true;
+  let maintenanceMessage: string =
+    "Our portal is currently undergoing maintenance, and you may experience difficulty logging in. We're working to restore full functionality as quickly as possible. Thank you for your patience and understanding.";
+
+  function closeMaintenance() {
+    showMaintenance = false;
+  }
+
   interface CreateUserRequest {
     email: string;
     password: string;
@@ -413,6 +422,50 @@
 </script>
 
 <Toaster />
+
+{#if showMaintenance}
+  <!-- Maintenance popup -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Maintenance notification"
+  >
+    <div class="max-w-lg w-full bg-white rounded-lg shadow-xl p-6">
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="flex items-center space-x-3">
+            <Icon
+              icon="mdi:alert-circle-outline"
+              class="text-yellow-600"
+              width="1.5rem"
+              height="1.5rem"
+              aria-hidden="true"
+            />
+            <h3 class="text-lg font-semibold text-slate-900">Public Notice: System Maintenance Update</h3>
+          </div>
+          <p class="mt-2 text-sm text-slate-600">{maintenanceMessage}</p>
+        </div>
+        <button
+          class="ml-4 p-2 rounded hover:bg-slate-100 text-slate-600"
+          aria-label="Close maintenance notice"
+          on:click={closeMaintenance}
+        >
+          ✕
+        </button>
+      </div>
+      <div class="mt-4 flex justify-end">
+        <button
+          class="px-4 py-2 rounded bg-green-700 text-white hover:bg-green-800"
+          on:click={closeMaintenance}
+        >
+          Dismiss
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <div class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
   <div
     class="relative flex min-h-screen w-full items-center justify-between overflow-hidden p-4 md:p-10"

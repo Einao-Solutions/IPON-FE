@@ -61,6 +61,7 @@ import * as Card from "$lib/components/ui/card"
 				UserRoles.PatentDesignRegistrar,
 				UserRoles.PermSec,
 				UserRoles.Minister,
+				UserRoles.Staff,
 				UserRoles.Tech,
 				UserRoles.SuperAdmin
 			].includes(x)
@@ -79,6 +80,7 @@ return show;
 				UserRoles.Minister,
 				UserRoles.PermSec,
 				UserRoles.Tech,
+				UserRoles.Staff,
 				UserRoles.SuperAdmin
 			].includes(x)
 		);
@@ -96,6 +98,7 @@ return show;
 				UserRoles.PermSec,
 				UserRoles.Minister,
 				UserRoles.Tech,
+				UserRoles.Staff,
 				UserRoles.SuperAdmin
 			].includes(x)
 		);

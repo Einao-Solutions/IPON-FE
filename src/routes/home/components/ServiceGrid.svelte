@@ -19,6 +19,26 @@
       // Handle modal opening for availability search
       const event = new CustomEvent('openAvailabilitySearch');
       window.dispatchEvent(event);
+    } else if (service.id === 'pay-certificate') {
+      // Handle modal opening for pay certificate
+      const event = new CustomEvent('openPayCertModal');
+      window.dispatchEvent(event);
+    } else if (service.id === 'verify-payment') {
+      // Handle modal opening for verify payment
+      const event = new CustomEvent('openVerifyPaymentModal');
+      window.dispatchEvent(event);
+    } else if (service.id === 'change-agent') {
+      // Handle modal opening for change of agent
+      const event = new CustomEvent('openChangeOfAgentModal');
+      window.dispatchEvent(event);
+    } else if (service.id === 'print-documents') {
+      // Handle modal opening for print documents
+      const event = new CustomEvent('openGetDocumentsModal');
+      window.dispatchEvent(event);
+    } else if (service.id === 'appeal') {
+      // Handle modal opening for appeals
+      const event = new CustomEvent('openFileAppealsModal');
+      window.dispatchEvent(event);
     } else {
       const route = resolveServiceRoute(service, ipType);
       goto(route);
