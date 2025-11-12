@@ -20,7 +20,7 @@
 
 	async function loadDashStats() {
 		const userId = user.creatorId;
-		const showId = user.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin);
+		const showId = user.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin || UserRoles.Staff);
 		let id = showId ? null : userId;
 		const url = `${baseURL}/api/files/FileStatistics?userId=${id}`;
 		const data = await fetch(url, {

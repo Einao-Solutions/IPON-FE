@@ -91,7 +91,7 @@
 		else {
 			if ($ticketsSummary===null) {
 				getStats()
-				const userId = $loggedInUser.id;
+				const userId = $loggedInUser.creatorId;
 				let body={
 					creatorId:  userId
 				}
