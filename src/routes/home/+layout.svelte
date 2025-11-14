@@ -78,16 +78,16 @@
   <svelte:component this={filterFiles} {...filterData} />
 {/if}
 
-<div class="flex h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-hidden">
+<div class="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
   <!-- Desktop Sidebar Navigation -->
-  <nav class="hidden sm:flex fixed left-0 top-0 h-screen w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-sm z-30">
+  <nav class="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-sm z-30">
     <SideMenu />
   </nav>
 
   <!-- Mobile Sidebar Overlay -->
   {#if isMobileSidebarOpen}
     <div 
-      class="fixed inset-0 bg-black bg-opacity-50 z-40 sm:hidden" 
+      class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
       on:click={closeMobileSidebar}
       on:keydown={(e) => e.key === 'Escape' && closeMobileSidebar()}
       role="button"
@@ -96,20 +96,20 @@
   {/if}
 
   <!-- Mobile Sidebar -->
-  <nav class="sm:hidden fixed left-0 top-0 h-full w-64 bg-white/90 backdrop-blur-xl border-r border-slate-200/60 shadow-lg z-50 transform transition-transform duration-300 {isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
+  <nav class="lg:hidden fixed left-0 top-0 h-full w-64 bg-white/90 backdrop-blur-xl border-r border-slate-200/60 shadow-lg z-50 transform transition-transform duration-300 {isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
     <SideMenu />
   </nav>
 
   <!-- Main Content Area -->
-  <div class="sm:ml-64 w-full h-screen flex flex-col overflow-hidden">
-    <!-- Modern Header -->
-    <header class="flex-shrink-0 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+  <div class="lg:ml-64 w-full min-h-screen flex flex-col">
+    <!-- Modern Header - STICKY -->
+    <header class="sticky top-0 z-20 flex-shrink-0 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
       <div class="flex items-center justify-between px-4 sm:px-8 py-4 gap-4">
         <!-- Mobile hamburger button -->
         <Button 
           variant="ghost" 
           size="sm" 
-          class="sm:hidden p-2 hover:bg-slate-100 rounded-lg"
+          class="lg:hidden p-2 hover:bg-slate-100 rounded-lg"
           on:click={toggleMobileSidebar}
         >
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +208,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto sm:overflow-hidden px-4 sm:px-8 py-6">
+    <main class="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
       <slot />
     </main>
   </div>

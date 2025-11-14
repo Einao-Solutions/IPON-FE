@@ -975,75 +975,97 @@
 </Dialog.Root>
 <!-- Verify Payment Dialog -->
 <Dialog.Root bind:open={showVerifyPaymentDialog}>
-	<Dialog.Content class="max-w-[400px]">
+	<Dialog.Content class="max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>Verify Remita Payment</Dialog.Title>
-			<Dialog.Description
-				>Enter your Remita Retrieval Reference (RRR) to verify payment.</Dialog.Description
-			>
+			<Dialog.Title class="text-lg font-semibold text-gray-900">Verify Remita Payment</Dialog.Title>
+			<Dialog.Description class="text-sm text-gray-600">
+				Enter your Remita Retrieval Reference (RRR) to verify payment.
+			</Dialog.Description>
 		</Dialog.Header>
-		<div class="mt-4">
-			<input
-				type="text"
-				class="border rounded w-full p-2"
-				placeholder="Enter RRR"
-				bind:value={verifyRRR}
-				on:keydown={(e) => {
-					if (e.key === 'Enter') verifyRemitaPayment();
-				}}
-			/>
-		</div>
-		{#if verifyPaymentError}
-			<p class="text-red-600 mt-2">{verifyPaymentError}</p>
-		{/if}
-		{#if verifyPaymentResult}
-			{#if verifyPaymentResult.status == null}
-				<div class="mt-4 bg-red-50 border border-red-200 rounded p-2">
-					<p class="font-semibold text-red-700">Payment not found.</p>
-				</div>
-			{:else if verifyPaymentResult.status === '00'}
-				<div class="mt-4 bg-green-50 border border-green-200 rounded p-2">
-					<p class="font-semibold text-green-700">Payment Status: Successful</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<p>Date: {mapDateToString(verifyPaymentResult.paymentDate)}</p>
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
-				</div>
-			{:else if verifyPaymentResult.status === '021'}
-				<div class="mt-4 bg-yellow-50 border border-yellow-200 rounded p-2">
-					<p class="font-semibold text-yellow-700">Payment Status: Pending</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<!-- <p>Date: {mapDateToString(verifyPaymentResult.paymentDate)}</p> -->
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
-				</div>
-			{:else}
-				<div class="mt-4 bg-red-50 border border-red-200 rounded p-2">
-					<p class="font-semibold text-red-700">
-						Payment Status: Unsuccessful ({verifyPaymentResult.status})
-					</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<!-- <p>Date: {mapDateToString(verifyPaymentResult.paymentDate)}</p> -->
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
+		<div class="space-y-4">
+			<div>
+				<label for="rrr-input" class="block text-sm font-medium text-gray-700 mb-2">
+					RRR Number
+				</label>
+				<input
+					id="rrr-input"
+					type="text"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+					placeholder="Enter RRR"
+					bind:value={verifyRRR}
+					on:keydown={(e) => {
+						if (e.key === 'Enter') verifyRemitaPayment();
+					}}
+				/>
+			</div>
+			
+			{#if verifyPaymentError}
+				<div class="bg-red-50 border border-red-200 rounded-md p-3">
+					<p class="text-sm text-red-600">{verifyPaymentError}</p>
 				</div>
 			{/if}
-		{/if}
-		<Dialog.Footer class="sm:flex mt-4">
+			
+			{#if verifyPaymentResult}
+				{#if verifyPaymentResult.status == null}
+					<div class="bg-red-50 border border-red-200 rounded-md p-3">
+						<p class="font-semibold text-red-700">Payment not found.</p>
+					</div>
+				{:else if verifyPaymentResult.status === '00'}
+					<div class="bg-green-50 border border-green-200 rounded-md p-3">
+						<p class="font-semibold text-green-700 mb-2">Payment Status: Successful</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Date:</span> {mapDateToString(verifyPaymentResult.paymentDate)}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{:else if verifyPaymentResult.status === '021'}
+					<div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+						<p class="font-semibold text-yellow-700 mb-2">Payment Status: Pending</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{:else}
+					<div class="bg-red-50 border border-red-200 rounded-md p-3">
+						<p class="font-semibold text-red-700 mb-2">
+							Payment Status: Unsuccessful ({verifyPaymentResult.status})
+						</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{/if}
+			{/if}
+		</div>
+		
+		<Dialog.Footer class="flex gap-2 pt-4">
 			<Button
 				variant="outline"
+				class="flex-1"
 				on:click={() => {
 					showVerifyPaymentDialog = false;
 					verifyRRR = '';
 					verifyPaymentResult = null;
 					verifyPaymentError = null;
-				}}>Close</Button
+				}}
 			>
-			<Button on:click={verifyRemitaPayment} class="ml-2" disabled={verifyPaymentLoading}>
+				Close
+			</Button>
+			<Button 
+				class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500" 
+				on:click={verifyRemitaPayment} 
+				disabled={verifyPaymentLoading}
+			>
 				{#if verifyPaymentLoading}
 					<Icon icon="eos-icons:loading" width="1.2rem" height="1.2rem" />
 				{:else}
-					Verify
+					Verify Payment
 				{/if}
 			</Button>
 		</Dialog.Footer>
@@ -1152,7 +1174,7 @@
 				<label class="block text-sm font-medium text-gray-700">File Number</label>
 				<input
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 					placeholder="Enter File Number"
 					bind:value={getDocFileNumber}
 				/>
@@ -1162,7 +1184,7 @@
 				<label class="block text-sm font-medium text-gray-700">Payment ID</label>
 				<input
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 					placeholder="Enter Payment ID"
 					bind:value={getDocPaymentId}
 					on:keydown={(e) => {
@@ -1249,7 +1271,7 @@
 			<Button
 				on:click={getDocuments}
 				disabled={getDocLoading || !getDocFileNumber || !getDocPaymentId}
-				class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+				class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
 			>
 				{#if getDocLoading}
 					<Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
@@ -1267,7 +1289,7 @@
 	<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
 {:else}
 	<div
-		class="w-full bg-yellow-300 text-black py-2 px-2 text-xs rounded overflow-hidden relative h-6"
+		class="w-full bg-green-600 text-white py-2 px-2 text-xs rounded overflow-hidden relative h-6"
 	>
 		<div class="absolute whitespace-nowrap animate-marquee top-1">
 			You can now file Withdrawals for all application types using the 'Withdrawal' Module on the dashboard.

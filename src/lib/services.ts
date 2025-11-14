@@ -260,7 +260,7 @@ export const trademarkServices: IPService[] = [
   {
     id: 'update-file',
     name: 'Update File',
-    description: 'Update file information',
+    description: 'Update file information for files in awaiting search status',
     icon: 'mdi:update',
     route: '/home/update-files',
     category: 'management',
@@ -277,7 +277,7 @@ export const trademarkServices: IPService[] = [
   },
   {
     id: 'withdrawal',
-    name: 'Withdrawal',
+    name: 'File Withdrawal',
     description: 'Withdraw application',
     icon: 'mdi:file-remove-outline',
     route: '/home/file-withdrawal',
@@ -343,22 +343,6 @@ export const patentServices: IPService[] = [
 // Design-specific services
 export const designServices: IPService[] = [
   ...commonServices,
-  {
-    id: 'clerical-update',
-    name: 'CLERICAL UPDATE',
-    description: 'Edit/Update existing design application',
-    icon: 'mdi:file-edit-outline',
-    route: '/home/clerical-update',
-    category: 'management'
-  },
-  {
-    id: 'post-registration',
-    name: 'POST-REGISTRATION',
-    description: 'File Design Recordal Applications',
-    icon: 'mdi:file',
-    route: '/home/postregistration',
-    category: 'filing'
-  },
   {
     id: 'update-attachments',
     name: 'UPDATE FILE ATTACHMENTS',

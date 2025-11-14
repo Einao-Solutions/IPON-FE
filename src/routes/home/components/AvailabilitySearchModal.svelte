@@ -3,8 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { baseURL } from '$lib/helpers';
 	import { loggedInUser } from '$lib/store';
+	import Icon from '@iconify/svelte';
+	
 	export let isOpen = false;
-
+	export let ipContext: 'trademark' | 'patent' | 'design' | null = null; // NEW: IP context from service view
+	
 	interface ClassOption {
 		id: number;
 		name: string;
@@ -72,7 +75,38 @@
 	// Form data
 	let searchQuery = '';
 	let selectedClass: number | undefined;
+	// OLD IMPLEMENTATION (commented for future deletion)
+	// let selectedfileType = '';
+	
+	// NEW IMPLEMENTATION - Context-aware file type
 	let selectedfileType = '';
+	let isFileTypeAutoSet = false;
+	
+	// Auto-set file type based on IP context
+	$: if (ipContext && !isFileTypeAutoSet) {
+		const contextMap: Record<string, string> = {
+			'trademark': 'Trademark',
+			'patent': 'Patent', 
+			'design': 'Design'
+		};
+		if (ipContext in contextMap) {
+			selectedfileType = contextMap[ipContext];
+			isFileTypeAutoSet = true;
+		}
+	}
+	
+	// Determine if file type dropdown should be shown
+	$: showFileTypeDropdown = !ipContext; // Hide dropdown when context is provided
+	
+	// Helper function to get file type icon
+	function getFileTypeIcon(fileType: string): string {
+		const iconMap: Record<string, string> = {
+			'Trademark': 'mdi:scale-balance',
+			'Patent': 'mdi:lightbulb-outline', 
+			'Design': 'mdi:palette-outline'
+		};
+		return iconMap[fileType] || 'mdi:file';
+	}
 	let isLoading = false;
 	let error: string | null = null;
 	let paymentId: string | null = null;
@@ -102,8 +136,20 @@
 			error = 'Please enter a search term';
 			return;
 		}
+		
+		// OLD VALIDATION (commented for future deletion)
+		// if (!selectedfileType) {
+		// 	error = 'Please select a file type';
+		// 	return;
+		// }
+		
+		// NEW VALIDATION - Context-aware validation
 		if (!selectedfileType) {
-			error = 'Please select a file type';
+			if (ipContext) {
+				error = 'File type could not be determined from context';
+			} else {
+				error = 'Please select a file type';
+			}
 			return;
 		}
 		try {
@@ -121,9 +167,9 @@
 			sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
 
 			try {
-				applicantName = $loggedInUser.name;
+				applicantName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName || 'Unknown';
 				// console.log('applicantName', applicantName);
-				 applicantEmail = $loggedInUser.email;
+				applicantEmail = $loggedInUser?.email || 'unknown@email.com';
 				// console.log('applicantEmail', applicantEmail);
 				
 				const res = await fetch(
@@ -225,22 +271,37 @@
 							</select>
 						</div>
 
-						<!-- File Type Dropdown -->
-						<div class="w-full md:w-1/3">
-							<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
-								File Type
-							</label>
-							<select
-								id="file-type"
-								bind:value={selectedfileType}
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-							>
-								<option value="">All</option>
-								{#each fileTypeOptions as type}
-									<option value={type}>{type}</option>
-								{/each}
-							</select>
-						</div>
+						<!-- File Type Dropdown - Context-aware display -->
+						{#if showFileTypeDropdown}
+							<!-- OLD IMPLEMENTATION (visible when no context) -->
+							<div class="w-full md:w-1/3">
+								<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
+									File Type
+								</label>
+								<select
+									id="file-type"
+									bind:value={selectedfileType}
+									class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+								>
+									<option value="">All</option>
+									{#each fileTypeOptions as type}
+										<option value={type}>{type}</option>
+									{/each}
+								</select>
+							</div>
+						{:else}
+							<!-- NEW IMPLEMENTATION - Show selected file type as readonly when context is provided -->
+							<div class="w-full md:w-1/3">
+								<label for="file-type-display" class="block text-sm font-medium text-gray-700 mb-1">
+									File Type
+								</label>
+								<div class="w-full p-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center">
+									<Icon icon={getFileTypeIcon(selectedfileType)} class="w-4 h-4 mr-2" />
+									{selectedfileType}
+									<span class="ml-2 text-xs text-green-600">(auto-selected)</span>
+								</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>

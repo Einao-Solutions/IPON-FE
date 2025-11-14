@@ -39,8 +39,46 @@
       // Handle modal opening for appeals
       const event = new CustomEvent('openFileAppealsModal');
       window.dispatchEvent(event);
+    } else if (ipType === 'trademark' && [
+      'change-applicant-name',
+      'change-applicant-address', 
+      'renewal',
+      'assignment',
+      'merger',
+      'registered-user'
+    ].includes(service.id)) {
+      // NEW STREAMLINED FLOW - Handle context-aware trademark services
+      const event = new CustomEvent('openStreamlinedPostRegModal', {
+        detail: {
+          serviceId: service.id,
+          serviceName: service.name,
+          ipType: ipType
+        }
+      });
+      window.dispatchEvent(event);
+    } else if (ipType === 'patent' && service.id === 'renewal') {
+      // NEW STREAMLINED FLOW - Handle context-aware patent renewal
+      const event = new CustomEvent('openStreamlinedPostRegModal', {
+        detail: {
+          serviceId: service.id,
+          serviceName: service.name,
+          ipType: ipType
+        }
+      });
+      window.dispatchEvent(event);
     } else {
-      const route = resolveServiceRoute(service, ipType);
+      // OLD IMPLEMENTATION (commented for future deletion)
+      // const route = resolveServiceRoute(service, ipType);
+      // goto(route);
+      
+      // STANDARD ROUTING - For all other services
+      let route = resolveServiceRoute(service, ipType);
+      
+      // Add IP context to context-aware routes
+      if ((service.id === 'post-registration' || service.id === 'file-withdrawal' || service.id === 'update-files') && ipType) {
+        route += `?ipType=${ipType}`;
+      }
+      
       goto(route);
     }
   }
@@ -118,7 +156,7 @@
           </div>
           {#if service.price}
             <div class="text-right">
-              <div class="text-lg font-semibold text-green-600">{service.price}</div>
+              <div class="text-sm font-semibold text-green-600">{service.price}</div>
               <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
             </div>
           {:else}
@@ -159,7 +197,7 @@
           <div class="flex items-center space-x-4 flex-shrink-0">
             {#if service.price}
               <div class="text-right">
-                <div class="text-lg font-semibold text-green-600">{service.price}</div>
+                <div class="text-sm font-semibold text-green-600">{service.price}</div>
               </div>
             {/if}
             <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>

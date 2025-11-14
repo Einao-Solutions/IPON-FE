@@ -4,6 +4,7 @@
   import Icon from '@iconify/svelte';
   import { Button } from '$lib/components/ui/button';
   import AvailabilitySearchModal from './AvailabilitySearchModal.svelte';
+  import StreamlinedPostRegModal from './StreamlinedPostRegModal.svelte';
   import * as Dialog from '$lib/components/ui/dialog';
   import { onMount, onDestroy } from 'svelte';
   import { baseURL } from '$lib/helpers';
@@ -24,6 +25,14 @@
   let showChangeOfAgentDialog = false;
   let showGetDocumentsDialog = false;
   let showFileAppealsDialog: boolean = false;
+
+  // NEW STREAMLINED MODAL - Context-aware post-registration
+  let showStreamlinedPostRegModal: boolean = false;
+  let streamlinedService: {
+    serviceId: string;
+    serviceName: string;
+    ipType: string;
+  } | null = null;
 
   // Pay Certificate variables - exact same as dashboard
   let payCertFileNumber: string = '';
@@ -191,15 +200,26 @@
       }
 
       const data = await response.json();
-      const filteredAppealsResults = data.filter((result: any) => result.fileStatus == 11);
+      
+      // First filter by status (rejected files)
+      const rejectedFiles = data.filter((result: any) => result.fileStatus == 11);
 
-      if (filteredAppealsResults?.length == 0) {
+      if (rejectedFiles?.length == 0) {
         appealsError = 'Appeals can only be filed for files with status "Rejected".';
         return;
-      } else {
-        appealsResults = filteredAppealsResults;
       }
 
+      // Then filter by file type to match current IP service context
+      const expectedFileType = ipType === 'trademark' ? 2 : ipType === 'patent' ? 0 : ipType === 'design' ? 1 : null;
+      const filteredAppealsResults = rejectedFiles.filter((result: any) => result.fileTypes === expectedFileType);
+
+      if (filteredAppealsResults?.length == 0) {
+        const currentServiceName = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+        appealsError = `This file is not a ${currentServiceName} file. Please use the ${currentServiceName} services to file appeals for ${currentServiceName} applications.`;
+        return;
+      }
+
+      appealsResults = filteredAppealsResults;
       showFileAppealsDialog = false;
       showFileAppealsResultsDialog = true;
     } catch (error: any) {
@@ -380,6 +400,13 @@
     showFileAppealsDialog = true;
   }
 
+  // NEW - Handle streamlined post-registration modal
+  function handleOpenStreamlinedPostRegModal(event: Event) {
+    const customEvent = event as CustomEvent;
+    streamlinedService = customEvent.detail;
+    showStreamlinedPostRegModal = true;
+  }
+
   // Event listeners for custom events from ServiceGrid - same pattern as dashboard
   onMount(() => {
     window.addEventListener('openAvailabilitySearch', handleOpenAvailabilitySearch);
@@ -388,6 +415,8 @@
     window.addEventListener('openChangeOfAgentModal', handleOpenChangeOfAgentModal);
     window.addEventListener('openGetDocumentsModal', handleOpenGetDocumentsModal);
     window.addEventListener('openFileAppealsModal', handleOpenFileAppealsModal);
+    // NEW - Streamlined post-registration modal
+    window.addEventListener('openStreamlinedPostRegModal', handleOpenStreamlinedPostRegModal);
   });
 
   onDestroy(() => {
@@ -397,6 +426,8 @@
     window.removeEventListener('openChangeOfAgentModal', handleOpenChangeOfAgentModal);
     window.removeEventListener('openGetDocumentsModal', handleOpenGetDocumentsModal);
     window.removeEventListener('openFileAppealsModal', handleOpenFileAppealsModal);
+    // NEW - Streamlined post-registration modal
+    window.removeEventListener('openStreamlinedPostRegModal', handleOpenStreamlinedPostRegModal);
   });
 
   function getIPIcon(type: string): string {
@@ -438,20 +469,33 @@
   }
 </script>
 
-<div class="h-full flex flex-col bg-slate-50/50 rounded-xl">
-  <div class="max-w-7xl mx-auto w-full h-full flex flex-col">
-    <!-- FIXED HEADER SECTION - Does not scroll -->
-    <div class="flex-shrink-0 p-6 pb-4">
-      <!-- Back Button and View Toggle -->
+<div class="relative h-full bg-slate-50/50 rounded-xl border border-slate-200 shadow-lg overflow-hidden">
+  <!-- FIXED HEADER SECTION - Absolutely positioned at top -->
+  <div class="absolute top-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-b border-slate-200 p-6 pb-4 shadow-sm rounded-t-xl">
+      <!-- Compressed Header - Back Button + Service Info + View Toggle -->
       <div class="flex items-center justify-between mb-4">
-        <Button 
-          on:click={onBack}
-          class="flex items-center"
-        >
-          <Icon icon="mdi:arrow-left" class="text-xl group-hover:translate-x-[-2px] transition-transform" />
-          <span class="">Back</span>
-        </Button>
+        <!-- Left side: Back Button + Service Info -->
+        <div class="flex items-center space-x-4">
+          <Button 
+            on:click={onBack}
+            class="flex items-center"
+          >
+            <Icon icon="mdi:arrow-left" class="text-xl group-hover:translate-x-[-2px] transition-transform" />
+            <span class="">Back</span>
+          </Button>
+          
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center">
+              <Icon icon={getIPIcon(ipType)} class="text-xl text-green-600" />
+            </div>
+            <div>
+              <h1 class="text-xl font-bold text-slate-800">{getIPTitle(ipType)}</h1>
+              <p class="text-slate-500 text-xs">{getIPDescription(ipType)}</p>
+            </div>
+          </div>
+        </div>
         
+        <!-- Right side: Grid/List Toggle -->
         <div class="flex items-center space-x-2">
           <Button 
             variant={viewMode === 'grid' ? 'default' : 'outline'}
@@ -471,17 +515,6 @@
             <Icon icon="mdi:format-list-bulleted" class="text-sm" />
             <span>List</span>
           </Button>
-        </div>
-      </div>
-
-      <!-- Service Header -->
-      <div class="flex items-center space-x-3 mb-4">
-        <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center">
-          <Icon icon={getIPIcon(ipType)} class="text-2xl text-green-600" />
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold text-slate-800">{getIPTitle(ipType)}</h1>
-          <p class="text-slate-600 text-sm">{getIPDescription(ipType)}</p>
         </div>
       </div>
 
@@ -506,126 +539,175 @@
           </Button>
         {/each}
       </div>
-    </div>
+  </div>
 
-    <!-- SCROLLABLE CONTENT AREA - Only this section scrolls -->
-    <div class="flex-1 overflow-y-auto px-6 pb-6 min-h-0">
-      <ServiceGrid 
-        {services} 
-        {viewMode} 
-        categoryFilter={selectedCategory} 
-        {ipType}
-      />
-    </div>
+  <!-- SCROLLABLE CONTENT AREA - Positioned below fixed header -->
+  <div class="absolute top-[140px] left-0 right-0 bottom-0 overflow-y-auto overflow-x-hidden px-6 pt-4 pb-6">
+    <ServiceGrid 
+      {services} 
+      {viewMode} 
+      categoryFilter={selectedCategory} 
+      {ipType}
+    />
   </div>
 </div>
 
 <!-- Availability Search Modal -->
-<AvailabilitySearchModal 
+<!-- OLD IMPLEMENTATION (commented for future deletion) -->
+<!-- <AvailabilitySearchModal 
   isOpen={isAvailabilityModalOpen} 
+  on:close={() => (isAvailabilityModalOpen = false)} 
+/> -->
+
+<!-- NEW IMPLEMENTATION - Context-aware modal -->
+<AvailabilitySearchModal 
+  isOpen={isAvailabilityModalOpen}
+  ipContext={ipType}
   on:close={() => (isAvailabilityModalOpen = false)} 
 />
 
-<!-- Pay for Certificate Modal - exact same as dashboard -->
+<!-- Pay for Certificate Modal -->
 <Dialog.Root bind:open={showPayCertModal}>
-	<Dialog.Content class="max-w-[400px]">
+	<Dialog.Content class="max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>Pay for Certificate</Dialog.Title>
-			<Dialog.Description>Search file number</Dialog.Description>
+			<Dialog.Title class="text-lg font-semibold text-gray-900">Pay for Certificate</Dialog.Title>
+			<Dialog.Description class="text-sm text-gray-600">
+				Enter the file number to search for certificate payment.
+			</Dialog.Description>
 		</Dialog.Header>
-		<div class="mt-4">
-			<input
-				type="text"
-				class="border rounded w-full p-2"
-				placeholder="Enter file number"
-				bind:value={payCertFileNumber}
-				on:keydown={(e) => {
-					if (e.key === 'Enter') searchPayCert();
-				}}
-			/>
+		<div class="space-y-4">
+			<div>
+				<label for="file-number-input" class="block text-sm font-medium text-gray-700 mb-2">
+					File Number
+				</label>
+				<input
+					id="file-number-input"
+					type="text"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+					placeholder="Enter file number"
+					bind:value={payCertFileNumber}
+					on:keydown={(e) => {
+						if (e.key === 'Enter') searchPayCert();
+					}}
+				/>
+			</div>
 		</div>
-		<Dialog.Footer class="sm:flex mt-4">
-			<Button variant="outline" on:click={() => (showPayCertModal = false)}>Cancel</Button>
-			<Button on:click={searchPayCert} class="ml-2" disabled={payCertLoading}>
+		<Dialog.Footer class="flex gap-2 pt-4">
+			<Button 
+				variant="outline" 
+				class="flex-1" 
+				on:click={() => (showPayCertModal = false)}
+			>
+				Cancel
+			</Button>
+			<Button 
+				class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500" 
+				on:click={searchPayCert} 
+				disabled={payCertLoading}
+			>
 				{#if payCertLoading}
 					<Icon icon="eos-icons:loading" width="1.2rem" height="1.2rem" />
 				{:else}
-					Search
+					Search File
 				{/if}
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
 
-<!-- Verify Payment Dialog - exact same as dashboard -->
+<!-- Verify Payment Dialog -->
 <Dialog.Root bind:open={showVerifyPaymentDialog}>
-	<Dialog.Content class="max-w-[400px]">
+	<Dialog.Content class="max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>Verify Remita Payment</Dialog.Title>
-			<Dialog.Description
-				>Enter your Remita Retrieval Reference (RRR) to verify payment.</Dialog.Description
-			>
+			<Dialog.Title class="text-lg font-semibold text-gray-900">Verify Remita Payment</Dialog.Title>
+			<Dialog.Description class="text-sm text-gray-600">
+				Enter your Remita Retrieval Reference (RRR) to verify payment.
+			</Dialog.Description>
 		</Dialog.Header>
-		<div class="mt-4">
-			<input
-				type="text"
-				class="border rounded w-full p-2"
-				placeholder="Enter RRR"
-				bind:value={verifyRRR}
-				on:keydown={(e) => {
-					if (e.key === 'Enter') verifyRemitaPayment();
-				}}
-			/>
-		</div>
-		{#if verifyPaymentError}
-			<p class="text-red-600 mt-2">{verifyPaymentError}</p>
-		{/if}
-		{#if verifyPaymentResult}
-			{#if verifyPaymentResult.status == null}
-				<div class="mt-4 bg-red-50 border border-red-200 rounded p-2">
-					<p class="font-semibold text-red-700">Payment not found.</p>
-				</div>
-			{:else if verifyPaymentResult.status === '00'}
-				<div class="mt-4 bg-green-50 border border-green-200 rounded p-2">
-					<p class="font-semibold text-green-700">Payment Status: Successful</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<p>Date: {mapDateToString(verifyPaymentResult.paymentDate)}</p>
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
-				</div>
-			{:else if verifyPaymentResult.status === '021'}
-				<div class="mt-4 bg-yellow-50 border border-yellow-200 rounded p-2">
-					<p class="font-semibold text-yellow-700">Payment Status: Pending</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
-				</div>
-			{:else}
-				<div class="mt-4 bg-red-50 border border-red-200 rounded p-2">
-					<p class="font-semibold text-red-700">
-						Payment Status: Unsuccessful ({verifyPaymentResult.status})
-					</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
+		<div class="space-y-4">
+			<div>
+				<label for="rrr-input" class="block text-sm font-medium text-gray-700 mb-2">
+					RRR Number
+				</label>
+				<input
+					id="rrr-input"
+					type="text"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+					placeholder="Enter RRR"
+					bind:value={verifyRRR}
+					on:keydown={(e) => {
+						if (e.key === 'Enter') verifyRemitaPayment();
+					}}
+				/>
+			</div>
+			
+			{#if verifyPaymentError}
+				<div class="bg-red-50 border border-red-200 rounded-md p-3">
+					<p class="text-sm text-red-600">{verifyPaymentError}</p>
 				</div>
 			{/if}
-		{/if}
-		<Dialog.Footer class="sm:flex mt-4">
+			
+			{#if verifyPaymentResult}
+				{#if verifyPaymentResult.status == null}
+					<div class="bg-red-50 border border-red-200 rounded-md p-3">
+						<p class="font-semibold text-red-700">Payment not found.</p>
+					</div>
+				{:else if verifyPaymentResult.status === '00'}
+					<div class="bg-green-50 border border-green-200 rounded-md p-3">
+						<p class="font-semibold text-green-700 mb-2">Payment Status: Successful</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Date:</span> {mapDateToString(verifyPaymentResult.paymentDate)}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{:else if verifyPaymentResult.status === '021'}
+					<div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+						<p class="font-semibold text-yellow-700 mb-2">Payment Status: Pending</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{:else}
+					<div class="bg-red-50 border border-red-200 rounded-md p-3">
+						<p class="font-semibold text-red-700 mb-2">
+							Payment Status: Unsuccessful ({verifyPaymentResult.status})
+						</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{/if}
+			{/if}
+		</div>
+		
+		<Dialog.Footer class="flex gap-2 pt-4">
 			<Button
 				variant="outline"
+				class="flex-1"
 				on:click={() => {
 					showVerifyPaymentDialog = false;
 					verifyRRR = '';
 					verifyPaymentResult = null;
 					verifyPaymentError = null;
-				}}>Close</Button
+				}}
 			>
-			<Button on:click={verifyRemitaPayment} class="ml-2" disabled={verifyPaymentLoading}>
+				Close
+			</Button>
+			<Button 
+				class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500" 
+				on:click={verifyRemitaPayment} 
+				disabled={verifyPaymentLoading}
+			>
 				{#if verifyPaymentLoading}
 					<Icon icon="eos-icons:loading" width="1.2rem" height="1.2rem" />
 				{:else}
-					Verify
+					Verify Payment
 				{/if}
 			</Button>
 		</Dialog.Footer>
@@ -648,7 +730,7 @@
 				<input
 					id="changeAgentFileNumber"
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 					placeholder="Enter File Number"
 					bind:value={changeAgentFileNumber}
 					on:keydown={(e) => {
@@ -706,7 +788,7 @@
 			<Button
 				on:click={searchChangeOfAgent}
 				disabled={changeAgentLoading || !changeAgentFileNumber}
-				class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+				class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
 			>
 				{#if changeAgentLoading}
 					<Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
@@ -736,7 +818,7 @@
 				<input
 					id="getDocFileNumber"
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 					placeholder="Enter File Number"
 					bind:value={getDocFileNumber}
 				/>
@@ -747,7 +829,7 @@
 				<input
 					id="getDocPaymentId"
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 					placeholder="Enter Payment ID"
 					bind:value={getDocPaymentId}
 					on:keydown={(e) => {
@@ -834,7 +916,7 @@
 			<Button
 				on:click={getDocuments}
 				disabled={getDocLoading || !getDocFileNumber || !getDocPaymentId}
-				class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+				class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
 			>
 				{#if getDocLoading}
 					<Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
@@ -849,42 +931,92 @@
 </Dialog.Root>
 
 <!-- File Appeals Dialog -->
-<Dialog.Root bind:open={showFileAppealsDialog}>
-	<Dialog.Content class="max-w-[900px]">
-		<Dialog.Header>
-			<Dialog.Title>File Appeals</Dialog.Title>
-			<Dialog.Description>Search file number to upload appeal documents</Dialog.Description>
-		</Dialog.Header>
-		<div class="mt-4">
-			<input
-				type="text"
-				class="border rounded w-full p-2"
-				placeholder="Enter file number"
-				bind:value={appealsFileNumber}
-				on:keydown={(e) => {
-					if (e.key === 'Enter') searchFileAppeals();
-				}}
-			/>
-		</div>
-
-		{#if appealsError}
-			<div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-				<p class="text-red-700 text-sm">{appealsError}</p>
+{#if showFileAppealsDialog}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div
+		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal-overlay"
+		on:click={(e) => { if (e.target.classList.contains('modal-overlay')) showFileAppealsDialog = false; }}
+	>
+		<div class="bg-white rounded-lg p-6 w-full max-w-md mx-4" on:click|stopPropagation>
+			<div class="flex items-center justify-between mb-4">
+				<h3 id="modal-title" class="text-lg font-bold text-black">File Appeals</h3>
+				<button
+					type="button"
+					class="text-gray-400 hover:text-gray-600"
+					on:click={() => (showFileAppealsDialog = false)}
+				>
+					<Icon icon="mdi:close" class="w-6 h-6" />
+				</button>
 			</div>
-		{/if}
 
-		<Dialog.Footer class="sm:flex mt-4">
-			<Button variant="outline" on:click={() => (showFileAppealsDialog = false)}>Cancel</Button>
-			<Button on:click={searchFileAppeals} class="ml-2" disabled={appealsLoading}>
-				{#if appealsLoading}
-					<Icon icon="eos-icons:loading" width="1.2rem" height="1.2rem" />
-				{:else}
-					Search
+			<div class="space-y-4">
+				<!-- File Type Display - Context-aware, no selection needed -->
+				<div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+					<Icon icon={ipType === 'trademark' ? 'mdi:scale-balance' : ipType === 'patent' ? 'mdi:lightbulb-outline' : 'mdi:palette-outline'} class="text-green-600 w-5 h-5" />
+					<span class="text-sm font-medium text-gray-700">
+						File Type: {ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design'}
+					</span>
+				</div>
+
+				<!-- File Number Input -->
+				<div>
+					<label for="appealFileNumber" class="block text-sm font-medium text-gray-700 mb-1">
+						File Number <span class="text-red-500">*</span>
+					</label>
+					<input
+						type="text"
+						id="appealFileNumber"
+						bind:value={appealsFileNumber}
+						placeholder="Enter file number"
+						class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+						on:keydown={(e) => {
+							if (e.key === 'Enter') searchFileAppeals();
+						}}
+					/>
+				</div>
+
+				<!-- Error Display -->
+				{#if appealsError}
+					<div class="flex items-center space-x-2 text-red-600 text-sm">
+						<Icon icon="mdi:alert-circle" class="w-4 h-4" />
+						<span>{appealsError}</span>
+					</div>
 				{/if}
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
+
+				<!-- Info Message -->
+				<div class="text-xs text-gray-500 bg-blue-50 p-3 rounded-md">
+					<Icon icon="mdi:information-outline" class="w-4 h-4 inline mr-1" />
+					File appeals for {ipType} applications. Upload appeal documents after finding your file.
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="flex space-x-2 pt-4">
+					<button
+						type="button"
+						class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors"
+						on:click={() => (showFileAppealsDialog = false)}
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+						disabled={appealsLoading}
+						on:click={searchFileAppeals}
+					>
+						{#if appealsLoading}
+							<Icon icon="mdi:loading" class="w-4 h-4 mr-2 animate-spin inline" />
+							Searching...
+						{:else}
+							Search File
+						{/if}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <!-- File Appeals Results Dialog -->
 <Dialog.Root bind:open={showFileAppealsResultsDialog}>
@@ -969,7 +1101,7 @@
 				<p class="text-gray-600 mb-2">Upload PDF documents for your appeal</p>
 				<button
 					type="button"
-					class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+					class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
 					on:click={() => appealFileInput?.click()}
 				>
 					Choose Files
@@ -1032,3 +1164,17 @@
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
+
+<!-- NEW STREAMLINED POST-REGISTRATION MODAL -->
+{#if streamlinedService}
+<StreamlinedPostRegModal 
+  isOpen={showStreamlinedPostRegModal}
+  serviceId={streamlinedService.serviceId}
+  serviceName={streamlinedService.serviceName}
+  ipType={streamlinedService.ipType}
+  onClose={() => {
+    showStreamlinedPostRegModal = false;
+    streamlinedService = null;
+  }}
+/>
+{/if}
