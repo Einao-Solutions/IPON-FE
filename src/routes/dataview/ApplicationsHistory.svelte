@@ -109,6 +109,7 @@
 		reason: null,
 		IsTreated: false
 	};
+	const name = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	// let appealReason = '';
 	// let submittingAppeal = false;
 	// let isApproving = false;
@@ -209,7 +210,7 @@
 		remita_confirmation = 'checking';
 		try {
 			const result = await fetch(
-				`${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.id}&userName=${$loggedInUser?.name}&isCertificate=${isCertificate}`,
+				`${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
 				{ method: 'POST' }
 			);
 
@@ -604,8 +605,8 @@
 				beforeStatus: selectedApplication.currentStatus,
 				afterStatus: mapStatusStringToStatus(String(newStatus ?? '')),
 				reason: newStatusReason,
-				userId: $loggedInUser.id,
-				userName: $loggedInUser.name
+				userId: $loggedInUser?.creatorId,
+				userName: name
 			};
 
 			const response = await fetch(`${baseURL}/api/files/AdminUpdateApplication`, {
@@ -1813,13 +1814,13 @@
 											>New Application Receipt</DropdownMenu.Item
 										> -->
 									{#if application.certificatePaymentId != null && application.currentStatus === ApplicationStatuses.Active}
-										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
 											<DropdownMenu.Item on:click={() => certificate(application)}
 												>Certificate</DropdownMenu.Item
 											>
 										{/if}
 									{:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
 											<DropdownMenu.Item on:click={() => renewalCertificate(application)}>
 												Renewal Certificate</DropdownMenu.Item
 											>
@@ -1834,7 +1835,7 @@
 											>Payment Receipt</DropdownMenu.Item
 										>-->
 									{#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-										{#if $loggedInUser?.userRoles?.includes(UserRoles.BackOffice || UserRoles.Tech)}
+										{#if $loggedInUser?.userRoles?.includes(UserRoles.Staff || UserRoles.Tech)}
 											<DropdownMenu.Item on:click={() => viewRecordalData(application)}
 												>View Application</DropdownMenu.Item
 											>

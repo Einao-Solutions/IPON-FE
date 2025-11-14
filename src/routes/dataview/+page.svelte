@@ -195,7 +195,7 @@
 	async function updateForThis() {
 		missingInfoUpdate = true;
 		const response = await fetch(
-			`${baseURL}/api/files/UpdateCorThis?id=${fileData.id}&userId=${$loggedInUser.id}`,
+			`${baseURL}/api/files/UpdateCorThis?id=${fileData?.id}&userId=${$loggedInUser?.creatorId}`,
 			{
 				method: 'POST',
 				headers: {
@@ -218,7 +218,7 @@
 	async function updateForAll() {
 		missingInfoUpdate = true;
 		const response = await fetch(
-			`${baseURL}/api/files/UpdateCorAll?id=${fileData.id}&userId=${$loggedInUser.id}&creatorAccount=${fileData.creatorAccount}`,
+			`${baseURL}/api/files/UpdateCorAll?id=${fileData?.id}&userId=${$loggedInUser?.creatorId}&creatorAccount=${fileData?.creatorAccount}`,
 			{
 				method: 'POST',
 				headers: {
@@ -348,7 +348,7 @@
 <Dialog.Root bind:open={showCorrespondenceRequest}>
 	<Dialog.Content>
 		<Dialog.Header>Missing Information</Dialog.Header>
-		{#if $loggedInUser.defaultCorrespondence === undefined}
+		{#if $loggedInUser?.defaultCorrespondence === undefined}
 			<p>
 				This application has some details missing in the correspondence section, Please update your
 				default correspondence in the profile section.
@@ -552,7 +552,7 @@
 				allApplications={fileData.applicationHistory}
 				{fileData}
 				showMissingDetailsForm={() => (showCorrespondenceRequest = true)}
-				isAdmin={$loggedInUser?.userRoles?.includes(UserRoles.Tech)}
+				isAdmin={$loggedInUser?.userRoles?.includes(UserRoles.Tech || UserRoles.SuperAdmin)}
 			/>
 		</Tabs.Content>
 		<!-- <Tabs.Content value="oppositions">

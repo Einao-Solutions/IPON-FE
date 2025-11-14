@@ -64,7 +64,7 @@
 		const startDate = url.searchParams.get("startDate")
 		const endDate = url.searchParams.get("endDate")
 		const title = url.searchParams.get('title');
-		const userId = $loggedInUser?.creatorId.toString();
+		const userId = $loggedInUser?.creatorId;
 		const index = indexString ? parseInt(indexString) : 0;
 		const quantity = quantityString ? parseInt(quantityString) : 10;
 		const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;

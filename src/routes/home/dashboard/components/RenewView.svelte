@@ -16,6 +16,7 @@
 	let isSearching: boolean = false;
 	let currentView: number = 0;
 	let searchResponse: unknown = null;
+	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 
 	async function fetchResult() {
 		if (!fileNumber) {
@@ -60,7 +61,7 @@
 	}
 	async function renewFile()
 	{
-		const response=await fetch(`${baseURL}/api/files/DashboardRenewal?fileId=${searchResponse?.id}&userId=${$loggedInUser?.id}&userName=${$loggedInUser?.name}`);
+		const response=await fetch(`${baseURL}/api/files/DashboardRenewal?fileId=${searchResponse?.id}&userId=${$loggedInUser?.creatorId}&userName=${userName}`);
 		if (response.ok) {
 			const paymentInfo = await response.json();
 			const amount = searchResponse.amount;

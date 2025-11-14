@@ -1,3 +1,4 @@
+import { goto } from "$app/navigation";
 import {
   type ApplicationHistoryType,
   ApplicationStatuses,
@@ -106,14 +107,14 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "New Opposition";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter";
-	case ApplicationStatuses.Amendment:
-	  return "Amendment";
-	case ApplicationStatuses.AwaitingRecordalProcess:
-		return "Awaiting Recordal Process";
-	case ApplicationStatuses.NewOpposition:
-		return "New Opposition";
-	case ApplicationStatuses.AwaitingCounter:
-		return "Awaiting Counter Statement";
+    case ApplicationStatuses.Amendment:
+      return "Amendment";
+    case ApplicationStatuses.AwaitingRecordalProcess:
+      return "Awaiting Recordal Process";
+    case ApplicationStatuses.NewOpposition:
+      return "New Opposition";
+    case ApplicationStatuses.AwaitingCounter:
+      return "Awaiting Counter Statement";
     default:
       return "-";
   }
@@ -201,18 +202,12 @@ export function showTreatUpdateAppButton(
     UserRoles.DesignSearch,
     UserRoles.Tech,
   ];
-  let hasRequiredPatentExamRoles = [
-    UserRoles.PatentExaminer,
-    UserRoles.Tech,
-  ];
+  let hasRequiredPatentExamRoles = [UserRoles.PatentExaminer, UserRoles.Tech];
   let hasRequiredTrademarkExamRoles = [
     UserRoles.TrademarkExaminer,
     UserRoles.Tech,
   ];
-  let hasRequiredDesignExamRoles = [
-    UserRoles.DesignExaminer,
-    UserRoles.Tech,
-  ];
+  let hasRequiredDesignExamRoles = [UserRoles.DesignExaminer, UserRoles.Tech];
   let searchOffice = [
     ApplicationStatuses.KivSearch,
     ApplicationStatuses.FormalityFail,
@@ -460,11 +455,12 @@ export function parseLoggedInUser(cookie: string) {
     .split(";")
     .find((x) => x.startsWith(" user=") || x.startsWith("user="));
   if (!cookieUser) {
-    return undefined;
+    goto("/auth");
+  } else {
+    let user = cookieUser?.trimStart();
+    user = user.slice(5);
+    return JSON.parse(decodeURIComponent(user));
   }
-  let user = cookieUser.trimStart();
-  user = user.slice(5);
-  return JSON.parse(decodeURIComponent(user));
 }
 
 export function mapAttchToString(name: string) {

@@ -45,6 +45,7 @@
 	let authorizationLetterUrl:string="";
 	let assigneeCountry:string|undefined=undefined;
 	let assigneeCountryOpen:boolean=false;
+	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	function GetCountryImageLink(country:string) {
 		let key = Object.keys(countriesMap).find(key => countriesMap[key] === country);
 		return `https://flagcdn.com/20x15/${key}.png`;
@@ -179,8 +180,8 @@
 			}
 		}
 			let body= {
-			creatorAccount: $loggedInUser.id,
-			userName: $loggedInUser.name,
+			creatorAccount: $loggedInUser?.creatorId,
+			userName: userName,
 			dateOfAssignment: assignmentDate,
 			applicantName: requiredData.applicant,
 			applicantEmail: requiredData.applicantEmail,
