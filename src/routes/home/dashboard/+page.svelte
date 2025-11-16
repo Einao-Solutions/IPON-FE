@@ -1417,6 +1417,12 @@
 				<div class="overflow-hidden">
 					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
 				</div>
+				
+				<!-- STATISTICS SECTION - Comment out this entire block to hide detailed statistics -->
+				<div class="mt-4">
+					<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
+				</div>
+				<!-- END STATISTICS SECTION -->
 			</div>
 		</div>
 	</div>
@@ -1658,13 +1664,13 @@
 	</div>
 	{/if}
 
-<!-- COMMENTED OUT - ORIGINAL USER DASHBOARD STATISTICS (FOR LATER) -->
-<!--
-{#if !isLoading}
+ 
+
+
+<!-- {#if !isLoading}
 	<div class="rounded-md p-2 mt-4 bg-accent">
 		<svelte:component this={typecomponent} {...data} />
 	</div>
 {:else}
 	<p>loading....</p>
-{/if}
--->
+{/if} -->

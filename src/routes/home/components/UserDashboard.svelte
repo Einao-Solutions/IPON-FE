@@ -9,6 +9,7 @@
 	import * as Accordion from "$lib/components/ui/accordion"
 	export let user: UsersType ;
 	export let showOnlyTotals: boolean = false;
+	export let showOnlyStatistics: boolean = false;
 	let isLoading: boolean = true;
 	onMount(async () => {
 		if ($DashStats === null) {
@@ -66,7 +67,8 @@
 		height="1.6rem"
 	/>
 {:else}
-	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+	{#if !showOnlyStatistics}
+	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
 		<a href="/files?fileType=2&titleType=specific" class="bg-white/60 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:scale-[1.02] text-left hover:border-green-300/50">
 			<p class="text-sm text-slate-500 font-medium mb-2">Total Trademarks</p>
 			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
@@ -90,8 +92,9 @@
 			</BackgroundGradient>
 		</a> -->
 	</div>
+	{/if}
 	
-	{#if !showOnlyTotals}
+	{#if !showOnlyTotals && !showOnlyStatistics}
 	<Accordion.Root>
 		<Accordion.Item value="pending" class="border rounded-md p-3 bg-white">
 			<Accordion.Trigger>
@@ -203,5 +206,111 @@
 				</Accordion.Content>
 			</Accordion.Item>
 		</Accordion.Root>
+	{/if}
+
+	{#if showOnlyStatistics}
+	<Accordion.Root>
+		<Accordion.Item value="patents" class="border rounded-md p-3 bg-white">
+			<Accordion.Trigger>
+				<div class="flex px-3">
+					<Icon
+						icon="arcticons:letter-uppercase-square-p"
+						width="1.5rem"
+						height="1.5rem"
+						class="mr-1.5 text-green-800"
+					/>
+					<p>Patent Applications Statistics</p>
+				</div>
+			</Accordion.Trigger>
+			<Accordion.Content>
+				<div class="grid grid-cols-3 gap-2">
+					{#each getType(FileTypes.Patent) as item}
+						<div>
+							<p>{mapTypeToString(parseInt(item.type))}</p>
+							<div class="border rounded-md p-2">
+								{#each item.items as appInfo}
+									<a
+										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
+										href="/files?fileType=0&appType={parseInt(item.type)}&status={appInfo.status}&titleType=custom"
+									>
+										<AppStatusTag value={appInfo.status} />
+										<p class="">{appInfo.count}</p>
+									</a>
+								{/each}
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Accordion.Content>
+		</Accordion.Item>
+		<br />
+		<Accordion.Item value="designs" class="border rounded-md p-3 bg-white">
+			<Accordion.Trigger>
+				<div class="flex px-3">
+					<Icon
+						icon="arcticons:letter-uppercase-square-d"
+						width="1.5rem"
+						height="1.5rem"
+						class="mr-1.5 text-green-800"
+					/>
+					<p>Design Applications Statistics</p>
+				</div>
+			</Accordion.Trigger>
+			<Accordion.Content>
+				<div class="grid grid-cols-3 gap-2">
+					{#each getType(1) as item}
+						<div>
+							<p>{mapTypeToString(parseInt(item.type))}</p>
+							<div class="border rounded-md p-2">
+								{#each item.items as appInfo}
+									<a
+										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
+										href="/files?fileType=1&appType={parseInt(item.type)}&status={appInfo.status}&titleType=custom"
+									>
+										<AppStatusTag value={appInfo.status} />
+										<p class="">{appInfo.count}</p>
+									</a>
+								{/each}
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Accordion.Content>
+		</Accordion.Item>
+		<br />
+		<Accordion.Item value="trademarks" class="border rounded-md p-3 bg-white">
+			<Accordion.Trigger>
+				<div class="flex px-3">
+					<Icon
+						icon="arcticons:letter-uppercase-square-t"
+						width="1.5rem"
+						height="1.5rem"
+						class="mr-1.5 text-green-800"
+					/>
+					<p>Trademark Applications Statistics</p>
+				</div>
+			</Accordion.Trigger>
+			<Accordion.Content>
+				<div class="grid grid-cols-3 gap-2">
+					{#each getType(2) as item}
+						<div>
+							<p>{mapTypeToString(parseInt(item.type))}</p>
+							<div class="border rounded-md p-2">
+								{#each item.items as appInfo}
+									<a
+										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
+										href="/files?fileType=2&appType={parseInt(item.type)}&status={appInfo.status}&titleType=custom"
+									>
+										<AppStatusTag value={appInfo.status} />
+										<p class="">{appInfo.count}</p>
+									</a>
+								{/each}
+							</div>
+						</div>
+					{/each}
+				</div>
+			</Accordion.Content>
+		</Accordion.Item>
+	</Accordion.Root>
 	{/if}
 {/if}

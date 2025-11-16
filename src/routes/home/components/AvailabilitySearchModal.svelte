@@ -217,31 +217,31 @@
 		role="presentation"
 	>
 		<div
-			class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md mx-auto"
+			class="modal-content bg-white rounded-lg shadow-xl w-full max-w-lg mx-auto"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="modal-title"
 		>
 			<!-- Modal Header -->
 			<div class="border-b px-6 py-4">
-				<h3 id="modal-title" class="text-lg font-medium text-gray-900">Availability Search</h3>
-				<p class="font-light">Search Online Database</p>
+				<h3 id="modal-title" class="text-lg font-semibold text-gray-900">Availability Search</h3>
+				<p class="text-sm text-gray-600 mt-1">Search Online Database</p>
 			</div>
 
 			<!-- Modal Body -->
 			<div class="p-6">
 				{#if error}
-					<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+					<div class="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-md text-sm">
 						{error}
 					</div>
 				{/if}
 
-				<div class="space-y-4 mx-auto">
+				<div class="space-y-6">
 					<!-- Search and Class selection layout -->
-					<div class="flex flex-col md:flex-row gap-3">
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 						<!-- Search Input -->
-						<div class="w-full md:w-2/3">
-							<label for="search-query" class="block text-sm font-medium text-gray-700 mb-1">
+						<div class="md:col-span-1">
+							<label for="search-query" class="block text-sm font-medium text-gray-700 mb-2">
 								Search Term
 							</label>
 							<input
@@ -249,19 +249,19 @@
 								type="text"
 								bind:value={searchQuery}
 								placeholder="Enter file name"
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
 							/>
 						</div>
 
 						<!-- Class Dropdown -->
-						<div class="w-full md:w-1/3">
-							<label for="class-select" class="block text-sm font-medium text-gray-700 mb-1">
+						<div class="md:col-span-1">
+							<label for="class-select" class="block text-sm font-medium text-gray-700 mb-2">
 								Class of Goods
 							</label>
 							<select
 								id="class-select"
 								bind:value={selectedClass}
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+								class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
 								disabled={selectedfileType === 'Patent' || selectedfileType === 'Design'}
 							>
 								<option value="">All</option>
@@ -274,14 +274,14 @@
 						<!-- File Type Dropdown - Context-aware display -->
 						{#if showFileTypeDropdown}
 							<!-- OLD IMPLEMENTATION (visible when no context) -->
-							<div class="w-full md:w-1/3">
-								<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
+							<div class="md:col-span-1">
+								<label for="file-type" class="block text-sm font-medium text-gray-700 mb-2">
 									File Type
 								</label>
 								<select
 									id="file-type"
 									bind:value={selectedfileType}
-									class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+									class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
 								>
 									<option value="">All</option>
 									{#each fileTypeOptions as type}
@@ -291,14 +291,13 @@
 							</div>
 						{:else}
 							<!-- NEW IMPLEMENTATION - Show selected file type as readonly when context is provided -->
-							<div class="w-full md:w-1/3">
-								<label for="file-type-display" class="block text-sm font-medium text-gray-700 mb-1">
+							<div class="md:col-span-1">
+								<label for="file-type-display" class="block text-sm font-medium text-gray-700 mb-2">
 									File Type
 								</label>
-								<div class="w-full p-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center">
+								<div class="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center shadow-sm">
 									<Icon icon={getFileTypeIcon(selectedfileType)} class="w-4 h-4 mr-2" />
 									{selectedfileType}
-									<span class="ml-2 text-xs text-green-600">(auto-selected)</span>
 								</div>
 							</div>
 						{/if}
@@ -307,11 +306,11 @@
 			</div>
 
 			<!-- Modal Footer -->
-			<div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
+			<div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end gap-3">
 				<button
 					type="button"
 					on:click={closeModal}
-					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
 				>
 					Cancel
 				</button>
@@ -319,7 +318,7 @@
 					type="button"
 					on:click={handleSearch}
 					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
 				>
 					{#if isLoading}
 						<span class="inline-block mr-2">
