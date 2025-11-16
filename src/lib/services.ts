@@ -38,6 +38,7 @@ export const commonServices: IPService[] = [
     icon: 'mdi:magnify',
     route: '/statussearch',
     category: 'search',
+    price: '₦9,500',
     isCommon: true
   },
   {
@@ -47,6 +48,7 @@ export const commonServices: IPService[] = [
     icon: 'mdi:file-search-outline',
     route: '/availabilitysearch',
     category: 'search',
+    price: '₦2,500',
     isCommon: true
   },
   {
@@ -119,6 +121,7 @@ export const commonServices: IPService[] = [
     icon: 'mdi:file-remove-outline',
     route: '/home/file-withdrawal',
     category: 'management',
+    price: '₦3,500',
     isCommon: true
   }
 ];
@@ -132,7 +135,7 @@ export const trademarkServices: IPService[] = [
     icon: 'mdi:file-plus-outline',
     route: '/application?type=2',
     category: 'filing',
-    price: '₦15,000'
+    price: '₦16,750'
   },
   {
     id: 'clerical-update',
@@ -141,7 +144,7 @@ export const trademarkServices: IPService[] = [
     icon: 'mdi:file-edit-outline',
     route: '/home/clerical-update',
     category: 'management',
-    price: '₦2000'
+    price: '₦2,000'
   },
   {
     id: 'trademark-journal',
@@ -150,12 +153,12 @@ export const trademarkServices: IPService[] = [
     icon: 'mdi:book-open-variant',
     route: '/home/trademarkpubs',
     category: 'search',
-    price: '₦15,500'
+    price: ''
   },
   {
     id: 'status-search',
     name: 'Status Search',
-    description: 'Search file status',
+    description: 'Application for the status of a Trademark',
     icon: 'mdi:magnify',
     route: '/statussearch',
     category: 'search',
@@ -213,7 +216,7 @@ export const trademarkServices: IPService[] = [
     icon: 'mdi:account-edit',
     route: '/home/change-applicant-name',
     category: 'administrative',
-    price: '₦2,000'
+    price: '₦11,500'
   },
   {
     id: 'change-applicant-address',
@@ -222,7 +225,7 @@ export const trademarkServices: IPService[] = [
     icon: 'mdi:map-marker-radius',
     route: '/home/change-applicant-address',
     category: 'administrative',
-    price: '₦2,000'
+    price: '₦11,500'
   },
   {
     id: 'pay-certificate',
@@ -231,7 +234,7 @@ export const trademarkServices: IPService[] = [
     icon: 'mdi:cash-fast',
     route: '/home/payment',
     category: 'financial',
-    price: '₦18,500'
+    price: '₦11,500'
   },
   {
     id: 'verify-payment',
@@ -259,12 +262,12 @@ export const trademarkServices: IPService[] = [
   },
   {
     id: 'update-file',
-    name: 'Update File',
+    name: 'Edit/Update File in Awaiting Search',
     description: 'Update file information for files in awaiting search status',
     icon: 'mdi:update',
     route: '/home/update-files',
     category: 'management',
-    price: '₦2,000'
+    price: ''
   },
   {
     id: 'update-publication-status',
@@ -277,12 +280,12 @@ export const trademarkServices: IPService[] = [
   },
   {
     id: 'withdrawal',
-    name: 'File Withdrawal',
-    description: 'Withdraw application',
+    name: 'Withdrawal',
+    description: 'File to withdraw your trademark applications ',
     icon: 'mdi:file-remove-outline',
     route: '/home/file-withdrawal',
     category: 'management',
-    price: '₦5,000'
+    price: '₦3,500'
   },
   {
     id: 'claim-files',
@@ -299,7 +302,7 @@ export const trademarkServices: IPService[] = [
     icon: 'mdi:gavel',
     route: '/home/appeal',
     category: 'management',
-    price: '₦5,000'
+    price: ''
   }
 ];
 
@@ -312,15 +315,17 @@ export const patentServices: IPService[] = [
     description: 'Edit/Update existing patent application',
     icon: 'mdi:file-edit-outline',
     route: '/home/clerical-update',
-    category: 'management'
+    category: 'management',
+    price: '₦5000'
   },
   {
     id: 'post-registration',
-    name: 'POST-REGISTRATION',
+    name: 'RENEWAL',
     description: 'File Patent Recordal Applications',
     icon: 'mdi:file',
     route: '/home/postregistration',
-    category: 'filing'
+    category: 'filing',
+    price: ''
   },
   {
     id: 'update-patent-files',

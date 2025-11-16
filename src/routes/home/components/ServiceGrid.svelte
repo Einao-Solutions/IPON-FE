@@ -6,7 +6,7 @@
   import * as Card from '$lib/components/ui/card';
 
   export let services: IPService[];
-  export let viewMode: 'grid' | 'list' = 'grid';
+  export let viewMode: 'grid' | 'list' = 'list';
   export let categoryFilter: string | null = null;
   export let ipType: string | undefined = undefined;
 

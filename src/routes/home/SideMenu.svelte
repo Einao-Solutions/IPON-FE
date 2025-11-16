@@ -35,14 +35,6 @@
 
 	let menus = [
 		{ icon: 'radix-icons:dashboard', location: 'Dashboard' },
-		{
-			icon: 'tabler:forms',
-			location: 'Post Registration',
-			submenus: [
-				{ name: 'Trademark', location: 'PostRegistration/' },
-				{ name: 'Patent', location: 'PostRegistration/' }
-			]
-		},
 		{ icon: 'cil:search', location: 'Publications' },
 		{ icon: 'fluent:person-support-20-filled', location: 'Support' },
 		// { icon: 'cil:search', location: 'Opposition' },
