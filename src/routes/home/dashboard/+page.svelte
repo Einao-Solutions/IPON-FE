@@ -1419,9 +1419,9 @@
 				</div>
 				
 				<!-- STATISTICS SECTION - Comment out this entire block to hide detailed statistics -->
-				<div class="mt-4">
+				<!-- <div class="mt-4">
 					<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
-				</div>
+				</div> -->
 				<!-- END STATISTICS SECTION -->
 			</div>
 		</div>
@@ -1653,19 +1653,16 @@
 
 	<!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->
 	{#if currentView === 'trademark' || currentView === 'patent' || currentView === 'design'}
-	<div class="h-full">
-		{#if currentView === 'trademark'}
-			<IPServiceView ipType="trademark" onBack={goBackToMain} />
-		{:else if currentView === 'patent'}
-			<IPServiceView ipType="patent" onBack={goBackToMain} />
-		{:else if currentView === 'design'}
-			<IPServiceView ipType="design" onBack={goBackToMain} />
-		{/if}
-	</div>
+		<div class="h-full">
+			{#if currentView === 'trademark'}
+				<IPServiceView ipType="trademark" onBack={goBackToMain} />
+			{:else if currentView === 'patent'}
+				<IPServiceView ipType="patent" onBack={goBackToMain} />
+			{:else if currentView === 'design'}
+				<IPServiceView ipType="design" onBack={goBackToMain} />
+			{/if}
+		</div>
 	{/if}
-
- 
-
 
 <!-- {#if !isLoading}
 	<div class="rounded-md p-2 mt-4 bg-accent">

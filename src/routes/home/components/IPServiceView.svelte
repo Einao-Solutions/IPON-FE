@@ -18,6 +18,16 @@
   let viewMode: 'grid' | 'list' = 'grid';
   let selectedCategory: string | null = null;
   
+  // Mobile-specific: Set default view mode to list for mobile screens
+  let isMobile = false;
+  
+  function handleResize() {
+    isMobile = window.innerWidth < 768; // Mobile breakpoint
+    if (isMobile) {
+      viewMode = 'list'; // Force list view on mobile
+    }
+  }
+  
   // Modal states - following the exact same pattern as dashboard
   let isAvailabilityModalOpen = false;
   let showPayCertModal: boolean = false;
@@ -409,6 +419,10 @@
 
   // Event listeners for custom events from ServiceGrid - same pattern as dashboard
   onMount(() => {
+    // Initialize mobile detection
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
     window.addEventListener('openAvailabilitySearch', handleOpenAvailabilitySearch);
     window.addEventListener('openPayCertModal', handleOpenPayCertModal);
     window.addEventListener('openVerifyPaymentModal', handleOpenVerifyPaymentModal);
@@ -420,6 +434,7 @@
   });
 
   onDestroy(() => {
+    window.removeEventListener('resize', handleResize);
     window.removeEventListener('openAvailabilitySearch', handleOpenAvailabilitySearch);
     window.removeEventListener('openPayCertModal', handleOpenPayCertModal);
     window.removeEventListener('openVerifyPaymentModal', handleOpenVerifyPaymentModal);
@@ -478,10 +493,12 @@
         <div class="flex items-center space-x-4">
           <Button 
             on:click={onBack}
-            class="flex items-center"
+            size="sm"
+            variant="outline"
+            class="flex items-center space-x-1 px-3 py-2"
           >
-            <Icon icon="mdi:arrow-left" class="text-xl group-hover:translate-x-[-2px] transition-transform" />
-            <span class="">Back</span>
+            <Icon icon="mdi:arrow-left" class="text-sm group-hover:translate-x-[-2px] transition-transform" />
+            <span class="text-sm">Back</span>
           </Button>
           
           <div class="flex items-center space-x-3">
@@ -495,8 +512,8 @@
           </div>
         </div>
         
-        <!-- Right side: Grid/List Toggle -->
-        <div class="flex items-center space-x-2">
+        <!-- Right side: Grid/List Toggle - Hidden on Mobile -->
+        <div class="hidden md:flex items-center space-x-2">
           <Button 
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="sm"
@@ -519,7 +536,8 @@
       </div>
 
       <!-- Category Filters -->
-      <div class="flex flex-wrap gap-2">
+      <!-- Desktop: Button Layout -->
+      <div class="hidden md:flex flex-wrap gap-2">
         <Button 
           variant={selectedCategory === null ? 'default' : 'outline'}
           size="sm"
@@ -539,10 +557,34 @@
           </Button>
         {/each}
       </div>
+      
+      <!-- Mobile: Dropdown Layout -->
+      <div class="md:hidden">
+        <!-- <label for="category-select" class="block text-sm font-medium text-slate-700 mb-2">
+          Filter by Category
+        </label> -->
+        <select 
+          id="category-select"
+          class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          on:change={(e) => {
+            const value = e.currentTarget.value;
+            selectedCategory = value === 'all' ? null : value;
+          }}
+        >
+          <option value="all" selected={selectedCategory === null}>
+            All Services ({services.length})
+          </option>
+          {#each categories as category}
+            <option value={category} selected={selectedCategory === category} class="capitalize">
+              {category} ({servicesByCategory[category].length})
+            </option>
+          {/each}
+        </select>
+      </div>
   </div>
 
   <!-- SCROLLABLE CONTENT AREA - Positioned below fixed header -->
-  <div class="absolute top-[140px] left-0 right-0 bottom-0 overflow-y-auto overflow-x-hidden px-6 pt-4 pb-6">
+  <div class="absolute top-[150px] left-0 right-0 bottom-0 overflow-y-auto overflow-x-hidden px-6 pt-4 pb-6">
     <ServiceGrid 
       {services} 
       {viewMode} 

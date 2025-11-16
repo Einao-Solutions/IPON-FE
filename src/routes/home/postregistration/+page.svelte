@@ -243,9 +243,9 @@
 									File Type
 								</label>
 								<div class="w-full p-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center">
-									<Icon icon={getFileTypeIcon(selectedFileType)} class="w-4 h-4 mr-2" />
+									<Icon icon={getFileTypeIcon(selectedFileType)} class="w-4 h-4 mr-2 text-green-600" />
 									{selectedFileType.charAt(0).toUpperCase() + selectedFileType.slice(1)}
-									<span class="ml-2 text-xs text-green-600">(auto-selected)</span>
+									<!-- <span class="ml-2 text-xs text-green-600">(auto-selected)</span> -->
 								</div>
 							</div>
 						{/if}
@@ -264,7 +264,7 @@
 			<!-- Modal Footer -->
 			<div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
 				<span class="flex items-center text-xs text-gray-600">
-					<Icon icon="mdi:information-variant-circle" class="mr-2 text-red-500" style="font-size: 1.3em;" />
+					<Icon icon="mdi:information-variant-circle" class="mr-2 text-green-600" style="font-size: 1.3em;" />
 					Post Registration is strictly for registered files with active status.
 				</span>
 				<button
@@ -278,7 +278,7 @@
 					type="button"
 					on:click={handleSearch}
 					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
 				>
 					{#if isLoading}
 						<span class="inline-block mr-2">

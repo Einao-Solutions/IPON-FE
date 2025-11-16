@@ -296,7 +296,7 @@
 									File Type
 								</label>
 								<div class="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center shadow-sm">
-									<Icon icon={getFileTypeIcon(selectedfileType)} class="w-4 h-4 mr-2" />
+									<Icon icon={getFileTypeIcon(selectedfileType)} class="w-4 h-4 mr-2 text-green-600" />
 									{selectedfileType}
 								</div>
 							</div>
