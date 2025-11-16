@@ -328,6 +328,7 @@ let filterData={};
 	let newStatusReason="";
 	let newStatus;
 	let isStatusUpdating=false;
+	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	async function changeStatusForAll(){
 		if (isStatusUpdating)return;
 		if (newStatus===undefined)return;
@@ -342,8 +343,8 @@ let filterData={};
 				body: JSON.stringify({
 					reasons: newStatusReason,
 					newStatus: newStatus,
-					userId:$loggedInUser.id,
-					userName:$loggedInUser.name,
+					userId:$loggedInUser?.creatorId,
+					userName:userName,
 					files:$selectedFilesForAction
 				})
 			})

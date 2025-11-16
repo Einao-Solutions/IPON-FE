@@ -49,7 +49,7 @@
 	onMount(async() => {
 		windowWidth = window.innerWidth;
 		if (!$loggedInUser){
-			await goto("/home/dashboard")
+			await goto("/auth")
 		}
 	});
 	$: previousMessage = () => {
