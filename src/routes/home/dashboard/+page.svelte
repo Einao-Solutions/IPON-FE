@@ -18,10 +18,14 @@
 	import { onMount } from 'svelte';
 	import RenewView from './components/RenewView.svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
-	import { ApplicationLetters, ApplicationStatuses, baseURL, UserRoles } from '$lib/helpers';
+	import { ApplicationLetters, ApplicationStatuses, baseURL, UserRoles, FileTypes, type DashBoardStats } from '$lib/helpers';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Card from '$lib/components/ui/card';
+	import { DashStats } from '$lib/store';
+	import { getServiceCount } from '$lib/services';
 	import AvailabilitySearchModal from '../../home/components/AvailabilitySearchModal.svelte';
+	import UserDashboard from '../components/UserDashboard.svelte';
+	import IPServiceView from '../components/IPServiceView.svelte';
 	import { Description } from 'formsnap';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { Result } from 'postcss';
@@ -46,8 +50,18 @@
 	let typecomponent;
 	let data = {};
 	$: fileData = $applicationData;
+	
+	// New navigation state for IP category views
+	let currentView = 'main'; // 'main', 'trademark', 'patent', 'design'
+	let viewToggle = 'grid'; // 'grid' or 'list'
+	
+	// Dashboard statistics are now handled by UserDashboard component
 	function openPreRegistrationDialog() {
 		showPreRegistrationDialog = true;
+	}
+
+	function goBackToMain() {
+		currentView = 'main';
 	}
 
 	function NewApplication() {
@@ -98,6 +112,7 @@
 		data = {
 			user: $loggedInUser
 		};
+		
 		isLoading = false;
 	});
 	let isLoading: boolean = true;
@@ -960,75 +975,97 @@
 </Dialog.Root>
 <!-- Verify Payment Dialog -->
 <Dialog.Root bind:open={showVerifyPaymentDialog}>
-	<Dialog.Content class="max-w-[400px]">
+	<Dialog.Content class="max-w-md">
 		<Dialog.Header>
-			<Dialog.Title>Verify Remita Payment</Dialog.Title>
-			<Dialog.Description
-				>Enter your Remita Retrieval Reference (RRR) to verify payment.</Dialog.Description
-			>
+			<Dialog.Title class="text-lg font-semibold text-gray-900">Verify Remita Payment</Dialog.Title>
+			<Dialog.Description class="text-sm text-gray-600">
+				Enter your Remita Retrieval Reference (RRR) to verify payment.
+			</Dialog.Description>
 		</Dialog.Header>
-		<div class="mt-4">
-			<input
-				type="text"
-				class="border rounded w-full p-2"
-				placeholder="Enter RRR"
-				bind:value={verifyRRR}
-				on:keydown={(e) => {
-					if (e.key === 'Enter') verifyRemitaPayment();
-				}}
-			/>
-		</div>
-		{#if verifyPaymentError}
-			<p class="text-red-600 mt-2">{verifyPaymentError}</p>
-		{/if}
-		{#if verifyPaymentResult}
-			{#if verifyPaymentResult.status == null}
-				<div class="mt-4 bg-red-50 border border-red-200 rounded p-2">
-					<p class="font-semibold text-red-700">Payment not found.</p>
-				</div>
-			{:else if verifyPaymentResult.status === '00'}
-				<div class="mt-4 bg-green-50 border border-green-200 rounded p-2">
-					<p class="font-semibold text-green-700">Payment Status: Successful</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<p>Date: {mapDateToString(verifyPaymentResult.paymentDate)}</p>
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
-				</div>
-			{:else if verifyPaymentResult.status === '021'}
-				<div class="mt-4 bg-yellow-50 border border-yellow-200 rounded p-2">
-					<p class="font-semibold text-yellow-700">Payment Status: Pending</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<!-- <p>Date: {mapDateToString(verifyPaymentResult.paymentDate)}</p> -->
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
-				</div>
-			{:else}
-				<div class="mt-4 bg-red-50 border border-red-200 rounded p-2">
-					<p class="font-semibold text-red-700">
-						Payment Status: Unsuccessful ({verifyPaymentResult.status})
-					</p>
-					<p>Amount: {verifyPaymentResult.amount}</p>
-					<!-- <p>Date: {mapDateToString(verifyPaymentResult.paymentDate)}</p> -->
-					<p>Description: {verifyPaymentResult.paymentDescription}</p>
-					<p>Payer Name: {verifyPaymentResult.payerName}</p>
+		<div class="space-y-4">
+			<div>
+				<label for="rrr-input" class="block text-sm font-medium text-gray-700 mb-2">
+					RRR Number
+				</label>
+				<input
+					id="rrr-input"
+					type="text"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+					placeholder="Enter RRR"
+					bind:value={verifyRRR}
+					on:keydown={(e) => {
+						if (e.key === 'Enter') verifyRemitaPayment();
+					}}
+				/>
+			</div>
+			
+			{#if verifyPaymentError}
+				<div class="bg-red-50 border border-red-200 rounded-md p-3">
+					<p class="text-sm text-red-600">{verifyPaymentError}</p>
 				</div>
 			{/if}
-		{/if}
-		<Dialog.Footer class="sm:flex mt-4">
+			
+			{#if verifyPaymentResult}
+				{#if verifyPaymentResult.status == null}
+					<div class="bg-red-50 border border-red-200 rounded-md p-3">
+						<p class="font-semibold text-red-700">Payment not found.</p>
+					</div>
+				{:else if verifyPaymentResult.status === '00'}
+					<div class="bg-green-50 border border-green-200 rounded-md p-3">
+						<p class="font-semibold text-green-700 mb-2">Payment Status: Successful</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Date:</span> {mapDateToString(verifyPaymentResult.paymentDate)}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{:else if verifyPaymentResult.status === '021'}
+					<div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+						<p class="font-semibold text-yellow-700 mb-2">Payment Status: Pending</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{:else}
+					<div class="bg-red-50 border border-red-200 rounded-md p-3">
+						<p class="font-semibold text-red-700 mb-2">
+							Payment Status: Unsuccessful ({verifyPaymentResult.status})
+						</p>
+						<div class="space-y-1 text-sm text-gray-600">
+							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
+							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
+							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
+						</div>
+					</div>
+				{/if}
+			{/if}
+		</div>
+		
+		<Dialog.Footer class="flex gap-2 pt-4">
 			<Button
 				variant="outline"
+				class="flex-1"
 				on:click={() => {
 					showVerifyPaymentDialog = false;
 					verifyRRR = '';
 					verifyPaymentResult = null;
 					verifyPaymentError = null;
-				}}>Close</Button
+				}}
 			>
-			<Button on:click={verifyRemitaPayment} class="ml-2" disabled={verifyPaymentLoading}>
+				Close
+			</Button>
+			<Button 
+				class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500" 
+				on:click={verifyRemitaPayment} 
+				disabled={verifyPaymentLoading}
+			>
 				{#if verifyPaymentLoading}
 					<Icon icon="eos-icons:loading" width="1.2rem" height="1.2rem" />
 				{:else}
-					Verify
+					Verify Payment
 				{/if}
 			</Button>
 		</Dialog.Footer>
@@ -1137,7 +1174,7 @@
 				<label class="block text-sm font-medium text-gray-700">File Number</label>
 				<input
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 					placeholder="Enter File Number"
 					bind:value={getDocFileNumber}
 				/>
@@ -1147,7 +1184,7 @@
 				<label class="block text-sm font-medium text-gray-700">Payment ID</label>
 				<input
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
 					placeholder="Enter Payment ID"
 					bind:value={getDocPaymentId}
 					on:keydown={(e) => {
@@ -1234,7 +1271,7 @@
 			<Button
 				on:click={getDocuments}
 				disabled={getDocLoading || !getDocFileNumber || !getDocPaymentId}
-				class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+				class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
 			>
 				{#if getDocLoading}
 					<Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
@@ -1252,9 +1289,9 @@
 	<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
 {:else}
 	<div
-		class="w-full bg-yellow-300 text-black py-2 px-2 text-xs rounded overflow-hidden relative h-6"
+		class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
 	>
-		<div class="absolute whitespace-nowrap animate-marquee top-1">
+		<div class="absolute whitespace-nowrap animate-marquee top-1.5">
 			You can now file Withdrawals for all application types using the 'Withdrawal' Module on the dashboard.
 			<b>◆</b>
 			You can now file Clerical Updates (Add/Remove Applicant, Edit/Add/Remove Inventor Information) for Patent applications.
@@ -1281,6 +1318,7 @@
 			
 		</div>
 	</div>
+{/if}
 
 	<style>
 		@keyframes marquee {
@@ -1295,6 +1333,179 @@
 			animation: marquee 25s linear infinite;
 		}
 	</style>
+	
+	<!-- DEBUG INFO - COMMENTED OUT
+	<div class="p-4 bg-yellow-100 border border-yellow-300 rounded mb-4">
+		<p>Debug Info:</p>
+		<p>canCreateApplication(): {canCreateApplication()}</p>
+		<p>currentView: {currentView}</p>
+		<p>User roles: {JSON.stringify($loggedInUser?.roles)}</p>
+		<p>User ID: {$loggedInUser?.id}</p>
+	</div>
+	-->
+	
+	<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
+	{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === 'main'}
+	<div class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-full rounded-xl p-6 shadow-xl border border-slate-200/60">
+		<div class="max-w-7xl mx-auto flex flex-col ">
+			<!-- Header Section -->
+			<div class="mb-5 flex-shrink-0">
+				<div class="flex items-center space-x-3 mb-1">
+					<!-- <div class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+						<Icon icon="mdi:shield-crown-outline" class="text-white text-xl" />
+					</div> -->
+					<div>
+						<h1 class="text-2xl md:text-3xl font-bold text-black bg-clip-text">Intellectual Property Office Nigeria</h1>
+						<p class="text-slate-600 text-sm">Select a category to explore available services</p>
+						<!-- <p class="text-slate-600 text-sm">Commercial Law Department</p> -->
+					</div>
+				</div>
+			</div>
+
+			<!-- Three IP Category Cards -->
+			 <!-- this div  -->
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
+				<!-- Trademark Card -->
+				<button 
+					class="text-left w-full group relative overflow-hidden"
+					on:click={() => (currentView = 'trademark')}
+				>
+					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1">
+						<!-- Subtle background pattern -->
+						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+						
+						<div class="relative z-10">
+							<div class="mb-5">
+								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
+									<Icon icon="mdi:scale-balance" class="text-2xl text-green-600 group-hover:text-green-700" />
+								</div>
+								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Trademark</h3>
+								<p class="text-slate-600 text-sm leading-relaxed">Register and protect your brand identity</p>
+							</div>
+							<div class="flex items-center justify-between">
+								<span class="text-xs text-slate-500 font-medium">{getServiceCount('trademark')} services available</span>
+								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</button>
+
+				<!-- Patent Card -->
+				<button 
+					class="text-left w-full group relative overflow-hidden"
+					on:click={() => (currentView = 'patent')}
+				>
+					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1">
+						<!-- Subtle background pattern -->
+						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+						
+						<div class="relative z-10">
+							<div class="mb-5">
+								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
+									<Icon icon="mdi:lightbulb-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
+								</div>
+								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Patent</h3>
+								<p class="text-slate-600 text-sm leading-relaxed">Protect your inventions and innovations</p>
+							</div>
+							<div class="flex items-center justify-between">
+								<span class="text-xs text-slate-500 font-medium">{getServiceCount('patent')} services available</span>
+								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</button>
+
+				<!-- Design Card -->
+				<button 
+					class="text-left w-full group relative overflow-hidden"
+					on:click={() => (currentView = 'design')}
+				>
+					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1">
+						<!-- Subtle background pattern -->
+						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+						
+						<div class="relative z-10">
+							<div class="mb-5">
+								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
+									<Icon icon="mdi:palette-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
+								</div>
+								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Design</h3>
+								<p class="text-slate-600 text-sm leading-relaxed">Safeguard your creative designs</p>
+							</div>
+							<div class="flex items-center justify-between">
+								<span class="text-xs text-slate-500 font-medium">{getServiceCount('design')} services available</span>
+								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+								</div>
+							</div>
+						</div>
+					</div>
+				</button>
+			</div>		
+
+			<!-- Portfolio Summary Section -->
+			<div class="border-t border-slate-200/60 pt-6">
+				<div class="mb-6">
+					<div class="flex items-center space-x-3 mb-4">
+						<!-- <div class="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+							<Icon icon="mdi:chart-box-outline" class="text-white text-lg" />
+						</div> -->
+						<div>
+							<h2 class="text-xl font-bold text-slate-800">Portfolio Summary</h2>
+							<p class="text-slate-600 text-sm">Track your intellectual property applications and registrations</p>
+						</div>
+					</div>
+				</div>
+				<!-- this div  -->
+				<div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
+					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
+				</div>
+				
+				<!-- DETAILED STATISTICS SECTION - Only visible for non-regular users (agents, staff, etc.) -->
+				{#if $loggedInUser && !$loggedInUser.userRoles.includes(UserRoles.User)}
+					<div class="mt-6">
+						<div class="mb-4">
+							<div class="flex items-center space-x-3 mb-3">
+								<!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+									<Icon icon="mdi:chart-line" class="text-white text-lg" />
+								</div> -->
+								<div>
+									<h2 class="text-xl font-bold text-slate-800">Detailed Statistics</h2>
+									<p class="text-slate-600 text-sm">Comprehensive breakdown by application types and status</p>
+								</div>
+							</div>
+						</div>
+						<div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
+							<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
+						</div>
+					</div>
+				{/if}
+			</div>
+		</div>
+	</div>
+	{:else}
+		<!-- FALLBACK WHEN CONDITIONS NOT MET - COMMENTED OUT FOR CLEAN VIEW
+		<div class="p-4 bg-red-100 border border-red-300 rounded">
+			<h3 class="text-lg font-semibold text-red-800">Dashboard Not Showing</h3>
+			<p class="text-red-600">Conditions not met:</p>
+			<ul class="text-red-600">
+				<li>isLoading: {isLoading}</li>
+				<li>loggedInUser exists: {!!$loggedInUser}</li>
+				<li>canCreateApplication(): {canCreateApplication()}</li>
+				<li>currentView: {currentView}</li>
+				<li>Expected: !isLoading AND loggedInUser AND canCreateApplication() AND currentView = 'main'</li>
+			</ul>
+		</div>
+		-->
+	{/if}
+
+	{#if canCreateApplication()}
+	<!-- COMMENTED OUT - ORIGINAL 17 ACTION CARDS GRID (TO BE REORGANIZED BY IP TYPE) -->
+	{#if false}
 	<div
 		class="overflow-y-auto sm:space-y-10 space-y-3 bg-accent {canCreateApplication()
 			? ''
@@ -1497,11 +1708,27 @@
 			<AvailabilitySearchModal isOpen={isModalOpen} on:close={() => (isModalOpen = false)} />
 		</div>
 	</div>
-{/if}
-{#if !isLoading}
+	{/if}
+	<!-- END COMMENTED OUT ACTION CARDS -->
+	{/if}
+
+	<!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->
+	{#if currentView === 'trademark' || currentView === 'patent' || currentView === 'design'}
+		<div class="h-full">
+			{#if currentView === 'trademark'}
+				<IPServiceView ipType="trademark" onBack={goBackToMain} />
+			{:else if currentView === 'patent'}
+				<IPServiceView ipType="patent" onBack={goBackToMain} />
+			{:else if currentView === 'design'}
+				<IPServiceView ipType="design" onBack={goBackToMain} />
+			{/if}
+		</div>
+	{/if}
+
+<!-- {#if !isLoading}
 	<div class="rounded-md p-2 mt-4 bg-accent">
 		<svelte:component this={typecomponent} {...data} />
 	</div>
 {:else}
 	<p>loading....</p>
-{/if}
+{/if} -->

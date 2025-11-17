@@ -1,7 +1,6 @@
 <script lang="ts">
   import SideMenu from "./SideMenu.svelte";
   import { Input } from "$lib/components/ui/input";
-  import BottomNavBar from "./BottomNavBar.svelte";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
   import type { LayoutServerData } from "../../../.svelte-kit/types/src/routes/home/$types";
@@ -17,10 +16,19 @@
   let showFilterSheet: boolean = false;
   let searchTitle: string | null = null;
   let showUserMenu = false;
+  let isMobileSidebarOpen = false;
 
   loggedInUser.subscribe((user) => {
     userName = user?.firstName + " " + user?.lastName;
   });
+
+  function toggleMobileSidebar() {
+    isMobileSidebarOpen = !isMobileSidebarOpen;
+  }
+
+  function closeMobileSidebar() {
+    isMobileSidebarOpen = false;
+  }
 
   onMount(async () => {
     if (
@@ -70,19 +78,47 @@
   <svelte:component this={filterFiles} {...filterData} />
 {/if}
 
-<div class="flex h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 overflow-hidden">
-  <!-- Sidebar Navigation -->
+<div class="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
+  <!-- Desktop Sidebar Navigation -->
   <nav class="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-sm z-30">
     <SideMenu />
   </nav>
 
+  <!-- Mobile Sidebar Overlay -->
+  {#if isMobileSidebarOpen}
+    <div 
+      class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
+      on:click={closeMobileSidebar}
+      on:keydown={(e) => e.key === 'Escape' && closeMobileSidebar()}
+      role="button"
+      tabindex="0"
+    ></div>
+  {/if}
+
+  <!-- Mobile Sidebar -->
+  <nav class="lg:hidden fixed left-0 top-0 h-full w-64 bg-white/90 backdrop-blur-xl border-r border-slate-200/60 shadow-lg z-50 transform transition-transform duration-300 {isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
+    <SideMenu />
+  </nav>
+
   <!-- Main Content Area -->
-  <div class="lg:ml-64 w-full flex flex-col pb-16 lg:pb-0">
-    <!-- Modern Header -->
-    <header class="sticky top-0 z-20 bg-white/70 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
-      <div class="flex items-center justify-between px-4 lg:px-8 py-4 gap-4">
+  <div class="lg:ml-64 w-full min-h-screen flex flex-col">
+    <!-- Modern Header - STICKY -->
+    <header class="sticky top-0 z-20 flex-shrink-0 bg-white border-b border-slate-200/60 shadow-xl">
+      <div class="flex items-center justify-between px-4 sm:px-8 py-4 gap-4">
+        <!-- Mobile hamburger button -->
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          class="lg:hidden p-2 hover:bg-slate-100 rounded-lg"
+          on:click={toggleMobileSidebar}
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </Button>
+
         <!-- Search Bar with Icon -->
-        <div class="relative flex-1 max-w-2xl group">
+        <div class="relative flex-1 max-w-md group">
           <svg 
             class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 transition-colors group-focus-within:text-green-500" 
             fill="none" 
@@ -172,16 +208,9 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto px-4 lg:px-8 py-6">
+    <main class="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
       <slot />
     </main>
-
-    <!-- Mobile Bottom Navigation -->
-    <nav class="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white/90 backdrop-blur-xl border-t border-slate-200 shadow-lg">
-      <div class="flex items-center justify-evenly h-16 px-2">
-        <BottomNavBar />
-      </div>
-    </nav>
   </div>
 </div>
 

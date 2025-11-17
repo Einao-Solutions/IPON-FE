@@ -43,7 +43,7 @@
 	export let showRenew:boolean=false;
 	let _selectedDataIds: RecordSetStore<string>;
 	let _hiddenColumnIds: Writable<string[]>;
-	let hidableCols: string[] = ['date', 'title', 'fileId', 'fileStatus', 'fileType', 'status'];
+	let hidableCols: string[] = ['date', 'title', 'fileId', 'fileStatus', 'fileType', 'trademarkClass', 'status'];
 	let hideForId: [] = [];
 	let isLoading=false;
 	let _filterValue;
@@ -115,6 +115,14 @@
 			table.column({
 				accessor: 'fileType',
 				header: 'Type'
+			}),
+			table.column({
+				accessor: 'trademarkClass',
+				header: 'Class',
+				cell: ({ value }) => {
+					// Only show for trademark files
+					return value ? value : '';
+				}
 			}),
 			// table.column({
 			// 	accessor: 'status',
