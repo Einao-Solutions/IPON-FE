@@ -36,7 +36,7 @@ import * as Card from "$lib/components/ui/card"
 
 	async function loadDashStats()
 	{
-		const userId=user.id;
+		const userId=user.creatorId;
 		const showId= true;
 		const id=showId?null:userId;
 		const url=`${baseURL}/api/files/FileStatistics?userId=${id}`;
