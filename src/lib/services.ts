@@ -511,7 +511,7 @@ export const designServices: IPService[] = [
     icon: 'mdi:file-plus-outline',
     route: '/application?type=1',
     category: 'filing',
-    price: '₦16,750',
+    price: '',
     isCommon: true
   },
   {

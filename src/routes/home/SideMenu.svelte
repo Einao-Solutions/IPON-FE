@@ -103,12 +103,23 @@
 
     // Set initial active menu based on current route
     const path = window.location.pathname.toLowerCase();
-    const currentLocation = path.split("/").pop();
-    if (currentLocation) {
-      const menuMatch = menus.find(
-        (m) => m.location.toLowerCase() === currentLocation
-      );
-      if (menuMatch) activeMenu = menuMatch.location;
+    let currentLocation = path.split("/").pop();
+    
+    // Handle special cases for routing
+    if (!currentLocation || currentLocation === '' || currentLocation === 'home') {
+      currentLocation = 'dashboard';
+    }
+    
+    // Find matching menu item (case-insensitive)
+    const menuMatch = menus.find(
+      (m) => m.location.toLowerCase() === currentLocation
+    );
+    
+    if (menuMatch) {
+      activeMenu = menuMatch.location;
+    } else {
+      // Fallback: if no match found, default to Dashboard
+      activeMenu = 'Dashboard';
     }
   });
 

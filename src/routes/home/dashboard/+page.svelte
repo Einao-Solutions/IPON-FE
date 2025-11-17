@@ -1364,7 +1364,8 @@
 			</div>
 
 			<!-- Three IP Category Cards -->
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 p-4 shadow-lg">
+			 <!-- this div  -->
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
 				<!-- Trademark Card -->
 				<button 
 					class="text-left w-full group relative overflow-hidden"
@@ -1460,7 +1461,8 @@
 						</div>
 					</div>
 				</div>
-				<div class="bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 p-4 shadow-lg">
+				<!-- this div  -->
+				<div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
 					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
 				</div>
 				
@@ -1469,16 +1471,16 @@
 					<div class="mt-6">
 						<div class="mb-4">
 							<div class="flex items-center space-x-3 mb-3">
-								<div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+								<!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
 									<Icon icon="mdi:chart-line" class="text-white text-lg" />
-								</div>
+								</div> -->
 								<div>
 									<h2 class="text-xl font-bold text-slate-800">Detailed Statistics</h2>
 									<p class="text-slate-600 text-sm">Comprehensive breakdown by application types and status</p>
 								</div>
 							</div>
 						</div>
-						<div class="bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 p-4 shadow-lg">
+						<div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
 							<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
 						</div>
 					</div>
