@@ -206,9 +206,10 @@
 		var cookieUser = document.cookie
 			.split(';')
 			.find((x) => x.startsWith('user=') || x.startsWith(' user='));
-		var user = cookieUser.trimStart();
-		user = user.slice(5);
-		const pp = JSON.parse(decodeURIComponent(user));
+		
+		// user = user.slice(5);
+		const user = $loggedInUser;
+		
 		if ($newApplicationType === 1) {
 			//design
 			const basicData = $formsData?.filter((x) => x.name === 'basic')[0]?.data as BasicDesignType;
@@ -235,7 +236,7 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: pp.id
+				creatorAccount: user.id
 			};
 		}
 		if ($newApplicationType === 0) {
@@ -271,7 +272,7 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: pp.id
+				creatorAccount: user.id
 			};
 		}
 		if ($newApplicationType === 2) {
@@ -299,7 +300,7 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: pp.id
+				creatorAccount: user.id
 			};
 		}
 
