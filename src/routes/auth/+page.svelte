@@ -15,7 +15,7 @@
   import { onMount } from "svelte";
 
   // show a maintenance popup on page load
-  let showMaintenance: boolean = true;
+  let showMaintenance: boolean = false;
   let maintenanceMessage: string =
     "Our portal is currently undergoing maintenance, and you may experience difficulty logging in. We're working to restore full functionality as quickly as possible. Thank you for your patience and understanding.";
 

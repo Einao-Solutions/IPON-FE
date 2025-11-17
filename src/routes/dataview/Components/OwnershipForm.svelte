@@ -88,8 +88,8 @@
 			},
 			body: JSON.stringify({
 				fileId: requiredData.fileId,
-				userName: $loggedInUser.name,
-				userId: $loggedInUser.id,
+				userName: $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName,
+				userId: $loggedInUser?.creatorId,
 				newOwner: selectedUser?.id,
 				oldId: requiredData.oldId,
 				oldName: old_name ?? '',

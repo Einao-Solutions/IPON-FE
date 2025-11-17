@@ -49,7 +49,7 @@
 	import ApplicationsHistory from './ApplicationsHistory.svelte';
 	let canUpdate: boolean = false;
 	let canTreat: boolean = false;
-	let fileData;
+	let fileData: any;
 	let currentStatus: ApplicationStatuses;
 	let treatApplicationDialog: boolean = false;
 	let treatConfirmationDialog: boolean = false;
@@ -81,8 +81,8 @@
 			beforeStatus: selectedApplication?.currentStatus,
 			afterStatus: selectedStatus,
 			message: $newStatusReason,
-			user: $loggedInUser?.name,
-			userId: $loggedInUser?.id.toString(),
+			user: $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName,
+			userId: $loggedInUser?.creatorId,
 			applicationType: selectedApplication?.applicationType,
 			fileId: fileData?.id,
 			applicationId: selectedApplication?.id,
@@ -108,10 +108,10 @@
 			});
 			newStatusReason.set(null);
 			selectedStatus = null;
-			const loggeduser = $loggedInUser.id.toString();
-			const userRoles = $loggedInUser.userRoles;
-			const filingType = $applicationData.type;
-			const appStatus = $applicationData.fileStatus;
+			const loggeduser = $loggedInUser?.id.toString() ?? '';
+			const userRoles = $loggedInUser?.userRoles ?? [];
+			const filingType = $applicationData?.type;
+			const appStatus = $applicationData?.fileStatus;
 			canUpdate = CanUpdateApplication(
 				loggeduser,
 				$applicationData.creatorAccount,
@@ -172,10 +172,10 @@
 				loggedInUser.set(user);
 			}
 		}
-		const loggeduser = $loggedInUser.id.toString();
+		const loggeduser = $loggedInUser?.id.toString() ?? '';
 		const res = await fetch(`${baseURL}/api/files/${id}`);
 		const file = await res.json();
-		const userRoles = $loggedInUser.userRoles;
+		const userRoles = $loggedInUser?.userRoles ?? [];
 		const filingType = file.type;
 		const appStatus = file.fileStatus;
 		applicationData.set(file);
@@ -403,7 +403,7 @@
 		</div>
 		<div class="flex justify-between p-4 basis-1/12">
 			<Button on:click={() => gotoPrevious()}>Previous</Button>
-			{#if $loggedInUser.userRoles?.some((x) => [UserRoles.BackOffice, UserRoles.Tech].includes(x))}
+			{#if $loggedInUser?.userRoles?.some((x) => [UserRoles.Staff, UserRoles.Tech].includes(x))}
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						<Button>Treat Applications</Button>
@@ -430,7 +430,7 @@
 				</DropdownMenu.Root>
 			{/if}
 
-			{#if $loggedInUser.userRoles?.includes(UserRoles.Tech) && fileData.type === FilingType.Design}
+			{#if $loggedInUser?.userRoles?.includes(UserRoles.Tech) && fileData.type === FilingType.Design}
 				<Button class={canUpdate ? 'block' : 'hidden'} on:click={() => updateApplication()}>
 					Update Record
 				</Button>

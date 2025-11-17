@@ -175,11 +175,11 @@ function validateEmail(): boolean {
 			toast.info("no correspondence configured, edit in profile", { position:'top-right' })
 		}
 		else {
-			name = $loggedInUser.defaultCorrespondence.name;
-			address = $loggedInUser.defaultCorrespondence.address;
-			phoneNumber = $loggedInUser.defaultCorrespondence.phone;
-			email = $loggedInUser.defaultCorrespondence.email;
-			state = $loggedInUser.defaultCorrespondence.state;
+			name = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
+			address = $loggedInUser?.Address ?? "";
+			phoneNumber = $loggedInUser?.Phone ?? "";
+			email = $loggedInUser?.email ?? "";
+			state = $loggedInUser?.state ?? "";
 		}
 	}
 function ResetCorr()

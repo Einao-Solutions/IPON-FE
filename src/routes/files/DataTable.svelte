@@ -193,7 +193,7 @@
 		const indexString = url.searchParams.get('index');
 		const quantityString = url.searchParams.get('quantity');
 		const title = url.searchParams.get('title');
-		const userId = $loggedInUser?.creatorId.toString();
+		const userId = $loggedInUser?.id;
 		const index = indexString ? parseInt(indexString) : 0;
 		const quantity = quantityString ? parseInt(quantityString) : 10;
 		const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
@@ -336,6 +336,7 @@ let filterData={};
 	let newStatusReason="";
 	let newStatus;
 	let isStatusUpdating=false;
+	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	async function changeStatusForAll(){
 		if (isStatusUpdating)return;
 		if (newStatus===undefined)return;
@@ -350,8 +351,8 @@ let filterData={};
 				body: JSON.stringify({
 					reasons: newStatusReason,
 					newStatus: newStatus,
-					userId:$loggedInUser.id,
-					userName:$loggedInUser.name,
+					userId:$loggedInUser?.creatorId,
+					userName:userName,
 					files:$selectedFilesForAction
 				})
 			})

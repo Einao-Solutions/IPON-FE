@@ -72,6 +72,7 @@
 			closeModal();
 		}
 	}
+	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	// Handle search submission
 	async function handleSearch(): Promise<void> {
 
@@ -119,8 +120,8 @@
 			};
 
 			sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
-			applicantName = $loggedInUser.name;		
-			applicantEmail = $loggedInUser.email;
+			applicantName = userName;		
+			applicantEmail = $loggedInUser?.email ?? null;
 			await goto(`/home/clerical-update/search/`);
 		}	
 		catch (err) {
