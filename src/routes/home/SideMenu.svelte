@@ -126,13 +126,13 @@
     notificationsLoading = true;
 
     let showSupportTickets = $loggedInUser.userRoles?.includes(
-      UserRoles.Tech, UserRoles.SuperAdmin
+      UserRoles.Tech || UserRoles.SuperAdmin
     );
     let showAllOpposition = $loggedInUser.userRoles?.some((role) =>
       [UserRoles.TrademarkOpposition, UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
     );
 
-    let url = `${baseURL}/api/files/UserNotifications?userId=${$loggedInUser.id}`;
+    let url = `${baseURL}/api/files/UserNotifications?userId=${$loggedInUser.creatorId}`;
     if (showSupportTickets) url += `&staffTickets=true`;
     if (showAllOpposition) url += `&showAllOpposition=true`;
 
