@@ -185,7 +185,7 @@
 		const indexString = url.searchParams.get('index');
 		const quantityString = url.searchParams.get('quantity');
 		const title = url.searchParams.get('title');
-		const userId = $loggedInUser?.creatorId;
+		const userId = $loggedInUser?.id;
 		const index = indexString ? parseInt(indexString) : 0;
 		const quantity = quantityString ? parseInt(quantityString) : 10;
 		const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
