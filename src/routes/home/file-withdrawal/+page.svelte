@@ -20,15 +20,17 @@
     let applicantEmail: string | null = null;
     const dispatch = createEventDispatcher();
     
-    // Get context from URL parameters
-    $: ipType = $page.url.searchParams.get('ipType') || 'patent';
-    // Debug logging
-    $: console.log('File Withdrawal - URL param ipType:', $page.url.searchParams.get('ipType'), 'ipType:', ipType);
-    // Context-aware file type - no dropdown needed
-    $: fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+    let ipType = 'patent';
+    let fileType = 'Patent';
 
+    // Get context from URL parameters (client-side only)
     onMount(() => {
         isOpen = true;
+        if (typeof window !== 'undefined') {
+            ipType = $page.url.searchParams.get('ipType') || 'patent';
+            fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+            console.log('File Withdrawal - URL param ipType:', $page.url.searchParams.get('ipType'), 'ipType:', ipType);
+        }
     });
 
     function closeModal(): void {
