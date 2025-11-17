@@ -236,7 +236,7 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: user.id
+				creatorAccount: user.creatorId
 			};
 		}
 		if ($newApplicationType === 0) {
@@ -272,7 +272,7 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: user.id
+				creatorAccount: user.creatorId
 			};
 		}
 		if ($newApplicationType === 2) {
@@ -300,7 +300,7 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: user.id
+				creatorAccount: user.creatorId
 			};
 		}
 
