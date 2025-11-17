@@ -86,8 +86,7 @@
 			let user = cookieUser.trimStart();
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-			isStaff =
-				$loggedInUser?.userRoles.some((e) => [UserRoles.Tech, UserRoles.User, UserRoles.SuperAdmin].includes(e)) == false;
+			isStaff = !!($loggedInUser?.userRoles?.some((e) => [UserRoles.Staff].includes(e)));
 		}
 		if (isStaff) {
 			typecomponent = (await import('../components/StaffDashboard.svelte')).default;

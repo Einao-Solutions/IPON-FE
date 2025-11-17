@@ -532,7 +532,7 @@
 		</Card.Root>
 	</div>
 	<Tabs.Root value="data" class="w-full">
-		<Tabs.List class="grid w-full grid-cols-3">
+		<Tabs.List class="grid w-full grid-cols-2">
 			<Tabs.Trigger value="data">Data View</Tabs.Trigger>
 			<Tabs.Trigger value="applications">Application History</Tabs.Trigger>
 			<!-- <Tabs.Trigger value="oppositions">Oppositions</Tabs.Trigger> -->
