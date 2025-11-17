@@ -56,19 +56,52 @@
 <Toaster />
 
 <Dialog.Root bind:open={showNewSearch} closeOnOutsideClick={false}>
-    <Dialog.Content>
+    <Dialog.Content class="max-w-md">
         <Dialog.Header>
-            <Dialog.Title>New Application Status Search</Dialog.Title>
+            <Dialog.Title class="text-lg font-semibold text-gray-900">New Application Status Search</Dialog.Title>
+            <Dialog.Description class="text-sm text-gray-600">
+                Enter the file number to search for application status and proceed with payment.
+            </Dialog.Description>
         </Dialog.Header>
 
-        <Input bind:value={search_file_id} placeholder="enter file number" />
-
-        <div class="flex gap-2 mt-4">
-            <Button on:click={() => goto('/home/dashboard')}>Back</Button>
-            <Button on:click={handlePayment} disabled={isSearching}>
-                <Icon class={isSearching ? '' : 'hidden'} icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
-                Search & Pay
-            </Button>
+        <div class="space-y-4">
+            <div>
+                <label for="file-search-input" class="block text-sm font-medium text-gray-700 mb-2">
+                    File Number
+                </label>
+                <input 
+                    id="file-search-input"
+                    type="text"
+                    bind:value={search_file_id} 
+                    placeholder="Enter file number"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    on:keydown={(e) => {
+                        if (e.key === 'Enter') handlePayment();
+                    }}
+                />
+            </div>
         </div>
+
+        <Dialog.Footer class="flex gap-2 pt-4">
+            <Button 
+                variant="outline" 
+                class="flex-1" 
+                on:click={() => goto('/home/dashboard')}
+            >
+                Back
+            </Button>
+            <Button 
+                class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500" 
+                on:click={handlePayment} 
+                disabled={isSearching}
+            >
+                {#if isSearching}
+                    <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" class="mr-2" />
+                    Searching...
+                {:else}
+                    Search & Pay
+                {/if}
+            </Button>
+        </Dialog.Footer>
     </Dialog.Content>
 </Dialog.Root>

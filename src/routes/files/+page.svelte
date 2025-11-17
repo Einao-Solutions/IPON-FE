@@ -116,7 +116,9 @@
 				id: curr.id,
 				status:
 					allPending.length > 1 ? 'Multiple' : allPending[0].applicationStatus,
-				appType: allPending.length > 1 ? 'Multiple' : mapTypeToString(allPending[0].applicationType)
+				appType: allPending.length > 1 ? 'Multiple' : mapTypeToString(allPending[0].applicationType),
+				// Add trademark class if it's a trademark file
+				trademarkClass: curr.type === 2 ? curr.trademarkClass : null
 			});
 		}
 		dataList = [..._dataList];
