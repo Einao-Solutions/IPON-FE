@@ -43,13 +43,13 @@
 	}
 	function getType(fileType: FileTypes) {
 		const val = $DashStats?.detailedStats
-			?.filter((x) => x.fileType === fileType) ?? [{ status: 0, count: 0 }];
+			?.filter((x) => x.fileType === fileType) ?? [];
 		val.sort((a, v) => (a.status > v.status ? 1 : a.status < v.status ? -1 : 0));
-		const grouped = val.reduce((acc, curr) => {
-			const type = curr.type;
+		const grouped = val.reduce((acc: Record<string, typeof val>, curr) => {
+			const type = curr.type?.toString() || '0';
 			acc[type] = (acc[type] || []).concat(curr);
 			return acc;
-		}, {});
+		}, {} as Record<string, typeof val>);
 		const mapped = Object.entries(grouped).map(([type, items]) => ({ type, items }));
 		return mapped;
 	}
@@ -68,29 +68,63 @@
 	/>
 {:else}
 	{#if !showOnlyStatistics}
-	<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5 ">
-		<a href="/files?fileType=2&titleType=specific" class="bg-white backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:scale-[1.02] text-left hover:border-green-300/50">
-			<p class="text-sm text-slate-500 font-medium mb-2">Total Trademarks</p>
-			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
+	<div class="space-y-3">
+		<!-- Trademark Total -->
+		<a href="/files?fileType=2&titleType=specific" class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+			<div class="flex items-center space-x-4">
+				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+					<Icon icon="mdi:scale-balance" class="text-lg text-green-600 group-hover:text-green-700" />
+				</div>
+				<div>
+					<p class="font-semibold text-slate-800 group-hover:text-slate-900">Trademark Applications</p>
+					<p class="text-xs text-slate-500">Registered brand identities</p>
+				</div>
+			</div>
+			<div class="text-right">
+				<p class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
+				<div class="flex items-center justify-end mt-1">
+					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-green-500 text-sm transition-colors duration-300" />
+				</div>
+			</div>
 		</a>
-		<a href="/files?fileType=0&titleType=specific" class="bg-white backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:scale-[1.02] text-left hover:border-green-300/50">
-			<p class="text-sm text-slate-500 font-medium mb-2">Total Patents</p>
-			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Patent).toLocaleString()}</p>
-		</a>
-		<a href="/files?fileType=1&titleType=specific" class="bg-white backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-lg hover:shadow-green-500/5 transition-all duration-200 hover:scale-[1.02] text-left hover:border-green-300/50">
-			<p class="text-sm text-slate-500 font-medium mb-2">Total Designs</p>
-			<p class="text-2xl md:text-3xl">{getTotal(FileTypes.Design).toLocaleString()}</p>
-		</a>
-		
 
-		<!-- <a href="/files?status=1&titleType=renew">
-			<BackgroundGradient className="rounded-md p-2  bg-white dark:bg-zinc-900">
-				<p class="mb-2 mt-2 text-base text-black dark:text-neutral-200 sm:text-xl">Renewal Due</p>
-				<p class="text-2xl text-neutral-600 dark:text-neutral-400">
-					{getRenewal()}
-				</p>
-			</BackgroundGradient>
-		</a> -->
+		<!-- Patent Total -->
+		<a href="/files?fileType=0&titleType=specific" class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+			<div class="flex items-center space-x-4">
+				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+					<Icon icon="mdi:lightbulb-outline" class="text-lg text-green-600 group-hover:text-green-700" />
+				</div>
+				<div>
+					<p class="font-semibold text-slate-800 group-hover:text-slate-900">Patent Applications</p>
+					<p class="text-xs text-slate-500">Protected inventions and innovations</p>
+				</div>
+			</div>
+			<div class="text-right">
+				<p class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300">{getTotal(FileTypes.Patent).toLocaleString()}</p>
+				<div class="flex items-center justify-end mt-1">
+					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-green-500 text-sm transition-colors duration-300" />
+				</div>
+			</div>
+		</a>
+
+		<!-- Design Total -->
+		<a href="/files?fileType=1&titleType=specific" class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+			<div class="flex items-center space-x-4">
+				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+					<Icon icon="mdi:palette-outline" class="text-lg text-green-600 group-hover:text-green-700" />
+				</div>
+				<div>
+					<p class="font-semibold text-slate-800 group-hover:text-slate-900">Design Applications</p>
+					<p class="text-xs text-slate-500">Safeguarded creative designs</p>
+				</div>
+			</div>
+			<div class="text-right">
+				<p class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300">{getTotal(FileTypes.Design).toLocaleString()}</p>
+				<div class="flex items-center justify-end mt-1">
+					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-green-500 text-sm transition-colors duration-300" />
+				</div>
+			</div>
+		</a>
 	</div>
 	{/if}
 	

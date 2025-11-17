@@ -15,17 +15,15 @@
   export let ipType: 'trademark' | 'patent' | 'design';
   export let onBack: () => void;
 
-  let viewMode: 'grid' | 'list' = 'grid';
+  let viewMode: 'grid' | 'list' = 'list';
   let selectedCategory: string | null = null;
   
-  // Mobile-specific: Set default view mode to list for mobile screens
+  // Default to list view for all screen sizes with toggle capability
   let isMobile = false;
   
   function handleResize() {
     isMobile = window.innerWidth < 768; // Mobile breakpoint
-    if (isMobile) {
-      viewMode = 'list'; // Force list view on mobile
-    }
+    // List view is now default for all screens, toggle remains functional
   }
   
   // Modal states - following the exact same pattern as dashboard

@@ -80,8 +80,8 @@
             };
 
             sessionStorage.setItem('withdrawalSearchParams', JSON.stringify(searchParams));
-            applicantName = $loggedInUser.name;
-            applicantEmail = $loggedInUser.email;
+            applicantName = $loggedInUser?.firstName || null;
+            applicantEmail = $loggedInUser?.email || null;
             await goto(`/home/file-withdrawal/search/`);
         } catch (err) {
             const catchError = err as Error;

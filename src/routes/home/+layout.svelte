@@ -103,7 +103,7 @@
   <!-- Main Content Area -->
   <div class="lg:ml-64 w-full min-h-screen flex flex-col">
     <!-- Modern Header - STICKY -->
-    <header class="sticky top-0 z-20 flex-shrink-0 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 shadow-sm">
+    <header class="sticky top-0 z-20 flex-shrink-0 bg-white border-b border-slate-200/60 shadow-xl">
       <div class="flex items-center justify-between px-4 sm:px-8 py-4 gap-4">
         <!-- Mobile hamburger button -->
         <Button 

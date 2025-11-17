@@ -22,6 +22,7 @@
 	import * as Dialog from '$lib/components/ui/dialog';
 	import * as Card from '$lib/components/ui/card';
 	import { DashStats } from '$lib/store';
+	import { getServiceCount } from '$lib/services';
 	import AvailabilitySearchModal from '../../home/components/AvailabilitySearchModal.svelte';
 	import UserDashboard from '../components/UserDashboard.svelte';
 	import IPServiceView from '../components/IPServiceView.svelte';
@@ -1289,9 +1290,9 @@
 	<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
 {:else}
 	<div
-		class="w-full bg-green-600 text-white py-2 px-2 text-xs rounded overflow-hidden relative h-6"
+		class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
 	>
-		<div class="absolute whitespace-nowrap animate-marquee top-1">
+		<div class="absolute whitespace-nowrap animate-marquee top-1.5">
 			You can now file Withdrawals for all application types using the 'Withdrawal' Module on the dashboard.
 			<b>◆</b>
 			You can now file Clerical Updates (Add/Remove Applicant, Edit/Add/Remove Inventor Information) for Patent applications.
@@ -1346,83 +1347,142 @@
 	
 	<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
 	{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === 'main'}
-	<div class="bg-slate-100/80 h-full sm:h-full rounded-xl p-6 overflow-hidden">
-		<div class="max-w-7xl mx-auto h-full flex flex-col">
+	<div class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-full rounded-xl p-6 shadow-xl border border-slate-200/60">
+		<div class="max-w-7xl mx-auto flex flex-col ">
 			<!-- Header Section -->
-			<div class="mb-6 flex-shrink-0">
-				<h1 class="text-2xl md:text-3xl font-bold text-slate-800 mb-2">Intellectual Property Office Nigeria</h1>
-				<p class="text-slate-600 text-sm">Select a category to explore available services</p>
+			<div class="mb-5 flex-shrink-0">
+				<div class="flex items-center space-x-3 mb-1">
+					<!-- <div class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+						<Icon icon="mdi:shield-crown-outline" class="text-white text-xl" />
+					</div> -->
+					<div>
+						<h1 class="text-2xl md:text-3xl font-bold text-black bg-clip-text">Intellectual Property Office Nigeria</h1>
+						<p class="text-slate-600 text-sm">Select a category to explore available services</p>
+						<!-- <p class="text-slate-600 text-sm">Commercial Law Department</p> -->
+					</div>
+				</div>
 			</div>
 
 			<!-- Three IP Category Cards -->
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 flex-shrink-0">
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 p-4 shadow-lg">
 				<!-- Trademark Card -->
 				<button 
-					class="text-left w-full group"
+					class="text-left w-full group relative overflow-hidden"
 					on:click={() => (currentView = 'trademark')}
 				>
-					<div class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.02] hover:border-green-300">
-						<div class="mb-4">
-							<div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-								<Icon icon="mdi:scale-balance" class="text-xl text-green-600" />
+					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1">
+						<!-- Subtle background pattern -->
+						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+						
+						<div class="relative z-10">
+							<div class="mb-5">
+								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
+									<Icon icon="mdi:scale-balance" class="text-2xl text-green-600 group-hover:text-green-700" />
+								</div>
+								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Trademark</h3>
+								<p class="text-slate-600 text-sm leading-relaxed">Register and protect your brand identity</p>
 							</div>
-							<h3 class="text-lg font-semibold mb-1 text-slate-800">Trademark</h3>
-							<p class="text-slate-600 text-sm">Register and protect your brand identity</p>
+							<div class="flex items-center justify-between">
+								<span class="text-xs text-slate-500 font-medium">{getServiceCount('trademark')} services available</span>
+								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+								</div>
+							</div>
 						</div>
-						<p class="text-xs text-slate-500">20 services available</p>
 					</div>
 				</button>
 
 				<!-- Patent Card -->
 				<button 
-					class="text-left w-full group"
+					class="text-left w-full group relative overflow-hidden"
 					on:click={() => (currentView = 'patent')}
 				>
-					<div class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.02] hover:border-green-300">
-						<div class="mb-4">
-							<div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-								<Icon icon="mdi:lightbulb-outline" class="text-xl text-green-600" />
+					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1">
+						<!-- Subtle background pattern -->
+						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+						
+						<div class="relative z-10">
+							<div class="mb-5">
+								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
+									<Icon icon="mdi:lightbulb-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
+								</div>
+								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Patent</h3>
+								<p class="text-slate-600 text-sm leading-relaxed">Protect your inventions and innovations</p>
 							</div>
-							<h3 class="text-lg font-semibold mb-1 text-slate-800">Patent</h3>
-							<p class="text-slate-600 text-sm">Protect your inventions and innovations</p>
+							<div class="flex items-center justify-between">
+								<span class="text-xs text-slate-500 font-medium">{getServiceCount('patent')} services available</span>
+								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+								</div>
+							</div>
 						</div>
-						<p class="text-xs text-slate-500">16 services available</p>
 					</div>
 				</button>
 
 				<!-- Design Card -->
 				<button 
-					class="text-left w-full group"
+					class="text-left w-full group relative overflow-hidden"
 					on:click={() => (currentView = 'design')}
 				>
-					<div class="bg-white/80 backdrop-blur-sm border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.02] hover:border-green-300">
-						<div class="mb-4">
-							<div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform duration-300">
-								<Icon icon="mdi:palette-outline" class="text-xl text-green-600" />
+					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1">
+						<!-- Subtle background pattern -->
+						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+						
+						<div class="relative z-10">
+							<div class="mb-5">
+								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
+									<Icon icon="mdi:palette-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
+								</div>
+								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Design</h3>
+								<p class="text-slate-600 text-sm leading-relaxed">Safeguard your creative designs</p>
 							</div>
-							<h3 class="text-lg font-semibold mb-1 text-slate-800">Design</h3>
-							<p class="text-slate-600 text-sm">Safeguard your creative designs</p>
+							<div class="flex items-center justify-between">
+								<span class="text-xs text-slate-500 font-medium">{getServiceCount('design')} services available</span>
+								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
+									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+								</div>
+							</div>
 						</div>
-						<p class="text-xs text-slate-500">16 services available</p>
 					</div>
 				</button>
 			</div>		
 
-			<!-- Totals Section -->
-			<div class="border-t border-slate-200/60 pt-4 flex-1 sm:min-h-0">
-				<div class="mb-4">
-					<h2 class="text-xl font-semibold text-slate-800 mb-2">Portfolio Summary</h2>
-					<p class="text-slate-600 text-sm">Track your intellectual property applications and registrations</p>
+			<!-- Portfolio Summary Section -->
+			<div class="border-t border-slate-200/60 pt-6">
+				<div class="mb-6">
+					<div class="flex items-center space-x-3 mb-4">
+						<!-- <div class="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+							<Icon icon="mdi:chart-box-outline" class="text-white text-lg" />
+						</div> -->
+						<div>
+							<h2 class="text-xl font-bold text-slate-800">Portfolio Summary</h2>
+							<p class="text-slate-600 text-sm">Track your intellectual property applications and registrations</p>
+						</div>
+					</div>
 				</div>
-				<div class="overflow-hidden">
+				<div class="bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 p-4 shadow-lg">
 					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
 				</div>
 				
-				<!-- STATISTICS SECTION - Comment out this entire block to hide detailed statistics -->
-				<!-- <div class="mt-4">
-					<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
-				</div> -->
-				<!-- END STATISTICS SECTION -->
+				<!-- DETAILED STATISTICS SECTION - Only visible for non-regular users (agents, staff, etc.) -->
+				{#if $loggedInUser && !$loggedInUser.userRoles.includes(UserRoles.User)}
+					<div class="mt-6">
+						<div class="mb-4">
+							<div class="flex items-center space-x-3 mb-3">
+								<div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+									<Icon icon="mdi:chart-line" class="text-white text-lg" />
+								</div>
+								<div>
+									<h2 class="text-xl font-bold text-slate-800">Detailed Statistics</h2>
+									<p class="text-slate-600 text-sm">Comprehensive breakdown by application types and status</p>
+								</div>
+							</div>
+						</div>
+						<div class="bg-white/60 backdrop-blur-sm rounded-xl border border-slate-200/60 p-4 shadow-lg">
+							<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
+						</div>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>

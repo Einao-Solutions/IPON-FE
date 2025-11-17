@@ -35,15 +35,21 @@
 
 	let menus = [
 		{ icon: 'radix-icons:dashboard', location: 'Dashboard' },
-		{ icon: 'cil:search', location: 'Publications' },
-		{ icon: 'fluent:person-support-20-filled', location: 'Support' },
+		{ icon: 'mdi:file-document-multiple-outline', location: 'Publications' },
+		{ icon: 'mdi:help-circle-outline', location: 'Support' },
 		// { icon: 'cil:search', location: 'Opposition' },
-		{ icon: 'arcticons:yahoo-japan-finance', location: 'Finance' },
-		{ icon: 'mi:notification', location: 'Performance' },
-		{ icon: 'octicon:people-24', location: 'Users' },
-		{ icon: 'ooui:user-avatar-outline', location: 'Profile' },
-		{ icon: 'mdi:shield-crown-outline', location: 'Admin' },
-		{ icon: 'mdi:file-plus', name:'Claim Requests',location: 'ClaimRequests' }
+		{ icon: 'mdi:chart-line', location: 'Finance' },
+		{ icon: 'mdi:chart-box-outline', location: 'Performance' },
+		{ icon: 'mdi:account-group-outline', location: 'Users' },
+		{ 
+			icon: 'mdi:cog-outline', 
+			location: 'Admin',
+			submenus: [
+				{ icon: 'mdi:account-circle-outline', name: 'Profile', location: 'profile' }
+			]
+		},
+		{ icon: 'mdi:shield-crown-outline', name: 'Super Admin', location: 'admin' },
+		{ icon: 'mdi:file-plus', name:'Claim Requests', location: 'ClaimRequests' }
 	];
 
   onMount(async () => {
@@ -81,8 +87,17 @@
           [UserRoles.SuperAdmin, UserRoles.Tech].includes(role)
         )
       ) {
-        menus = menus.filter((x) => x.location !== "Admin");
+        menus = menus.filter((x) => x.location !== "AdminPanel");
         menus = menus.filter((x) => x.location !== "ClaimRequests");
+      }
+      
+      // For regular users, keep the Admin dropdown with Profile only
+      if ($loggedInUser.userRoles.includes(UserRoles.User)) {
+        const adminMenu = menus.find(m => m.location === "Admin");
+        if (adminMenu) {
+          // Keep only Profile submenu for regular users
+          adminMenu.submenus = adminMenu.submenus?.filter(s => s.location === "profile") || [];
+        }
       }
     }
 
@@ -200,10 +215,12 @@
   }
 </script>
 
-<div class="w-56 h-screen bg-white shadow-lg flex flex-col">
+<div class="w-64 h-screen bg-white shadow-xl flex flex-col border-r border-slate-200/60">
   <!-- Logo -->
-  <div class="flex justify-center py-4 border-b border-gray-100">
-    <img src="/logo.png" alt="logo" class="h-16 w-16" />
+  <div class="flex justify-center py-6 border-b border-slate-200/60">
+    <div class="bg-gradient-to-br  p-3 rounded-xl shadow-lg">
+      <img src="/logo.png" alt="logo" class="h-12 w-12" />
+    </div>
   </div>
 
   <!-- Menu items -->
@@ -283,38 +300,42 @@
 
   <!-- System notification -->
   {#if systemNotification.isActive}
-    <div class="p-3 mx-2 mb-3">
+    <div class="p-3 mx-3 mb-4">
       <div
-        class={`rounded-lg border-2 shadow-lg ${getNotificationColors(systemNotification.priority)}`}
+        class={`rounded-xl border shadow-lg ${getNotificationColors(systemNotification.priority)} backdrop-blur-sm`}
       >
         <div
           class="flex items-center justify-between p-3 border-b border-white/20"
         >
           <div class="flex items-center space-x-2">
-            <Icon
-              icon={getNotificationIcon(systemNotification.type)}
-              class="text-lg flex-shrink-0"
-            />
-            <span class="font-semibold text-base">{systemNotification.title}</span
-            >
+            <div class="p-1 bg-white/20 rounded-md">
+              <Icon
+                icon={getNotificationIcon(systemNotification.type)}
+                class="text-base flex-shrink-0"
+              />
+            </div>
+            <span class="font-semibold text-sm">{systemNotification.title}</span>
           </div>
           <button
-            class="text-white/80 hover:text-white transition-colors p-1"
+            class="text-white/80 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-md"
             on:click={toggleSystemNotifications}
           >
             <Icon
               icon={showSystemNotifications
                 ? "heroicons:chevron-up"
                 : "heroicons:chevron-down"}
-              width="16"
+              width="14"
             />
           </button>
         </div>
         {#if showSystemNotifications}
           <div class="p-3">
-            <ul class="list-disc pl-5 text-base text-white/90 leading-relaxed">
+            <ul class="space-y-1 text-sm text-white/90 leading-relaxed">
               {#each systemNotification.message as line}
-                <li>{line}</li>
+                <li class="flex items-start space-x-2">
+                  <span class="text-white/60 mt-1.5">•</span>
+                  <span>{line}</span>
+                </li>
               {/each}
             </ul>
           </div>
@@ -324,7 +345,9 @@
   {/if}
 
   <!-- Footer logo -->
-  <div class="p-4 border-t border-gray-100 flex justify-center">
-    <img src="/einao.png" alt="einao logo" class="h-12 w-auto opacity-70" />
+  <div class="p-4 border-t border-slate-200/60 flex justify-center bg-white">
+    <div class="transition-opacity">
+      <img src="/einao.png" alt="einao logo" class="h-10 w-auto" />
+    </div>
   </div>
 </div>
