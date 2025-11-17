@@ -83,7 +83,6 @@ const config = {
 				'/home/publications/publicationstatusupdate/statusupdateform',
 				'/opposition',
 				'/opposition/paid',
-				'/home/file-withdrawal',
 				'/home/file-withdrawal/search',
 				'/home/file-withdrawal/withdrawalform',
 				'/home/file-withdrawal/file-withdrawal-result',
