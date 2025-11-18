@@ -18,7 +18,7 @@
 	let newText: string = '';
 	let selectedFile: File | null = null;
 	let isUploading = false;
-
+	const name = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	async function addCorrespondence() {
 		isUploading = true;
 		let attachmenturl: string | null = null;
@@ -49,7 +49,7 @@
 			body: JSON.stringify({
 				ticketId: data.id,
 				newStatus:
-					$loggedInUser.id === data.creatorId
+					$loggedInUser?.creatorId === data.creatorId
 						? TicketStates.awaitingStaff
 						: TicketStates.awaitingUser,
 				correspondence:
@@ -57,13 +57,13 @@
 						? {
 								message: newText,
 								attachment: attachmenturl[0],
-								senderId: $loggedInUser.id,
-								senderName: $loggedInUser.name
+								senderId: $loggedInUser?.creatorId,
+								senderName: name
 							}
 						: {
 								message: newText,
-								senderId: $loggedInUser.id,
-								senderName: $loggedInUser.name
+								senderId: $loggedInUser?.creatorId,
+								senderName: name
 							}
 			})
 		});
