@@ -235,28 +235,35 @@
 		const filescount: number = resp.count;
 		let _dataList = [];
 		for (let i = 0; i < values.length; i++) {
-			const curr = values[i];
-			const allPending = (curr.summaries as []);
-			_dataList.push({
-				's/n': index+ i + 1,
-				date: Intl.DateTimeFormat('en-NG', {
-					year: '2-digit',
-					month: 'short',
-					day: 'numeric',
-					weekday: 'short',
-					hour: 'numeric',
-					minute: 'numeric'
-				}).format(new Date(curr.summaries[0].applicationDate)),
-				fileId: curr.fileId,
-				fileStatus: curr.fileStatus,
-				title: curr.title,
-				fileType: fileTypeToString(curr.type),
-				id: curr.id,
-				status:
-					allPending.length > 1 ? 'Multiple' : allPending[0].applicationStatus,
-				appType: allPending.length > 1 ? 'Multiple' : mapTypeToString(allPending[0].applicationType)
-			});
-		}
+            const curr = values[i];
+            // ensure summaries is an array and guard access to the first item
+            const summaries = Array.isArray(curr.summaries) ? curr.summaries : [];
+            const first = summaries.length > 0 ? summaries[0] : null;
+
+            const formattedDate = first?.applicationDate
+                ? Intl.DateTimeFormat('en-NG', {
+                        year: '2-digit',
+                        month: 'short',
+                        day: 'numeric',
+                        weekday: 'short',
+                        hour: 'numeric',
+                        minute: 'numeric'
+                  }).format(new Date(first.applicationDate))
+                : '-';
+
+            _dataList.push({
+                's/n': index + i + 1,
+                date: formattedDate,
+                fileId: curr.fileId ?? '-',
+                fileStatus: curr.fileStatus ?? '-',
+                title: curr.title ?? '-',
+                fileType: fileTypeToString(curr.type),
+                id: curr.id,
+                status: summaries.length > 1 ? 'Multiple' : (first?.applicationStatus ?? 'Unknown'),
+                appType:
+                    summaries.length > 1 ? 'Multiple' : (first?.applicationType ? mapTypeToString(first.applicationType) : null)
+            });
+        }
 		dataList = [..._dataList];
 		const _listOfIds = _dataList.map((x) => x.id);
 		listOfIds.set(_listOfIds);

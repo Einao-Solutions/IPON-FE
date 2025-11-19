@@ -97,26 +97,30 @@
 		const filescount: number = resp.count;
 		let _dataList = [];
 		for (let i = 0; i < values.length; i++) {
-			const curr = values[i];
-			const allPending = (curr.summaries as []);
+			const curr: any = values[i];
+			const allPending: any[] = Array.isArray(curr.summaries) ? curr.summaries : [];
+			const first = allPending.length > 0 ? allPending[0] : null;
+
+			const applicationDate = first?.applicationDate ?? curr.createdAt ?? new Date().toISOString();
+			const formattedDate = Intl.DateTimeFormat('en-NG', {
+				year: '2-digit',
+				month: 'short',
+				day: 'numeric',
+				weekday: 'short',
+				hour: 'numeric',
+				minute: 'numeric'
+			}).format(new Date(applicationDate));
+
 			_dataList.push({
 				's/n': i + 1,
-				date: Intl.DateTimeFormat('en-NG', {
-					year: '2-digit',
-					month: 'short',
-					day: 'numeric',
-					weekday: 'short',
-					hour: 'numeric',
-					minute: 'numeric'
-				}).format(new Date(curr.summaries[0].applicationDate)),
+				date: formattedDate,
 				fileId: curr.fileId,
 				fileStatus: curr.fileStatus,
 				title: curr.title,
 				fileType: fileTypeToString(curr.type),
 				id: curr.id,
-				status:
-					allPending.length > 1 ? 'Multiple' : allPending[0].applicationStatus,
-				appType: allPending.length > 1 ? 'Multiple' : mapTypeToString(allPending[0].applicationType)
+				status: allPending.length > 1 ? 'Multiple' : (first?.applicationStatus ?? 'Unknown'),
+				appType: allPending.length > 1 ? 'Multiple' : (first ? mapTypeToString(first.applicationType) : 'Unknown')
 			});
 		}
 		dataList = [..._dataList];

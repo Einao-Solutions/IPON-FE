@@ -90,7 +90,7 @@
 			await setData();
 		}
 	});
-
+	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	async function setData() {
 		appData = $applicationData;
 		if (type == 'newapplication') {
@@ -154,7 +154,7 @@
 				appData.applicants.length > 1
 					? appData.applicants[0].name + ' et al.'
 					: appData.applicants[0].name;
-			responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&applicationId=${applicationId}&title=${fileTitle}&amount=${cost}&applicantName=${applicantName}&fileType=${fileType}`;
+			responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&applicationId=${applicationId}&title=${fileTitle}&amount=${cost}&applicantName=${userName}&fileType=${fileType}`;
 			isLoading = false;
 		}
 		if (type === 'renewal') {
@@ -218,7 +218,7 @@
 				);
 
 				if (response.ok) {
-					fileApplicant = parsed.name;
+					fileApplicant = userName;
 					const result = await response.json();
 					cost = result.cost;
 					paymentId = result.rrr;
@@ -247,7 +247,7 @@
 			title = 'Renewal';
 			fileNumber = $page.url.searchParams.get('fileNumber') ?? undefined;
 			fileTitle = $page.url.searchParams.get('title') ?? undefined;
-			fileApplicant = $page.url.searchParams.get('applicant') ?? undefined;
+			fileApplicant = userName;
 			await setHash();
 			responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&title=${fileTitle}&amount=${cost}`;
 			isLoading = false;
@@ -260,8 +260,7 @@
 			fileNumber = fileNo;
 			console.log('File ID:', fileNumber);
 			fileTitle = $page.url.searchParams.get('title') ?? undefined;
-			const name = localStorage.getItem('name');
-			fileApplicant = name;
+			fileApplicant = userName;
 			let systemId = $page.url.searchParams.get('systemId') ?? undefined;
 			await setHash();
 			responseurl = `https://${currentBaseurl}/payment/paid?paymentType=tradecertificate&fileId=${fileNumber}&rrr=${paymentId}`;
@@ -290,26 +289,19 @@
 				body: JSON.stringify({
 					number: appData.correspondence.phone,
 					email: appData.correspondence.email,
-					name:
-						appData.applicants.length > 1
-							? appData.applicants[0].name + ' et al.'
-							: appData.applicants[0].name,
+					name: userName,
 					fileType: appData.type,
 					patentchangeType: patentChangeType
 				})
 			});
 			if (response.ok) {
-				const applicantName =
-					appData.applicants.length > 1
-						? appData.applicants[0].name + ' et al.'
-						: appData.applicants[0].name;
 				const result = await response.json();
 				cost = result.cost;
 				paymentId = result.rrr;
 				await setHash();
 				fileId = appData.id;
 				applicationId = $page.url.searchParams.get('applicationId') ?? '';
-				responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&title=${fileTitle}&amount=${cost}&applicantName=${applicantName}&fileType=${fileType}&applicationId=${applicationId}`;
+				responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&title=${fileTitle}&amount=${cost}&applicantName=${userName}&fileType=${fileType}&applicationId=${applicationId}`;
 				isLoading = false;
 			}
 		}
@@ -331,7 +323,7 @@
 				const curr = batch.data[currentRenewalIndex];
 				totalRenewalDue = batch.total;
 				fileTitle = curr.fileTitle;
-				fileApplicant = curr.applicant;
+				fileApplicant = userName;
 				fileNumber = curr.fileNumber;
 				title = curr.title;
 				fileType = curr.fileType;
@@ -353,7 +345,7 @@
 			const parsed = appData ? JSON.parse(appData) : null;
 			const fileData = sessionStorage.getItem('searchResults');
 			const parsedData = fileData ? JSON.parse(fileData) : null;
-			fileApplicant = parsedData[0].fileApplicant;
+			fileApplicant = userName;
 			console.log('File Applicant:', fileApplicant);
 			fileNumber = parsed.query;
 			cost = $page.url.searchParams.get('amount') ?? undefined;
@@ -464,7 +456,7 @@
 			fileNumber = $page.url.searchParams.get('fileNumber') ?? sessionStorage.getItem('withdrawal_fileNumber');
 			cost = $page.url.searchParams.get('amount') ?? sessionStorage.getItem('withdrawal_cost');
 			paymentId = $page.url.searchParams.get('rrr') ?? sessionStorage.getItem('withdrawal_rrr');
-			fileApplicant = $loggedInUser.name;
+			fileApplicant = userName;
 
 			const requestId = crypto.randomUUID();
 			if (cost == undefined || paymentId == undefined || requestId === undefined) {
@@ -480,7 +472,7 @@
 			title = 'Availability Search';
 			// console.log('Amount:', cost);
 			// console.log('RRR:', paymentId);
-			fileApplicant = $loggedInUser.name;
+			fileApplicant = userName;
 			cost = $page.url.searchParams.get('amount') ?? undefined;
 			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
 
@@ -498,7 +490,7 @@
 		}
 		if (type === 'merger') {
 			title = 'Merger Application';
-			fileApplicant = $loggedInUser.name;
+			fileApplicant = userName;
 			cost = $page.url.searchParams.get('amount') ?? undefined;
 			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
 			// const requestId = crypto.randomUUID();
@@ -514,7 +506,7 @@
 			title = 'Registered Users Application';
 			const fileData = sessionStorage.getItem('searchResults');
 			const parsedData = fileData ? JSON.parse(fileData) : null;
-			fileApplicant = parsedData[0].fileApplicant;
+			fileApplicant = userName;
 			console.log('File Applicant:', fileApplicant);
 			cost = $page.url.searchParams.get('amount') ?? undefined;
 			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
@@ -534,7 +526,7 @@
 			title = `Application for Change of Applicant ${change}`;
 			const fileData = sessionStorage.getItem('searchResults');
 			const parsedData = fileData ? JSON.parse(fileData) : null;
-			fileApplicant = parsedData[0].fileApplicant;
+			fileApplicant = userName;
 			console.log('File Applicant:', fileApplicant);
 			cost = $page.url.searchParams.get('amount') ?? undefined;
 			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
