@@ -2,13 +2,17 @@ import type { PageLoad } from './$types';
 import { applicationData, applicationMode, newApplicationType } from '$lib/store';
 import { get } from 'svelte/store';
 import { ApplicationStatuses, FilingType, FormApplicationTypes } from '$lib/helpers';
-export const prerender = false;
-
+import { browser } from '$app/environment';
 
 export const load: PageLoad=({ url })=>{
-	// Get the type parameter from URL
-	const typeParam = url.searchParams.get('type');
-	const applicationType = typeParam ? parseInt(typeParam) : null;
+	// Get the type parameter from URL (safe for prerendering)
+	let typeParam: string | null = null;
+	let applicationType: number | null = null;
+	
+	if (browser && url.searchParams) {
+		typeParam = url.searchParams.get('type');
+		applicationType = typeParam ? parseInt(typeParam) : null;
+	}
 	
 	// Set the application type in store
 	if (applicationType !== null) {

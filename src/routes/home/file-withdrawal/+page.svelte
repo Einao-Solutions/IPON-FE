@@ -3,6 +3,7 @@
     import { createEventDispatcher } from 'svelte';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
+    import { browser } from '$app/environment';
     import { baseURL } from '$lib/helpers';
     import { loggedInUser } from '$lib/store';
     import Icon from '@iconify/svelte';
@@ -20,12 +21,15 @@
     let applicantEmail: string | null = null;
     const dispatch = createEventDispatcher();
     
-    // Get context from URL parameters
-    $: ipType = $page.url.searchParams.get('ipType') || 'patent';
-    // Debug logging
-    $: console.log('File Withdrawal - URL param ipType:', $page.url.searchParams.get('ipType'), 'ipType:', ipType);
-    // Context-aware file type - no dropdown needed
-    $: fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+    // Get context from URL parameters (client-side only)
+    let ipType = 'patent';
+    let fileType = 'Patent';
+    
+    $: if (browser) {
+        ipType = $page.url.searchParams.get('ipType') || 'patent';
+        fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+        console.log('File Withdrawal - URL param ipType:', $page.url.searchParams.get('ipType'), 'ipType:', ipType);
+    }
 
     onMount(() => {
         isOpen = true;
@@ -67,7 +71,7 @@
             }
 
             const actualType = data.type?.toLowerCase();
-            const selectedType = type.toLowerCase();
+            const selectedType = fileType.toLowerCase();
 
             if (actualType !== selectedType) {
                 error = `File number and file type do not match. File number ${searchQuery} is a ${actualType} file.`;

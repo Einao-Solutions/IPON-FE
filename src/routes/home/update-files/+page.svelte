@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 	import { baseURL } from '$lib/helpers';
 	import { loggedInUser } from '$lib/store';
 	import { page } from '$app/stores';
@@ -21,10 +22,14 @@
 	let applicantEmail: string | null = null;
 	const dispatch = createEventDispatcher();
 	
-	// Get context from URL parameters
-	$: ipType = $page.url.searchParams.get('ipType') || 'patent';
-	// Context-aware file type - no dropdown needed
-	$: fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+	// Get context from URL parameters (client-side only)
+	let ipType = 'patent';
+	let fileType = 'Patent';
+	
+	$: if (browser) {
+		ipType = $page.url.searchParams.get('ipType') || 'patent';
+		fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+	}
 	
 	onMount(async () => {
 		isOpen = true;
