@@ -1,3 +1,4 @@
+
 <script lang="ts">
 	import { beforeUpdate, onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
