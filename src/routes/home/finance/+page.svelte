@@ -19,6 +19,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { countriesMap } from '$lib/constants';
 	import Icon from '@iconify/svelte';
+	import { browser } from '$app/environment';
 	dayjs.extend(quarterOfYear);
 	let financeData = writable<FinanceData[] | []>([]);
 	let financeLoading: boolean = false;
@@ -28,6 +29,12 @@
 	let startDate = '';
 	let endDate = '';
 	async function fetchData(startTime: string | null, endTime: string | null) {
+		// prevent server-side/build-time fetches (CI / SSR)
+		if (!browser) {
+			// ensure loading flag reset on server to avoid hanging UI state
+			financeLoading = false;
+			return;
+		}
 		if ($selectedRange==='custom')
 		{
 			startTime=dayjs(startTime).startOf('day').format();
