@@ -241,35 +241,43 @@
 
 	let showCertificate = false;
 	async function ShowCertificatePayment() {
-		showCertificate = true;
-		if (fileData.applicationHistory[0].certificatePaymentId !== null) {
-			let response = await fetch(`${baseURL}/api/files/CertificatePayment?id=${fileData?.fileId}`);
-			if (response.ok) {
-				let result = await response.json();
-				sessionStorage.setItem('fileId', result.fileId);
-				sessionStorage.setItem('name', result.name);
-				sessionStorage.setItem('rrr', result.rrr);
-				goto(
-					`/payment?type=tradecertificate&amount=${result.total}&paymentId=${result.rrr}&fileId=${result.fileId}&name=${result.name}`
-				);
-			}
-		} else {
-			const rrr = fileData.applicationHistory[0].certificatePaymentId;
-			let amount = 0;
-			const response = await fetch(`${baseURL}/api/payments/check?id=${rrr}`);
-			if (response.ok) {
-				const result = await response.json();
-				amount = result?.amount;
-			}
-			goto(
-				`/payment?type=tradecertificate&amount=${amount}&paymentId=${rrr}&fileId=${fileData.id}&title=${fileData.titleOfTradeMark}`
-			);
-		}
-	}
+        showCertificate = true;
+        const history0 = fileData?.applicationHistory?.[0];
+        if (!history0) {
+            toast.error('No application history available for certificate payment', { position: 'top-right' });
+            return;
+        }
+        if (history0.certificatePaymentId !== null) {
+            let response = await fetch(`${baseURL}/api/files/CertificatePayment?id=${fileData?.fileId}`);
+            if (response.ok) {
+                let result = await response.json();
+                sessionStorage.setItem('fileId', result.fileId);
+                sessionStorage.setItem('name', result.name);
+                sessionStorage.setItem('rrr', result.rrr);
+                goto(
+                    `/payment?type=tradecertificate&amount=${result.total}&paymentId=${result.rrr}&fileId=${result.fileId}&name=${result.name}`
+                );
+            }
+        } else {
+            const rrr = history0.certificatePaymentId;
+            let amount = 0;
+            if (rrr) {
+                const response = await fetch(`${baseURL}/api/payments/check?id=${rrr}`);
+                if (response.ok) {
+                    const result = await response.json();
+                    amount = result?.amount;
+                }
+            }
+            goto(
+                `/payment?type=tradecertificate&amount=${amount}&paymentId=${rrr}&fileId=${fileData.id}&title=${fileData.titleOfTradeMark}`
+            );
+        }
+    }
 
 	function showNewPayment() {
-		return fileData?.applicationHistory.find((x) => x.applicationType === 0).currentStatus === 2;
-	}
+        const app = fileData?.applicationHistory?.find((x) => x.applicationType === 0);
+        return app?.currentStatus === 2;
+    }
 
 	function viewMetadata() {
 		metaDataInfo.set(fileData);
