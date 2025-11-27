@@ -281,6 +281,7 @@ export enum FormApplicationTypes {
   WithdrawalRequest = 15,
   NewOpposition = 16,
   Amendment = 17,
+  Certification = 18
 }
 
 export enum ApplicationLetters {
