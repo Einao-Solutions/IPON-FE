@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { baseURL } from '$lib/helpers';
+	import { baseURL, ApplicationStatuses } from '$lib/helpers';
 	import { loggedInUser } from '$lib/store';
 	import Icon from '@iconify/svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -68,6 +68,58 @@
 			if (actualType !== expectedType) {
 				error = `File type mismatch. You selected "${expectedType}", but file is "${actualType}".`;
 				return;
+			}
+
+			// Check file status for recordals (renewal, merger, assignment, registered users)
+			if (['renewal', 'merger', 'assignment', 'registered-user'].includes(serviceId)) {
+				// Get file details to check status
+				const fileRes = await fetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`);
+				const fileData = await fileRes.json();
+				
+				if (!fileRes.ok || !fileData || fileData.length === 0) {
+					error = 'Unable to verify file status. Please try again.';
+					return;
+				}
+				
+				const file = fileData[0];
+				const fileStatus = file?.fileStatus;
+				const statusText = file?.statusText?.toLowerCase() || '';
+				
+				// Allow only specific statuses: Publication, AwaitingCertification, AwaitingCertificateConfirmation, and Active
+				const allowedStatuses = [
+					ApplicationStatuses.Publication,
+					ApplicationStatuses.AwaitingCertification,
+					ApplicationStatuses.AwaitingCertificateConfirmation,
+					ApplicationStatuses.Active
+				];
+				
+				const isStatusAllowed = allowedStatuses.includes(fileStatus);
+				
+				if (!isStatusAllowed) {
+					error = `${serviceName} is only available for files with status: Publication, Awaiting Certification, Awaiting Certificate Confirmation, or Active. Current file status: ${file?.statusText || 'Unknown'}`;
+					return;
+				}
+			}
+
+			// Check file status for change of name/address services
+			if (['change-applicant-name', 'change-applicant-address'].includes(serviceId)) {
+				// Get file details to check status
+				const fileRes = await fetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`);
+				const fileData = await fileRes.json();
+				
+				if (!fileRes.ok || !fileData || fileData.length === 0) {
+					error = 'Unable to verify file status. Please try again.';
+					return;
+				}
+				
+				const file = fileData[0];
+				const fileStatus = file?.fileStatus;
+				
+				// Change of Name/Address only allowed for Active files
+				if (fileStatus !== ApplicationStatuses.Active) {
+					error = `${serviceName} is only available for Active files.`;
+					return;
+				}
 			}
 
 			// Route to appropriate destination based on service type
@@ -232,6 +284,11 @@
 						bind:value={searchQuery}
 						placeholder="Enter file number"
 						class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+						on:keydown={(e) => {
+							if (e.key === 'Enter' && searchQuery.trim() && !isLoading) {
+								handleSearch();
+							}
+						}}
 					/>
 				</div>
 

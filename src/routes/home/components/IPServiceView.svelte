@@ -56,12 +56,17 @@
   let verifyPaymentResult: any = null;
   let verifyPaymentError: string | null = null;
 
-  // Change of Agent variables - exact same as dashboard
+  // Change of Agent variables - complete implementation
   let changeAgentError: string | null = null;
   let changeAgentResult: any[] = [];
   let changeAgentFileNumber: string = '';
   let changeAgentLoading = false;
   let changeAgentSearched = false;
+  
+  // Ownership form variables for agent change process
+  let showOwnership = false;
+  let ownershipForm: any = undefined;
+  let ownershipData = {};
 
   // Get Documents variables - exact same as dashboard
   let getDocFileNumber = '';
@@ -193,30 +198,73 @@
     verifyPaymentLoading = false;
   }
 
-  // Additional functions - exact same implementations as dashboard
+  // Complete Change of Agent search function - from working dashboard implementation
   async function searchChangeOfAgent() {
     changeAgentError = null;
     changeAgentResult = [];
+    changeAgentSearched = true;
+    
     if (!changeAgentFileNumber.trim()) {
       changeAgentError = 'Please enter File Number';
       return;
     }
+    
     changeAgentLoading = true;
     try {
+      console.log('🔍 Searching for change of agent file:', changeAgentFileNumber);
+      
       const response = await fetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(changeAgentFileNumber.trim())}`
       );
+      
       if (!response.ok) {
         const errorData = await response.json();
         changeAgentError = errorData.message || 'An error occurred';
         throw new Error(changeAgentError ?? 'An error occurred');
       }
+      
       changeAgentResult = await response.json();
+      console.log('✅ Change of Agent search results:', changeAgentResult);
+      
     } catch (e: any) {
-      changeAgentError = e.Message || e;
+      console.error('❌ Change of Agent search error:', e);
+      changeAgentError = e.message || e.Message || e;
     }
+    
     changeAgentLoading = false;
   }
+
+  // Show ownership form for actual agent change process
+  async function showOwnershipForm() {
+    if (!ownershipForm) {
+      console.log('📄 Loading OwnershipForm component...');
+      ownershipForm = (await import('../../dataview/Components/OwnershipForm.svelte')).default;
+    }
+    
+    const file = Array.isArray(changeAgentResult) ? changeAgentResult[0] : changeAgentResult;
+    console.log('📋 Preparing ownership data for file:', file);
+
+    if (!file?.fileId) {
+      changeAgentError = 'File data incomplete. Cannot update ownership.';
+      return;
+    }
+    
+    let closed = () => (showOwnership = false);
+    
+    ownershipData = {
+      closed: closed,
+      requiredData: {
+        fileId: file?.fileId,
+        oldCorrespondence: file?.correspondence,
+        oldId: file?.creatorAccount || null
+      }
+    };
+    
+    console.log('🚀 Opening ownership form with data:', ownershipData);
+    showOwnership = true;
+  }
+
+
 
   async function getDocuments() {
     getDocError = null;
@@ -305,35 +353,7 @@
       appealsLoading = false;
     }
   }
-
-  // Additional functions for modal functionality - exact same as dashboard
-  let ownershipForm: any = undefined;
-  let showOwnership = false;
-  let ownershipData: any = null;
   
-  async function showOwnershipForm() {
-    if (!ownershipForm) {
-      ownershipForm = (await import('../../dataview/Components/OwnershipForm.svelte')).default;
-    }
-    let closed = () => (showOwnership = false);
-    const file = Array.isArray(changeAgentResult) ? changeAgentResult[0] : changeAgentResult;
-    console.log(file);
-
-    if (!file?.fileId) {
-      console.error('File data incomplete. Cannot update ownership.');
-      return;
-    }
-    ownershipData = {
-      closed: closed,
-      requiredData: {
-        fileId: file?.fileId,
-        oldCorrespondence: file?.correspondence,
-        oldId: file?.creatorAccount || null
-      }
-    };
-    showOwnership = true;
-  }
-
   // Open appeal upload dialog
   function openAppealUpload(file: any): void {
     selectedAppealFile = file;
@@ -470,6 +490,12 @@
   }
   
   function handleOpenChangeOfAgentModal() {
+    // Reset all change of agent state when opening modal
+    changeAgentError = null;
+    changeAgentResult = [];
+    changeAgentFileNumber = '';
+    changeAgentLoading = false;
+    changeAgentSearched = false;
     showChangeOfAgentDialog = true;
   }
   
@@ -1424,4 +1450,9 @@
     streamlinedService = null;
   }}
 />
+{/if}
+
+<!-- Change of Agent OwnershipForm -->
+{#if showOwnership}
+  <svelte:component this={ownershipForm} requiredData={ownershipData.requiredData} closed={ownershipData.closed} />
 {/if}
