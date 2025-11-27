@@ -83,7 +83,7 @@ export const commonServices: IPService[] = [
     name: 'PRINT DOCUMENTS',
     description: 'Print application documents',
     icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
+    route: '/home/dashboard',
     category: 'administrative',
     isCommon: true
   },
@@ -173,14 +173,7 @@ export const trademarkServices: IPService[] = [
     route: '/home/agent/change',
     category: 'filing'
   },
-  {
-    id: 'print-documents-filing',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print trademark documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'filing'
-  },
+
 
   // PREREGISTRATION CATEGORY (formerly management)
   {
@@ -203,21 +196,14 @@ export const trademarkServices: IPService[] = [
   },
   {
     id: 'update-publication-status',
-    name: 'PUBLICATION',
+    name: 'UPDATE PUBLICATION STATUS',
     description: 'Update publication status for trademark files',
     icon: 'mdi:newspaper-variant-outline',
     route: '/home/publications/publicationstatusupdate',
     category: 'pre-registration',
     price: '₦5,000'
   },
-  {
-    id: 'print-documents-preregistration',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print trademark documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'pre-registration'
-  },
+
 
   // SEARCH CATEGORY (reordered)
   {
@@ -247,14 +233,7 @@ export const trademarkServices: IPService[] = [
     category: 'search',
     price: '₦9,500'
   },
-  {
-    id: 'print-documents-search',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print trademark documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'search'
-  },
+
 
   // RECORDALS CATEGORY (formerly administrative)
   {
@@ -302,14 +281,7 @@ export const trademarkServices: IPService[] = [
     category: 'recordals',
     price: '₦18,500'
   },
-  {
-    id: 'print-documents-recordals',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print trademark documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'recordals'
-  },
+
 
   // FINANCIAL CATEGORY
   {
@@ -330,13 +302,14 @@ export const trademarkServices: IPService[] = [
     category: 'financial'
   },
   {
-    id: 'print-documents-financial',
+    id: 'print-documents',
     name: 'PRINT DOCUMENTS',
-    description: 'Print trademark documents',
+    description: 'Print Trademark documents',
     icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
+    route: '/home/dashboard',
     category: 'financial'
-  }
+  },
+
 ];
 
 // Patent-specific services
@@ -396,14 +369,7 @@ export const patentServices: IPService[] = [
     route: '/home/editpatentfiles',
     category: 'filing'
   },
-  {
-    id: 'print-documents-filing-patent',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print patent documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'filing'
-  },
+
 
   // PRE-REGISTRATION CATEGORY
   {
@@ -423,14 +389,7 @@ export const patentServices: IPService[] = [
     route: '/home/editattachments',
     category: 'pre-registration'
   },
-  {
-    id: 'print-documents-preregistration-patent',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print patent documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'pre-registration'
-  },
+
 
   // SEARCH CATEGORY
   {
@@ -453,14 +412,7 @@ export const patentServices: IPService[] = [
     price: '₦9,500',
     isCommon: true
   },
-  {
-    id: 'print-documents-search-patent',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print patent documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'search'
-  },
+
 
   // RECORDALS CATEGORY
   {
@@ -472,14 +424,7 @@ export const patentServices: IPService[] = [
     category: 'recordals',
     price: ''
   },
-  {
-    id: 'print-documents-recordals-patent',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print patent documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'recordals'
-  },
+
 
   // FINANCIAL CATEGORY
   {
@@ -491,14 +436,16 @@ export const patentServices: IPService[] = [
     category: 'financial',
     isCommon: true
   },
-  {
-    id: 'print-documents-financial-patent',
+
+    {
+    id: 'print-documents',
     name: 'PRINT DOCUMENTS',
     description: 'Print patent documents',
     icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
+    route: '/home/dashboard',
     category: 'financial'
-  }
+  },
+
 ];
 
 // Design-specific services
@@ -541,14 +488,7 @@ export const designServices: IPService[] = [
     route: '/home/agent/change',
     category: 'filing'
   },
-  {
-    id: 'print-documents-filing-design',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print design documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'filing'
-  },
+
 
   // PRE-REGISTRATION CATEGORY
   {
@@ -559,14 +499,7 @@ export const designServices: IPService[] = [
     route: '/home/editattachments',
     category: 'pre-registration'
   },
-  {
-    id: 'print-documents-preregistration-design',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print design documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'pre-registration'
-  },
+
 
   // SEARCH CATEGORY
   {
@@ -590,23 +523,17 @@ export const designServices: IPService[] = [
     isCommon: true
   },
   {
-    id: 'print-documents-search-design',
+    id: 'print-documents',
     name: 'PRINT DOCUMENTS',
-    description: 'Print design documents',
+    description: 'Print Design documents',
     icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'search'
+    route: '/home/dashboard',
+    category: 'financial'
   },
 
+
   // RECORDALS CATEGORY
-  {
-    id: 'print-documents-recordals-design',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print design documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'recordals'
-  },
+
 
   // FINANCIAL CATEGORY
   {
@@ -618,14 +545,7 @@ export const designServices: IPService[] = [
     category: 'financial',
     isCommon: true
   },
-  {
-    id: 'print-documents-financial-design',
-    name: 'PRINT DOCUMENTS',
-    description: 'Print design documents',
-    icon: 'mdi:printer-outline',
-    route: '/home/documents/print',
-    category: 'financial'
-  }
+
 ];
 
 export function getServicesForIPType(ipType: 'trademark' | 'patent' | 'design'): IPService[] {

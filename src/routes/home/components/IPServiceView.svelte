@@ -48,6 +48,7 @@
   let payCertResults: any[] | null = null;
   let error: string | null = null;
   let filteredResults: any[] | undefined;
+  let showPayCertResultsModal: boolean = false;
 
   // Verify Payment variables - exact same as dashboard  
   let verifyRRR = '';
@@ -91,19 +92,86 @@
 
   // Functions - exact same implementations as dashboard
   async function searchPayCert() {
+    // Reset previous error
+    error = null;
     payCertLoading = true;
 
-    const response = await fetch(
-      `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`
-    );
-    if (response.ok) {
-      payCertResults = await response.json();
-    } else {
-      error = 'Failed to fetch search results';
+    try {
+      console.log('🔍 Searching for file:', payCertFileNumber);
+      
+      const response = await fetch(
+        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`
+      );
+      
+      if (response.ok) {
+        payCertResults = await response.json();
+        console.log('📁 API Response:', payCertResults);
+        
+        filteredResults = payCertResults?.filter((result) => result.fileStatus == 20);
+        console.log('🎯 Filtered results (status 20):', filteredResults);
+        
+        // Success - show results modal
+        showPayCertModal = false;
+        showPayCertResultsModal = true;
+      } else {
+        // Error - stay on search modal and show error
+        error = 'Failed to fetch search results';
+        console.error('❌ API Error:', response.status, response.statusText);
+      }
+    } catch (err) {
+      // Network error - stay on search modal and show error
+      error = 'Network error occurred';
+      console.error('❌ Network Error:', err);
+    }
+    
+    payCertLoading = false;
+  }
+
+  async function ShowCertificatePayment(result: any) {
+    if (!result?.fileId) {
+      error = 'Invalid file data - missing file ID';
+      return;
     }
 
-    filteredResults = payCertResults?.filter((result) => result.fileStatus == 20);
-    payCertLoading = false;
+    const fileNumber = result.fileId;
+    console.log('💳 Processing certificate payment for file:', fileNumber);
+
+    try {
+      const response = await fetch(`${baseURL}/api/files/CertificatePayment?id=${fileNumber}`);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Certificate Payment API Error:', response.status, errorText);
+        error = `Payment setup failed: ${response.status} - ${response.statusText}`;
+        return;
+      }
+
+      const res = await response.json();
+      console.log('✅ Certificate Payment Response:', res);
+
+      // Validate response data
+      if (!res.fileId || !res.rrr || res.total === undefined) {
+        error = 'Invalid payment data received from server';
+        console.error('❌ Missing required payment fields:', res);
+        return;
+      }
+
+      // Store payment information
+      localStorage.setItem('fileId', res.fileId);
+      localStorage.setItem('name', res.name || '');
+      localStorage.setItem('rrr', res.rrr);
+      
+      // Navigate to payment page
+      const paymentUrl = `/payment?type=tradecertificate&amount=${res.total}&paymentId=${res.rrr}&fileId=${res.fileId}&name=${encodeURIComponent(res.name || '')}`;
+      console.log('🚀 Navigating to payment:', paymentUrl);
+      
+      // Use window.location for navigation
+      window.location.href = paymentUrl;
+      
+    } catch (err) {
+      console.error('❌ Certificate Payment Error:', err);
+      error = `Payment error: ${err instanceof Error ? err.message : 'Unknown error'}`;
+    }
   }
 
   async function verifyRemitaPayment() {
@@ -389,6 +457,11 @@
   }
   
   function handleOpenPayCertModal() {
+    // Reset state when opening modal
+    error = null;
+    payCertFileNumber = '';
+    payCertResults = null;
+    filteredResults = undefined;
     showPayCertModal = true;
   }
   
@@ -480,6 +553,19 @@
     };
     return icons[category] || 'mdi:folder';
   }
+
+  function getCategoryDisplayName(category: string): string {
+    const displayNames: Record<string, string> = {
+      filing: 'Filing',
+      search: 'Search',
+      management: 'Management',
+      financial: 'Payment Services',
+      administrative: 'Administrative',
+      recordals: 'Recordals',
+      'pre-registration': 'Pre-Registration'
+    };
+    return displayNames[category] || category.charAt(0).toUpperCase() + category.slice(1);
+  }
 </script>
 
 <div class="relative h-full bg-slate-50/50 rounded-xl border border-slate-200 shadow-lg overflow-hidden">
@@ -551,7 +637,7 @@
             class="flex items-center space-x-1 capitalize"
           >
             <Icon icon={getCategoryIcon(category)} class="text-sm" />
-            <span>{category} ({servicesByCategory[category].length})</span>
+            <span>{getCategoryDisplayName(category)} ({servicesByCategory[category].length})</span>
           </Button>
         {/each}
       </div>
@@ -574,7 +660,7 @@
           </option>
           {#each categories as category}
             <option value={category} selected={selectedCategory === category} class="capitalize">
-              {category} ({servicesByCategory[category].length})
+              {getCategoryDisplayName(category)} ({servicesByCategory[category].length})
             </option>
           {/each}
         </select>
@@ -616,6 +702,14 @@
 			</Dialog.Description>
 		</Dialog.Header>
 		<div class="space-y-4">
+			{#if error}
+				<div class="p-3 bg-red-50 border border-red-200 rounded-md">
+					<div class="flex items-center">
+						<Icon icon="mdi:alert-circle" class="text-red-500 mr-2" />
+						<span class="text-red-700 text-sm">{error}</span>
+					</div>
+				</div>
+			{/if}
 			<div>
 				<label for="file-number-input" class="block text-sm font-medium text-gray-700 mb-2">
 					File Number
@@ -623,13 +717,16 @@
 				<input
 					id="file-number-input"
 					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-					placeholder="Enter file number"
+					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 {error ? 'border-red-300' : ''}"
+					placeholder="Enter file number (e.g., TM/2024/12345)"
 					bind:value={payCertFileNumber}
+					on:input={() => { if (error) error = null; }}
 					on:keydown={(e) => {
 						if (e.key === 'Enter') searchPayCert();
 					}}
+					disabled={payCertLoading}
 				/>
+				<p class="text-xs text-gray-500 mt-1">Only files with status "Awaiting Certification" are eligible</p>
 			</div>
 		</div>
 		<Dialog.Footer class="flex gap-2 pt-4">
@@ -650,6 +747,116 @@
 				{:else}
 					Search File
 				{/if}
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
+
+<!-- Pay for Certificate Results Modal -->
+<Dialog.Root bind:open={showPayCertResultsModal}>
+	<Dialog.Content class="max-w-4xl">
+		<Dialog.Header>
+			<Dialog.Title class="text-lg font-semibold text-gray-900">Certificate Payment Search Results</Dialog.Title>
+			<Dialog.Description class="text-sm text-gray-600">
+				Files eligible for certificate payment
+			</Dialog.Description>
+		</Dialog.Header>
+		
+		{#if error}
+			<div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+				<div class="flex items-center">
+					<Icon icon="mdi:alert-circle" class="text-red-500 mr-2" />
+					<span class="text-red-700 text-sm">{error}</span>
+				</div>
+			</div>
+		{/if}
+
+		{#if filteredResults && filteredResults.length > 0}
+			<div class="mt-4">
+				<div class="mb-3 p-3 bg-green-50 border border-green-200 rounded-md">
+					<div class="flex items-center">
+						<Icon icon="mdi:check-circle" class="text-green-500 mr-2" />
+						<span class="text-green-700 text-sm">
+							Found {filteredResults.length} file(s) eligible for certificate payment
+						</span>
+					</div>
+				</div>
+				<div class="overflow-x-auto">
+					<table class="min-w-full border border-gray-200">
+						<thead class="bg-gray-50">
+							<tr>
+								<th class="border-b px-4 py-2 text-left text-sm font-semibold text-gray-900">File Number</th>
+								<th class="border-b px-4 py-2 text-left text-sm font-semibold text-gray-900">Type</th>
+								<th class="border-b px-4 py-2 text-left text-sm font-semibold text-gray-900">Title</th>
+								<th class="border-b px-4 py-2 text-left text-sm font-semibold text-gray-900">Status</th>
+								<th class="border-b px-4 py-2 text-left text-sm font-semibold text-gray-900">Class</th>
+								<th class="border-b px-4 py-2 text-left text-sm font-semibold text-gray-900">Applicant</th>
+								<th class="border-b px-4 py-2 text-center text-sm font-semibold text-gray-900">Action</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each filteredResults as result}
+								<tr class="hover:bg-gray-50">
+									<td class="border-b px-4 py-2 font-mono text-sm">{result.fileId}</td>
+									<td class="border-b px-4 py-2 text-sm">{fileTypeToString(result.fileTypes)}</td>
+									<td class="border-b px-4 py-2 text-sm">{result.titleOfTradeMark || result.title || 'N/A'}</td>
+									<td class="border-b px-4 py-2">
+										<AppStatusTag value={result.fileStatus || result.status} />
+									</td>
+									<td class="border-b px-4 py-2 text-sm">{result.tradeMarkClass || result.class || 'N/A'}</td>
+									<td class="border-b px-4 py-2 text-sm">{result.fileApplicant || result.applicant || 'N/A'}</td>
+									<td class="border-b px-4 py-2 text-center">
+										<Button
+											size="sm"
+											class="bg-green-600 hover:bg-green-700 text-white"
+											on:click={() => ShowCertificatePayment(result)}
+										>
+											<Icon icon="mdi:credit-card" class="mr-1" />
+											Pay for Certificate
+										</Button>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		{:else if filteredResults && filteredResults.length === 0}
+			<div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-center">
+				<div class="flex flex-col items-center space-y-2">
+					<Icon icon="mdi:information" class="text-yellow-500 text-2xl" />
+					<div>
+						<p class="text-yellow-800 font-medium">No eligible files found</p>
+						<p class="text-yellow-700 text-sm mt-1">
+							File number "{payCertFileNumber}" was found, but it's not eligible for certificate payment.
+						</p>
+						<p class="text-yellow-600 text-xs mt-2">
+							<strong>Requirements:</strong> File status must be "Awaiting Certification"
+						</p>
+					</div>
+				</div>
+			</div>
+		{:else if payCertResults && payCertResults.length > 0}
+			<div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-md text-center">
+				<div class="flex flex-col items-center space-y-2">
+					<Icon icon="mdi:file-search" class="text-blue-500 text-2xl" />
+					<div>
+						<p class="text-blue-800 font-medium">File found, but not eligible</p>
+						<p class="text-blue-700 text-sm mt-1">
+							Found {payCertResults.length} file(s) for "{payCertFileNumber}", but none are awaiting certification.
+						</p>
+					</div>
+				</div>
+			</div>
+		{:else}
+			<div class="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-md text-center">
+				<p class="text-gray-600">Enter a file number in the search box to find eligible files.</p>
+			</div>
+		{/if}
+
+		<Dialog.Footer class="flex gap-2 pt-4">
+			<Button variant="outline" class="flex-1" on:click={() => (showPayCertResultsModal = false)}>
+				Close
 			</Button>
 		</Dialog.Footer>
 	</Dialog.Content>

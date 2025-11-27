@@ -47,7 +47,7 @@
 	let showUpdateForm: boolean = false;
 	let showRenewForm: boolean = false;
 	let showAssignForm: boolean = false;
-	let typecomponent;
+	let typecomponent: any;
 	let data = {};
 	$: fileData = $applicationData;
 	
@@ -100,7 +100,33 @@
 			let user = cookieUser.trimStart();
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-			isStaff = !!($loggedInUser?.userRoles?.some((e) => [UserRoles.Staff].includes(e)));
+			// Determine if user should see StaffDashboard (all non-regular user roles except Agent)
+		isStaff = !!($loggedInUser?.userRoles?.some((e) => [
+			// Generic staff roles
+			UserRoles.Staff,
+			// Patent-related roles
+			UserRoles.PatentSearch,
+			UserRoles.PatentExaminer,
+			UserRoles.PatentCertification,
+			UserRoles.PatentDesignRegistrar,
+			// Trademark-related roles
+			UserRoles.TrademarkSearch,
+			UserRoles.TrademarkExaminer,
+			UserRoles.TrademarkOpposition,
+			UserRoles.TrademarkAcceptance,
+			UserRoles.TrademarkCertification,
+			UserRoles.TrademarkRegistrar,
+			// Design-related roles
+			UserRoles.DesignSearch,
+			UserRoles.DesignExaminer,
+			UserRoles.DesignCertification,
+			// Administrative roles
+			UserRoles.Minister,
+			UserRoles.PermSec,
+			UserRoles.Finance
+			// Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
+			// Note: Agent will use UserDashboard with totals only
+		].includes(e)));
 		}
 		if (isStaff) {
 			typecomponent = (await import('../components/StaffDashboard.svelte')).default;
@@ -1465,21 +1491,49 @@
 					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
 				</div>
 				
-				<!-- DETAILED STATISTICS SECTION - Only visible for non-regular users (agents, staff, etc.) -->
-				{#if $loggedInUser && !$loggedInUser.userRoles.includes(UserRoles.User)}
+				<!-- 
+					DETAILED STATISTICS SECTION
+					========================== 
+					This section provides comprehensive statistical breakdowns for Tech and SuperAdmin users only.
+					It displays detailed application statistics organized by IP type (Patents, Designs, Trademarks) 
+					and further broken down by application types and statuses.
+					
+					Visibility Logic:
+					- ONLY visible to Tech and SuperAdmin roles
+					- Hidden from all other roles (User, Agent, Staff, and IP-specific officers)
+					- IP-specific officers get their own StaffDashboard instead
+				-->
+				{#if $loggedInUser && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin))}
 					<div class="mt-6">
+						<!-- Section Header: Title and description for the detailed statistics -->
 						<div class="mb-4">
 							<div class="flex items-center space-x-3 mb-3">
+								<!-- Optional: Icon for the statistics section (currently commented out) -->
 								<!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
 									<Icon icon="mdi:chart-line" class="text-white text-lg" />
 								</div> -->
 								<div>
+									<!-- Main heading for the statistics section -->
 									<h2 class="text-xl font-bold text-slate-800">Detailed Statistics</h2>
+									<!-- Descriptive subtext explaining what the statistics show -->
 									<p class="text-slate-600 text-sm">Comprehensive breakdown by application types and status</p>
 								</div>
 							</div>
 						</div>
+						<!-- 
+							Statistics Content Container:
+							- Styled with subtle background, blur effect, and soft borders
+							- Contains the UserDashboard component with showOnlyStatistics=true
+							- This prop tells UserDashboard to render only the detailed statistics accordions
+						-->
 						<div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
+							<!-- 
+								UserDashboard Component (Statistics Mode):
+								- user={$loggedInUser}: Passes the logged-in user data
+								- showOnlyStatistics={true}: Flag to render only the detailed statistics view
+								- This will show accordion sections for Patents, Designs, and Trademarks
+								- Each accordion contains application types and status breakdowns
+							-->
 							<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
 						</div>
 					</div>
@@ -1725,10 +1779,23 @@
 		</div>
 	{/if}
 
-<!-- {#if !isLoading}
+<!-- 
+	STAFF DASHBOARD RENDERING SECTION
+	================================
+	This section renders the appropriate dashboard component based on user role:
+	- StaffDashboard: For IP-specific officers and staff roles
+	- UserDashboard: Already rendered above for regular users, agents, tech, and superadmin
+-->
+{#if !isLoading && isStaff}
 	<div class="rounded-md p-2 mt-4 bg-accent">
+		<!-- 
+			Render StaffDashboard for staff roles:
+			- Will show role-specific sections based on user's actual roles
+			- Uses isPatentRelated(), isDesignRelated(), isTradeMarkRelated() functions
+			- Provides specialized workflow for IP officers
+		-->
 		<svelte:component this={typecomponent} {...data} />
 	</div>
-{:else}
-	<p>loading....</p>
-{/if} -->
+{:else if !isLoading && isStaff}
+	<p>Loading staff dashboard...</p>
+{/if}
