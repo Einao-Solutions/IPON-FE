@@ -31,8 +31,8 @@
       // Handle modal opening for change of agent
       const event = new CustomEvent('openChangeOfAgentModal');
       window.dispatchEvent(event);
-    } else if (service.id === 'print-documents') {
-      // Handle modal opening for print documents
+    } else if (service.id === 'print-documents' || service.id.startsWith('print-documents-')) {
+      // Handle modal opening for print documents (all variants)
       const event = new CustomEvent('openGetDocumentsModal');
       window.dispatchEvent(event);
     } else if (service.id === 'appeal') {
@@ -75,7 +75,7 @@
       let route = resolveServiceRoute(service, ipType);
       
       // Add IP context to context-aware routes
-      if ((service.id === 'post-registration' || service.id === 'file-withdrawal' || service.id === 'withdrawal' || service.id === 'update-files' || service.id === 'clerical-update') && ipType) {
+      if ((service.id === 'post-registration' || service.id === 'file-withdrawal' || service.id === 'update-files' || service.id === 'clerical-update') && ipType) {
         route += `?ipType=${ipType}`;
       }
       
