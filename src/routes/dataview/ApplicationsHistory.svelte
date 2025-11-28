@@ -199,7 +199,7 @@
 	  if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
 		showManualUpdate = true;
 		updateCert = false;
-	  } else if (application.currentStatus === ApplicationStatuses.AwaitingCertification) {
+	  } else if (application.currentStatus === ApplicationStatuses.AwaitingCertification || application.currentStatus === ApplicationStatuses.Publication) {
 		updateCert = true;
 		showManualUpdate = false;
 	  } else {
