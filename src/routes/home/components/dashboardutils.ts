@@ -468,6 +468,8 @@ export function mapTypeToString(type: number) {
       return "New Opposition";
     case 17:
       return "Clerical Update";
+    case 18:
+      return "Certification";
     default:
       return "";
   }
