@@ -89,6 +89,7 @@
       ) {
         menus = menus.filter((x) => x.location !== "AdminPanel");
         menus = menus.filter((x) => x.location !== "ClaimRequests");
+        menus = menus.filter((x) => x.location !== "admin"); // Hide Super Admin menu
       }
       
       // For regular users, keep the Admin dropdown with Profile only
