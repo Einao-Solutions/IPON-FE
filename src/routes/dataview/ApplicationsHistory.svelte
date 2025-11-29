@@ -199,7 +199,7 @@
 	  if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
 		showManualUpdate = true;
 		updateCert = false;
-	  } else if (application.currentStatus === ApplicationStatuses.AwaitingCertification) {
+	  } else if (application.currentStatus === ApplicationStatuses.AwaitingCertification || application.currentStatus === ApplicationStatuses.Publication) {
 		updateCert = true;
 		showManualUpdate = false;
 	  } else {
@@ -239,18 +239,44 @@
   async function updateManual() {
     remita_confirmation = "checking";
     try {
-      const result = await fetch(
+      const res = await fetch(
         `${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
         { method: "POST" }
       );
 
-      if (result.ok) {
-        const updatedData = await result.json();
-        applicationData.set(updatedData);
-        remita_confirmation = "success";
+      if (!res.ok) {
+        // try to read error message if provided
+        const txt = await res.text().catch(() => "");
+        let msg = "Manual update failed";
+        try {
+          const jsonErr = txt ? JSON.parse(txt) : null;
+          msg = jsonErr?.message || txt || msg;
+        } catch {
+          msg = txt || msg;
+        }
+        showToast("error", msg);
+        remita_confirmation = "failed";
+        return;
       }
+
+      // safe parse: some endpoints return empty body (204) -> avoid json() error
+      const text = await res.text().catch(() => "");
+      if (text) {
+        try {
+          const updatedData = JSON.parse(text);
+          applicationData.set(updatedData);
+        } catch (err) {
+          console.warn("Manual update: response not JSON:", err);
+        }
+      } else {
+        // no body but OK response — treat as success
+        showToast("success", "Manual update completed");
+      }
+      remita_confirmation = "success";
     } catch (error) {
       console.error("Manual update error:", error);
+      showToast("error", "Manual update failed");
+      remita_confirmation = "failed";
     }
   }
 
