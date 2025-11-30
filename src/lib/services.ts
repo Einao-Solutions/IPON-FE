@@ -354,7 +354,7 @@ export const patentServices: IPService[] = [
     isCommon: true
   },
   {
-    id: 'change-agent-patent',
+    id: 'change-agent',
     name: 'CHANGE OF AGENT',
     description: 'Update agent information',
     icon: 'mdi:account-switch',
@@ -481,14 +481,13 @@ export const designServices: IPService[] = [
     isCommon: true
   },
   {
-    id: 'change-agent-design',
+    id: 'change-agent',
     name: 'CHANGE OF AGENT',
     description: 'Update agent information',
     icon: 'mdi:account-switch',
     route: '/home/agent/change',
     category: 'filing'
   },
-
 
   // PRE-REGISTRATION CATEGORY
   {
