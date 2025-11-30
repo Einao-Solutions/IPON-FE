@@ -37,8 +37,8 @@ import * as Card from "$lib/components/ui/card"
 	async function loadDashStats()
 	{
 		const userId=user.creatorId;
-		// Only Tech and SuperAdmin can see all file statistics, others see only their own
-		const showId = user.userRoles?.some((role) => [UserRoles.Tech, UserRoles.SuperAdmin].includes(role)) ?? false;
+		// All staff users can see all file statistics (StaffDashboard is only shown to staff, not agents)
+		const showId = true;
 		const id=showId?null:userId;
 		const url=`${baseURL}/api/files/FileStatistics?userId=${id}`;
 		const data=await fetch(url,{headers:{

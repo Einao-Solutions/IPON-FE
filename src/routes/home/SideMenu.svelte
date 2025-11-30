@@ -59,13 +59,13 @@
     loadOppositionsCount();
     if ($loggedInUser) {
       // Filter menus based on roles
-      if (!$loggedInUser.userRoles.includes(UserRoles.Tech)) {
+      if (!$loggedInUser.userRoles.includes(UserRoles.Tech) && !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)) {
         menus = menus.filter(
           (x) => x.location !== "Performance" && x.location !== "Users"
         );
       }
 
-      if (!$loggedInUser.userRoles.includes(UserRoles.Finance)) {
+      if (!$loggedInUser.userRoles.includes(UserRoles.Finance) && !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)) {
         menus = menus.filter((x) => x.location !== "Finance");
       }
 

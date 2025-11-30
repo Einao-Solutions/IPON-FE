@@ -202,7 +202,7 @@
   async function searchChangeOfAgent() {
     changeAgentError = null;
     changeAgentResult = [];
-    changeAgentSearched = true;
+    changeAgentSearched = false; // Reset search state
     
     if (!changeAgentFileNumber.trim()) {
       changeAgentError = 'Please enter File Number';
@@ -220,15 +220,18 @@
       if (!response.ok) {
         const errorData = await response.json();
         changeAgentError = errorData.message || 'An error occurred';
+        changeAgentSearched = true; // Mark as searched for error case
         throw new Error(changeAgentError ?? 'An error occurred');
       }
       
       changeAgentResult = await response.json();
+      changeAgentSearched = true; // Mark as searched after successful response
       console.log('✅ Change of Agent search results:', changeAgentResult);
       
     } catch (e: any) {
       console.error('❌ Change of Agent search error:', e);
       changeAgentError = e.message || e.Message || e;
+      changeAgentSearched = true; // Ensure searched state is set for error display
     }
     
     changeAgentLoading = false;
