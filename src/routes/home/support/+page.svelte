@@ -52,6 +52,7 @@
 	export let data: PageServerData;
 	let isAdmin: boolean | null = null;
 	let groupedData={}
+	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 	onMount(async()=>{
 		await decodeUser()
 		isAdmin = $loggedInUser.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)
@@ -62,7 +63,7 @@
 
 	async function getStats() {
 		const userId = $loggedInUser?.id;
-		const url=$loggedInUser?.userRoles.includes(UserRoles.Tech)?`${baseURL}/api/tickets/GetStats`:`${baseURL}/api/tickets/GetStats?userId=${userId}`;
+		const url=$loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)?`${baseURL}/api/tickets/GetStats`:`${baseURL}/api/tickets/GetStats?userId=${userId}`;
 		let response = await fetch(url, {
 			method: 'GET'
 		})
@@ -276,9 +277,9 @@
 	}
 	async function getSpecific(type:number|null){
 		ticketLoading=true;
-		const userId = $loggedInUser?.id;
+		const userId = $loggedInUser?.creatorId;
 		let body={
-			creatorId: $loggedInUser.userRoles.includes(UserRoles.Tech)==false ? userId : 'null',
+			creatorId: $loggedInUser?.userRoles.includes(UserRoles.Tech)==false ? userId : 'null',
 		}
 		if (type!=null){
 			body['status']=type
@@ -310,8 +311,8 @@
 			body:JSON.stringify({
 				ticketId: closeIdds,
 				resolution: {
-					staffId: $loggedInUser.id,
-					staffName: $loggedInUser.name
+					staffId: $loggedInUser?.id,
+					staffName: userName
 				}
 			})
 		});
@@ -326,7 +327,7 @@
 						}
 					})
 				}
-				toast.success("successfully closed tickets",{
+				toast.success("Ticket(s) closed successfully",{
 					position:"top-right",
 				});
 			}
