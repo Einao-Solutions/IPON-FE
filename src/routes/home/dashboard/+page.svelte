@@ -176,7 +176,7 @@
 		// const history = result?.applicationHistory;
 		const fileNumber = result?.fileId;
 
-		let response = await fetch(`${baseURL}/api/files/CertificatePayment?id=${fileNumber}`);
+		let response = await fetch(`${baseURL}/api/files/CertificatePayment?id=${fileNumber}&userId=${$loggedInUser?.id}`);
 		if (response.ok) {
 			let res = await response.json();
 			localStorage.setItem('fileId', res.fileId);
