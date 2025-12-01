@@ -35,13 +35,15 @@
 			.find((x) => x.startsWith(' user=') || x.startsWith('user='));
 		if (!cookieUser) {
 			await goto('/auth/');
+			return;
 		}
 		else {
 			var user = cookieUser.trimStart();
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
+			await loadData();
 		}
-		await loadData();
+		
 	})
 	let showRenew:boolean=false;
 	async function loadData() {
