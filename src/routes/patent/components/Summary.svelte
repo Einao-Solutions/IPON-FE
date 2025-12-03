@@ -198,7 +198,7 @@ async function submitForm() {
           ...app,
           phone: `${app.phonePrefix}${app.phone}`
         })),
-			creatorAccount: pp?.id
+			creatorAccount: pp?.creatorId
 		};
     
 		const result = await fetch(`${baseURL}/api/files/createNew`, {

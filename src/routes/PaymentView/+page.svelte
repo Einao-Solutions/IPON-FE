@@ -15,7 +15,7 @@
 		var user = cookieUser.trimStart();
 		user = user.slice(5);
 		const pp=JSON.parse(decodeURIComponent(user));
-		data.creatorAccount=pp.id;
+		data.creatorAccount=pp.creatorId;
 		var files= {file:  JSON.stringify({...data})};
 		// for (let i=0;i <$appattachmentsData.length;i++)
 		// {
