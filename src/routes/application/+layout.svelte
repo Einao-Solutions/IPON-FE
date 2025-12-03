@@ -209,6 +209,10 @@
 		
 		// user = user.slice(5);
 		const user = $loggedInUser;
+		if (!user) {
+			await goto('/auth');
+			return;
+		}
 		
 		if ($newApplicationType === 1) {
 			//design
@@ -236,11 +240,12 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: user.creatorId
+				creatorAccount: $loggedInUser.creatorId
 			};
 		}
 		if ($newApplicationType === 0) {
 			// patent
+			console.log('Creator ID:', $loggedInUser.creatorId);
 			const basicData = $formsData?.filter((x) => x.name === 'basic')[0]?.data as BasicPatentType;
 			const allApplicants =
 				($formsData?.filter((x) => x.name === 'applicant')[0]?.data as Applicant[]) ?? [];
@@ -272,8 +277,9 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: user.creatorId
+				creatorAccount: $loggedInUser.creatorId
 			};
+			
 		}
 		if ($newApplicationType === 2) {
 			const basicData = $formsData?.filter((x) => x.name === 'basic')[0]?.data ;
@@ -300,7 +306,7 @@
 				correspondence: correspondence,
 				applicants: allApplicants,
 				attachments: [],
-				creatorAccount: user.creatorId
+				creatorAccount: $loggedInUser.creatorId
 			};
 		}
 
