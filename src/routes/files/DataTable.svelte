@@ -211,7 +211,7 @@
     const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
     let body = {
       // userType: $loggedInUser.userRoles.includes(UserRoles.StaffMenu)  ? 1:0,
-      userType: $loggedInUser?.userRoles.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.Staff) ? 1 : 0,
+      userType: $loggedInUser?.userRoles.some(role => role > UserRoles.User) ? 1 : 0,
       userId,
       types: typeconverted,
       status: statusConverted,
