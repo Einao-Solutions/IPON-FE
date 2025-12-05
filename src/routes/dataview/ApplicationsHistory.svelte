@@ -10,6 +10,7 @@
     type TreatAppealType,
     ApplicationStatuses,
     baseURL,
+    FileTypes,
     FormApplicationTypes,
     hasValidCorrespondenceDetails,
     UserRoles,
@@ -195,22 +196,26 @@
       ({ amount, paymentDate, status, paymentDesc } = result);
       remita_confirmation = "verify_update";
 
-	if (status === "00") {
-	  if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
-		showManualUpdate = true;
-		updateCert = false;
-	  } else if (application.currentStatus === ApplicationStatuses.AwaitingCertification || application.currentStatus === ApplicationStatuses.Publication) {
-		updateCert = true;
-		showManualUpdate = false;
-	  } else {
-		showManualUpdate = false;
-		updateCert = false;
-	  }
-	} else {
-	  showManualUpdate = false;
-	  updateCert = false;
-	}
-	showCancel = !(showManualUpdate || updateCert);
+      if (status === "00") {
+        if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
+          showManualUpdate = true;
+          updateCert = false;
+        } else if (
+          application.currentStatus ===
+            ApplicationStatuses.AwaitingCertification ||
+          application.currentStatus === ApplicationStatuses.Publication
+        ) {
+          updateCert = true;
+          showManualUpdate = false;
+        } else {
+          showManualUpdate = false;
+          updateCert = false;
+        }
+      } else {
+        showManualUpdate = false;
+        updateCert = false;
+      }
+      showCancel = !(showManualUpdate || updateCert);
       showCancel = !updateCert;
     } catch (error) {
       console.error("Payment check error:", error);
@@ -224,13 +229,12 @@
         `${baseURL}/api/files/UpdateCertificatePaymentStatus?fileId=${fileId}&rrr=${paymentId}`,
         { method: "POST" }
       );
-      if (result.ok){
-		toast.success("Certificate status updated successfully");
-		updateCert = false;
-	  }
-	  else{
-		toast.error("Failed to update certificate status");
-	  }
+      if (result.ok) {
+        toast.success("Certificate status updated successfully");
+        updateCert = false;
+      } else {
+        toast.error("Failed to update certificate status");
+      }
     } catch (error) {
       console.error("Certificate status update error:", error);
     }
@@ -965,16 +969,17 @@
                   Confirm Payment
                 </Button>
               {/if}
-			  {#if $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)}
-			   {#if updateCert}
-                <Button
-                  on:click={() => updateCertPaymentStatus(validateRRR, fileData.fileId)}
-                  class="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  Update Certificate Status
-                </Button>
+              {#if $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)}
+                {#if updateCert}
+                  <Button
+                    on:click={() =>
+                      updateCertPaymentStatus(validateRRR, fileData.fileId)}
+                    class="flex-1 bg-green-600 hover:bg-green-700"
+                  >
+                    Update Certificate Status
+                  </Button>
+                {/if}
               {/if}
-			  {/if}
 
               <Button
                 on:click={() => (showAlertDialog = false)}
@@ -1247,7 +1252,7 @@
         </div>
       {/if}
 
-      {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
+      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some(r => $loggedInUser.userRoles.includes(r))}
         {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected}
           <div class="mt-4">
             <Label
@@ -1284,7 +1289,7 @@
 			{/if}
 		{/if}		 -->
       <Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-        {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification)}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some(r => $loggedInUser.userRoles.includes(r))}
           {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
             <Button
               on:click={() => {
@@ -1428,7 +1433,7 @@
             </p>
           {/if}
         </div>
-        {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.AppealExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.Tech)}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkAcceptance, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin].some(r => $loggedInUser.userRoles.includes(r))}
           <!-- Action Buttons -->
           <div class="flex gap-3 justify-end pt-2 border-t">
             <Button
@@ -2044,6 +2049,7 @@
                       >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item
                     >
                   {/if}
+
                   {#if application.applicationType == FormApplicationTypes.AppealRequest}
                     <DropdownMenu.Item
                       on:click={() => {
@@ -2051,14 +2057,17 @@
                       }}>View Application</DropdownMenu.Item
                     >
                   {/if}
+
                   <DropdownMenu.Label>Print</DropdownMenu.Label>
+
                   <DropdownMenu.Separator />
-                  {#if application.certificatePaymentId != null && application.currentStatus === ApplicationStatuses.Active}
-                    {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
+                  {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
+                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
                       <DropdownMenu.Item
                         on:click={() => certificate(application)}
-                        >Certificate</DropdownMenu.Item
                       >
+                        Certificate
+                      </DropdownMenu.Item>
                     {/if}
                   {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
                     {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
@@ -2070,7 +2079,7 @@
                     {/if}
                   {/if}
                   {#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    {#if $loggedInUser?.userRoles?.includes(UserRoles.Staff || UserRoles.Tech)}
+                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some(r => $loggedInUser.userRoles.includes(r))}
                       <DropdownMenu.Item
                         on:click={() => viewRecordalData(application)}
                         >View Application</DropdownMenu.Item
@@ -2112,9 +2121,13 @@
                       </DropdownMenu.Item>
                     {/if}
                   {/if}
+
                 </DropdownMenu.Group>
+
               </DropdownMenu.Content>
+
             </DropdownMenu.Root>
+            
           </Table.Cell>
         </Table.Row>
       {/each}

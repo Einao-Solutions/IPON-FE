@@ -92,7 +92,7 @@
 						// Existing logic for trademark and patent
 						(result.fileTypes === 2 && [4, 6, 7, 14,20].includes(result.fileStatus)) ||
 						// New logic for patent files with status 3
-						(result.fileTypes === 0 && [4, 6, 7, 14].includes(result.fileStatus))
+						(result.fileTypes === 0 && [3, 4, 6, 7, 14].includes(result.fileStatus))
 				);
 			} else {
 				error = 'Search parameters are missing';
