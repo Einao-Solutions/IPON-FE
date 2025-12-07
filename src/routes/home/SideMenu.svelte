@@ -36,6 +36,7 @@
 	let menus = [
 		{ icon: 'radix-icons:dashboard', location: 'Dashboard' },
 		{ icon: 'mdi:file-document-multiple-outline', location: 'Publications' },
+		{ icon: 'mdi:book-open-variant', location: 'Resources' },
 		{ icon: 'mdi:help-circle-outline', location: 'Support' },
 		// { icon: 'cil:search', location: 'Opposition' },
 		{ icon: 'mdi:chart-line', location: 'Finance' },
@@ -92,6 +93,19 @@
         menus = menus.filter((x) => x.location !== "admin"); // Hide Super Admin menu
       }
       
+      // Show Resources only for agents (User role), tech team, and superadmin
+      const canSeeResources = $loggedInUser.userRoles.some((role) =>
+        [
+          UserRoles.User,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin
+        ].includes(role)
+      );
+      
+      if (!canSeeResources) {
+        menus = menus.filter((x) => x.location !== "Resources");
+      }
+
       // For regular users, keep the Admin dropdown with Profile only
       if ($loggedInUser.userRoles.includes(UserRoles.User)) {
         const adminMenu = menus.find(m => m.location === "Admin");

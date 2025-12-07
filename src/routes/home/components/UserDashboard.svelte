@@ -11,20 +11,46 @@
 	export let showOnlyTotals: boolean = false;
 	export let showOnlyStatistics: boolean = false;
 	let isLoading: boolean = true;
+	
+	// Separate state for user dashboard to avoid conflicts with staff dashboard
+	let userDashStats: DashBoardStats | null = null;
+
+	// 🐛 DEBUG: Log DashStats changes for comparison with StaffDashboard
+	// $: if ($DashStats) {
+	// 	console.log('🔍 USER DASHBOARD - DashStats:', {
+	// 		detailedStats: $DashStats.detailedStats,
+	// 		detailedStatsCount: $DashStats.detailedStats?.length || 0,
+	// 		patentStats: $DashStats.detailedStats?.filter(x => x.fileType === 0) || [],
+	// 		trademarkStats: $DashStats.detailedStats?.filter(x => x.fileType === 2) || [],
+	// 		designStats: $DashStats.detailedStats?.filter(x => x.fileType === 1) || [],
+	// 		userType: user?.userType,
+	// 		userRoles: user?.userRoles,
+	// 		userId: user?.creatorId
+	// 	});
+	// }
+
 	onMount(async () => {
-		if ($DashStats === null) {
-			isLoading = true;
-			await loadDashStats();
-		} else {
-			isLoading = false;
-		}
+		isLoading = true;
+		await loadDashStats();
 	});
 
 	async function loadDashStats() {
-		const userId = user.creatorId;
-		const showId = user.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin || UserRoles.Staff);
-		let id = showId ? null : userId;
+		// Use $loggedInUser instead of user prop for consistent role checking
+		const currentUser = $loggedInUser || user;
+		const userId = currentUser.creatorId;
+		
+		// Only show all files for Tech, SuperAdmin roles
+		// Regular users (UserRoles.User) should only see their own files
+		const canSeeAllFiles = currentUser.userRoles?.some(role => 
+			[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
+		);
+		
+
+		
+		let id = canSeeAllFiles ? null : userId;
 		const url = `${baseURL}/api/files/FileStatistics?userId=${id}`;
+		
+
 		const data = await fetch(url, {
 			headers: {
 				'Authorization': `Bearer ${$loggedInToken}`
@@ -33,7 +59,7 @@
 		if (data.ok) {
 			const body = await data.json();
 			const values = body as DashBoardStats[];
-			DashStats.set(values[0]);
+			userDashStats = values[0]; // Use local state instead of global store
 			isLoading = false;
 		}
 	}
@@ -45,7 +71,7 @@
 	 * @returns Total count of applications for this file type
 	 */
 	function getTotal(type: FileTypes) {
-		return $DashStats?.fileStats.find((x) => x.fileType === type)?.count??0;
+		return userDashStats?.fileStats.find((x) => x.fileType === type)?.count??0;
 	}
 	
 	/**
@@ -67,7 +93,7 @@
 	 */
 	function getType(fileType: FileTypes) {
 		// Step 1: Filter statistics data for the specified file type
-		const val = $DashStats?.detailedStats
+		const val = userDashStats?.detailedStats
 			?.filter((x) => x.fileType === fileType) ?? [];
 		
 		// Step 2: Sort by status for consistent display order
@@ -82,11 +108,36 @@
 		
 		// Step 4: Convert grouped object to array format expected by the UI
 		const mapped = Object.entries(grouped).map(([type, items]) => ({ type, items }));
+		
+
+		
 		return mapped;
 	}
 
 	function getRenewal() {
-		return $DashStats?.inactive[0]?.total??0;
+		return userDashStats?.inactive[0]?.total??0;
+	}
+
+	/**
+	 * Generate filtered file URLs for regular users
+	 * Tech/SuperAdmin see all files, regular users see only their own files
+	 */
+	function getFileUrl(baseParams: string): string {
+		// Use $loggedInUser for consistent role checking
+		const currentUser = $loggedInUser || user;
+		const canSeeAllFiles = currentUser.userRoles?.some(role => 
+			[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
+		);
+		
+
+		
+		if (canSeeAllFiles) {
+			// Tech/SuperAdmin see all files
+			return `/files?${baseParams}`;
+		} else {
+			// Regular users see only their own files
+			return `/files?${baseParams}&userId=${currentUser.creatorId}`;
+		}
 	}
 </script>
 
@@ -101,7 +152,7 @@
 	{#if !showOnlyStatistics}
 	<div class="space-y-3">
 		<!-- Trademark Total -->
-		<a href="/files?fileType=2&titleType=specific" class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+		<a href={getFileUrl("fileType=2&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
 					<Icon icon="mdi:scale-balance" class="text-lg text-green-600 group-hover:text-green-700" />
@@ -120,7 +171,7 @@
 		</a>
 
 		<!-- Patent Total -->
-		<a href="/files?fileType=0&titleType=specific" class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+		<a href={getFileUrl("fileType=0&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
 					<Icon icon="mdi:lightbulb-outline" class="text-lg text-green-600 group-hover:text-green-700" />
@@ -139,7 +190,7 @@
 		</a>
 
 		<!-- Design Total -->
-		<a href="/files?fileType=1&titleType=specific" class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+		<a href={getFileUrl("fileType=1&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
 					<Icon icon="mdi:palette-outline" class="text-lg text-green-600 group-hover:text-green-700" />
@@ -182,9 +233,7 @@
 								{#each item.items as appInfo}
 									<a
 										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
-										href="/files?fileType=0&appType={parseInt(
-											item.type
-										)}&status={appInfo.status}&titleType=custom"
+									href={getFileUrl(`fileType=0&appType=${parseInt(item.type)}&status=${appInfo.status}&titleType=custom`)}
 									>
 										<AppStatusTag value={appInfo.status} />
 										<p class="">{appInfo.count}</p>
@@ -220,9 +269,7 @@
 								{#each item.items as appInfo}
 									<a
 										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
-										href="/files?fileType=1&appType={parseInt(
-											item.type
-										)}&status={appInfo.status}&titleType=custom"
+									href={getFileUrl(`fileType=1&appType=${parseInt(item.type)}&status=${appInfo.status}&titleType=custom`)}
 									>
 										<AppStatusTag value={appInfo.status} />
 										<p class="">{appInfo.count}</p>
@@ -258,7 +305,8 @@
 									{#each item.items as appInfo}
 										<a
 											class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
-											href="/files?fileType=2&appType={parseInt(item.type)}&status={appInfo.status}&titleType=custom"
+											href={getFileUrl(`fileType=2&appType=${parseInt(item.type)}&status=${appInfo.status}&titleType=custom`)}
+				
 										>
 											<AppStatusTag value={appInfo.status} />
 											<p class="">{appInfo.count}</p>
@@ -330,7 +378,7 @@
 									-->
 									<a
 										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
-										href="/files?fileType=0&appType={parseInt(item.type)}&status={appInfo.status}&titleType=custom"
+										href={getFileUrl(`fileType=0&appType=${parseInt(item.type)}&status=${appInfo.status}&titleType=custom`)}
 									>
 										<!-- Status badge component (e.g., "Pending", "Approved", etc.) -->
 										<AppStatusTag value={appInfo.status} />
@@ -384,7 +432,7 @@
 									-->
 									<a
 										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
-										href="/files?fileType=1&appType={parseInt(item.type)}&status={appInfo.status}&titleType=custom"
+										href={getFileUrl(`fileType=1&appType=${parseInt(item.type)}&status=${appInfo.status}&titleType=custom`)}
 									>
 										<!-- Design status badge -->
 										<AppStatusTag value={appInfo.status} />
@@ -439,7 +487,7 @@
 									-->
 									<a
 										class="flex space-x-2 hover:bg-gray-500 my-1.5 items-center justify-between"
-										href="/files?fileType=2&appType={parseInt(item.type)}&status={appInfo.status}&titleType=custom"
+										href={getFileUrl(`fileType=2&appType=${parseInt(item.type)}&status=${appInfo.status}&titleType=custom`)}
 									>
 										<!-- Trademark status badge -->
 										<AppStatusTag value={appInfo.status} />

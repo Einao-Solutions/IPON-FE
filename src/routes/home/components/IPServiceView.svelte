@@ -574,24 +574,26 @@
 
   function getCategoryIcon(category: string): string {
     const icons: Record<string, string> = {
-      filing: 'mdi:file-plus',
-      search: 'mdi:magnify',
-      management: 'mdi:cog',
-      financial: 'mdi:cash',
-      administrative: 'mdi:clipboard-text'
+			filing: 'mdi:file-plus',
+			agent: 'mdi:account-switch',
+			payment: 'mdi:cash',
+			search: 'mdi:magnify',
+			management: 'mdi:cog',
+			administrative: 'mdi:clipboard-text'
     };
     return icons[category] || 'mdi:folder';
   }
 
   function getCategoryDisplayName(category: string): string {
     const displayNames: Record<string, string> = {
-      filing: 'Filing',
-      search: 'Search',
-      management: 'Management',
-      financial: 'Payment Services',
-      administrative: 'Administrative',
-      recordals: 'Recordals',
-      'pre-registration': 'Pre-Registration'
+			filing: 'Filing Services',
+			agent: 'Agent Services',
+			payment: 'Payment Services',
+			search: 'Search',
+			management: 'Management',
+			administrative: 'Administrative',
+			recordals: 'Recordals',
+			'pre-registration': 'Pre-Registration'
     };
     return displayNames[category] || category.charAt(0).toUpperCase() + category.slice(1);
   }

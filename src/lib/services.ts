@@ -4,7 +4,7 @@ export interface IPService {
   description: string;
   icon: string;
   route: string | ((ipType?: string) => string);
-  category: 'filing' | 'search' | 'pre-registration' | 'recordals' | 'financial' | 'management' | 'administrative';
+  category: 'filing' | 'agent' | 'payment';
   price?: string;
   isCommon?: boolean; // Services available across all IP types
 }
@@ -37,7 +37,7 @@ export const commonServices: IPService[] = [
     description: 'Search file status',
     icon: 'mdi:magnify',
     route: '/statussearch',
-    category: 'search',
+    category: 'filing',
     price: '₦9,500',
     isCommon: true
   },
@@ -47,7 +47,7 @@ export const commonServices: IPService[] = [
     description: 'Search file availability',
     icon: 'mdi:file-search-outline',
     route: '/availabilitysearch',
-    category: 'search',
+    category: 'filing',
     price: '₦2,500',
     isCommon: true
   },
@@ -57,7 +57,7 @@ export const commonServices: IPService[] = [
     description: 'Pay for Certificate',
     icon: 'mdi:cash-fast',
     route: '/home/payment',
-    category: 'financial',
+    category: 'filing',
     isCommon: true
   },
   {
@@ -66,7 +66,7 @@ export const commonServices: IPService[] = [
     description: 'Verify Payments using RRR',
     icon: 'mdi:cash-sync',
     route: '/home/payment/verify',
-    category: 'financial',
+    category: 'payment',
     isCommon: true
   },
   {
@@ -75,7 +75,7 @@ export const commonServices: IPService[] = [
     description: 'Request change of agent',
     icon: 'mdi:account-switch',
     route: '/home/agent/change',
-    category: 'administrative',
+    category: 'agent',
     isCommon: true
   },
   {
@@ -84,7 +84,7 @@ export const commonServices: IPService[] = [
     description: 'Print application documents',
     icon: 'mdi:printer-outline',
     route: '/home/dashboard',
-    category: 'administrative',
+    category: 'agent',
     isCommon: true
   },
   {
@@ -93,7 +93,7 @@ export const commonServices: IPService[] = [
     description: 'Edit/Update files with status "Awaiting Search"',
     icon: 'mdi:update',
     route: '/home/update-files',
-    category: 'management',
+    category: 'agent',
     isCommon: true
   },
   {
@@ -102,7 +102,7 @@ export const commonServices: IPService[] = [
     description: 'File Appeals',
     icon: 'mdi:file-document-refresh',
     route: '/home/appeal',
-    category: 'management',
+    category: 'filing',
     isCommon: true
   },
   {
@@ -111,7 +111,7 @@ export const commonServices: IPService[] = [
     description: 'Claim files from previous system',
     icon: 'mdi:file-download',
     route: '/home/claim-files',
-    category: 'administrative',
+    category: 'agent',
     isCommon: true
   },
   {
@@ -120,7 +120,7 @@ export const commonServices: IPService[] = [
     description: 'Withdrawal process for all file types',
     icon: 'mdi:file-remove-outline',
     route: '/home/file-withdrawal',
-    category: 'management',
+    category: 'filing',
     price: '₦3,500',
     isCommon: true
   }
@@ -171,7 +171,7 @@ export const trademarkServices: IPService[] = [
     description: 'Update agent information',
     icon: 'mdi:account-switch',
     route: '/home/agent/change',
-    category: 'filing'
+    category: 'agent'
   },
 
 
@@ -182,7 +182,7 @@ export const trademarkServices: IPService[] = [
     description: 'Edit/Update existing applications',
     icon: 'mdi:file-edit-outline',
     route: '/home/clerical-update',
-    category: 'pre-registration',
+    category: 'agent',
     price: '₦2,000'
   },
   {
@@ -191,7 +191,7 @@ export const trademarkServices: IPService[] = [
     description: 'Update file information for files in awaiting search status',
     icon: 'mdi:update',
     route: '/home/update-files',
-    category: 'pre-registration',
+    category: 'filing',
     price: ''
   },
   {
@@ -200,7 +200,7 @@ export const trademarkServices: IPService[] = [
     description: 'Update publication status for trademark files',
     icon: 'mdi:newspaper-variant-outline',
     route: '/home/publications/publicationstatusupdate',
-    category: 'pre-registration',
+    category: 'agent',
     price: '₦5,000'
   },
 
@@ -212,7 +212,7 @@ export const trademarkServices: IPService[] = [
     description: 'Check trademark availability',
     icon: 'mdi:file-search-outline',
     route: '/availabilitysearch',
-    category: 'search',
+    category: 'filing',
     price: '₦2,500'
   },
   {
@@ -221,7 +221,7 @@ export const trademarkServices: IPService[] = [
     description: 'View trademark journal',
     icon: 'mdi:book-open-variant',
     route: '/home/trademarkpubs',
-    category: 'search',
+    category: 'agent',
     price: ''
   },
   {
@@ -230,7 +230,7 @@ export const trademarkServices: IPService[] = [
     description: 'Application for the status of a Trademark',
     icon: 'mdi:magnify',
     route: '/statussearch',
-    category: 'search',
+    category: 'filing',
     price: '₦9,500'
   },
 
@@ -242,7 +242,7 @@ export const trademarkServices: IPService[] = [
     description: 'Update applicant name',
     icon: 'mdi:account-edit',
     route: '/home/change-applicant-name',
-    category: 'recordals',
+    category: 'filing',
     price: '₦11,500'
   },
   {
@@ -251,7 +251,7 @@ export const trademarkServices: IPService[] = [
     description: 'Update applicant address',
     icon: 'mdi:map-marker-radius',
     route: '/home/change-applicant-address',
-    category: 'recordals',
+    category: 'filing',
     price: '₦11,500'
   },
   {
@@ -260,7 +260,7 @@ export const trademarkServices: IPService[] = [
     description: 'Merge trademark applications',
     icon: 'mdi:merge',
     route: '/home/merger',
-    category: 'recordals',
+    category: 'filing',
     price: '₦18,500'
   },
   {
@@ -269,7 +269,7 @@ export const trademarkServices: IPService[] = [
     description: 'Assign trademark rights',
     icon: 'mdi:account-switch',
     route: '/home/assignment',
-    category: 'recordals',
+    category: 'filing',
     price: '₦18,500'
   },
   {
@@ -278,7 +278,7 @@ export const trademarkServices: IPService[] = [
     description: 'Manage registered users',
     icon: 'mdi:account-group',
     route: '/home/registered-user',
-    category: 'recordals',
+    category: 'filing',
     price: '₦18,500'
   },
 
@@ -290,7 +290,7 @@ export const trademarkServices: IPService[] = [
     description: 'Pay for registration certificate',
     icon: 'mdi:cash-fast',
     route: '/home/payment',
-    category: 'financial',
+    category: 'filing',
     price: '₦11,500'
   },
   {
@@ -299,7 +299,7 @@ export const trademarkServices: IPService[] = [
     description: 'Verify payments using RRR',
     icon: 'mdi:cash-sync',
     route: '/home/payment/verify',
-    category: 'financial'
+    category: 'payment'
   },
   {
     id: 'print-documents',
@@ -307,7 +307,7 @@ export const trademarkServices: IPService[] = [
     description: 'Print Trademark documents',
     icon: 'mdi:printer-outline',
     route: '/home/dashboard',
-    category: 'financial'
+    category: 'agent'
   },
 
 ];
@@ -359,7 +359,7 @@ export const patentServices: IPService[] = [
     description: 'Update agent information',
     icon: 'mdi:account-switch',
     route: '/home/agent/change',
-    category: 'filing'
+    category: 'agent'
   },
   {
     id: 'update-patent-files',
@@ -367,7 +367,7 @@ export const patentServices: IPService[] = [
     description: 'File updates for all files filed before 25th August, 2025',
     icon: 'mdi:update',
     route: '/home/editpatentfiles',
-    category: 'filing'
+    category: 'agent'
   },
 
 
@@ -378,7 +378,7 @@ export const patentServices: IPService[] = [
     description: 'Edit/Update existing patent application',
     icon: 'mdi:file-edit-outline',
     route: '/home/clerical-update',
-    category: 'pre-registration',
+    category: 'agent',
     price: '₦4,100'
   },
   {
@@ -387,7 +387,7 @@ export const patentServices: IPService[] = [
     description: 'Make attachment updates for Patent files',
     icon: 'mdi:attachment',
     route: '/home/editattachments',
-    category: 'pre-registration'
+    category: 'agent'
   },
 
 
@@ -398,7 +398,7 @@ export const patentServices: IPService[] = [
     description: 'Search file availability',
     icon: 'mdi:file-search-outline',
     route: '/availabilitysearch',
-    category: 'search',
+    category: 'filing',
     price: '₦2,500',
     isCommon: true
   },
@@ -408,22 +408,22 @@ export const patentServices: IPService[] = [
     description: 'Search file status',
     icon: 'mdi:magnify',
     route: '/statussearch',
-    category: 'search',
+    category: 'filing',
     price: '₦9,500',
     isCommon: true
   },
 
 
   // RECORDALS CATEGORY
-  {
-    id: 'renewal-recordals-patent',
-    name: 'RENEWAL',
-    description: 'Patent renewal recordals',
-    icon: 'mdi:refresh',
-    route: '/home/postregistration',
-    category: 'recordals',
-    price: ''
-  },
+  // {
+  //   id: 'renewal-recordals-patent',
+  //   name: 'RENEWAL',
+  //   description: 'Patent renewal recordals',
+  //   icon: 'mdi:refresh',
+  //   route: '/home/postregistration',
+  //   category: 'filing',
+  //   price: ''
+  // },
 
 
   // FINANCIAL CATEGORY
@@ -433,7 +433,7 @@ export const patentServices: IPService[] = [
     description: 'Verify payments using RRR',
     icon: 'mdi:cash-sync',
     route: '/home/payment/verify',
-    category: 'financial',
+    category: 'payment',
     isCommon: true
   },
 
@@ -443,7 +443,7 @@ export const patentServices: IPService[] = [
     description: 'Print patent documents',
     icon: 'mdi:printer-outline',
     route: '/home/dashboard',
-    category: 'financial'
+    category: 'agent'
   },
 
 ];
@@ -486,7 +486,7 @@ export const designServices: IPService[] = [
     description: 'Update agent information',
     icon: 'mdi:account-switch',
     route: '/home/agent/change',
-    category: 'filing'
+    category: 'agent'
   },
 
   // PRE-REGISTRATION CATEGORY
@@ -496,7 +496,7 @@ export const designServices: IPService[] = [
     description: 'Make attachment updates for Design files',
     icon: 'mdi:attachment',
     route: '/home/editattachments',
-    category: 'pre-registration'
+    category: 'agent'
   },
 
 
@@ -507,7 +507,7 @@ export const designServices: IPService[] = [
     description: 'Search file availability',
     icon: 'mdi:file-search-outline',
     route: '/availabilitysearch',
-    category: 'search',
+    category: 'filing',
     price: '₦2,500',
     isCommon: true
   },
@@ -517,7 +517,7 @@ export const designServices: IPService[] = [
     description: 'Search file status',
     icon: 'mdi:magnify',
     route: '/statussearch',
-    category: 'search',
+    category: 'filing',
     price: '₦9,500',
     isCommon: true
   },
@@ -527,7 +527,7 @@ export const designServices: IPService[] = [
     description: 'Print Design documents',
     icon: 'mdi:printer-outline',
     route: '/home/dashboard',
-    category: 'financial'
+    category: 'agent'
   },
 
 
@@ -541,7 +541,7 @@ export const designServices: IPService[] = [
     description: 'Verify payments using RRR',
     icon: 'mdi:cash-sync',
     route: '/home/payment/verify',
-    category: 'financial',
+    category: 'payment',
     isCommon: true
   },
 

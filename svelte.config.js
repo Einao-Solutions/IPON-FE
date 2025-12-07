@@ -87,7 +87,11 @@ const config = {
 				'/home/file-withdrawal/search',
 				'/home/file-withdrawal/withdrawalform',
 				'/home/file-withdrawal/file-withdrawal-result',
-				'/home/profile/update'
+				'/home/profile/update',
+				'/home/resources',
+				'/home/resources/design',
+				'/home/resources/patent',
+				'/home/resources/trademark'
 			]
 		}
 	}
