@@ -367,6 +367,7 @@ export enum ApplicationStatuses {
   NewOpposition = 30,
   AwaitingCounter = 31,
   Amendment = 32,
+  Value,
 }
 export enum PatentTypes {
   Conventional = 0,
