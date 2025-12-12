@@ -14,14 +14,18 @@
 	import {
 		ApplicationStatuses,
 		baseURL,
+		ClericalUpdateTypes,
 		FileTypes,
 		hasValidCorrespondenceDetails,
 		PatentTypes,
 		UserRoles,
-		type CorrespondenceType
+		type CorrespondenceType,
+
+    type PatentData
+
 	} from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
-	$: fileData = $applicationData;
+	// $: fileData = $applicationData;
 
 	interface SearchResult {
 		titleOfTradeMark: string;
@@ -41,6 +45,7 @@
 		patentType: PatentTypes | null;
 		fileOrigin: string | null;
 	}
+	
 
 	let results: SearchResult[] = [];
 	let isLoading = true;
@@ -90,7 +95,7 @@
 				filteredResults = results.filter(
 					(result) =>
 						// Existing logic for trademark and patent
-						(result.fileTypes === 2 && [4, 6, 7, 14,20].includes(result.fileStatus)) ||
+						(result.fileTypes === 2 && [3,4, 6, 7, 14,20].includes(result.fileStatus)) ||
 						// New logic for patent files with status 3
 						(result.fileTypes === 0 && [3, 4, 6, 7, 14].includes(result.fileStatus))
 				);
@@ -241,42 +246,42 @@
 									class="border rounded px-2 py-1"
 									on:change={(e) => {
 										const selectedValue = e.target.value;
-										if (result.fileTypes === 2) {
+										if (result.fileTypes === FileTypes.Trademark) {
 											// Trademark options
 											if (selectedValue === 'update-name') {
 												goto(
-													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=ApplicantName`
+													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`
 												);
 											} else if (selectedValue === 'update-address') {
 												goto(
-													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=ApplicantAddress`
+													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`
 												);
 											} else if (selectedValue === 'update-title') {
 												goto(
-													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=FileTitle`
+													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`
 												);
 											} else if (selectedValue === 'update-class') {
 												goto(
-													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=FileClass`
+													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileClass}`
 												);
 											} else if (selectedValue === 'update-correspondence') {
 												goto(
-													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=Correspondence`
+													`/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`
 												);
 											}
-										} else if (result.fileTypes === 0) {
+										} else if (result.fileTypes === FileTypes.Patent) {
 											// Patent options
 											if (selectedValue === 'update-name') {
 												goto(
-													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=ApplicantName`
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`
 												);
 											} else if (selectedValue === 'update-address') {
 												goto(
-													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=ApplicantAddress`
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`
 												);
 											} else if (selectedValue === 'update-title') {
 												goto(
-													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=FileTitle`
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`
 												);
 											} else if (selectedValue === 'addorremove-applicant') {
 												goto(
@@ -284,31 +289,31 @@
 												);
 											} else if (selectedValue === 'edit-inventors') {
 												goto(
-													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=EditInventors`
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.EditInventors}`
 												);
 											}
 											else if (selectedValue === 'priorityinfo') {
 												goto(
-													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=PriorityInfo`
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.PriorityInfo}`
 												);
 											}
 											else if (selectedValue === 'correspondence') {
 												goto(
-													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=Correspondence`
+													`/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`
 												);
 											}
 										}
 									}}
 								>
 									<option value="">--Select--</option>
-									{#if result.fileTypes === 2}
+									{#if result.fileTypes === FileTypes.Trademark}
 										<option value="update-name">Update Applicant Name</option>
 										<option value="update-address">Update Applicant Address</option>
 										<option value="update-title">Update Title/Representation</option>
 										<option value="update-class">Update Class/Description/Disclaimer</option>
 
 										<option value="update-correspondence">Update Correspondence/Attachments</option>
-									{:else if result.fileTypes === 0}
+									{:else if result.fileTypes === FileTypes.Patent}
 										<option value="update-name">Update Applicant Name</option>
 										<option value="update-address">Update Applicant Address</option>
 										<option value="update-title">Update Abstract/Application Type/Title Of Invention</option>
@@ -316,6 +321,12 @@
 										<option value="edit-inventors">Update Inventors</option>
 										<option value="priorityinfo">Update Priority Information</option>
 										<option value="correspondence">Update Correspondence</option>
+										{:else if result.fileTypes === FileTypes.Design}
+										<option value="applicant-info">Update Applicant Information</option>
+										<option value="design-info">Update Design Informatino</option>
+										<option value="creator-info">Update Creator Information</option>
+										<option value="correspondence">Update Correspondence Information</option>
+										<option value="design-att">Update Design Attachments</option>
 									{/if}
 								</select>
 							</Table.Cell>

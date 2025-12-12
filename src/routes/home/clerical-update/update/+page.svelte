@@ -5,11 +5,13 @@
 	import { page } from '$app/stores';
 	import { get } from 'svelte/store';
 	import Icon from '@iconify/svelte';
+	import { loggedInUser, loggedInToken } from '$lib/store';
 	import { Button } from '$lib/components/ui/button/index';
 	import { text } from 'd3';
 	import { showTreatUpdateAppButton } from '../../../dataview/datahelpers';
 	import { toast } from 'svelte-sonner';
 	import { countriesMap } from '$lib/constants';
+  import { boolean } from 'zod';
 	interface FileInfo {
 		fileTitle: string;
 		representation: File | null;
@@ -91,13 +93,20 @@
 	let isProcessing = false;
 	let isLoading = false;
 	let updateType = '';
-	let fileType = '';
+	let fileType : FileTypes | null = null;
 	const pageData = get(page);
 
 	onMount(async () => {
 		const fileNumber = pageData.url.searchParams.get('fileId') ?? '';
-		fileType = pageData.url.searchParams.get('fileType') ?? '';
+		const fileTypeParam = pageData.url.searchParams.get('fileType');
+		const parsed = Number(fileTypeParam);
+    const validValues = Object.values(FileTypes).filter((v) => typeof v === 'number') as number[];
+    fileType = !Number.isNaN(parsed) && validValues.includes(parsed) ? (parsed as FileTypes) : null;
+
+
 		updateType = pageData.url.searchParams.get('updateType') ?? '';
+
+		// fileType = FileTypes[fileTypeParam as keyof typeof FileTypes] ?? null;
 		console.log('File Number:', fileNumber);
 		console.log('File Type:', fileType);
 		console.log('Update Type:', updateType);
@@ -156,17 +165,31 @@
 		{ id: 45, name: 'Class 45 - Legal, security, social services' }
 	];
 
-	async function setData(fileNumber: string, fileType: string, updateType: string): Promise<void> {
+	async function setData(fileNumber: string, fileType: FileTypes | null, updateType: string): Promise<void> {
 		isLoading = true;
 		try {
+			 const requestBody = {
+				UserId: $loggedInUser?.id,
+                FileNumber: fileNumber,
+                FileType: fileType,
+                UpdateType: updateType
+            };
 			const res = await fetch(
-				`${baseURL}/api/files/GetClericalUpdateCost?fileId=${fileNumber}&fileType=${fileType}&updateType=${updateType}`
-			);
-			if (!res.ok) {
-				error = 'Unable to retrieve cost info.';
-				return;
-			}
-			const data = await res.json();
+                `${baseURL}/api/files/GetClericalUpdateCost`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+						'Authorization': `Bearer ${$loggedInToken}`
+                    },
+                    body: JSON.stringify(requestBody)
+                }
+            );
+            if (!res.ok) {
+                error = 'Unable to retrieve cost info.';
+                return;
+            }
+            const data = await res.json();
 
 			// Assign to fileInfo using the FileInfo interface
 			fileInfo = {
@@ -392,25 +415,25 @@
 
 			localStorage.setItem('formData', JSON.stringify(formObj));
 
-			if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
-				const formData = new FormData();
-				for (const key in formObj) {
-					if (
-						Object.prototype.hasOwnProperty.call(formObj, key) &&
-						formObj[key] !== undefined &&
-						formObj[key] !== null
-					) {
-						formData.append(key, formObj[key]);
-					}
-				}
-				// setTimeout(() => (showSuccessToast = false), 5000);
-				await freeUpdate(formData);
-				showSuccessToast = true;
-				setTimeout(() => {
-					goto(`/home/dashboard`);
-				}, 5000);
-				return; // Prevent further execution (skip handlePayment)
-			}
+			// if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
+			// 	const formData = new FormData();
+			// 	for (const key in formObj) {
+			// 		if (
+			// 			Object.prototype.hasOwnProperty.call(formObj, key) &&
+			// 			formObj[key] !== undefined &&
+			// 			formObj[key] !== null
+			// 		) {
+			// 			formData.append(key, formObj[key]);
+			// 		}
+			// 	}
+			// 	// setTimeout(() => (showSuccessToast = false), 5000);
+			// 	await freeUpdate(formData);
+			// 	showSuccessToast = true;
+			// 	setTimeout(() => {
+			// 		goto(`/home/dashboard`);
+			// 	}, 5000);
+			// 	return; // Prevent further execution (skip handlePayment)
+			// }
 			await handlePayment();
 		} catch (err) {
 			error = 'Form submission failed.';
@@ -437,6 +460,9 @@
 		if (fileInfo.cost && fileInfo.paymentRRR) {
 			await goto(`/payment/?type=clerical&rrr=${fileInfo.paymentRRR}&amount=${fileInfo.cost}`);
 		}
+		if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
+			await goto(`/payment/?type=clerical&rrr=Free&amount=0`);
+		}
 	}
 
 	function goBack() {
@@ -444,7 +470,7 @@
 	}
 	$: isAwaitingSearch = fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch;
 	$: isReadyForPayment =
-		fileInfo.fileStatus != null && fileInfo.fileStatus !== ApplicationStatuses.AwaitingSearch;
+		fileInfo.fileStatus != null;
 </script>
 
 <!-- Success Toast Modal -->
@@ -1059,40 +1085,8 @@
 
 			<!-- Submit Button -->
 			<div class="flex justify-end">
-				{#if isAwaitingSearch}
-					<!-- Submit Button -->
-					<button
-						on:click={handleSubmit}
-						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
-						disabled={isProcessing}
-					>
-						{#if isProcessing}
-							<svg
-								class="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-							>
-								<circle
-									class="opacity-25"
-									cx="12"
-									cy="12"
-									r="10"
-									stroke="currentColor"
-									stroke-width="4"
-								/>
-								<path
-									class="opacity-75"
-									fill="currentColor"
-									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291..."
-								/>
-							</svg>
-							Processing...
-						{:else}
-							Submit
-						{/if}
-					</button>
-				{:else if isReadyForPayment}
+				
+				{#if isReadyForPayment}
 					<!-- Pay Button -->
 					<button
 						on:click={handleSubmit}

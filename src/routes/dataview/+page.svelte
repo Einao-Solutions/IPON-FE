@@ -42,7 +42,7 @@
   let historyComponent: HistorySheet | null = null;
   let historyData = {};
   let showStatusHistory = false;
-  let isUser: boolean = false;+
+  let isUser: boolean = false;
 
   let showAllDates: boolean = false;
   applicationData.subscribe((data) => {
