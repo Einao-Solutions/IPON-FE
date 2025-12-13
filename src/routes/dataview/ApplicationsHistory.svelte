@@ -667,6 +667,7 @@
   function changeStatus(application: ApplicationHistoryType) {
     selectedApplication = application;
     showUpdateStatusForm = true;
+    
   }
 
   function showTreatDialog(application: ApplicationHistoryType) {

@@ -112,7 +112,10 @@
         `${baseURL}/api/auth/verify?userId=${userId}`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${$loggedInToken}`,
+          },
         }
       );
 
@@ -120,6 +123,7 @@
         const data = await response.json();
         email = data.email;
         currentScreen = 0;
+        window.alert("Application Added to History Successfully!");
         toast.success(
           "Successfully verified account, please login to continue",
           {
@@ -235,7 +239,7 @@
           password: createUser.password,
           firstName: createUser.firstName,
           lastName: createUser.lastName,
-          phone: createUser.phoneNumber
+          phone: createUser.phoneNumber,
         }),
       });
 
@@ -442,7 +446,9 @@
               height="1.5rem"
               aria-hidden="true"
             />
-            <h3 class="text-lg font-semibold text-slate-900">Public Notice: System Maintenance Update</h3>
+            <h3 class="text-lg font-semibold text-slate-900">
+              Public Notice: System Maintenance Update
+            </h3>
           </div>
           <p class="mt-2 text-sm text-slate-600">{maintenanceMessage}</p>
         </div>
@@ -618,7 +624,9 @@
                     type="button"
                     class="ml-2 p-2 rounded hover:bg-slate-100 text-slate-600"
                     on:click={() => (showPassword = !showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword
+                      ? "Hide password"
+                      : "Show password"}
                   >
                     <Icon
                       icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
