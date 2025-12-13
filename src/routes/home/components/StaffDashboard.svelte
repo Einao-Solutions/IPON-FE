@@ -307,7 +307,7 @@ return show;
 				</p>
 				<h2 class="text-lg md:text-xl font-bold text-gray-700">{getRoleInfo().title}</h2>
 				<p class="text-green-600 text-xs md:text-sm">
-					Manage {getRoleInfo().title.toLowerCase()} applications
+					Manage {getRoleInfo().title} Applications
 				</p>
 			</div>
 			
