@@ -35,23 +35,22 @@
 
 	let menus = [
 		{ icon: 'radix-icons:dashboard', location: 'Dashboard' },
-		{
-			icon: 'tabler:forms',
-			location: 'Post Registration',
+		// { icon: 'mdi:file-document-multiple-outline', location: 'Publications' },
+		{ icon: 'mdi:book-open-variant', location: 'Resources' },
+		{ icon: 'mdi:help-circle-outline', location: 'Support' },
+		// { icon: 'cil:search', location: 'Opposition' },
+		{ icon: 'mdi:chart-line', location: 'Finance' },
+		{ icon: 'mdi:chart-box-outline', location: 'Performance' },
+		{ icon: 'mdi:account-group-outline', location: 'Users' },
+		{ 
+			icon: 'mdi:cog-outline', 
+			location: 'Admin',
 			submenus: [
-				{ name: 'Trademark', location: 'PostRegistration/' },
-				{ name: 'Patent', location: 'PostRegistration/' }
+				{ icon: 'mdi:account-circle-outline', name: 'Profile', location: 'profile' }
 			]
 		},
-		{ icon: 'cil:search', location: 'Publications' },
-		{ icon: 'fluent:person-support-20-filled', location: 'Support' },
-		// { icon: 'cil:search', location: 'Opposition' },
-		{ icon: 'arcticons:yahoo-japan-finance', location: 'Finance' },
-		{ icon: 'mi:notification', location: 'Performance' },
-		{ icon: 'octicon:people-24', location: 'Users' },
-		{ icon: 'ooui:user-avatar-outline', location: 'Profile' },
-		{ icon: 'mdi:shield-crown-outline', location: 'Admin' },
-		{ icon: 'mdi:file-plus', name:'Claim Requests',location: 'ClaimRequests' }
+		{ icon: 'mdi:shield-crown-outline', name: 'Super Admin', location: 'admin' },
+		{ icon: 'mdi:file-plus', name:'Claim Requests', location: 'ClaimRequests' }
 	];
 
   onMount(async () => {
@@ -61,13 +60,13 @@
     loadOppositionsCount();
     if ($loggedInUser) {
       // Filter menus based on roles
-      if (!$loggedInUser.userRoles.includes(UserRoles.Tech)) {
+      if (!$loggedInUser.userRoles.includes(UserRoles.Tech) && !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)) {
         menus = menus.filter(
           (x) => x.location !== "Performance" && x.location !== "Users"
         );
       }
 
-      if (!$loggedInUser.userRoles.includes(UserRoles.Finance)) {
+      if (!$loggedInUser.userRoles.includes(UserRoles.Finance) && !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)) {
         menus = menus.filter((x) => x.location !== "Finance");
       }
 
@@ -89,19 +88,53 @@
           [UserRoles.SuperAdmin, UserRoles.Tech].includes(role)
         )
       ) {
-        menus = menus.filter((x) => x.location !== "Admin");
+        menus = menus.filter((x) => x.location !== "AdminPanel");
         menus = menus.filter((x) => x.location !== "ClaimRequests");
+        menus = menus.filter((x) => x.location !== "admin"); // Hide Super Admin menu
+      }
+      
+      // Show Resources only for agents (User role), tech team, and superadmin
+      const canSeeResources = $loggedInUser.userRoles.some((role) =>
+        [
+          UserRoles.User,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin
+        ].includes(role)
+      );
+      
+      if (!canSeeResources) {
+        menus = menus.filter((x) => x.location !== "Resources");
+      }
+
+      // For regular users, keep the Admin dropdown with Profile only
+      if ($loggedInUser.userRoles.includes(UserRoles.User)) {
+        const adminMenu = menus.find(m => m.location === "Admin");
+        if (adminMenu) {
+          // Keep only Profile submenu for regular users
+          adminMenu.submenus = adminMenu.submenus?.filter(s => s.location === "profile") || [];
+        }
       }
     }
 
     // Set initial active menu based on current route
     const path = window.location.pathname.toLowerCase();
-    const currentLocation = path.split("/").pop();
-    if (currentLocation) {
-      const menuMatch = menus.find(
-        (m) => m.location.toLowerCase() === currentLocation
-      );
-      if (menuMatch) activeMenu = menuMatch.location;
+    let currentLocation = path.split("/").pop();
+    
+    // Handle special cases for routing
+    if (!currentLocation || currentLocation === '' || currentLocation === 'home') {
+      currentLocation = 'dashboard';
+    }
+    
+    // Find matching menu item (case-insensitive)
+    const menuMatch = menus.find(
+      (m) => m.location.toLowerCase() === currentLocation
+    );
+    
+    if (menuMatch) {
+      activeMenu = menuMatch.location;
+    } else {
+      // Fallback: if no match found, default to Dashboard
+      activeMenu = 'Dashboard';
     }
   });
 
@@ -201,17 +234,19 @@
       case "low":
         return "bg-blue-500 text-white border-blue-600";
       case "feature":
-        return "bg-green-500 text-white border-green-600";
+        return "bg-green-600 text-white border-green-600";
       default:
         return "bg-gray-500 text-white border-gray-600";
     }
   }
 </script>
 
-<div class="w-56 h-screen bg-white shadow-lg flex flex-col">
+<div class="w-64 h-screen bg-white shadow-xl flex flex-col border-r border-slate-200/60">
   <!-- Logo -->
-  <div class="flex justify-center py-4 border-b border-gray-100">
-    <img src="/logo.png" alt="logo" class="h-16 w-16" />
+  <div class="flex justify-center py-6 border-b border-slate-200/60">
+    <div class="bg-gradient-to-br  p-3 rounded-xl shadow-lg">
+      <img src="/logo.png" alt="logo" class="h-12 w-12" />
+    </div>
   </div>
 
   <!-- Menu items -->
@@ -226,17 +261,17 @@
               : handleMenuClick(menu)}
         >
           <div
-            class={`flex items-center justify-between rounded-md py-2 px-3 ${activeMenu === menu.location ? "bg-[#287F71] text-white" : "hover:bg-gray-100"}`}
+            class={`flex items-center justify-between rounded-md py-2 px-3 ${activeMenu === menu.location ? "bg-green-600 text-white" : "hover:bg-gray-100"}`}
           >
             <div class="flex items-center space-x-3">
               <Icon
                 icon={menu.icon}
-                class={`text-xl ${activeMenu === menu.location ? "text-white" : "text-gray-500"}`}
+                class={`text-xl ${activeMenu === menu.location ? "text-white" : "text-slate-500"}`}
               />
               <span
-                class={`${activeMenu === menu.location ? "text-white" : "text-gray-700"}`}
-                >{menu.name ?? menu.location}</span
-              >
+                class={`text-base ${activeMenu === menu.location ? "text-white" : "text-slate-600"}`}
+                >{menu.name ?? menu.location}</span>
+              
             </div>
             <div class="flex items-center">
               {#if menu.location === "Support" && !notificationsLoading}
@@ -263,7 +298,7 @@
               {#if menu.submenus}
                 <Icon
                   icon="heroicons:chevron-down"
-                  class={`transition-transform duration-200 ${activeMenu === menu.location ? "rotate-180 text-white" : "text-gray-400"}`}
+                  class={`transition-transform duration-200 ${activeMenu === menu.location ? "rotate-180 text-white" : "text-slate-400"}`}
                   width="16"
                 />
               {/if}
@@ -274,10 +309,10 @@
           <div class="ml-10 mt-1 space-y-1">
             {#each menu.submenus as submenu}
               <button
-                class="w-full text-left block py-2 px-3 rounded-md text-sm {activeSubmenu ===
+                class="w-full text-left block py-2 px-3 rounded-md text-base {activeSubmenu ===
                 submenu.name
                   ? 'font-medium text-[#287F71] bg-gray-50'
-                  : 'text-gray-600 hover:bg-gray-50'}"
+                  : 'text-slate-600 hover:bg-gray-50'}"
                 on:click={() => handleMenuClick(menu, submenu)}
               >
                 {submenu.name}
@@ -291,38 +326,42 @@
 
   <!-- System notification -->
   {#if systemNotification.isActive}
-    <div class="p-3 mx-2 mb-3">
+    <div class="p-3 mx-3 mb-4">
       <div
-        class={`rounded-lg border-2 shadow-lg ${getNotificationColors(systemNotification.priority)}`}
+        class={`rounded-xl border shadow-lg ${getNotificationColors(systemNotification.priority)} backdrop-blur-sm`}
       >
         <div
           class="flex items-center justify-between p-3 border-b border-white/20"
         >
           <div class="flex items-center space-x-2">
-            <Icon
-              icon={getNotificationIcon(systemNotification.type)}
-              class="text-lg flex-shrink-0"
-            />
-            <span class="font-semibold text-xs">{systemNotification.title}</span
-            >
+            <div class="p-1 bg-white/20 rounded-md">
+              <Icon
+                icon={getNotificationIcon(systemNotification.type)}
+                class="text-base flex-shrink-0"
+              />
+            </div>
+            <span class="font-semibold text-sm">{systemNotification.title}</span>
           </div>
           <button
-            class="text-white/80 hover:text-white transition-colors p-1"
+            class="text-white/80 hover:text-white transition-colors p-1.5 hover:bg-white/10 rounded-md"
             on:click={toggleSystemNotifications}
           >
             <Icon
               icon={showSystemNotifications
                 ? "heroicons:chevron-up"
                 : "heroicons:chevron-down"}
-              width="16"
+              width="14"
             />
           </button>
         </div>
         {#if showSystemNotifications}
           <div class="p-3">
-            <ul class="list-disc pl-5 text-xs text-white/90 leading-relaxed">
+            <ul class="space-y-1 text-sm text-white/90 leading-relaxed">
               {#each systemNotification.message as line}
-                <li>{line}</li>
+                <li class="flex items-start space-x-2">
+                  <span class="text-white/60 mt-1.5">•</span>
+                  <span>{line}</span>
+                </li>
               {/each}
             </ul>
           </div>
@@ -332,7 +371,9 @@
   {/if}
 
   <!-- Footer logo -->
-  <div class="p-4 border-t border-gray-100 flex justify-center">
-    <img src="/einao.png" alt="einao logo" class="h-12 w-auto opacity-70" />
+  <div class="p-4 border-t border-slate-200/60 flex justify-center bg-white">
+    <div class="transition-opacity">
+      <img src="/einao.png" alt="einao logo" class="h-10 w-auto" />
+    </div>
   </div>
 </div>

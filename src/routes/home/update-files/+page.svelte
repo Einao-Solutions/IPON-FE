@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { createEventDispatcher } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 	import { baseURL } from '$lib/helpers';
 	import { loggedInUser } from '$lib/store';
 	import { page } from '$app/stores';
@@ -20,10 +21,17 @@
 	let applicantName: string | null = null;
 	let applicantEmail: string | null = null;
 	const dispatch = createEventDispatcher();
-	let type: string;
+	
+	// Get context from URL parameters (client-side only)
+	let ipType = 'patent';
+	let fileType = 'Patent';
+	
+	$: if (browser) {
+		ipType = $page.url.searchParams.get('ipType') || 'patent';
+		fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+	}
+	
 	onMount(async () => {
-		const file = $page.url.searchParams.get('type') ?? '';
-		type = file;
 		isOpen = true;
 	});
 	// Close modal function
@@ -52,7 +60,7 @@
 
 			const searchParams: SearchParams = {
 				query: searchQuery,
-				fileType: type
+				fileType: fileType
 			};
 			// console.log('searchParams', searchParams);
 			// Store search parameters
@@ -87,113 +95,78 @@
 </script>
 
 {#if isOpen}
+	<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
-		class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+		class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal-overlay"
 		on:click={handleOutsideClick}
 		on:keydown={handleKeydown}
-		role="presentation"
 	>
-		<div
-			class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md mx-auto"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="modal-title"
-		>
-			<!-- Modal Header -->
-			<div class="border-b px-6 py-4">
-				<h3 id="modal-title" class="text-lg font-bold text-black">File Search</h3>
-				<p>For files in Awaiting Search</p>
+		<div class="bg-white rounded-lg p-6 w-full max-w-md mx-4" on:click|stopPropagation>
+			<div class="flex items-center justify-between mb-4">
+				<div>
+					<h3 id="modal-title" class="text-lg font-bold text-black">Update Files</h3>
+					<p class="text-sm text-gray-600 mt-1">For files in awaiting search</p>
+				</div>
+				<button
+					type="button"
+					class="text-gray-400 hover:text-gray-600"
+					on:click={closeModal}
+				>
+					<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+					</svg>
+				</button>
 			</div>
 
-			<!-- Modal Body -->
-			<div class="p-6">
+			<div class="space-y-4">
 				{#if error}
 					<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
 						{error}
 					</div>
 				{/if}
 
-				<div class="space-y-4 mx-auto">
-					<!-- Search and Class selection layout -->
-					<div class="flex flex-col md:flex-row gap-3">
-						<!-- Search Input -->
-						<div class="w-full md:w-3/3">
-							<label for="search-query" class="block text-sm font-medium text-gray-700 mb-1">
-								File Number
-							</label>
-							<input
-								id="search-query"
-								type="text"
-								bind:value={searchQuery}
-								placeholder="Enter file number"
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-							/>
-						</div>
-						<!-- File Type Dropdown
-						<div class="w-full md:w-1/3">
-							<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
-								File Type
-							</label>
-							<input
-								id="search-query"
-								type="text"
-								placeholder={type && type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}
-								value={type && type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}
-								disabled
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-							/>
-						</div> -->
-					</div>
+				<!-- Search Input -->
+				<div>
+					<label for="search-query" class="block text-sm font-medium text-gray-700 mb-2">
+						File Number
+					</label>
+					<input
+						id="search-query"
+						type="text"
+						bind:value={searchQuery}
+						placeholder="Enter file number"
+						class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+						on:keydown={handleKeydown}
+					/>
 				</div>
-			</div>
 
-			<!-- Modal Footer -->
-			<div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
-				<!-- <span class="flex items-center text-xs text-gray-600">
-					<Icon icon="mdi:information-variant-circle" class="mr-2 text-red-500" style="font-size: 1.3em;" />
-					Post Registration is strictly for registered files with active status.
-				</span> -->
-				<button
-					type="button"
-					on:click={closeModal}
-					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-				>
-					Cancel
-				</button>
-				<button
-					type="button"
-					on:click={handleSearch}
-					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
-				>
-					{#if isLoading}
-						<span class="inline-block mr-2">
-							<svg
-								class="animate-spin h-4 w-4 text-white"
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-							>
-								<circle
-									class="opacity-25"
-									cx="12"
-									cy="12"
-									r="10"
-									stroke="currentColor"
-									stroke-width="4"
-								></circle>
-								<path
-									class="opacity-75"
-									fill="currentColor"
-									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-								></path>
+				<!-- Action Buttons -->
+				<div class="flex space-x-2 pt-4">
+					<button
+						type="button"
+						class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors"
+						on:click={closeModal}
+					>
+						Cancel
+					</button>
+					<button
+						type="button"
+						class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+						disabled={isLoading}
+						on:click={handleSearch}
+					>
+						{#if isLoading}
+							<svg class="w-4 h-4 mr-2 animate-spin inline" fill="none" viewBox="0 0 24 24">
+								<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+								<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
 							</svg>
-						</span>
-						Searching...
-					{:else}
-						Search
-					{/if}
-				</button>
+							Searching...
+						{:else}
+							Search
+						{/if}
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>

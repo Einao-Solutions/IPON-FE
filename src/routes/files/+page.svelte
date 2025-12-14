@@ -70,8 +70,21 @@
 		const index = indexString ? parseInt(indexString) : 0;
 		const quantity = quantityString ? parseInt(quantityString) : 10;
 		const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
+		
+		// 🐛 DEBUG: Log what we're sending to API
+		// console.log('📋 FILES DEBUG - URL Parameters:', {
+		// 	url: url.toString(),
+		// 	fileType: type,
+		// 	appType: applicationType, 
+		// 	status: status,
+		// 	index: index,
+		// 	quantity: quantity,
+		// 	userId: userId,
+		// 	userRoles: $loggedInUser?.userRoles
+		// });
+		
 		const body = {
-			userType: $loggedInUser?.userRoles.includes(UserRoles.Tech) || $loggedInUser?.userRoles.includes(UserRoles.Staff) ? 1 : 0,
+			userType: $loggedInUser?.userRoles.some(role => role > UserRoles.User) ? 1 : 0,
 			userId,
 			types: typeconverted,
 			status: statusConverted,
@@ -85,7 +98,24 @@
 		if (endDate!=null){
 			body.endDate= endDate
 		}
+		// 🚨 DETAILED REQUEST DEBUG
+		// console.log('🔥 EXACT API REQUEST:', {
+		// 	method: 'POST',
+		// 	url: fileUrl,
+		// 	queryParams: { index, quantity },
+		// 	bodyPayload: body,
+		// 	bodyJSON: JSON.stringify(body)
+		// });
+
 		queryBody.set(JSON.stringify(body));
+		
+		// 🚨 CRITICAL: Log the exact moment before API call
+		// console.log('🎯 ABOUT TO CALL API:', {
+		// 	url: fileUrl,
+		// 	hasAuth: !!$loggedInToken,
+		// 	bodyString: JSON.stringify(body)
+		// });
+		
 		const result = await fetch(fileUrl, {
 			method: 'POST',
 			headers: {
@@ -94,9 +124,47 @@
 			},
 			body: JSON.stringify({ ...body })
 		});
+		
+		// 🚨 IMMEDIATE API RESPONSE CHECK
+		// console.log('📡 RAW API RESPONSE:', {
+		// 	status: result.status,
+		// 	statusText: result.statusText,
+		// 	ok: result.ok
+		// });
 		const resp = await result.json();
-		const values: any[] = resp.result;
-		const filescount: number = resp.count;
+		
+		// 🔥 CRITICAL DEBUG: What did we get back?
+		// console.log('🎯 SIMPLE API CHECK:', {
+		// 	gotResults: !!resp?.result,
+		// 	resultLength: resp?.result?.length || 0,
+		// 	apiStatus: result.status
+		// });
+		
+		// DEBUG: Log the API response
+		// console.log('📡 FILES PAGE DEBUG - API Response:', {
+		// 	status: result.status,
+		// 	statusText: result.statusText,
+		// 	responseData: resp,
+		// 	resultCount: resp?.result?.length || 0,
+		// 	totalCount: resp?.count || 0,
+		// 	errorMessage: resp?.message || resp?.error || resp?.title,
+		// 	errorDetails: resp?.errors || resp?.details,
+		// 	rawResponse: JSON.stringify(resp)
+		// });
+
+		// Handle potential undefined response
+		if (!resp || !resp.result) {
+			console.error('❌ API Response Error:', {
+				response: resp,
+				status: result.status,
+				statusText: result.statusText
+			});
+			isLoading.set(false);
+			return;
+		}
+
+		const values: any[] = resp.result || [];
+		const filescount: number = resp.count || 0;
 		let _dataList = [];
 		for (let i = 0; i < values.length; i++) {
 			const curr: any = values[i];

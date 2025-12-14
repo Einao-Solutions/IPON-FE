@@ -20,12 +20,43 @@
 	let applicantName: string | null = null;
 	let applicantEmail: string | null = null;
 	const dispatch = createEventDispatcher();
-	let type: string;
+	let type: string = '';
 	let fileTypeOptions = ['Patent', 'Trademark', 'Design'];
+	
+	// NEW: Context-aware functionality
+	let ipType: string | null = null;
+	let isFileTypeAutoSet = false;
+	
+	// Helper function to get file type icon
+	function getFileTypeIcon(fileType: string): string {
+		const iconMap: Record<string, string> = {
+			'Trademark': 'mdi:scale-balance',
+			'Patent': 'mdi:lightbulb-outline', 
+			'Design': 'mdi:palette-outline'
+		};
+		return iconMap[fileType] || 'mdi:file';
+	}
+	
+	// Determine if file type dropdown should be shown
+	$: showFileTypeDropdown = !ipType;
 
 	onMount(async () => {
-		// const file = $page.url.searchParams.get('type') ?? '';
-		// type = file;
+		// Get IP context from URL parameters
+		ipType = $page.url.searchParams.get('ipType');
+		
+		// Auto-set file type based on context
+		if (ipType && !isFileTypeAutoSet) {
+			const contextMap: Record<string, string> = {
+				'trademark': 'Trademark',
+				'patent': 'Patent', 
+				'design': 'Design'
+			};
+			if (ipType in contextMap) {
+				type = contextMap[ipType];
+				isFileTypeAutoSet = true;
+			}
+		}
+		
 		isOpen = true;
 	});
 	// Close modal function
@@ -46,14 +77,14 @@
 	async function handleSearch(): Promise<void> {
 
 		if (!searchQuery && !type) {
-			error = 'Please enter a file number and select a file type';
+			error = showFileTypeDropdown ? 'Please enter a file number and select a file type' : 'Please enter a file number';
 			return;
 		}
 		if (!searchQuery) {
 			error = 'File number is required';
 			return;
 		}
-		if (!type) {
+		if (!type && showFileTypeDropdown) {
 			error = 'File type is required';
 			return;
 		}
@@ -127,7 +158,7 @@
 		>
 			<!-- Modal Header -->
 			<div class="border-b px-6 py-4">
-				<h3 id="modal-title" class="text-lg font-bold text-black">File Search</h3>
+				<h3 id="modal-title" class="text-lg font-bold text-black">Clerical Update Search</h3>
 				<p>Please enter the File Number you want to search</p>
 			</div>
 
@@ -152,25 +183,37 @@
 								type="text"
 								bind:value={searchQuery}
 								placeholder="Enter file number"
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+								class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
 							/>
 						</div>
-						 <!-- File Type Dropdown -->
-                        <div class="w-full md:w-2/3">
-                            <label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
-                                File Type
-                            </label>
-                            <select
-                                id="file-type"
-                                bind:value={type}
-                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="" disabled selected>Select file type</option>
-                                {#each fileTypeOptions as option}
-                                    <option value={option}>{option}</option>
-                                {/each}
-                            </select>
-                        </div>
+						 <!-- File Type Display -->
+						{#if showFileTypeDropdown}
+							<div class="w-full md:w-2/3">
+								<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
+									File Type
+								</label>
+								<select
+									id="file-type"
+									bind:value={type}
+									class="w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+								>
+									<option value="" disabled selected>Select file type</option>
+									{#each fileTypeOptions as option}
+										<option value={option}>{option}</option>
+									{/each}
+								</select>
+							</div>
+						{:else if type}
+							<!-- Context-aware file type display -->
+							<div class="w-full md:w-2/3">
+								<label class="block text-sm font-medium text-gray-700 mb-1">File Type</label>
+								<div class="flex items-center p-2 border border-gray-300 rounded-md bg-green-50">
+									<Icon icon={getFileTypeIcon(type)} class="text-green-600 mr-2" width="18" height="18" />
+									<span class="text-gray-900 font-medium">{type}</span>
+									<!-- <span class="ml-auto text-sm text-green-600">(Auto-detected)</span> -->
+								</div>
+							</div>
+						{/if}
 					</div>
 				</div>
 			</div>
@@ -180,7 +223,7 @@
 				<button
 					type="button"
 					on:click={closeModal}
-					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
 				>
 					Cancel
 				</button>
@@ -188,7 +231,7 @@
 					type="button"
 					on:click={handleSearch}
 					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
 				>
 					{#if isLoading}
 						<span class="inline-block mr-2">

@@ -15,7 +15,43 @@
 	
 	// Form data
 	let searchQuery = '';
+	// OLD IMPLEMENTATION (commented for future deletion)
+	// let selectedFileType: string = 'patent'; // Default to patent
+	
+	// NEW IMPLEMENTATION - Context-aware file type selection
 	let selectedFileType: string = 'patent'; // Default to patent
+	let ipContext: string | null = null;
+	let isFileTypeAutoSet = false;
+	
+	// Check for IP context from URL parameters
+	$: {
+		if (typeof window !== 'undefined') {
+			const urlParams = new URLSearchParams(window.location.search);
+			const contextParam = urlParams.get('ipType') || urlParams.get('context');
+			if (contextParam && !isFileTypeAutoSet) {
+				ipContext = contextParam.toLowerCase();
+				if (contextParam.toLowerCase() === 'trademark') {
+					selectedFileType = 'trademark';
+				} else if (contextParam.toLowerCase() === 'patent') {
+					selectedFileType = 'patent';
+				}
+				isFileTypeAutoSet = true;
+			}
+		}
+	}
+	
+	// Determine if file type dropdown should be shown
+	$: showFileTypeDropdown = !ipContext;
+	
+	// Helper function to get file type icon
+	function getFileTypeIcon(fileType: string): string {
+		const iconMap: Record<string, string> = {
+			'trademark': 'mdi:scale-balance',
+			'patent': 'mdi:lightbulb-outline', 
+			'design': 'mdi:palette-outline'
+		};
+		return iconMap[fileType.toLowerCase()] || 'mdi:file';
+	}
 	let isLoading = false;
 	let error: string | null = null;
 	let applicantName: string | null = null;
@@ -72,8 +108,8 @@
                 fileType: selectedFileType
             };
             sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
-            applicantName = $loggedInUser.name;
-            applicantEmail = $loggedInUser.email;
+            applicantName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName || 'Unknown';
+            applicantEmail = $loggedInUser?.email || 'unknown@email.com';
             await goto(`/home/postregistration/search/`);
         } catch (err) {
             error = 'Error checking file type.';
@@ -184,19 +220,35 @@
 							/>
 						</div>
 
-						<!-- File Type Dropdown -->
-						<div class="w-full md:w-1/3">
-							<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
-								File Type
-							</label>
-							 <select
-                                id="file-type"
-                                class="border rounded w-full p-2"
-                                bind:value={selectedFileType}
-                            >
-                                <option value="patent">Patent</option>
-                                <option value="trademark">Trademark</option>
-                            </select>
+						<!-- File Type Dropdown - Context-aware display -->
+						{#if showFileTypeDropdown}
+							<!-- OLD IMPLEMENTATION (visible when no context) -->
+							<div class="w-full md:w-1/3">
+								<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
+									File Type
+								</label>
+								<select
+									id="file-type"
+									class="border rounded w-full p-2"
+									bind:value={selectedFileType}
+								>
+									<option value="patent">Patent</option>
+									<option value="trademark">Trademark</option>
+								</select>
+							</div>
+						{:else}
+							<!-- NEW IMPLEMENTATION - Show selected file type as readonly when context is provided -->
+							<div class="w-full md:w-1/3">
+								<label for="file-type-display" class="block text-sm font-medium text-gray-700 mb-1">
+									File Type
+								</label>
+								<div class="w-full p-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center">
+									<Icon icon={getFileTypeIcon(selectedFileType)} class="w-4 h-4 mr-2 text-green-600" />
+									{selectedFileType.charAt(0).toUpperCase() + selectedFileType.slice(1)}
+									<!-- <span class="ml-2 text-xs text-green-600">(auto-selected)</span> -->
+								</div>
+							</div>
+						{/if}
 							<!-- <input
 								id="search-query"
 								type="text"
@@ -205,7 +257,6 @@
 								disabled
 								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
 							/> -->
-						</div>
 					</div>
 				</div>
 			</div>
@@ -213,7 +264,7 @@
 			<!-- Modal Footer -->
 			<div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
 				<span class="flex items-center text-xs text-gray-600">
-					<Icon icon="mdi:information-variant-circle" class="mr-2 text-red-500" style="font-size: 1.3em;" />
+					<Icon icon="mdi:information-variant-circle" class="mr-2 text-green-600" style="font-size: 1.3em;" />
 					Post Registration is strictly for registered files with active status.
 				</span>
 				<button
@@ -227,7 +278,7 @@
 					type="button"
 					on:click={handleSearch}
 					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-blue-400 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
 				>
 					{#if isLoading}
 						<span class="inline-block mr-2">

@@ -1,11 +1,27 @@
 import type { PageLoad } from './$types';
-import { applicationData, applicationMode } from '$lib/store';
+import { applicationData, applicationMode, newApplicationType } from '$lib/store';
 import { get } from 'svelte/store';
 import { ApplicationStatuses, FilingType, FormApplicationTypes } from '$lib/helpers';
-export const prerender = true;
+import { browser } from '$app/environment';
 
-
-export const load: PageLoad=()=>{
+export const load: PageLoad=({ url })=>{
+	// Get the type parameter from URL (safe for prerendering)
+	let typeParam: string | null = null;
+	let applicationType: number | null = null;
+	
+	if (browser && url.searchParams) {
+		typeParam = url.searchParams.get('type');
+		applicationType = typeParam ? parseInt(typeParam) : null;
+	}
+	
+	// Set the application type in store
+	if (applicationType !== null) {
+		newApplicationType.set(applicationType);
+	}
+	
+	// Set application mode to 2 for new applications (mode 1 is for editing)
+	applicationMode.set(2);
+	
 	const appMode=get(applicationMode);
 	if (appMode)
 	{
@@ -21,19 +37,42 @@ export const load: PageLoad=()=>{
 			// creating new data
 			applicationData.set(
 				{
-					id: "asfasdf",
-					titleOfInvention:"",
-					patentAbstract:"",
+					id: "new-application",
+					titleOfTradeMark: null,
+					trademarkClass: null,
+					trademarkClassDescription: null,
+					filingCountry: null,
+					fileOrigin: null,
+					trademarkLogo: null,
+					trademarkType: null,
+					trademarkDisclaimer: null,
+					lastRequestDate: null,
+					lastRequest: null,
+					titleOfDesign: null,
+					type: applicationType || 1,
+					fileStatus: null,
+					statementOfNovelty: null,
+					titleOfInvention: "",
+					patentAbstract: "",
 					applicants: [],
 					priorityInfo: [],
-					inventors:[],
-					correspondence:null,
+					firstPriorityInfo: null,
+					inventors: [],
+					designCreators: null,
+					correspondence: null,
+					patentApplicationType: null,
 					patentType: null,
-					fileNumber: null,
+					patentBaseType: null,
+					designType: null,
+					fileId: null,
 					formApplicationType: FormApplicationTypes.NewApplication,
-					status: ApplicationStatuses.AwaitingPayment,
-					type: FilingType.Patent,
-					attachments:[]
+					attachments: [],
+					creatorAccount: null,
+					dateCreated: null,
+					fieldStatus: null,
+					registeredUsers: null,
+					oppositions: null,
+					applicationHistory: null
 				}
 			);
 

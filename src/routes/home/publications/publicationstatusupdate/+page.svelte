@@ -60,6 +60,13 @@
         }
     }
 
+    function handleOutsideClick(event: MouseEvent): void {
+        const target = event.target as HTMLElement;
+        if (target.classList.contains('modal-overlay')) {
+            closeModal();
+        }
+    }
+
     function handleKeydown(event: KeyboardEvent) {
         if (event.key === 'Escape') closeModal();
         if (event.key === 'Enter') handleSearch();
@@ -67,80 +74,92 @@
 </script>
 
 {#if isOpen}
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-static-element-interactions -->
     <div
-        class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 modal-overlay"
+        on:click={handleOutsideClick}
         on:keydown={handleKeydown}
-        role="presentation"
     >
-        <div class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md mx-auto" role="dialog" aria-modal="true">
-            <div class="border-b px-6 py-4">
-                <h3 class="text-lg font-bold text-black">Publication Status Update</h3>
-                <p>Search for the File</p>
+        <div class="bg-white rounded-lg p-6 w-full max-w-md mx-4" on:click|stopPropagation>
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-bold text-black">Publication Status Update</h3>
+                    <p class="text-sm text-gray-600 mt-1">Search for the File</p>
+                </div>
+                <button
+                    type="button"
+                    class="text-gray-400 hover:text-gray-600"
+                    on:click={closeModal}
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
             </div>
-            <div class="p-6">
+
+            <div class="space-y-4">
                 {#if error}
                     <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">{error}</div>
                 {/if}
-                <div class="space-y-4 mx-auto">
-                    <div class="flex flex-col md:flex-row gap-3">
-                        <div class="w-full md:w-2/3">
-                            <label for="search-query" class="block text-sm font-medium text-gray-700 mb-1">
-                                File Number or RTM:
-                            </label>
-                            <input
-                                id="search-query"
-                                type="text"
-                                bind:value={searchQuery}
-                                placeholder="Enter file number or RTM number"
-                                class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                            />
-                        </div>
-                        <div class="w-full md:w-1/3">
-                            <label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
-                                File Type
-                            </label>
-                            <select
-                                id="file-type"
-                                class="border rounded w-full p-2"
-                                bind:value={selectedFileType}
-                            >
-                                <!-- <option value="patent">Patent</option> -->
-                                <option value="trademark">Trademark</option>
-                            </select>
-                        </div>
-                    </div>
+
+                <!-- File Number Input -->
+                <div>
+                    <label for="search-query" class="block text-sm font-medium text-gray-700 mb-2">
+                        File Number or RTM
+                    </label>
+                    <input
+                        id="search-query"
+                        type="text"
+                        bind:value={searchQuery}
+                        placeholder="Enter file number or RTM number"
+                        class="w-full p-3 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+                        on:keydown={handleKeydown}
+                    />
                 </div>
-            </div>
-            <div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
-                <span class="flex items-center text-xs text-gray-600">
-                    <Icon icon="mdi:information-variant-circle" class="mr-2 text-blue-500" style="font-size: 1.3em;" />
-                    Only files with status of publication can undergo publication status update.
-                </span>
-                <button
-                    type="button"
-                    on:click={closeModal}
-                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-                >
-                    Cancel
-                </button>
-                <button
-                    type="button"
-                    on:click={handleSearch}
-                    disabled={isLoading}
-                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 disabled:bg-blue-400"
-                >
-                    {#if isLoading}
-                        <span class="inline-block mr-2">
-                            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+
+                <!-- File Type Display - Static, no dropdown -->
+                <div class="flex items-center space-x-2 p-3 bg-gray-50 rounded-md">
+                    <Icon icon="mdi:scale-balance" class="text-green-600 w-5 h-5" />
+                    <span class="text-sm font-medium text-gray-700">
+                        File Type: Trademark
+                    </span>
+                </div>
+
+                <!-- Information Notice -->
+                <div class="flex items-start space-x-2 p-3 bg-blue-50 rounded-md">
+                    <Icon icon="mdi:information-variant-circle" class="text-blue-600 w-5 h-5 mt-0.5" />
+                    <span class="text-xs text-blue-800">
+                        Only files with status of publication can undergo publication status update.
+                    </span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex space-x-2 pt-4">
+                    <button
+                        type="button"
+                        class="flex-1 bg-gray-200 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors"
+                        on:click={closeModal}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                        disabled={isLoading}
+                        on:click={handleSearch}
+                    >
+                        {#if isLoading}
+                            <svg class="w-4 h-4 mr-2 animate-spin inline" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                        </span>
-                        Searching...
-                    {:else}
-                        Search
-                    {/if}
-                </button>
+                            Searching...
+                        {:else}
+                            Search
+                        {/if}
+                    </button>
+                </div>
             </div>
         </div>
     </div>

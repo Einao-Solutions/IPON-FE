@@ -1,163 +1,137 @@
 <script lang="ts">
-  import {
-    createRender,
-    createTable,
-    Render,
-    Subscribe,
-  } from "svelte-headless-table";
-  import { type Writable, writable } from "svelte/store";
-  import * as Dialog from "$lib/components/ui/dialog";
-  import { Textarea } from "$lib/components/ui/textarea";
-  import { mapStatusToString } from "../home/components/dashboardutils";
-  import {
-    type AffectedFiles,
-    ApplicationStatuses,
-    baseURL,
-    FormApplicationTypes,
-    getStatusColour,
-    UserRoles,
-    UserTypes,
-  } from "$lib/helpers";
-  import { Button } from "$lib/components/ui/button";
-  import { goto } from "$app/navigation";
-  import {
-    addHiddenColumns,
-    addPagination,
-    addSelectedRows,
-    addTableFilter,
-  } from "svelte-headless-table/plugins";
-  import { page } from "$app/stores";
-  import ChevronDown from "lucide-svelte/icons/chevron-down";
-  import { ChevronsUpDown } from "lucide-svelte";
-  import DataTableCheckbox from "./data-table-checkbox.svelte";
-  import CreateTicket from "../home/components/CreateTicket.svelte";
-  import type { RecordSetStore } from "svelte-headless-table/dist/utils/store";
-  import FilterFile from "../home/FilterFile.svelte";
-  import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
-  import {
-    listOfIds,
-    loggedInUser,
-    queryBody,
-    selectedFilesForAction,
-  } from "$lib/store";
-  import {
-    fileTypeToString,
-    mapTypeToString,
-  } from "../home/components/dashboardutils";
-  import Icon from "@iconify/svelte";
-  import * as Table from "$lib/components/ui/table";
-  import * as Pagination from "$lib/components/ui/pagination";
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-  import { Toaster } from "$lib/components/ui/sonner";
-  export let dataList: [] | null = [];
-  let tableHeaderRows, tablePageRows, _tableAttrs, _tableBodyAttrs;
-  let _hasNextPage, _hasPreviousPage, _pageIndex;
-  let createTicket: CreateTicket | null = null;
-  let filterFiles: FilterFile | null = null;
-  let _flatColumns;
-  export let count: number = 0;
-  export let showAppStatus: boolean = true;
-  export let showType: boolean = true;
-  export let currentDataPage: number = 0;
-  export let showRenew: boolean = false;
-  let _selectedDataIds: RecordSetStore<string>;
-  let _hiddenColumnIds: Writable<string[]>;
-  let hidableCols: string[] = [
-    "date",
-    "title",
-    "fileId",
-    "fileStatus",
-    "fileType",
-    "status",
-  ];
-  let hideForId: [] = [];
-  let isLoading = false;
-  let _filterValue;
-  $: {
-    $_hiddenColumnIds = Object.entries(hideForId)
-      .filter(([, hide]) => !hide)
-      .map(([id]) => id);
-  }
-  $: {
-    $_pageIndex = currentDataPage;
-    console.log($_pageIndex);
-  }
-  const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
-  $: {
-    const table = createTable(writable(dataList ?? []), {
-      page: addPagination({
-        initialPageSize: $selectedResultList,
-        serverItemCount: writable(count),
-        serverSide: true,
-      }),
-      filter: addTableFilter({
-        fn: ({ filterValue, value }) =>
-          value.toLowerCase().includes(filterValue.toLowerCase()),
-      }),
-      hide: addHiddenColumns(),
-      select: addSelectedRows(),
-    });
-    const columns = table.createColumns([
-      table.column({
-        accessor: "_id",
-        header: (_, { pluginStates }) => {
-          const { allPageRowsSelected } = pluginStates.select;
-          return createRender(DataTableCheckbox, {
-            checked: allPageRowsSelected,
-            id: "s",
-          });
-        },
-        cell: ({ row }, { pluginStates }) => {
-          const { getRowState } = pluginStates.select;
-          const { isSelected } = getRowState(row);
-          let status = writable<boolean>(
-            $selectedFilesForAction?.includes(row.cells[7].value.toString()) ??
-              false
-          );
-          return createRender(DataTableCheckbox, {
-            checked: status,
-            id: row.cells[7].value,
-          });
-        },
-        plugins: {
-          filter: {
-            exclude: true,
-          },
-        },
-      }),
-      table.column({
-        accessor: "s/n",
-        header: "S/N",
-        plugins: { filter: { exclude: true } },
-      }),
-      table.column({
-        accessor: "date",
-        header: "Date",
-      }),
-      table.column({
-        accessor: "fileId",
-        header: "File ID",
-      }),
-      table.column({
-        accessor: "fileStatus",
-        header: "File Status",
-      }),
-      table.column({
-        accessor: "title",
-        header: "Title",
-      }),
-      table.column({
-        accessor: "fileType",
-        header: "Type",
-      }),
-      // table.column({
-      // 	accessor: 'status',
-      // 	header: 'Application Status'
-      // }),
-      // table.column({
-      // 		accessor:"applicationType",
-      // 		header:"sd"
-      // 	}),
+	import { createRender, createTable, Render, Subscribe } from 'svelte-headless-table';
+	import { type Writable, writable } from 'svelte/store';
+	import * as Dialog from "$lib/components/ui/dialog"
+	import { Textarea } from '$lib/components/ui/textarea';
+	import { mapStatusToString } from '../home/components/dashboardutils';
+	import {
+		type AffectedFiles, ApplicationStatuses,
+		baseURL,
+		FormApplicationTypes,
+		getStatusColour,
+		UserRoles,
+		UserTypes
+	} from '$lib/helpers';
+	import { Button } from '$lib/components/ui/button';
+	import { goto } from '$app/navigation';
+	import { addHiddenColumns, addPagination, addSelectedRows, addTableFilter } from 'svelte-headless-table/plugins';
+	import { page } from '$app/stores';
+	import ChevronDown from 'lucide-svelte/icons/chevron-down';
+	import { ChevronsUpDown } from 'lucide-svelte';
+	import DataTableCheckbox from './data-table-checkbox.svelte';
+	import CreateTicket from '../home/components/CreateTicket.svelte';
+	import type { RecordSetStore } from 'svelte-headless-table/dist/utils/store';
+	import FilterFile from '../home/FilterFile.svelte';
+	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
+	import { listOfIds, loggedInUser, queryBody, selectedFilesForAction } from '$lib/store';
+	import { fileTypeToString, mapTypeToString } from '../home/components/dashboardutils';
+	import Icon from '@iconify/svelte';
+	import * as Table from "$lib/components/ui/table"
+	import * as Pagination from "$lib/components/ui/pagination"
+	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
+	import { Toaster } from '$lib/components/ui/sonner';
+	export let dataList: [] | null = [];
+	let tableHeaderRows, tablePageRows, _tableAttrs, _tableBodyAttrs;
+	let _hasNextPage, _hasPreviousPage, _pageIndex;
+	let createTicket: CreateTicket | null = null;
+	let filterFiles:FilterFile|null=null;
+	let _flatColumns;
+	export let count:number=0;
+	export let showAppStatus:boolean=true;
+	export let showType:boolean=true;
+	export let currentDataPage:number=0;
+	export let showRenew:boolean=false;
+	let _selectedDataIds: RecordSetStore<string>;
+	let _hiddenColumnIds: Writable<string[]>;
+	let hidableCols: string[] = ['date', 'title', 'fileId', 'fileStatus', 'fileType', 'trademarkClass', 'status'];
+	let hideForId: [] = [];
+	let isLoading=false;
+	let _filterValue;
+	$: {
+		$_hiddenColumnIds = Object.entries(hideForId)
+			.filter(([, hide]) => !hide)
+			.map(([id]) => id);
+	}
+	$:{
+		 $_pageIndex=currentDataPage
+		console.log($_pageIndex)
+	}
+	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
+	$: {
+		const table = createTable(writable(dataList ?? []), {
+			page: addPagination({ initialPageSize: $selectedResultList, serverItemCount:writable(count), serverSide:true}),
+			filter: addTableFilter({
+				fn: ({ filterValue, value }) => value.toLowerCase().includes(filterValue.toLowerCase())
+			}),
+			hide: addHiddenColumns(),
+			select: addSelectedRows()
+		});
+		const columns = table.createColumns([
+			table.column({
+				accessor: '_id',
+				header: (_, { pluginStates }) => {
+					const { allPageRowsSelected } = pluginStates.select;
+					return createRender(DataTableCheckbox, {
+						checked: allPageRowsSelected,
+						id:"s"
+					});
+				},
+				cell: ({ row }, { pluginStates }) => {
+					const { getRowState } = pluginStates.select;
+					const { isSelected } = getRowState(row);
+					let  status=writable<boolean>($selectedFilesForAction?.includes(row.cells[7].value.toString())??false);
+					return createRender(DataTableCheckbox, {
+						checked: status,
+						id:row.cells[7].value
+					});
+				},
+				plugins: {
+					filter: {
+						exclude: true
+					}
+				}
+			}),
+			table.column({
+				accessor: 's/n',
+				header: 'S/N',
+				plugins: { filter: { exclude: true } }
+			}),
+			table.column({
+				accessor: 'date',
+				header: 'Date'
+			}),
+			table.column({
+				accessor: 'fileId',
+				header: 'File ID'
+			}),
+			table.column({
+				accessor: 'fileStatus',
+				header: 'File Status'
+			}),
+			table.column({
+				accessor: 'title',
+				header: 'Title'
+			}),
+			table.column({
+				accessor: 'fileType',
+				header: 'Type'
+			}),
+			table.column({
+				accessor: 'trademarkClass',
+				header: 'Class',
+				cell: ({ value }) => {
+					// Only show for trademark files
+					return value ? value : '';
+				}
+			}),
+			// table.column({
+			// 	accessor: 'status',
+			// 	header: 'Application Status'
+			// }),
+			// table.column({
+			// 		accessor:"applicationType",
+			// 		header:"sd"
+			// 	}),
 
       table.column({
         accessor: "id",
@@ -237,7 +211,7 @@
     const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
     let body = {
       // userType: $loggedInUser.userRoles.includes(UserRoles.StaffMenu)  ? 1:0,
-      userType: $loggedInUser?.userRoles.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.Staff) ? 1 : 0,
+      userType: $loggedInUser?.userRoles.some(role => role > UserRoles.User) ? 1 : 0,
       userId,
       types: typeconverted,
       status: statusConverted,
