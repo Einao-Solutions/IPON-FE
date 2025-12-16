@@ -592,14 +592,7 @@
   }
   let showNoticeModal = false; // show on first load
   const noticeTitle = "Notice";
-  const noticeMessage = `Dear Esteemed Customer,
-We are pleased to inform you that online services on the official website of the Commercial Law Department, Federal Ministry of Industry, Trade and Investment — www.iponigeria.com — have now been fully restored.
-We have also introduced important updates to improve your experience. Here’s what has changed:
-• We have deployed an improved user dashboard for easier access to the modules you use daily.
-• Processing speed for payments has been significantly optimized.
-• Key modules have been enhanced and reorganized for your filing convenience.
-We understand that you may need time to familiarize yourself with the new layout. Our support team is available 24/7 to assist with any requests, enquiries, or issues through the support link on your user dashboard.
-Thank you for choosing the Commercial Law Department, Federal Ministry of Industry, Trade and Investment — proudly supported by Einao Solutions, your trusted IP technology support partner.`;
+  const noticeMessage = "";
 
   function closeNotice() {
     showNoticeModal = false;
