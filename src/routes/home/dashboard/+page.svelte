@@ -590,7 +590,7 @@
       appealFileInput.value = "";
     }
   }
-  let showNoticeModal = true; // show on first load
+  let showNoticeModal = false; // show on first load
   const noticeTitle = "Notice";
   const noticeMessage = `Dear Esteemed Customer,
 We are pleased to inform you that online services on the official website of the Commercial Law Department, Federal Ministry of Industry, Trade and Investment — www.iponigeria.com — have now been fully restored.
@@ -1502,31 +1502,30 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
       aria-modal="true"
       aria-labelledby="maintenance-notice-title"
     >
-     <!-- Header -->
-<div class="flex items-center justify-between px-6 py-4 border-b">
-  <div class="flex items-center gap-2">
-    <Icon
-      icon="mdi:bell"
-      class="w-6 h-6 text-gray-700"
-      aria-hidden="true"
-    />
-    <h2
-      id="maintenance-notice-title"
-      class="text-xl md:text-2xl font-semibold"
-    >
-      Notice of System Restoration and Updates
-    </h2>
-  </div>
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b">
+        <div class="flex items-center gap-2">
+          <Icon
+            icon="mdi:bell"
+            class="w-6 h-6 text-gray-700"
+            aria-hidden="true"
+          />
+          <h2
+            id="maintenance-notice-title"
+            class="text-xl md:text-2xl font-semibold"
+          >
+            Notice of System Restoration and Updates
+          </h2>
+        </div>
 
-  <button
-    class="rounded-full p-2 hover:bg-gray-100"
-    aria-label="Close"
-    on:click={closeNotice}
-  >
-    <Icon icon="mdi:close" class="w-5 h-5 text-gray-700" />
-  </button>
-</div>
-
+        <button
+          class="rounded-full p-2 hover:bg-gray-100"
+          aria-label="Close"
+          on:click={closeNotice}
+        >
+          <Icon icon="mdi:close" class="w-5 h-5 text-gray-700" />
+        </button>
+      </div>
 
       <!-- Content -->
       <div class="px-6 py-4 max-h-[80vh] overflow-y-auto">
