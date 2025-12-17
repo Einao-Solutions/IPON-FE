@@ -1,12 +1,12 @@
 import { countriesMap } from "$lib/constants";
-import type { Types } from "$lib/designutils";
+import type { DesignTypes } from "$lib/designutils";
 import * as valid from "validator";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-export const baseURL = 'http://localhost:5044';
+export const baseURL = "http://localhost:5044";
 //  export const baseURL="https://backend.einaotest.com";
 // export const baseURL="https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
@@ -44,7 +44,14 @@ export type InventorValidator = {
   email: boolean | null;
   address: boolean | null;
 };
-
+export type DesignCreator = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  country: string;
+  email: string;
+};
 export type Applicant = {
   id: string;
   name: string;
