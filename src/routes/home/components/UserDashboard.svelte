@@ -419,13 +419,13 @@
 											</div>
 											<div class="flex-1 text-left">
 												<div class="flex items-center gap-2">
-													<h5 class="font-semibold text-gray-800 text-xs">{mapTypeToString(parseInt(item.type))}</h5>
+													<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
 													<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 												</div>
 											</div>
 										</div>
 										<div class="flex-shrink-0 ml-1">
-											<Icon icon="heroicons:chevron-down" class="w-4 h-4 text-green-500 transition-transform duration-200 data-[state=open]:rotate-180" />
+											<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 										</div>
 									</div>
 								</Accordion.Trigger>
@@ -484,9 +484,7 @@
 						</div>
 					</div>
 					<div class="flex-shrink-0 ml-2">
-						<svg class="w-5 h-5 text-green-600 transition-transform duration-200 group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-						</svg>
+					<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 					</div>
 				</div>
 			</Accordion.Trigger>
@@ -504,13 +502,13 @@
 										</div>
 										<div class="flex-1 text-left">
 											<div class="flex items-center gap-2">
-												<h5 class="font-semibold text-gray-800 text-xs">{mapTypeToString(parseInt(item.type))}</h5>
+												<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
 												<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 											</div>
 										</div>
 									</div>
 									<div class="flex-shrink-0 ml-1">
-										<Icon icon="heroicons:chevron-down" class="w-4 h-4 text-green-500 transition-transform duration-200 data-[state=open]:rotate-180" />
+										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 									</div>
 								</div>
 							</Accordion.Trigger>
@@ -556,7 +554,7 @@
 						</div>
 					</div>
 					<div class="flex-shrink-0 ml-2">
-						<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 transition-transform duration-200 data-[state=open]:rotate-180" />
+						<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 					</div>
 				</div>
 			</Accordion.Trigger>
@@ -574,13 +572,13 @@
 										</div>
 										<div class="flex-1 text-left">
 											<div class="flex items-center gap-2">
-												<h5 class="font-semibold text-gray-800 text-xs">{mapTypeToString(parseInt(item.type))}</h5>
+												<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
 												<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 											</div>
 										</div>
 									</div>
 									<div class="flex-shrink-0 ml-1">
-										<Icon icon="heroicons:chevron-down" class="w-4 h-4 text-green-500 transition-transform duration-200 data-[state=open]:rotate-180" />
+										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 									</div>
 								</div>
 							</Accordion.Trigger>
@@ -625,7 +623,7 @@
 						</div>
 					</div>
 					<div class="flex-shrink-0 ml-2">
-						<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 transition-transform duration-200 data-[state=open]:rotate-180" />
+					<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 					</div>
 				</div>
 			</Accordion.Trigger>
@@ -643,13 +641,13 @@
 										</div>
 										<div class="flex-1 text-left">
 											<div class="flex items-center gap-2">
-												<h5 class="font-semibold text-gray-800 text-xs">{mapTypeToString(parseInt(item.type))}</h5>
+												<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
 												<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 											</div>
 										</div>
 									</div>
 									<div class="flex-shrink-0 ml-1">
-										<Icon icon="heroicons:chevron-down" class="w-4 h-4 text-green-500 transition-transform duration-200 data-[state=open]:rotate-180" />
+										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 									</div>
 								</div>
 							</Accordion.Trigger>
@@ -717,8 +715,8 @@
 		display: none !important;
 	}
 	
-	/* Hide any default SVG arrows from accordion component but keep application type icons */
-	:global([data-accordion-trigger] svg:not(.w-6):not([class*="text-base"])) {
+	/* Hide any default SVG arrows from accordion component but keep application type icons and chevron icons */
+	:global([data-accordion-trigger] svg:not(.w-6):not([class*="text-base"]):not([class*="w-5"])) {
 		display: none !important;
 	}
 	
