@@ -1708,11 +1708,11 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
 					and further broken down by application types and statuses.
 					
 					Visibility Logic:
-					- ONLY visible to Tech and SuperAdmin roles
-					- Hidden from all other roles (User, Agent, Staff, and IP-specific officers)
+					- ONLY visible to User, Tech and SuperAdmin roles
+					- Hidden from all other roles (Agent, Staff, and IP-specific officers)
 					- IP-specific officers get their own StaffDashboard instead
 				-->
-				{#if $loggedInUser && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin))}
+				{#if $loggedInUser && ($loggedInUser.userRoles.includes(UserRoles.User) || $loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin))}
 					<div class="mt-6">
 						<!-- Section Header: Title and description for the detailed statistics -->
 						<div class="mb-4">

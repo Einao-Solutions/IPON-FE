@@ -173,6 +173,14 @@ export const trademarkServices: IPService[] = [
     route: '/home/agent/change',
     category: 'agent'
   },
+  {
+    id: 'claim-files',
+    name: 'CLAIM FILES',
+    description: 'Claim files from previous system',
+    icon: 'mdi:file-download',
+    route: '/home/claim-files',
+    category: 'agent'
+  },
 
 
   // PREREGISTRATION CATEGORY (formerly management)
@@ -369,7 +377,14 @@ export const patentServices: IPService[] = [
     route: '/home/editpatentfiles',
     category: 'agent'
   },
-
+  {
+    id: 'claim-files',
+    name: 'CLAIM FILES',
+    description: 'Claim files from previous system',
+    icon: 'mdi:file-download',
+    route: '/home/claim-files',
+    category: 'agent'
+  },
 
   // PRE-REGISTRATION CATEGORY
   {
@@ -486,6 +501,14 @@ export const designServices: IPService[] = [
     description: 'Update agent information',
     icon: 'mdi:account-switch',
     route: '/home/agent/change',
+    category: 'agent'
+  },
+  {
+    id: 'claim-files',
+    name: 'CLAIM FILES',
+    description: 'Claim files from previous system',
+    icon: 'mdi:file-download',
+    route: '/home/claim-files',
     category: 'agent'
   },
 
