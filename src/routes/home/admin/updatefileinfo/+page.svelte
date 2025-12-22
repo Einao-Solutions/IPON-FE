@@ -111,7 +111,7 @@
     fileId: string;
     reason: string;
   }
-  
+
   let statusUpdate: StatusChange = {
     newStatus: null,
     userId: "",
@@ -124,7 +124,7 @@
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${$loggedInToken}`,
+        Authorization: `Bearer ${$loggedInToken}`,
       },
       body: JSON.stringify({
         newStatus: statusUpdate.newStatus,
@@ -134,7 +134,8 @@
       }),
     });
     if (result.ok) {
-      const data = await result.json();
+      const text = await result.text();
+      const data = text ? JSON.parse(text) : null;
       window.alert("Status Changed Successfully!");
       toast.success("Status Changed Successfully", {
         position: "top-right",
@@ -175,7 +176,7 @@
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${$loggedInToken}`,
+          Authorization: `Bearer ${$loggedInToken}`,
         },
         body: JSON.stringify({
           applicationDate: newApp.applicationDate,
@@ -189,7 +190,8 @@
       }
     );
     if (result.ok) {
-      const data = await result.json();
+      const text = await result.text();
+      const data = text ? JSON.parse(text) : null;
       window.alert("Application Added to History Successfully!");
       toast.success("Application added successfully", {
         position: "top-right",
@@ -1222,12 +1224,15 @@
               <!-- Current File Status -->
               <div>
                 <p class="mb-1">Current File Status:</p>
-                <AppStatusTag status={filing.status} />
+                <AppStatusTag value={filing.fileStatus} />
               </div>
 
               <!-- New File Status -->
               <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1" for="new-status">
+                <label
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  for="new-status"
+                >
                   New File Status
                 </label>
                 <select
@@ -1244,7 +1249,10 @@
 
               <!-- Reason -->
               <div class="md:col-span-2">
-                <label class="block text-sm font-medium text-gray-700 mb-1" for="reason-status">
+                <label
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  for="reason-status"
+                >
                   Reason
                 </label>
                 <input
@@ -1259,8 +1267,7 @@
               <div class="md:col-span-2 flex justify-end">
                 <Button
                   size="sm"
-                  on:click={() =>
-                    changeFileStatus(statusUpdate)}
+                  on:click={() => changeFileStatus(statusUpdate)}
                 >
                   Update
                 </Button>
