@@ -1,68 +1,78 @@
 <script lang="ts">
-	import { fade } from 'svelte/transition';
-	import { Button } from '$lib/components/ui/button';
-	import Icon from '@iconify/svelte';
-	import { goto } from '$app/navigation';
-	import {
-		appattachmentsData,
-		applicationData,
-		applicationMode,
-		applicationScreen,
-		formsData,
-		loggedInUser,
-		newApplicationType,
-		validatedPages,
-		validatePage
-	} from '$lib/store';
-	import UpdateFormView from './components/UpdateFormView.svelte';
-	import { onMount } from 'svelte';
-	import RenewView from './components/RenewView.svelte';
-	import { Toaster } from '$lib/components/ui/sonner';
-	import { ApplicationLetters, ApplicationStatuses, baseURL, UserRoles, FileTypes, type DashBoardStats } from '$lib/helpers';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import * as Card from '$lib/components/ui/card';
-	import { DashStats } from '$lib/store';
-	import { getServiceCount } from '$lib/services';
-	import AvailabilitySearchModal from '../../home/components/AvailabilitySearchModal.svelte';
-	import UserDashboard from '../components/UserDashboard.svelte';
-	import IPServiceView from '../components/IPServiceView.svelte';
-	import { Description } from 'formsnap';
-	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
-	import { Result } from 'postcss';
-	import { fileTypeToString, mapDateToString } from '../components/dashboardutils';
-	import { getLetterName } from '../../dataview/datahelpers';
-	import { toast } from 'svelte-sonner';
-  import { User } from 'lucide-svelte';
-	let isModalOpen = false;
-	function toggleModal(): void {
-		isModalOpen = !isModalOpen;
-	}
-	let updateForm: UpdateFormView | null = null;
-	let renewForm: RenewView | null = null;
-	let assignForm: AssignView | null = null;
-	let selectedCreation: number | null = null;
-	let showNewApplication: boolean = false;
-	let showPreRegistrationDialog: boolean = false;
-	let appPageLoading: boolean = false;
-	let showUpdateForm: boolean = false;
-	let showRenewForm: boolean = false;
-	let showAssignForm: boolean = false;
-	let typecomponent: any;
-	let data = {};
-	$: fileData = $applicationData;
-	
-	// New navigation state for IP category views
-	let currentView = 'main'; // 'main', 'trademark', 'patent', 'design'
-	let viewToggle = 'grid'; // 'grid' or 'list'
-	
-	// Dashboard statistics are now handled by UserDashboard component
-	function openPreRegistrationDialog() {
-		showPreRegistrationDialog = true;
-	}
+  import { fade } from "svelte/transition";
+  import { Button } from "$lib/components/ui/button";
+  import Icon from "@iconify/svelte";
+  import { goto } from "$app/navigation";
+  import {
+    appattachmentsData,
+    applicationData,
+    applicationMode,
+    applicationScreen,
+    formsData,
+    loggedInUser,
+    newApplicationType,
+    validatedPages,
+    validatePage,
+  } from "$lib/store";
+  import UpdateFormView from "./components/UpdateFormView.svelte";
+  import { onMount } from "svelte";
+  import RenewView from "./components/RenewView.svelte";
+  import { Toaster } from "$lib/components/ui/sonner";
+  import {
+    ApplicationLetters,
+    ApplicationStatuses,
+    baseURL,
+    UserRoles,
+    FileTypes,
+    type DashBoardStats,
+  } from "$lib/helpers";
+  import * as Dialog from "$lib/components/ui/dialog";
+  import * as Card from "$lib/components/ui/card";
+  import { DashStats } from "$lib/store";
+  import { getServiceCount } from "$lib/services";
+  import AvailabilitySearchModal from "../../home/components/AvailabilitySearchModal.svelte";
+  import UserDashboard from "../components/UserDashboard.svelte";
+  import IPServiceView from "../components/IPServiceView.svelte";
+  import { Description } from "formsnap";
+  import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
+  import { Result } from "postcss";
+  import {
+    fileTypeToString,
+    mapDateToString,
+  } from "../components/dashboardutils";
+  import { getLetterName } from "../../dataview/datahelpers";
+  import { toast } from "svelte-sonner";
+  import { User } from "lucide-svelte";
+  let isModalOpen = false;
+  function toggleModal(): void {
+    isModalOpen = !isModalOpen;
+  }
+  let updateForm: UpdateFormView | null = null;
+  let renewForm: RenewView | null = null;
+  let assignForm: AssignView | null = null;
+  let selectedCreation: number | null = null;
+  let showNewApplication: boolean = false;
+  let showPreRegistrationDialog: boolean = false;
+  let appPageLoading: boolean = false;
+  let showUpdateForm: boolean = false;
+  let showRenewForm: boolean = false;
+  let showAssignForm: boolean = false;
+  let typecomponent: any;
+  let data = {};
+  $: fileData = $applicationData;
 
-	function goBackToMain() {
-		currentView = 'main';
-	}
+  // New navigation state for IP category views
+  let currentView = "main"; // 'main', 'trademark', 'patent', 'design'
+  let viewToggle = "grid"; // 'grid' or 'list'
+
+  // Dashboard statistics are now handled by UserDashboard component
+  function openPreRegistrationDialog() {
+    showPreRegistrationDialog = true;
+  }
+
+  function goBackToMain() {
+    currentView = "main";
+  }
 
   function NewApplication() {
     showPreRegistrationDialog = false;
@@ -81,70 +91,74 @@
     }
   }
 
-	let isStaff: boolean = false;
-	function canCreateApplication() {
-		return (
-			$loggedInUser?.userRoles.includes(UserRoles.User) ||
-			$loggedInUser?.userRoles.includes(UserRoles.Tech) ||
-			$loggedInUser?.userRoles.includes(UserRoles.SuperAdmin)
-		);
-	}
-	onMount(async () => {
-		isLoading = true;
-		let cookieUser = document.cookie
-			.split(';')
-			.find((x) => x.startsWith(' user=') || x.startsWith('user='));
-		if (!cookieUser) {
-			await goto('/auth/');
-		} else {
-			let user = cookieUser.trimStart();
-			user = user.slice(5);
-			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-			// Determine if user should see StaffDashboard (all non-regular user roles except Agent)
-		isStaff = !!($loggedInUser?.userRoles?.some((e) => [
-			// Generic staff roles
-			UserRoles.Staff,
-			// Patent-related roles
-			UserRoles.PatentSearch,
-			UserRoles.PatentExaminer,
-			UserRoles.PatentCertification,
-			UserRoles.PatentDesignRegistrar,
-			// Trademark-related roles
-			UserRoles.TrademarkSearch,
-			UserRoles.TrademarkExaminer,
-			UserRoles.TrademarkOpposition,
-			UserRoles.TrademarkAcceptance,
-			UserRoles.TrademarkCertification,
-			UserRoles.TrademarkRegistrar,
-			// Design-related roles
-			UserRoles.DesignSearch,
-			UserRoles.DesignExaminer,
-			UserRoles.DesignCertification,
-			// Administrative roles
-			UserRoles.Minister,
-			UserRoles.PermSec,
-			UserRoles.Finance
-			// Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
-			// Note: Agent will use UserDashboard with totals only
-		].includes(e)));
-		}
-		if (isStaff) {
-			typecomponent = (await import('../components/StaffDashboard.svelte')).default;
-		} else {
-			{
-				typecomponent = (await import('../components/UserDashboard.svelte')).default;
-			}
-		}
-		data = {
-			user: $loggedInUser
-		};
-		
-		isLoading = false;
-	});
-	let isLoading: boolean = true;
-	let updateData = {};
-	let renewData = {};
-	let assignData = {};
+  let isStaff: boolean = false;
+  function canCreateApplication() {
+    return (
+      $loggedInUser?.userRoles.includes(UserRoles.User) ||
+      $loggedInUser?.userRoles.includes(UserRoles.Tech) ||
+      $loggedInUser?.userRoles.includes(UserRoles.SuperAdmin)
+    );
+  }
+  onMount(async () => {
+    isLoading = true;
+    let cookieUser = document.cookie
+      .split(";")
+      .find((x) => x.startsWith(" user=") || x.startsWith("user="));
+    if (!cookieUser) {
+      await goto("/auth/");
+    } else {
+      let user = cookieUser.trimStart();
+      user = user.slice(5);
+      loggedInUser.set(JSON.parse(decodeURIComponent(user)));
+      // Determine if user should see StaffDashboard (all non-regular user roles except Agent)
+      isStaff = !!$loggedInUser?.userRoles?.some((e) =>
+        [
+          // Generic staff roles
+          UserRoles.Staff,
+          // Patent-related roles
+          UserRoles.PatentSearch,
+          UserRoles.PatentExaminer,
+          UserRoles.PatentCertification,
+          UserRoles.PatentDesignRegistrar,
+          // Trademark-related roles
+          UserRoles.TrademarkSearch,
+          UserRoles.TrademarkExaminer,
+          UserRoles.TrademarkOpposition,
+          UserRoles.TrademarkAcceptance,
+          UserRoles.TrademarkCertification,
+          UserRoles.TrademarkRegistrar,
+          // Design-related roles
+          UserRoles.DesignSearch,
+          UserRoles.DesignExaminer,
+          UserRoles.DesignCertification,
+          // Administrative roles
+          UserRoles.Minister,
+          UserRoles.PermSec,
+          UserRoles.Finance,
+          // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
+          // Note: Agent will use UserDashboard with totals only
+        ].includes(e)
+      );
+    }
+    if (isStaff) {
+      typecomponent = (await import("../components/StaffDashboard.svelte"))
+        .default;
+    } else {
+      {
+        typecomponent = (await import("../components/UserDashboard.svelte"))
+          .default;
+      }
+    }
+    data = {
+      user: $loggedInUser,
+    };
+
+    isLoading = false;
+  });
+  let isLoading: boolean = true;
+  let updateData = {};
+  let renewData = {};
+  let assignData = {};
 
   // Pay for Certificate modal state variables
   let showPayCertModal: boolean = false;
@@ -576,16 +590,9 @@
       appealFileInput.value = "";
     }
   }
-  let showNoticeModal = true; // show on first load
-  const noticeTitle = "Scheduled Maintenance Notice";
-  const noticeMessage = `Dear Esteemed Customer,
-Please be informed that our system will undergo scheduled maintenance to enhance the performance and reliability of our online registration portal.
-During this period:
-The portal and all online services will remain accessible via iponigeria.einaotest.com
-• Our main website, www.iponigeria.com, will be temporarily unavailable for 10 days (Friday, 12th December 2025 to Monday, 22nd December 2025)
-• Our support team will be available 24/7 to assist with any requests, enquiries, or issues through the support link on your user dashboard
-We sincerely apologize for any inconvenience this may cause and assure you that all online services will remain fully accessible and functional throughout the maintenance window.
-Thank you for choosing Einao Solutions as your trusted IP technology support partner.`;
+  let showNoticeModal = false; // show on first load
+  const noticeTitle = "Notice";
+  const noticeMessage = "";
 
   function closeNotice() {
     showNoticeModal = false;
@@ -1099,101 +1106,140 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
 </Dialog.Root>
 <!-- Verify Payment Dialog -->
 <Dialog.Root bind:open={showVerifyPaymentDialog}>
-	<Dialog.Content class="max-w-md">
-		<Dialog.Header>
-			<Dialog.Title class="text-lg font-semibold text-gray-900">Verify Remita Payment</Dialog.Title>
-			<Dialog.Description class="text-sm text-gray-600">
-				Enter your Remita Retrieval Reference (RRR) to verify payment.
-			</Dialog.Description>
-		</Dialog.Header>
-		<div class="space-y-4">
-			<div>
-				<label for="rrr-input" class="block text-sm font-medium text-gray-700 mb-2">
-					RRR Number
-				</label>
-				<input
-					id="rrr-input"
-					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
-					placeholder="Enter RRR"
-					bind:value={verifyRRR}
-					on:keydown={(e) => {
-						if (e.key === 'Enter') verifyRemitaPayment();
-					}}
-				/>
-			</div>
-			
-			{#if verifyPaymentError}
-				<div class="bg-red-50 border border-red-200 rounded-md p-3">
-					<p class="text-sm text-red-600">{verifyPaymentError}</p>
-				</div>
-			{/if}
-			
-			{#if verifyPaymentResult}
-				{#if verifyPaymentResult.status == null}
-					<div class="bg-red-50 border border-red-200 rounded-md p-3">
-						<p class="font-semibold text-red-700">Payment not found.</p>
-					</div>
-				{:else if verifyPaymentResult.status === '00'}
-					<div class="bg-green-50 border border-green-200 rounded-md p-3">
-						<p class="font-semibold text-green-700 mb-2">Payment Status: Successful</p>
-						<div class="space-y-1 text-sm text-gray-600">
-							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
-							<p><span class="font-medium">Date:</span> {mapDateToString(verifyPaymentResult.paymentDate)}</p>
-							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
-							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
-						</div>
-					</div>
-				{:else if verifyPaymentResult.status === '021'}
-					<div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
-						<p class="font-semibold text-yellow-700 mb-2">Payment Status: Pending</p>
-						<div class="space-y-1 text-sm text-gray-600">
-							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
-							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
-							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
-						</div>
-					</div>
-				{:else}
-					<div class="bg-red-50 border border-red-200 rounded-md p-3">
-						<p class="font-semibold text-red-700 mb-2">
-							Payment Status: Unsuccessful ({verifyPaymentResult.status})
-						</p>
-						<div class="space-y-1 text-sm text-gray-600">
-							<p><span class="font-medium">Amount:</span> {verifyPaymentResult.amount}</p>
-							<p><span class="font-medium">Description:</span> {verifyPaymentResult.paymentDescription}</p>
-							<p><span class="font-medium">Payer Name:</span> {verifyPaymentResult.payerName}</p>
-						</div>
-					</div>
-				{/if}
-			{/if}
-		</div>
-		
-		<Dialog.Footer class="flex gap-2 pt-4">
-			<Button
-				variant="outline"
-				class="flex-1"
-				on:click={() => {
-					showVerifyPaymentDialog = false;
-					verifyRRR = '';
-					verifyPaymentResult = null;
-					verifyPaymentError = null;
-				}}
-			>
-				Close
-			</Button>
-			<Button 
-				class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500" 
-				on:click={verifyRemitaPayment} 
-				disabled={verifyPaymentLoading}
-			>
-				{#if verifyPaymentLoading}
-					<Icon icon="eos-icons:loading" width="1.2rem" height="1.2rem" />
-				{:else}
-					Verify Payment
-				{/if}
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
+  <Dialog.Content class="max-w-md">
+    <Dialog.Header>
+      <Dialog.Title class="text-lg font-semibold text-gray-900"
+        >Verify Remita Payment</Dialog.Title
+      >
+      <Dialog.Description class="text-sm text-gray-600">
+        Enter your Remita Retrieval Reference (RRR) to verify payment.
+      </Dialog.Description>
+    </Dialog.Header>
+    <div class="space-y-4">
+      <div>
+        <label
+          for="rrr-input"
+          class="block text-sm font-medium text-gray-700 mb-2"
+        >
+          RRR Number
+        </label>
+        <input
+          id="rrr-input"
+          type="text"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+          placeholder="Enter RRR"
+          bind:value={verifyRRR}
+          on:keydown={(e) => {
+            if (e.key === "Enter") verifyRemitaPayment();
+          }}
+        />
+      </div>
+
+      {#if verifyPaymentError}
+        <div class="bg-red-50 border border-red-200 rounded-md p-3">
+          <p class="text-sm text-red-600">{verifyPaymentError}</p>
+        </div>
+      {/if}
+
+      {#if verifyPaymentResult}
+        {#if verifyPaymentResult.status == null}
+          <div class="bg-red-50 border border-red-200 rounded-md p-3">
+            <p class="font-semibold text-red-700">Payment not found.</p>
+          </div>
+        {:else if verifyPaymentResult.status === "00"}
+          <div class="bg-green-50 border border-green-200 rounded-md p-3">
+            <p class="font-semibold text-green-700 mb-2">
+              Payment Status: Successful
+            </p>
+            <div class="space-y-1 text-sm text-gray-600">
+              <p>
+                <span class="font-medium">Amount:</span>
+                {verifyPaymentResult.amount}
+              </p>
+              <p>
+                <span class="font-medium">Date:</span>
+                {mapDateToString(verifyPaymentResult.paymentDate)}
+              </p>
+              <p>
+                <span class="font-medium">Description:</span>
+                {verifyPaymentResult.paymentDescription}
+              </p>
+              <p>
+                <span class="font-medium">Payer Name:</span>
+                {verifyPaymentResult.payerName}
+              </p>
+            </div>
+          </div>
+        {:else if verifyPaymentResult.status === "021"}
+          <div class="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+            <p class="font-semibold text-yellow-700 mb-2">
+              Payment Status: Pending
+            </p>
+            <div class="space-y-1 text-sm text-gray-600">
+              <p>
+                <span class="font-medium">Amount:</span>
+                {verifyPaymentResult.amount}
+              </p>
+              <p>
+                <span class="font-medium">Description:</span>
+                {verifyPaymentResult.paymentDescription}
+              </p>
+              <p>
+                <span class="font-medium">Payer Name:</span>
+                {verifyPaymentResult.payerName}
+              </p>
+            </div>
+          </div>
+        {:else}
+          <div class="bg-red-50 border border-red-200 rounded-md p-3">
+            <p class="font-semibold text-red-700 mb-2">
+              Payment Status: Unsuccessful ({verifyPaymentResult.status})
+            </p>
+            <div class="space-y-1 text-sm text-gray-600">
+              <p>
+                <span class="font-medium">Amount:</span>
+                {verifyPaymentResult.amount}
+              </p>
+              <p>
+                <span class="font-medium">Description:</span>
+                {verifyPaymentResult.paymentDescription}
+              </p>
+              <p>
+                <span class="font-medium">Payer Name:</span>
+                {verifyPaymentResult.payerName}
+              </p>
+            </div>
+          </div>
+        {/if}
+      {/if}
+    </div>
+
+    <Dialog.Footer class="flex gap-2 pt-4">
+      <Button
+        variant="outline"
+        class="flex-1"
+        on:click={() => {
+          showVerifyPaymentDialog = false;
+          verifyRRR = "";
+          verifyPaymentResult = null;
+          verifyPaymentError = null;
+        }}
+      >
+        Close
+      </Button>
+      <Button
+        class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500"
+        on:click={verifyRemitaPayment}
+        disabled={verifyPaymentLoading}
+      >
+        {#if verifyPaymentLoading}
+          <Icon icon="eos-icons:loading" width="1.2rem" height="1.2rem" />
+        {:else}
+          Verify Payment
+        {/if}
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
 </Dialog.Root>
 
 <!-- Change of Agent Dialog -->
@@ -1310,30 +1356,33 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
       </Dialog.Description>
     </Dialog.Header>
 
-		<div class="mt-6 space-y-4">
-			<div class="space-y-2">
-				<label class="block text-sm font-medium text-gray-700">File Number</label>
-				<input
-					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-					placeholder="Enter File Number"
-					bind:value={getDocFileNumber}
-				/>
-			</div>
+    <div class="mt-6 space-y-4">
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-gray-700"
+          >File Number</label
+        >
+        <input
+          type="text"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+          placeholder="Enter File Number"
+          bind:value={getDocFileNumber}
+        />
+      </div>
 
-			<div class="space-y-2">
-				<label class="block text-sm font-medium text-gray-700">Payment ID</label>
-				<input
-					type="text"
-					class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
-					placeholder="Enter Payment ID"
-					bind:value={getDocPaymentId}
-					on:keydown={(e) => {
-						if (e.key === 'Enter') getDocuments();
-					}}
-				/>
-			</div>
-		</div>
+      <div class="space-y-2">
+        <label class="block text-sm font-medium text-gray-700">Payment ID</label
+        >
+        <input
+          type="text"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors"
+          placeholder="Enter Payment ID"
+          bind:value={getDocPaymentId}
+          on:keydown={(e) => {
+            if (e.key === "Enter") getDocuments();
+          }}
+        />
+      </div>
+    </div>
 
     {#if getDocError}
       <div class="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
@@ -1399,39 +1448,43 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
       </div>
     {/if}
 
-		<Dialog.Footer class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
-			<Button
-				variant="outline"
-				on:click={() => {
-					showGetDocumentsDialog = false;
-					getDocFileNumber = '';
-					getDocPaymentId = '';
-					getDocResult = null;
-					getDocError = null;
-					documents = [];
-				}}
-				class="px-4 py-2"
-			>
-				Close
-			</Button>
-			<Button
-				on:click={getDocuments}
-				disabled={getDocLoading || !getDocFileNumber || !getDocPaymentId}
-				class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
-			>
-				{#if getDocLoading}
-					<Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
-					Loading...
-				{:else}
-					<Icon icon="lucide:search" class="w-4 h-4 mr-2" />
-					Get Documents
-				{/if}
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
+    <Dialog.Footer
+      class="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200"
+    >
+      <Button
+        variant="outline"
+        on:click={() => {
+          showGetDocumentsDialog = false;
+          getDocFileNumber = "";
+          getDocPaymentId = "";
+          getDocResult = null;
+          getDocError = null;
+          documents = [];
+        }}
+        class="px-4 py-2"
+      >
+        Close
+      </Button>
+      <Button
+        on:click={getDocuments}
+        disabled={getDocLoading || !getDocFileNumber || !getDocPaymentId}
+        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+      >
+        {#if getDocLoading}
+          <Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
+          Loading...
+        {:else}
+          <Icon icon="lucide:search" class="w-4 h-4 mr-2" />
+          Get Documents
+        {/if}
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
 </Dialog.Root>
 {#if showNoticeModal}
-  <div class="fixed inset-0 z-[9999] flex items-start md:items-center justify-center p-4">
+  <div
+    class="fixed inset-0 z-[9999] flex items-start md:items-center justify-center p-4"
+  >
     <!-- Backdrop -->
     <div class="absolute inset-0 bg-black/60"></div>
 
@@ -1444,9 +1497,20 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
-        <h2 id="maintenance-notice-title" class="text-xl md:text-2xl font-semibold">
-          {noticeTitle}
-        </h2>
+        <div class="flex items-center gap-2">
+          <Icon
+            icon="mdi:bell"
+            class="w-6 h-6 text-gray-700"
+            aria-hidden="true"
+          />
+          <h2
+            id="maintenance-notice-title"
+            class="text-xl md:text-2xl font-semibold"
+          >
+            Notice of System Restoration and Updates
+          </h2>
+        </div>
+
         <button
           class="rounded-full p-2 hover:bg-gray-100"
           aria-label="Close"
@@ -1459,54 +1523,52 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
       <!-- Content -->
       <div class="px-6 py-4 max-h-[80vh] overflow-y-auto">
         <!-- <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-800 flex items-start gap-2">
-          <Icon icon="mdi:alert-circle-outline" class="w-5 h-5 mt-[2px]" />
+          
           <span class="text-sm md:text-base">
             Scheduled maintenance will not affect access to the registration portal.
           </span>
         </div> -->
 
-        <p class="text-sm md:text-base text-gray-700">Dear Esteemed Customer,</p>
+        <p class="text-sm md:text-base text-gray-700">
+          Dear Esteemed Customer,
+        </p>
         <p class="mt-3 text-sm md:text-base text-gray-700">
-          Please be informed that our system will undergo scheduled maintenance to enhance
-          the performance and reliability of our online registration portal.
+          We are pleased to inform you that online services on the official
+          website of the Commercial Law Department, Federal Ministry of
+          Industry, Trade and Investment — www.iponigeria.com — have now been
+          fully restored.
         </p>
 
-        <p class="mt-4 font-semibold text-gray-900">During this period:</p>
-        <ul class="mt-2 list-disc pl-6 space-y-2 text-sm md:text-base text-gray-700">
+        <p class="mt-4 font-semibold text-gray-900">
+          We have also introduced important updates to improve your experience.
+          Here’s what has changed:
+        </p>
+        <ul
+          class="mt-2 list-disc pl-6 space-y-2 text-sm md:text-base text-gray-700"
+        >
           <li>
-            The portal and all online services will remain accessible via
-            <a
-              href="https://iponigeria.einaotest.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-blue-600 hover:underline"
-            >iponigeria.einaotest.com</a>.
+            We have deployed an improved user dashboard for easier access to the
+            modules you use daily.
           </li>
           <li>
-            Our main website,
-            <a
-              href="https://www.iponigeria.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-blue-600 hover:underline"
-            >www.iponigeria.com</a>,
-            will be temporarily unavailable for 10 days
-            (<span class="font-medium">Friday, 12th December 2025</span> to
-            <span class="font-medium">Monday, 22nd December 2025</span>).
+            Processing speed for payments has been significantly optimized.
           </li>
           <li>
-            Our support team will be available 24/7 to assist with any requests, enquiries,
-            or issues through the support link on your user dashboard.
+            Key modules have been enhanced and reorganized for your filing
+            convenience.
           </li>
         </ul>
 
         <p class="mt-4 text-sm md:text-base text-gray-700">
-          We sincerely apologize for any inconvenience this may cause and assure you that
-          all online services will remain fully accessible and functional throughout the
-          maintenance window.
+          We understand that you may need time to familiarize yourself with the
+          new layout. Our support team is available 24/7 to assist with any
+          requests, enquiries, or issues through the support link on your user
+          dashboard.
         </p>
         <p class="mt-3 text-sm md:text-base text-gray-700">
-          Thank you for choosing Einao Solutions as your trusted IP technology support partner.
+          Thank you for choosing the Commercial Law Department, Federal Ministry
+          of Industry, Trade and Investment — proudly supported by Einao
+          Solutions, your trusted IP technology support partner.
         </p>
       </div>
 
@@ -1520,56 +1582,53 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
 {#if isLoading}
   <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
 {:else}
-	<!-- Show marquee banner only for regular users (non-staff) -->
-	{#if !isStaff}
-		<div
-			class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
-		>
-			<div class="absolute whitespace-nowrap animate-marquee top-1.5">
-				You can now file Withdrawals for all application types using the 'Withdrawal' Module on the dashboard.
-				<b>◆</b>
-				You can now file Clerical Updates (Add/Remove Applicant, Edit/Add/Remove Inventor Information) for Patent applications.
-				<b>◆</b>
-				Claim your files not yet on the portal and move them into your platform using the 'Claim File' Module.
-				<b>◆</b>
-				You can now file Recordals (Merger, Registered User, and Assignment) for Trademark applications with status 'Publication', 'Awaiting Certification, and Awaiting Certificate Confirmation'.
-				<b>◆</b>
-				You can now file Clerical Updates (Change of Name, Address, Representation, Correspondence, and Attachment, ) for trademark applications with status 'Publication' and 'AwaitingCertification'.
-				<b>◆</b>
-				You can now get your Trademark Recordal Certificates (Merger, Registered User, Assignment, Change of Applicant Name, and Change of Applicant Address) using the 'Print Documents' Module.
-				<b>◆</b>
-				You can now file clerical updates (change of name, address, or title of invention) for patent applications using the Clerical Update module on the dashboard.
-				<b>◆</b>
-				Patent Renewal can now be filed using the "Post-Registration" module on the dashboard.
-				<b>◆</b>
-				Use the Attachment Module to upload your patent application attachments.
-				<b>◆</b>
-				Files with status "Rejected" can file for appeal using the "APPEAL" module on the dashboard.
-				<b>◆</b>
-				All Patent application filed prior to Monday, 25th August, 2025 are required to be updated via
-				the "Update Patent File" Module on the dashboard to ensure the completeness of all fields within
-				the documents.
-				
-			</div>
-		</div>
-	{/if}
+  <!-- Show marquee banner only for regular users (non-staff) -->
+  {#if !isStaff}
+    <div
+      class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
+    >
+      <div class="absolute whitespace-nowrap animate-marquee top-1.5">
+        You can now file Withdrawals for all application types using the
+        'Withdrawal' Module on the dashboard.
+        <b>◆</b>
+        You can now file Clerical Updates (Add/Remove Applicant, Edit/Add/Remove
+        Inventor Information) for Patent applications.
+        <b>◆</b>
+        Claim your files not yet on the portal and move them into your platform using
+        the 'Claim File' Module.
+        <b>◆</b>
+        You can now file Recordals (Merger, Registered User, and Assignment) for
+        Trademark applications with status 'Publication', 'Awaiting Certification,
+        and Awaiting Certificate Confirmation'.
+        <b>◆</b>
+        You can now file Clerical Updates (Change of Name, Address, Representation,
+        Correspondence, and Attachment, ) for trademark applications with status
+        'Publication' and 'AwaitingCertification'.
+        <b>◆</b>
+        You can now get your Trademark Recordal Certificates (Merger, Registered
+        User, Assignment, Change of Applicant Name, and Change of Applicant Address)
+        using the 'Print Documents' Module.
+        <b>◆</b>
+        You can now file clerical updates (change of name, address, or title of invention)
+        for patent applications using the Clerical Update module on the dashboard.
+        <b>◆</b>
+        Patent Renewal can now be filed using the "Post-Registration" module on the
+        dashboard.
+        <b>◆</b>
+        Use the Attachment Module to upload your patent application attachments.
+        <b>◆</b>
+        Files with status "Rejected" can file for appeal using the "APPEAL" module
+        on the dashboard.
+        <b>◆</b>
+        All Patent application filed prior to Monday, 25th August, 2025 are required
+        to be updated via the "Update Patent File" Module on the dashboard to ensure
+        the completeness of all fields within the documents.
+      </div>
+    </div>
+  {/if}
 {/if}
 
-	<style>
-		@keyframes marquee {
-			0% {
-				left: 100%;
-			}
-			100% {
-				left: -100%;
-			}
-		}
-		.animate-marquee {
-			animation: marquee 25s linear infinite;
-		}
-	</style>
-	
-	<!-- DEBUG INFO - COMMENTED OUT
+<!-- DEBUG INFO - COMMENTED OUT
 	<div class="p-4 bg-yellow-100 border border-yellow-300 rounded mb-4">
 		<p>Debug Info:</p>
 		<p>canCreateApplication(): {canCreateApplication()}</p>
@@ -1578,129 +1637,209 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
 		<p>User ID: {$loggedInUser?.id}</p>
 	</div>
 	-->
-	
-	<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
-	{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === 'main'}
-	<div class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-full rounded-xl p-6 shadow-xl border border-slate-200/60">
-		<div class="max-w-7xl mx-auto flex flex-col ">
-			<!-- Header Section -->
-			<div class="mb-5 flex-shrink-0">
-				<div class="flex items-center space-x-3 mb-1">
-					<!-- <div class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+
+<!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
+{#if !isLoading && $loggedInUser && canCreateApplication() && currentView === "main"}
+  <div
+    class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-full rounded-xl p-6 shadow-xl border border-slate-200/60"
+  >
+    <div class="max-w-7xl mx-auto flex flex-col">
+      <!-- Header Section -->
+      <div class="mb-5 flex-shrink-0">
+        <div class="flex items-center space-x-3 mb-1">
+          <!-- <div class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
 						<Icon icon="mdi:shield-crown-outline" class="text-white text-xl" />
 					</div> -->
-					<div>
-						<h1 class="text-2xl md:text-3xl font-bold text-black bg-clip-text">Intellectual Property Office Nigeria</h1>
-						<p class="text-slate-600 text-sm">Select a category to explore available services</p>
-						<!-- <p class="text-slate-600 text-sm">Commercial Law Department</p> -->
-					</div>
-				</div>
-			</div>
+          <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-black bg-clip-text">
+              Intellectual Property Office Nigeria
+            </h1>
+            <p class="text-slate-600 text-sm">
+              Select a category to explore available services
+            </p>
+            <!-- <p class="text-slate-600 text-sm">Commercial Law Department</p> -->
+          </div>
+        </div>
+      </div>
 
-			<!-- Three IP Category Cards -->
-			 <!-- this div  -->
-			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
-				<!-- Trademark Card -->
-				<button 
-					class="text-left w-full group relative overflow-hidden"
-					on:click={() => (currentView = 'trademark')}
-				>
-					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1">
-						<!-- Subtle background pattern -->
-						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-						
-						<div class="relative z-10">
-							<div class="mb-5">
-								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
-									<Icon icon="mdi:scale-balance" class="text-2xl text-green-600 group-hover:text-green-700" />
-								</div>
-								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Trademark</h3>
-								<p class="text-slate-600 text-sm leading-relaxed">Register and protect your brand identity</p>
-							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-xs text-slate-500 font-medium">{getServiceCount('trademark')} services available</span>
-								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
-								</div>
-							</div>
-						</div>
-					</div>
-				</button>
+      <!-- Three IP Category Cards -->
+      <!-- this div  -->
+      <div
+        class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
+      >
+        <!-- Trademark Card -->
+        <button
+          class="text-left w-full group relative overflow-hidden"
+          on:click={() => (currentView = "trademark")}
+        >
+          <div
+            class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1"
+          >
+            <!-- Subtle background pattern -->
+            <div
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            ></div>
 
-				<!-- Patent Card -->
-				<button 
-					class="text-left w-full group relative overflow-hidden"
-					on:click={() => (currentView = 'patent')}
-				>
-					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1">
-						<!-- Subtle background pattern -->
-						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-						
-						<div class="relative z-10">
-							<div class="mb-5">
-								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
-									<Icon icon="mdi:lightbulb-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
-								</div>
-								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Patent</h3>
-								<p class="text-slate-600 text-sm leading-relaxed">Protect your inventions and innovations</p>
-							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-xs text-slate-500 font-medium">{getServiceCount('patent')} services available</span>
-								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
-								</div>
-							</div>
-						</div>
-					</div>
-				</button>
+            <div class="relative z-10">
+              <div class="mb-5">
+                <div
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl"
+                >
+                  <Icon
+                    icon="mdi:scale-balance"
+                    class="text-2xl text-green-600 group-hover:text-green-700"
+                  />
+                </div>
+                <h3
+                  class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900"
+                >
+                  Trademark
+                </h3>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                  Register and protect your brand identity
+                </p>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500 font-medium"
+                  >{getServiceCount("trademark")} services available</span
+                >
+                <div
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300"
+                >
+                  <Icon
+                    icon="heroicons:arrow-right"
+                    class="text-green-600 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
 
-				<!-- Design Card -->
-				<button 
-					class="text-left w-full group relative overflow-hidden"
-					on:click={() => (currentView = 'design')}
-				>
-					<div class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1">
-						<!-- Subtle background pattern -->
-						<div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-						
-						<div class="relative z-10">
-							<div class="mb-5">
-								<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
-									<Icon icon="mdi:palette-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
-								</div>
-								<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Design</h3>
-								<p class="text-slate-600 text-sm leading-relaxed">Safeguard your creative designs</p>
-							</div>
-							<div class="flex items-center justify-between">
-								<span class="text-xs text-slate-500 font-medium">{getServiceCount('design')} services available</span>
-								<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-									<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
-								</div>
-							</div>
-						</div>
-					</div>
-				</button>
-			</div>		
+        <!-- Patent Card -->
+        <button
+          class="text-left w-full group relative overflow-hidden"
+          on:click={() => (currentView = "patent")}
+        >
+          <div
+            class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1"
+          >
+            <!-- Subtle background pattern -->
+            <div
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            ></div>
 
-			<!-- Portfolio Summary Section -->
-			<div class="border-t border-slate-200/60 pt-6">
-				<div class="mb-6">
-					<div class="flex items-center space-x-3 mb-4">
-						<!-- <div class="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+            <div class="relative z-10">
+              <div class="mb-5">
+                <div
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl"
+                >
+                  <Icon
+                    icon="mdi:lightbulb-outline"
+                    class="text-2xl text-green-600 group-hover:text-green-700"
+                  />
+                </div>
+                <h3
+                  class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900"
+                >
+                  Patent
+                </h3>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                  Protect your inventions and innovations
+                </p>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500 font-medium"
+                  >{getServiceCount("patent")} services available</span
+                >
+                <div
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300"
+                >
+                  <Icon
+                    icon="heroicons:arrow-right"
+                    class="text-green-600 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
+
+        <!-- Design Card -->
+        <button
+          class="text-left w-full group relative overflow-hidden"
+          on:click={() => (currentView = "design")}
+        >
+          <div
+            class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
+          >
+            <!-- Subtle background pattern -->
+            <div
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+            ></div>
+
+            <div class="relative z-10">
+              <div class="mb-5">
+                <div
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl"
+                >
+                  <Icon
+                    icon="mdi:palette-outline"
+                    class="text-2xl text-green-600 group-hover:text-green-700"
+                  />
+                </div>
+                <h3
+                  class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900"
+                >
+                  Design
+                </h3>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                  Safeguard your creative designs
+                </p>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-xs text-slate-500 font-medium"
+                  >{getServiceCount("design")} services available</span
+                >
+                <div
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300"
+                >
+                  <Icon
+                    icon="heroicons:arrow-right"
+                    class="text-green-600 text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- Portfolio Summary Section -->
+      <div class="border-t border-slate-200/60 pt-6">
+        <div class="mb-6">
+          <div class="flex items-center space-x-3 mb-4">
+            <!-- <div class="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
 							<Icon icon="mdi:chart-box-outline" class="text-white text-lg" />
 						</div> -->
-						<div>
-							<h2 class="text-xl font-bold text-slate-800">Portfolio Summary</h2>
-							<p class="text-slate-600 text-sm">Track your intellectual property applications and registrations</p>
-						</div>
-					</div>
-				</div>
-				<!-- this div  -->
-				<div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
-					<UserDashboard user={$loggedInUser} showOnlyTotals={true} />
-				</div>
-				
-				<!-- 
+            <div>
+              <h2 class="text-xl font-bold text-slate-800">
+                Portfolio Summary
+              </h2>
+              <p class="text-slate-600 text-sm">
+                Track your intellectual property applications and registrations
+              </p>
+            </div>
+          </div>
+        </div>
+        <!-- this div  -->
+        <div
+          class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
+        >
+          <UserDashboard user={$loggedInUser} showOnlyTotals={true} />
+        </div>
+
+        <!-- 
 					DETAILED STATISTICS SECTION
 					========================== 
 					This section provides comprehensive statistical breakdowns for Tech and SuperAdmin users only.
@@ -1712,46 +1851,52 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
 					- Hidden from all other roles (Agent, Staff, and IP-specific officers)
 					- IP-specific officers get their own StaffDashboard instead
 				-->
-				{#if $loggedInUser && ($loggedInUser.userRoles.includes(UserRoles.User) || $loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin))}
-					<div class="mt-6">
-						<!-- Section Header: Title and description for the detailed statistics -->
-						<div class="mb-4">
-							<div class="flex items-center space-x-3 mb-3">
-								<!-- Optional: Icon for the statistics section (currently commented out) -->
-								<!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+        {#if $loggedInUser && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin))}
+          <div class="mt-6">
+            <!-- Section Header: Title and description for the detailed statistics -->
+            <div class="mb-4">
+              <div class="flex items-center space-x-3 mb-3">
+                <!-- Optional: Icon for the statistics section (currently commented out) -->
+                <!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
 									<Icon icon="mdi:chart-line" class="text-white text-lg" />
 								</div> -->
-								<div>
-									<!-- Main heading for the statistics section -->
-									<h2 class="text-xl font-bold text-slate-800">Detailed Statistics</h2>
-									<!-- Descriptive subtext explaining what the statistics show -->
-									<p class="text-slate-600 text-sm">Comprehensive breakdown by application types and status</p>
-								</div>
-							</div>
-						</div>
-						<!-- 
+                <div>
+                  <!-- Main heading for the statistics section -->
+                  <h2 class="text-xl font-bold text-slate-800">
+                    Detailed Statistics
+                  </h2>
+                  <!-- Descriptive subtext explaining what the statistics show -->
+                  <p class="text-slate-600 text-sm">
+                    Comprehensive breakdown by application types and status
+                  </p>
+                </div>
+              </div>
+            </div>
+            <!-- 
 							Statistics Content Container:
 							- Styled with subtle background, blur effect, and soft borders
 							- Contains the UserDashboard component with showOnlyStatistics=true
 							- This prop tells UserDashboard to render only the detailed statistics accordions
 						-->
-						<div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
-							<!-- 
+            <div
+              class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
+            >
+              <!-- 
 								UserDashboard Component (Statistics Mode):
 								- user={$loggedInUser}: Passes the logged-in user data
 								- showOnlyStatistics={true}: Flag to render only the detailed statistics view
 								- This will show accordion sections for Patents, Designs, and Trademarks
 								- Each accordion contains application types and status breakdowns
 							-->
-							<UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
-						</div>
-					</div>
-				{/if}
-			</div>
-		</div>
-	</div>
-	{:else}
-		<!-- FALLBACK WHEN CONDITIONS NOT MET - COMMENTED OUT FOR CLEAN VIEW
+              <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
+            </div>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{:else}
+  <!-- FALLBACK WHEN CONDITIONS NOT MET - COMMENTED OUT FOR CLEAN VIEW
 		<div class="p-4 bg-red-100 border border-red-300 rounded">
 			<h3 class="text-lg font-semibold text-red-800">Dashboard Not Showing</h3>
 			<p class="text-red-600">Conditions not met:</p>
@@ -1764,322 +1909,369 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
 			</ul>
 		</div>
 		-->
-	{/if}
+{/if}
 
-	{#if canCreateApplication()}
-	<!-- COMMENTED OUT - ORIGINAL 17 ACTION CARDS GRID (TO BE REORGANIZED BY IP TYPE) -->
-	{#if false}
-	<div
-		class="overflow-y-auto sm:space-y-10 space-y-3 bg-accent {canCreateApplication()
-			? ''
-			: 'hidden'}"
-	>
-		<div
-			class="border rounded-md justify-between p-3 grid xl:grid-cols-5 lg:grid-cols-5 md:grid-cols-2 grid-cols-1 gap-3"
-		>
-			<button
-				on:click={() => (showNewApplication = true)}
-				class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[120px] space-y-2"
-			>
-				<Icon icon="mdi:file" width="2em" height="2em" class="text-green-800" />
-				<div class="space-y-1">
-					<Card.Title class="text-sm font-semibold">PRE-REGISTRATION</Card.Title>
-					<Card.Description class="text-xs">File new applications</Card.Description>
-				</div>
-			</button>
-
-      <button
-        on:click={() => goto("/home/clerical-update")}
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[120px] space-y-2"
+{#if canCreateApplication()}
+  <!-- COMMENTED OUT - ORIGINAL 17 ACTION CARDS GRID (TO BE REORGANIZED BY IP TYPE) -->
+  {#if false}
+    <div
+      class="overflow-y-auto sm:space-y-10 space-y-3 bg-accent {canCreateApplication()
+        ? ''
+        : 'hidden'}"
+    >
+      <div
+        class="border rounded-md justify-between p-3 grid xl:grid-cols-5 lg:grid-cols-5 md:grid-cols-2 grid-cols-1 gap-3"
       >
-        <Icon
-          icon="mdi:file-edit-outline"
-          width="2em"
-          height="2em"
-          class="text-green-800"
+        <button
+          on:click={() => (showNewApplication = true)}
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[120px] space-y-2"
+        >
+          <Icon
+            icon="mdi:file"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >PRE-REGISTRATION</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >File new applications</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          on:click={() => goto("/home/clerical-update")}
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[120px] space-y-2"
+        >
+          <Icon
+            icon="mdi:file-edit-outline"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >CLERICAL UPDATE</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >Edit/Update existing application</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/home/trademarkpubs")}
+        >
+          <Icon
+            icon="mdi:file"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >TRADEMARK JOURNAL</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >View trademarks in publication</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/statussearch")}
+        >
+          <Icon
+            icon="mdi:magnify"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold">STATUS SEARCH</Card.Title>
+            <Card.Description class="text-xs"
+              >Search file status</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={toggleModal}
+        >
+          <Icon
+            icon="mdi:file-search-outline"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >AVAILABILITY SEARCH</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >Search file availability</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/home/postregistration")}
+        >
+          <Icon
+            icon="mdi:file"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >POST-REGISTRATION</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >File Recordal Applications</Card.Description
+            >
+          </div>
+        </button>
+
+        <!-- Pay for Certificate Button -->
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => (showPayCertModal = true)}
+        >
+          <Icon
+            icon="mdi:cash-fast"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >PAY FOR CERTIFICATE</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >Pay for Certificate</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => (showVerifyPaymentDialog = true)}
+        >
+          <Icon
+            icon="mdi:cash-sync"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold">VERIFY PAYMENT</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >Verify Payments using RRR</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => (showChangeOfAgentDialog = true)}
+        >
+          <Icon
+            icon="mdi:account-switch"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >CHANGE OF AGENT</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >Request change of agent</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => (showGetDocumentsDialog = true)}
+        >
+          <Icon
+            icon="mdi:printer-outline"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >PRINT DOCUMENTS</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >Print application documents</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          on:click={() => goto("/home/update-files")}
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[120px] space-y-2"
+        >
+          <Icon
+            icon="mdi:update"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold">UPDATE FILE</Card.Title>
+            <Card.Description class="text-xs"
+              >Edit/Update files with status "Awaiting Search"</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/home/editpatentfiles")}
+        >
+          <Icon
+            icon="mdi:update"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >UPDATE PATENT FILES</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >File updates for all files filed before 25th August, 2025</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => (showFileAppealsDialog = true)}
+        >
+          <Icon
+            icon="mdi:file-document-refresh"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold">APPEAL</Card.Title>
+            <Card.Description class="text-xs">File Appeals</Card.Description>
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/home/editattachments")}
+        >
+          <Icon
+            icon="mdi:update"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >UPDATE FILE ATTACHMENTS</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >Make attachment updates for Patent & Design files</Card.Description
+            >
+          </div>
+        </button>
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/home/claim-files")}
+        >
+          <Icon
+            icon="mdi:file-download"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold">CLAIM FILES</Card.Title>
+            <Card.Description class="text-xs"
+              >Claim files from previous system</Card.Description
+            >
+          </div>
+        </button>
+
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/home/publications/publicationstatusupdate")}
+        >
+          <Icon
+            icon="mdi:newspaper-variant-outline"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >PUBLICATION STATUS UPDATE</Card.Title
+            >
+            <Card.Description class="text-xs"
+              >File for publication status updates for Trademark files in
+              Publication</Card.Description
+            >
+          </div>
+        </button>
+        <button
+          class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
+          on:click={() => goto("/home/file-withdrawal")}
+        >
+          <Icon
+            icon="mdi:file-remove-outline"
+            width="2em"
+            height="2em"
+            class="text-green-800"
+          />
+          <div class="space-y-1">
+            <Card.Title class="text-sm font-semibold"
+              >FILE WITHDRAWAL</Card.Title
+            >
+            <Card.Description class="text-xs">
+              Withdrawal process for all file types
+            </Card.Description>
+          </div>
+        </button>
+        <AvailabilitySearchModal
+          isOpen={isModalOpen}
+          on:close={() => (isModalOpen = false)}
         />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">CLERICAL UPDATE</Card.Title>
-          <Card.Description class="text-xs"
-            >Edit/Update existing application</Card.Description
-          >
-        </div>
-      </button>
+      </div>
+    </div>
+  {/if}
+  <!-- END COMMENTED OUT ACTION CARDS -->
+{/if}
 
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => goto("/home/trademarkpubs")}
-      >
-        <Icon icon="mdi:file" width="2em" height="2em" class="text-green-800" />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold"
-            >TRADEMARK JOURNAL</Card.Title
-          >
-          <Card.Description class="text-xs"
-            >View trademarks in publication</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => goto("/statussearch")}
-      >
-        <Icon
-          icon="mdi:magnify"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">STATUS SEARCH</Card.Title>
-          <Card.Description class="text-xs">Search file status</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={toggleModal}
-      >
-        <Icon
-          icon="mdi:file-search-outline"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold"
-            >AVAILABILITY SEARCH</Card.Title
-          >
-          <Card.Description class="text-xs"
-            >Search file availability</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => goto("/home/postregistration")}
-      >
-        <Icon icon="mdi:file" width="2em" height="2em" class="text-green-800" />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold"
-            >POST-REGISTRATION</Card.Title
-          >
-          <Card.Description class="text-xs"
-            >File Recordal Applications</Card.Description
-          >
-        </div>
-      </button>
-
-      <!-- Pay for Certificate Button -->
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => (showPayCertModal = true)}
-      >
-        <Icon
-          icon="mdi:cash-fast"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold"
-            >PAY FOR CERTIFICATE</Card.Title
-          >
-          <Card.Description class="text-xs"
-            >Pay for Certificate</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => (showVerifyPaymentDialog = true)}
-      >
-        <Icon
-          icon="mdi:cash-sync"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">VERIFY PAYMENT</Card.Title>
-          <Card.Description class="text-xs"
-            >Verify Payments using RRR</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => (showChangeOfAgentDialog = true)}
-      >
-        <Icon
-          icon="mdi:account-switch"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">CHANGE OF AGENT</Card.Title>
-          <Card.Description class="text-xs"
-            >Request change of agent</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => (showGetDocumentsDialog = true)}
-      >
-        <Icon
-          icon="mdi:printer-outline"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">PRINT DOCUMENTS</Card.Title>
-          <Card.Description class="text-xs"
-            >Print application documents</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        on:click={() => goto("/home/update-files")}
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[120px] space-y-2"
-      >
-        <Icon
-          icon="mdi:update"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">UPDATE FILE</Card.Title>
-          <Card.Description class="text-xs"
-            >Edit/Update files with status "Awaiting Search"</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => goto("/home/editpatentfiles")}
-      >
-        <Icon
-          icon="mdi:update"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold"
-            >UPDATE PATENT FILES</Card.Title
-          >
-          <Card.Description class="text-xs"
-            >File updates for all files filed before 25th August, 2025</Card.Description
-          >
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => (showFileAppealsDialog = true)}
-      >
-        <Icon
-          icon="mdi:file-document-refresh"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">APPEAL</Card.Title>
-          <Card.Description class="text-xs">File Appeals</Card.Description>
-        </div>
-      </button>
-
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => goto("/home/editattachments")}
-      >
-        <Icon
-          icon="mdi:update"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold"
-            >UPDATE FILE ATTACHMENTS</Card.Title
-          >
-          <Card.Description class="text-xs"
-            >Make attachment updates for Patent & Design files</Card.Description
-          >
-        </div>
-      </button>
-      <button
-        class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-        on:click={() => goto("/home/claim-files")}
-      >
-        <Icon
-          icon="mdi:file-download"
-          width="2em"
-          height="2em"
-          class="text-green-800"
-        />
-        <div class="space-y-1">
-          <Card.Title class="text-sm font-semibold">CLAIM FILES</Card.Title>
-          <Card.Description class="text-xs"
-            >Claim files from previous system</Card.Description
-          >
-        </div>
-      </button>
-
-			 <button
-				class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-				on:click={() => goto('/home/publications/publicationstatusupdate')}
-			>
-				 <Icon icon="mdi:newspaper-variant-outline" width="2em" height="2em" class="text-green-800" />
-				<div class="space-y-1">
-					<Card.Title class="text-sm font-semibold">PUBLICATION STATUS UPDATE</Card.Title>
-					<Card.Description class="text-xs">File for publication status updates for Trademark files in Publication</Card.Description>
-				</div>
-			</button>
-			<button
-				class="flex flex-col items-center justify-center text-center bg-white p-3 border rounded-md hover:cursor-pointer hover:bg-accent transition-colors min-h-[120px] space-y-2"
-				on:click={() => goto('/home/file-withdrawal')}
-			>
-				<Icon icon="mdi:file-remove-outline" width="2em" height="2em" class="text-green-800" />
-				<div class="space-y-1">
-					<Card.Title class="text-sm font-semibold">FILE WITHDRAWAL</Card.Title>
-					<Card.Description class="text-xs">
-						Withdrawal process for all file types
-					</Card.Description>
-				</div>
-			</button>
-			<AvailabilitySearchModal isOpen={isModalOpen} on:close={() => (isModalOpen = false)} />
-		</div>
-	</div>
-	{/if}
-	<!-- END COMMENTED OUT ACTION CARDS -->
-	{/if}
-
-	<!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->
-	{#if currentView === 'trademark' || currentView === 'patent' || currentView === 'design'}
-		<div class="h-full">
-			{#if currentView === 'trademark'}
-				<IPServiceView ipType="trademark" onBack={goBackToMain} />
-			{:else if currentView === 'patent'}
-				<IPServiceView ipType="patent" onBack={goBackToMain} />
-			{:else if currentView === 'design'}
-				<IPServiceView ipType="design" onBack={goBackToMain} />
-			{/if}
-		</div>
-	{/if}
+<!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->
+{#if currentView === "trademark" || currentView === "patent" || currentView === "design"}
+  <div class="h-full">
+    {#if currentView === "trademark"}
+      <IPServiceView ipType="trademark" onBack={goBackToMain} />
+    {:else if currentView === "patent"}
+      <IPServiceView ipType="patent" onBack={goBackToMain} />
+    {:else if currentView === "design"}
+      <IPServiceView ipType="design" onBack={goBackToMain} />
+    {/if}
+  </div>
+{/if}
 
 <!-- 
 	STAFF DASHBOARD RENDERING SECTION
@@ -2089,15 +2281,29 @@ Thank you for choosing Einao Solutions as your trusted IP technology support par
 	- UserDashboard: Already rendered above for regular users, agents, tech, and superadmin
 -->
 {#if !isLoading && isStaff}
-	<div class="rounded-md p-2 mt-4 bg-accent">
-		<!-- 
+  <div class="rounded-md p-2 mt-4 bg-accent">
+    <!-- 
 			Render StaffDashboard for staff roles:
 			- Will show role-specific sections based on user's actual roles
 			- Uses isPatentRelated(), isDesignRelated(), isTradeMarkRelated() functions
 			- Provides specialized workflow for IP officers
 		-->
-		<svelte:component this={typecomponent} {...data} />
-	</div>
+    <svelte:component this={typecomponent} {...data} />
+  </div>
 {:else if !isLoading && isStaff}
-	<p>Loading staff dashboard...</p>
+  <p>Loading staff dashboard...</p>
 {/if}
+
+<style>
+  @keyframes marquee {
+    0% {
+      left: 100%;
+    }
+    100% {
+      left: -100%;
+    }
+  }
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+  }
+</style>

@@ -1,5 +1,5 @@
 import { countriesMap } from "$lib/constants";
-import type { Types } from "$lib/designutils";
+import type { DesignTypes } from "$lib/designutils";
 import * as valid from "validator";
 import { isValidPhoneNumber } from "libphonenumber-js";
 import { loggedInUser } from "$lib/store";
@@ -281,7 +281,7 @@ export enum FormApplicationTypes {
   WithdrawalRequest = 15,
   NewOpposition = 16,
   Amendment = 17,
-  Certification = 18
+  Certification = 18,
 }
 
 export enum ApplicationLetters {
