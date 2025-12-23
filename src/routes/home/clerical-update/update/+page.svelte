@@ -535,7 +535,19 @@
       }
 
       localStorage.setItem("formData", JSON.stringify(formObj));
-
+      const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+        method: "POST",
+        body: JSON.stringify(formObj),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!result.ok) {
+        const error = await result.json();
+        toast.error(`Error submitting clerical update: ${error.message}`);
+        // isStatusUpdating = false;
+        return;
+      }
       await handlePayment();
     } catch (err) {
       error = "Form submission failed.";
