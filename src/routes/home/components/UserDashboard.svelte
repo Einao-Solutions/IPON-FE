@@ -239,6 +239,7 @@
 	}
 </script>
 
+<div class="dashboard-content">
 {#if isLoading}
 	<Icon
 		class="flex items-center justify-center w-full"
@@ -250,7 +251,15 @@
 	{#if !showOnlyStatistics}
 	<div class="space-y-3">
 		<!-- Trademark Total -->
-		<a href={getFileUrl("fileType=2&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+		<a href={getFileUrl("fileType=2&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-red-50 via-white to-green-50 border border-red-200/40 rounded-xl hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-red-300/60 christmas-card relative overflow-hidden">
+			<!-- Christmas Hat -->
+			<div class="absolute top-2 right-2">
+				<svg width="20" height="20" viewBox="0 0 100 100" class="opacity-70">
+					<path d="M20 60 Q50 40 80 60 L75 75 Q50 65 25 75 Z" fill="#dc2626" stroke="#b91c1c" stroke-width="2"/>
+					<ellipse cx="50" cy="60" rx="30" ry="8" fill="#ffffff"/>
+					<circle cx="75" cy="35" r="12" fill="#ffffff"/>
+				</svg>
+			</div>
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
 					<Icon icon="mdi:scale-balance" class="text-lg text-green-600 group-hover:text-green-700" />
@@ -261,15 +270,25 @@
 				</div>
 			</div>
 			<div class="text-right">
-				<p class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
+				<p class="text-2xl font-bold text-slate-800 group-hover:text-red-700 transition-colors duration-300">{getTotal(FileTypes.Trademark).toLocaleString()}</p>
 				<div class="flex items-center justify-end mt-1">
-					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-green-500 text-sm transition-colors duration-300" />
+					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-red-500 text-sm transition-colors duration-300" />
 				</div>
 			</div>
 		</a>
 
 		<!-- Patent Total -->
-		<a href={getFileUrl("fileType=0&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+		<a href={getFileUrl("fileType=0&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 via-white to-red-50 border border-green-200/40 rounded-xl hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60 christmas-card relative overflow-hidden">
+			<!-- Christmas Wreath -->
+			<div class="absolute top-2 right-2">
+				<svg width="20" height="20" viewBox="0 0 100 100" class="opacity-70">
+					<circle cx="50" cy="50" r="35" fill="none" stroke="#16a34a" stroke-width="8"/>
+					<circle cx="30" cy="30" r="3" fill="#dc2626"/>
+					<circle cx="70" cy="35" r="3" fill="#dc2626"/>
+					<circle cx="65" cy="70" r="3" fill="#dc2626"/>
+					<path d="M45 20 L50 10 L55 20" fill="#dc2626"/>
+				</svg>
+			</div>
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
 					<Icon icon="mdi:lightbulb-outline" class="text-lg text-green-600 group-hover:text-green-700" />
@@ -288,7 +307,17 @@
 		</a>
 
 		<!-- Design Total -->
-		<a href={getFileUrl("fileType=1&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-white via-slate-50/50 to-white border border-slate-200/60 rounded-xl hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+		<a href={getFileUrl("fileType=1&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-red-50 via-green-50 to-white border border-red-200/40 rounded-xl hover:shadow-lg hover:shadow-red-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-red-300/60 christmas-card relative overflow-hidden">
+			<!-- Christmas Tree -->
+			<div class="absolute top-2 right-2">
+				<svg width="20" height="20" viewBox="0 0 100 100" class="opacity-70">
+					<polygon points="50,10 35,40 65,40" fill="#16a34a"/>
+					<polygon points="50,25 30,55 70,55" fill="#16a34a"/>
+					<polygon points="50,40 25,70 75,70" fill="#16a34a"/>
+					<rect x="45" y="70" width="10" height="15" fill="#8b5cf6"/>
+					<circle cx="50" cy="8" r="3" fill="#fbbf24"/>
+				</svg>
+			</div>
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
 					<Icon icon="mdi:palette-outline" class="text-lg text-green-600 group-hover:text-green-700" />
@@ -299,9 +328,9 @@
 				</div>
 			</div>
 			<div class="text-right">
-				<p class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300">{getTotal(FileTypes.Design).toLocaleString()}</p>
+				<p class="text-2xl font-bold text-slate-800 group-hover:text-red-700 transition-colors duration-300">{getTotal(FileTypes.Design).toLocaleString()}</p>
 				<div class="flex items-center justify-end mt-1">
-					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-green-500 text-sm transition-colors duration-300" />
+					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-red-500 text-sm transition-colors duration-300" />
 				</div>
 			</div>
 		</a>
@@ -679,8 +708,74 @@
 	<!-- End of detailed statistics view -->
 	{/if}
 {/if}
+</div>
 
 <style>
+	/* Dashboard wrapper */
+	.dashboard-content {
+		position: relative;
+	}
+	
+	/* Christmas Cards */
+	.christmas-card {
+		position: relative;
+		overflow: hidden;
+	}
+	
+	.christmas-card::before {
+		content: '';
+		position: absolute;
+		top: -2px;
+		left: -2px;
+		right: -2px;
+		bottom: -2px;
+		background: linear-gradient(45deg, #dc2626, #16a34a, #dc2626, #16a34a);
+		background-size: 400% 400%;
+		border-radius: 14px;
+		z-index: -1;
+		animation: christmas-border 3s ease-in-out infinite;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+	
+	.christmas-card:hover::before {
+		opacity: 0.3;
+	}
+	
+	.christmas-card::after {
+		content: '❄️';
+		position: absolute;
+		top: 10px;
+		right: 15px;
+		font-size: 0.8rem;
+		opacity: 0;
+		animation: snowflake-float 2s ease-in-out infinite;
+		transition: opacity 0.3s ease;
+	}
+	
+	.christmas-card:hover::after {
+		opacity: 1;
+	}
+	
+	@keyframes christmas-border {
+		0%, 100% { background-position: 0% 50%; }
+		50% { background-position: 100% 50%; }
+	}
+	
+	@keyframes snowflake-float {
+		0%, 100% { transform: translateY(0px) rotate(0deg); }
+		50% { transform: translateY(-5px) rotate(10deg); }
+	}
+	
+	/* Christmas card decorations */
+	.christmas-card svg {
+		transition: transform 0.3s ease;
+	}
+	
+	.christmas-card:hover svg {
+		transform: scale(1.1);
+	}
+	
 	/* Allow underlines for elements with underline class */
 	:global(button[data-accordion-trigger]) {
 		text-decoration: none !important;
