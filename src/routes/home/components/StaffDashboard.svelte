@@ -289,43 +289,89 @@ return show;
 				height="1.6rem"
 	/>
 {:else}
-	<!-- Unified Header -->
-	<div class="bg-green-50 rounded-xl p-5 mb-8 border border-green-100 shadow-md hover:shadow-lg transition-shadow duration-200 sticky top-0 z-10">
-		<div class="flex items-center justify-between space-x-6">
-			<!-- Left Logo -->
-			<div class="flex-shrink-0">
-				<img src="{ministry}" alt="Ministry Logo" class="h-16 w-16 md:h-20 md:w-20 object-contain opacity-90" />
+	<!-- Unified Header with Christmas Theme -->
+	<div class="relative">
+		<!-- Floating Snowflakes -->
+		<div class="absolute inset-0 pointer-events-none overflow-hidden rounded-xl">
+			<div class="snowflake absolute text-white opacity-70" style="left: 10%; animation-duration: 3s; animation-delay: 0s;">❄</div>
+			<div class="snowflake absolute text-white opacity-50" style="left: 20%; animation-duration: 4s; animation-delay: 1s;">❅</div>
+			<div class="snowflake absolute text-white opacity-60" style="left: 30%; animation-duration: 5s; animation-delay: 2s;">❄</div>
+			<div class="snowflake absolute text-white opacity-40" style="left: 70%; animation-duration: 3.5s; animation-delay: 1.5s;">❅</div>
+			<div class="snowflake absolute text-white opacity-50" style="left: 80%; animation-duration: 4.5s; animation-delay: 0.5s;">❄</div>
+			<div class="snowflake absolute text-white opacity-30" style="left: 90%; animation-duration: 6s; animation-delay: 3s;">❅</div>
+		</div>
+
+		<!-- Santa Cap hanging from top -->
+		<div class="absolute -top-6 -left-6 z-20">
+			<img src="/src/lib/assets/santacap.png" alt="Santa Cap" class="w-15 h-12 filter drop-shadow-lg opacity-90 hover:scale-110 transition-transform duration-300" />
+		</div>
+
+		<!-- Christmas decorative border lights -->
+		<div class="absolute top-0 left-0 right-0 h-1 rounded-t-xl">
+			<div class="flex justify-around h-full">
+				<div class="w-1 h-1 bg-red-400 rounded-full animate-pulse"></div>
+				<div class="w-1 h-1 bg-yellow-400 rounded-full animate-pulse" style="animation-delay: 0.3s"></div>
+				<div class="w-1 h-1 bg-green-400 rounded-full animate-pulse" style="animation-delay: 0.6s"></div>
+				<div class="w-1 h-1 bg-blue-400 rounded-full animate-pulse" style="animation-delay: 0.9s"></div>
+				<div class="w-1 h-1 bg-red-400 rounded-full animate-pulse" style="animation-delay: 1.2s"></div>
+				<div class="w-1 h-1 bg-yellow-400 rounded-full animate-pulse" style="animation-delay: 1.5s"></div>
 			</div>
-			
-			<!-- Center Content -->
-			<div class="text-center flex-1">
-				<h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-1 leading-tight">
-					Intellectual Property Office Nigeria
-				</h1>
-				<p class="text-green-600 font-semibold text-xs md:text-sm tracking-wide mb-2">
-					Commercial Law Department
-				</p>
-				<h2 class="text-lg md:text-xl font-bold text-gray-700">{getRoleInfo().title}</h2>
-				<p class="text-green-600 text-xs md:text-sm">
-					Manage {getRoleInfo().title} Applications
-				</p>
-			</div>
-			
-			<!-- Right Logo (Officer's IP Type) -->
-			<div class="flex-shrink-0">
-			{#if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Trademark}
-				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-sm">
-					<Icon icon="mdi:scale-balance" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+		</div>
+
+		<div class="bg-gradient-to-br from-red-50 via-white to-green-50 rounded-xl p-5 mb-8 border border-red-200/40 shadow-xl hover:shadow-2xl transition-all duration-300 sticky top-0 z-10 christmas-header">
+			<div class="flex items-center justify-between space-x-6 relative z-10">
+				<!-- Left Logo with Christmas decoration -->
+				<div class="flex-shrink-0 relative">
+					<div class="absolute -top-1 -right-1">
+						<svg width="16" height="16" viewBox="0 0 100 100" class="opacity-80">
+							<path d="M20 30 Q30 20 40 30 Q50 40 60 30 Q70 20 80 30 Q70 40 60 50 Q50 60 40 50 Q30 40 20 30" fill="#16a34a"/>
+							<circle cx="35" cy="35" r="2" fill="#dc2626"/>
+							<circle cx="65" cy="45" r="2" fill="#dc2626"/>
+						</svg>
+					</div>
+					<img src="{ministry}" alt="Ministry Logo" class="h-16 w-16 md:h-20 md:w-20 object-contain opacity-90 hover:scale-105 transition-transform duration-300" />
 				</div>
-			{:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Patent}
-				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-sm">
-					<Icon icon="mdi:lightbulb-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+				
+				<!-- Center Content with festive styling -->
+				<div class="text-center flex-1">
+					<h1 class="text-xl md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-red-700 via-green-600 to-red-700 bg-clip-text text-transparent mb-1 leading-tight">
+						Intellectual Property Office Nigeria
+					</h1>
+					<p class="text-green-600 font-semibold text-xs md:text-sm tracking-wide mb-2 relative">
+						Commercial Law Department
+						<!-- Small Christmas tree decoration -->
+						<span class="absolute -right-4 top-0 text-green-600 opacity-70">🎄</span>
+					</p>
+					<h2 class="text-lg md:text-xl font-bold text-gray-700">{getRoleInfo().title}</h2>
+					<p class="text-green-600 text-xs md:text-sm">
+						Manage {getRoleInfo().title} Applications
+					</p>
 				</div>
-			{:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Design}
-				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-sm">
-					<Icon icon="mdi:palette-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+				
+				<!-- Right Logo (Officer's IP Type) with Christmas decoration -->
+				<div class="flex-shrink-0 relative">
+					<div class="absolute -top-1 -left-1">
+						<svg width="16" height="16" viewBox="0 0 100 100" class="opacity-70">
+							<polygon points="50,10 35,35 65,35" fill="#16a34a"/>
+							<polygon points="50,25 30,50 70,50" fill="#16a34a"/>
+							<rect x="45" y="50" width="10" height="12" fill="#8b4513"/>
+							<circle cx="50" cy="8" r="3" fill="#fbbf24"/>
+						</svg>
+					</div>
+				{#if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Trademark}
+					<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-red-100 via-white to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-red-200/30 hover:scale-105">
+						<Icon icon="mdi:scale-balance" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+					</div>
+				{:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Patent}
+					<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-red-100 via-white to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-red-200/30 hover:scale-105">
+						<Icon icon="mdi:lightbulb-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+					</div>
+				{:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Design}
+					<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-red-100 via-white to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-red-200/30 hover:scale-105">
+						<Icon icon="mdi:palette-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+					</div>
+					{/if}
 				</div>
-				{/if}
 			</div>
 		</div>
 	</div>
@@ -521,6 +567,39 @@ return show;
 {/if}
 
 <style>
+	/* Christmas Snowflake Animation */
+	.snowflake {
+		animation: fall linear infinite;
+		user-select: none;
+		pointer-events: none;
+		font-size: 14px;
+	}
+
+	@keyframes fall {
+		0% {
+			transform: translateY(-100vh) rotate(0deg);
+			opacity: 1;
+		}
+		100% {
+			transform: translateY(100vh) rotate(360deg);
+			opacity: 0;
+		}
+	}
+
+	/* Christmas Header Subtle Animation */
+	.christmas-header {
+		animation: festive-glow 4s ease-in-out infinite alternate;
+	}
+
+	@keyframes festive-glow {
+		0% {
+			filter: brightness(1);
+		}
+		100% {
+			filter: brightness(1.05);
+		}
+	}
+
 	/* Allow underlines for elements with underline class */
 	:global(button[data-accordion-trigger]) {
 		text-decoration: none !important;
