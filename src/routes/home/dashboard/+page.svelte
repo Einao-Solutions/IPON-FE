@@ -92,6 +92,11 @@
   }
 
   let isStaff: boolean = false;
+  
+  // Christmas greeting modal state
+  let showChristmasGreeting = false;
+  let showConfetti = false;
+  
   function canCreateApplication() {
     return (
       $loggedInUser?.userRoles.includes(UserRoles.User) ||
@@ -154,6 +159,18 @@
     };
 
     isLoading = false;
+    
+    // Show Christmas greeting after login with auto-dismiss
+    setTimeout(() => {
+      showConfetti = true;
+      showChristmasGreeting = true;
+      
+      // Auto-dismiss after 15 seconds
+      setTimeout(() => {
+        showChristmasGreeting = false;
+        showConfetti = false;
+      }, 15000);
+    }, 1000);
   });
   let isLoading: boolean = true;
   let updateData = {};
@@ -612,6 +629,85 @@
 {#if showOwnership && ownershipForm}
   <svelte:component this={ownershipForm} {...ownershipData} />
 {/if}
+
+<!-- Christmas Confetti Effect -->
+{#if showConfetti}
+  <div class="fixed inset-0 pointer-events-none z-[9998] overflow-hidden">
+    {#each Array(50) as _, i}
+      <div 
+        class="confetti absolute" 
+        style="left: {Math.random() * 100}%; 
+               animation-delay: {Math.random() * 3}s;
+               background-color: {['#dc2626', '#16a34a', '#eab308', '#3b82f6', '#f59e0b'][Math.floor(Math.random() * 5)]}"
+      ></div>
+    {/each}
+  </div>
+{/if}
+
+<!-- Christmas Greeting Modal -->
+<Dialog.Root bind:open={showChristmasGreeting}>
+  <Dialog.Content class="max-w-[600px] bg-gradient-to-br from-red-50 via-white to-green-50 border-2 border-red-200/50 shadow-2xl">
+    <div class="text-center p-6">
+      <!-- Christmas decorative header -->
+      <div class="flex justify-center mb-4">
+        <div class="relative">
+          <div class="text-6xl animate-bounce">🎄</div>
+          <div class="absolute -top-2 -right-2 text-2xl animate-spin">⭐</div>
+        </div>
+      </div>
+
+      <!-- Christmas message -->
+      <div class="space-y-4">
+        <h2 class="text-2xl font-bold bg-gradient-to-r from-red-600 via-green-600 to-red-600 bg-clip-text text-transparent">
+          🎅 Season's Greetings! 🎄
+        </h2>
+        
+        <div class="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-green-200/50 shadow-lg">
+          <p class="text-gray-800 leading-relaxed mb-4 text-sm md:text-base">
+            <strong>Dear Esteemed Customer,</strong>
+          </p>
+          
+          <p class="text-gray-700 leading-relaxed mb-4 text-sm md:text-base">
+            Season's greetings and best wishes for a joyful Christmas and a prosperous New Year. 
+            Thank you for your continued trust.
+          </p>
+          
+          <p class="text-gray-700 leading-relaxed text-sm md:text-base">
+            Thank you for choosing the Commercial Law Department, Federal Ministry of Industry, 
+            Trade and Investment, proudly supported by <strong class="text-green-600">Einao Solutions</strong>, 
+            your trusted IP technology support partner.
+          </p>
+        </div>
+
+        <!-- Christmas decorations -->
+        <div class="flex justify-center space-x-4 text-2xl">
+          <span class="animate-pulse">🎁</span>
+          <span class="animate-bounce">🔔</span>
+          <span class="animate-pulse">🎅</span>
+          <span class="animate-bounce">❄️</span>
+          <span class="animate-pulse">🤶</span>
+        </div>
+      </div>
+
+      <!-- Close button -->
+      <div class="mt-6">
+        <Button 
+          on:click={() => {
+            showChristmasGreeting = false;
+            showConfetti = false;
+          }}
+          class="bg-gradient-to-r from-red-600 to-green-600 hover:from-red-700 hover:to-green-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+        >
+          <span class="flex items-center space-x-2">
+            <span>🎄</span>
+            <span>Thank you!</span>
+            <span>🎄</span>
+          </span>
+        </Button>
+      </div>
+    </div>
+  </Dialog.Content>
+</Dialog.Root>
 
 <!-- Pre-Registration Dialog -->
 <Dialog.Root
@@ -2426,5 +2522,34 @@
   @keyframes christmas-lights {
     0% { background-position: 0% 50%; }
     100% { background-position: 200% 50%; }
+  }
+  
+  /* Christmas confetti animation */
+  .confetti {
+    width: 10px;
+    height: 10px;
+    position: absolute;
+    animation: confetti-fall 3s linear infinite;
+    transform-origin: center;
+  }
+  
+  .confetti:before {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: inherit;
+    transform: rotate(45deg);
+  }
+  
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(-100vh) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
   }
 </style>
