@@ -363,6 +363,26 @@
 			isLoading = false;
 		}
 
+		if (type === 'patentassignment') {
+			title = 'Patent Assignment Application';
+
+			const appData = sessionStorage.getItem('searchParams');
+			const parsed = appData ? JSON.parse(appData) : null;
+			const fileData = sessionStorage.getItem('searchResults');
+			const parsedData = fileData ? JSON.parse(fileData) : null;
+			fileApplicant = userName;
+			fileNumber = parsed.query;
+			cost = $page.url.searchParams.get('amount') ?? undefined;
+			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
+			if (cost == undefined || paymentId == undefined) {
+				await goto(`/home/dashboard`);
+				return;
+			}
+			await setHash();
+			responseurl = `https://${currentBaseurl}/home/postregistration/patentassignment/result?rrr=${paymentId}&paymentType=${type}&fileId=${fileNumber}&amount=${cost}&applicantName=${userName}`;
+			isLoading = false;
+		}
+
 		if (type === 'opposition') {
 			const data = localStorage.getItem('oppositionData');
 			const opp = data ? JSON.parse(data) : null;

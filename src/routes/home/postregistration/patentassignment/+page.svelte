@@ -251,7 +251,7 @@
 						</div>
 						<div>
 							<label for="applicantName" class="block text-sm font-medium text-gray-700 mb-1">
-								Current Applicant:
+								Applicant Name:
 							</label>
 							<input
 								id="applicantName"
