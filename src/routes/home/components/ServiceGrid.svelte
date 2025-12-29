@@ -66,6 +66,22 @@
         }
       });
       window.dispatchEvent(event);
+    } else if (ipType === 'patent' && [
+      'patent-amendment',
+      'patent-assignment', 
+      'patent-ctc',
+      'patent-license',
+      'patent-mortgage'
+    ].includes(service.id)) {
+      // NEW STREAMLINED FLOW - Handle context-aware patent post-registration services
+      const event = new CustomEvent('openStreamlinedPostRegModal', {
+        detail: {
+          serviceId: service.id,
+          serviceName: service.name,
+          ipType: ipType
+        }
+      });
+      window.dispatchEvent(event);
     } else {
       // OLD IMPLEMENTATION (commented for future deletion)
       // const route = resolveServiceRoute(service, ipType);
@@ -105,7 +121,13 @@
       'update-publication-status': 'mdi:newspaper-variant-outline',
       'withdrawal': 'mdi:close-circle-outline',
       'claim-files': 'mdi:file-document-multiple',
-      'appeal': 'mdi:information-outline'
+      'appeal': 'mdi:information-outline',
+      // Patent post-registration services
+      'patent-amendment': 'mdi:file-edit-outline',
+      'patent-assignment': 'mdi:account-switch-outline',
+      'patent-ctc': 'mdi:certificate-outline',
+      'patent-license': 'mdi:handshake-outline',
+      'patent-mortgage': 'mdi:bank-outline'
     };
     return iconMap[service.id] || service.icon;
   }

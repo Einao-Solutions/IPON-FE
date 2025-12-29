@@ -31,7 +31,13 @@
 		const routeMap: Record<string, string> = {
 			'assignment': `/home/postregistration/assignment?fileId=${fileId}&fileType=${fileType}`,
 			'merger': `/home/postregistration/merger?fileId=${fileId}&fileType=${fileType}`, 
-			'registered-user': `/home/postregistration/registeredusers?fileId=${fileId}&fileType=${fileType}`
+			'registered-user': `/home/postregistration/registeredusers?fileId=${fileId}&fileType=${fileType}`,
+			// Patent post-registration services
+			'patent-amendment': `/home/postregistration/patentamendment?fileId=${fileId}&fileType=${fileType}`,
+			'patent-assignment': `/home/postregistration/patentassignment?fileId=${fileId}&fileType=${fileType}`,
+			'patent-ctc': `/home/postregistration/patentctc?fileId=${fileId}&fileType=${fileType}`,
+			'patent-license': `/home/postregistration/patentlicense?fileId=${fileId}&fileType=${fileType}`,
+			'patent-mortgage': `/home/postregistration/patentmortgage?fileId=${fileId}&fileType=${fileType}`
 		};
 		return routeMap[serviceId] || '';
 	}
@@ -40,6 +46,15 @@
 	function closeModal(): void {
 		onClose();
 		isOpen = false;
+	}
+
+	// Function to get readable status name from ApplicationStatuses enum
+	function getStatusName(statusValue: number): string {
+		// Find the key name for the given status value
+		const statusKey = Object.keys(ApplicationStatuses).find(key => 
+			ApplicationStatuses[key as keyof typeof ApplicationStatuses] === statusValue
+		);
+		return statusKey || 'Unknown';
 	}
 
 	// Handle search submission - following same pattern as existing implementation
@@ -122,6 +137,27 @@
 				}
 			}
 
+			// Check file status for patent post-registration services
+			if (['patent-amendment', 'patent-assignment', 'patent-ctc', 'patent-license', 'patent-mortgage'].includes(serviceId)) {
+				// Get file details to check status
+				const fileRes = await fetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`);
+				const fileData = await fileRes.json();
+				
+				if (!fileRes.ok || !fileData || fileData.length === 0) {
+					error = 'Unable to verify file status. Please try again.';
+					return;
+				}
+				
+				const file = fileData[0];
+				const fileStatus = file?.fileStatus;
+				
+				// Patent post-registration services only allowed for Active files
+				if (fileStatus !== ApplicationStatuses.Active) {
+					error = `${serviceName} is only available for Active patent files. Current file status: ${getStatusName(file?.fileStatus)}`;
+					return;
+				}
+			}
+
 			// Route to appropriate destination based on service type
 			const changeType = getChangeType(serviceId);
 			const fileTypeNum = ipType === 'trademark' ? '2' : ipType === 'patent' ? '0' : '1';
@@ -137,6 +173,14 @@
 				// For renewal, get file details and route directly to payment
 				if (serviceId === 'renewal') {
 					await handleRenewalService(searchQuery.trim(), ipType);
+				} else if (['patent-amendment', 'patent-assignment', 'patent-ctc', 'patent-license', 'patent-mortgage'].includes(serviceId)) {
+					// For patent post-registration services, go to search page first with service type
+					sessionStorage.setItem('searchParams', JSON.stringify({
+						query: searchQuery.trim(),
+						fileType: 'patent',
+						serviceType: serviceId
+					}));
+					await goto('/home/postregistration/search');
 				} else {
 					// For other post-registration services, go directly to service page
 					const route = getPostRegistrationRoute(serviceId, searchQuery.trim(), fileTypeNum);
@@ -303,7 +347,11 @@
 				<!-- Info Message -->
 				<div class="text-xs text-gray-500 bg-blue-50 p-3 rounded-md">
 					<Icon icon="mdi:information-outline" class="w-4 h-4 inline mr-1" />
-					This service is only available for registered {ipType} files with active status.
+					{#if ['patent-amendment', 'patent-assignment', 'patent-ctc', 'patent-license', 'patent-mortgage'].includes(serviceId)}
+						This service is only available for Active patent files.
+					{:else}
+						This service is only available for registered {ipType} files with active status.
+					{/if}
 				</div>
 
 				<!-- Action Buttons -->

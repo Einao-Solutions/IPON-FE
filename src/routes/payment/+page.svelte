@@ -65,7 +65,8 @@
 		'changedatarecordal',
 		'clerical',
 		'publicationstatusupdate',
-		'filewithdrawal'
+		'filewithdrawal',
+		'patentassignment'
 	];
 	let currentBaseurl: string = '';
 	beforeUpdate(async () => {
