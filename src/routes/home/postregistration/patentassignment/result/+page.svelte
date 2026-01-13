@@ -1,35 +1,98 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
-	import { Button } from '$lib/components/ui/button/index';
-	import Icon from '@iconify/svelte';
+	import { baseURL } from '$lib/helpers';
+	import { toast } from 'svelte-sonner';
+
+	let checkVisible = false;
+	let messageVisible = false;
+	let subMessageVisible = false;
+	let isLoading = true;
+	let submissionSuccess = false;
+	let submissionError: string | null = null;
 
 	let paymentId: string | null = null;
-	let paymentType: string | null = null;
 	let fileId: string | null = null;
 	let amount: string | null = null;
 	let applicantName: string | null = null;
-	let isLoading = true;
-	let submissionDate: string = '';
+	let patentTitle: string | null = null;
 
-	onMount(() => {
+	onMount(async () => {
 		// Extract query parameters
 		paymentId = $page.url.searchParams.get('rrr');
-		paymentType = $page.url.searchParams.get('paymentType');
 		fileId = $page.url.searchParams.get('fileId');
 		amount = $page.url.searchParams.get('amount');
 		applicantName = $page.url.searchParams.get('applicantName');
+		patentTitle = $page.url.searchParams.get('patentTitle');
 
-		// Set submission date to current date
-		submissionDate = new Date().toLocaleDateString('en-GB', {
-			day: '2-digit',
-			month: '2-digit',
-			year: 'numeric'
-		});
-        
+		// Submit the form data to backend
+		await submitToBackend();
+		
 		isLoading = false;
+
+		// Start animations if successful
+		if (submissionSuccess) {
+			setTimeout(() => {
+				checkVisible = true;
+			}, 300);
+			setTimeout(() => {
+				messageVisible = true;
+			}, 1000);
+			setTimeout(() => {
+				subMessageVisible = true;
+			}, 1800);
+		}
 	});
+
+	async function submitToBackend() {
+		try {
+			const payloadData = sessionStorage.getItem('patentAssignmentPayload');
+			if (!payloadData) {
+				submissionError = 'No form data found. Please try again.';
+				return;
+			}
+
+			const payload = JSON.parse(payloadData);
+
+			const response = await fetch(`${baseURL}/api/files/PatentAssignmentApplication`, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify(payload)
+			});
+
+			const result = await response.json();
+
+			if (!response.ok) {
+				submissionError = result.message || 'Submission failed.';
+				toast.error(`Submission failed: ${submissionError}`);
+				return;
+			}
+
+			submissionSuccess = true;
+			
+			// Clear the stored data after successful submission
+			sessionStorage.removeItem('patentAssignmentPayload');
+			
+			// Store success data for potential future reference
+			localStorage.setItem('patentAssignmentSubmission', JSON.stringify({
+				submissionDate: new Date().toISOString(),
+				fileId: fileId,
+				rrr: paymentId,
+				success: true
+			}));
+
+			toast.success('Patent assignment application submitted successfully!');
+
+		} catch (err) {
+			submissionError = 'Form submission failed. Please try again.';
+			toast.error(`Submission error: ${submissionError}`);
+			console.error('Submission error:', err);
+		}
+	}
 
 	function goToDashboard() {
 		goto('/home/dashboard');
@@ -45,178 +108,121 @@
 </script>
 
 <svelte:head>
-	<title>Patent Assignment Application - Payment Successful</title>
-	<style>
-		@media print {
-			.no-print { display: none !important; }
-			.print-only { display: block !important; }
-		}
-		.print-only { display: none; }
-	</style>
+	<title>Patent Assignment Application - Submission Result</title>
 </svelte:head>
 
-<div class="min-h-screen bg-gray-50 py-8 px-4">
-	<div class="max-w-4xl mx-auto">
-		{#if isLoading}
-			<div class="flex items-center justify-center p-12">
-				<div class="flex flex-col items-center gap-3">
-					<Icon icon="line-md:loading-loop" width="2.5rem" height="2.5rem" class="text-blue-600" />
-					<span class="text-gray-600">Processing payment confirmation...</span>
+{#if isLoading}
+	<main class="flex justify-center items-center min-h-screen bg-gray-50">
+		<div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md text-center">
+			<div class="h-32 w-32 mx-auto mb-6 relative">
+				<div class="h-full w-full bg-blue-50 rounded-full flex justify-center items-center">
+					<svg class="w-16 h-16 text-blue-500 animate-spin" viewBox="0 0 24 24">
+						<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="32" stroke-linecap="round"/>
+					</svg>
 				</div>
 			</div>
-		{:else}
-			<!-- Success Header -->
-			<div class="text-center mb-8">
-				<div class="flex justify-center mb-4">
-					<div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-						<Icon icon="lucide:check" width="2rem" height="2rem" class="text-green-600" />
-					</div>
+			<h1 class="text-2xl font-bold text-gray-900 mb-4">Processing Application</h1>
+			<p class="text-gray-600">Submitting your patent assignment application...</p>
+		</div>
+	</main>
+{:else if submissionError}
+	<main class="flex justify-center items-center min-h-screen bg-gray-50">
+		<div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md text-center">
+			<div class="h-32 w-32 mx-auto mb-6 relative">
+				<div class="h-full w-full bg-red-50 rounded-full flex justify-center items-center">
+					<svg class="w-16 h-16 text-red-500" viewBox="0 0 24 24">
+						<path fill="currentColor" d="M12 2C6.47 2 2 6.47 2 12s4.47 10 10 10 10-4.47 10-10S17.53 2 12 2zm5 13.59L15.59 17 12 13.41 8.41 17 7 15.59 10.59 12 7 8.41 8.41 7 12 10.59 15.59 7 17 8.41 13.41 12 17 15.59z"/>
+					</svg>
 				</div>
-				<h1 class="text-3xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-				<p class="text-gray-600">Your patent assignment application has been submitted successfully.</p>
+			</div>
+			<h1 class="text-2xl font-bold text-gray-900 mb-4">Submission Failed</h1>
+			<p class="text-gray-600 mb-6">{submissionError}</p>
+			<button
+				class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200 mr-3"
+				on:click={() => goto('/home/postregistration/patentassignment')}
+			>
+				Try Again
+			</button>
+			<button
+				class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
+				on:click={goToDashboard}
+			>
+				Dashboard
+			</button>
+		</div>
+	</main>
+{:else if submissionSuccess}
+	<main class="flex justify-center items-center min-h-screen bg-gray-50">
+		<div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md text-center">
+			<div class="h-32 w-32 mx-auto mb-6 relative">
+				{#if checkVisible}
+					<div
+						class="h-full w-full bg-green-50 rounded-full flex justify-center items-center"
+						in:fade={{ duration: 400 }}
+					>
+						<svg class="w-16 h-16 text-green-500" viewBox="0 0 24 24">
+							<path
+								class="checkmark-path"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="3"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M5 13l4 4L19 7"
+							>
+							</path>
+						</svg>
+					</div>
+				{/if}
 			</div>
 
-			<!-- Payment Details Card -->
-			<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-6">
-				<div class="bg-green-50 px-6 py-4 border-b border-green-200">
-					<h2 class="text-lg font-semibold text-green-800">Patent Assignment Application Confirmation</h2>
-				</div>
-				
-				<div class="p-6">
-					<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<!-- Payment Information -->
-						<div class="space-y-4">
-							<h3 class="font-semibold text-gray-900 border-b pb-2">Payment Information</h3>
-							<div class="space-y-3">
-								<div class="flex justify-between">
-									<span class="text-gray-600">Payment Reference (RRR):</span>
-									<span class="font-mono font-medium">{paymentId || 'N/A'}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-gray-600">Amount Paid:</span>
-									<span class="font-medium text-green-600">₦{amount ? Number(amount).toLocaleString() : 'N/A'}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-gray-600">Payment Date:</span>
-									<span class="font-medium">{submissionDate}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-gray-600">Service Type:</span>
-									<span class="font-medium">Patent Assignment Application</span>
-								</div>
-							</div>
-						</div>
+			{#if messageVisible}
+				<h1 class="text-3xl font-bold text-gray-900 mt-2 mb-4" in:fly={{ y: 20, duration: 500 }}>
+					Application Submitted
+				</h1>
+			{/if}
 
-						<!-- Application Details -->
-						<div class="space-y-4">
-							<h3 class="font-semibold text-gray-900 border-b pb-2">Application Details</h3>
-							<div class="space-y-3">
-								<div class="flex justify-between">
-									<span class="text-gray-600">Patent File ID:</span>
-									<span class="font-mono font-medium">{fileId || 'N/A'}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-gray-600">Applicant:</span>
-									<span class="font-medium">{applicantName || 'N/A'}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-gray-600">Submission Date:</span>
-									<span class="font-medium">{submissionDate}</span>
-								</div>
-								<div class="flex justify-between">
-									<span class="text-gray-600">Status:</span>
-									<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-										Payment Completed
-									</span>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+			{#if subMessageVisible}
+				<p
+					class="text-base font-medium text-gray-600 mb-8 max-w-xs mx-auto"
+					in:fly={{ y: 15, duration: 500 }}
+				>
+					YOUR PATENT ASSIGNMENT APPLICATION HAS BEEN RECEIVED AND IS RECEIVING DUE ATTENTION
+				</p>
 
-			<!-- Important Information -->
-			<div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-				<div class="flex items-start gap-3">
-					<Icon icon="lucide:info" width="1.25rem" height="1.25rem" class="text-blue-600 mt-0.5" />
-					<div>
-						<h3 class="font-semibold text-blue-900 mb-2">Important Information</h3>
-						<ul class="text-sm text-blue-800 space-y-1">
-							<li>• Your patent assignment application has been successfully submitted and payment confirmed.</li>
-							<li>• The assignment documents you uploaded are now being processed by our office.</li>
-							<li>• You will receive email notifications about the progress of your application.</li>
-							<li>• Please keep your payment reference (RRR) number for your records.</li>
-							<li>• Processing time is typically 5-10 business days depending on document complexity.</li>
-						</ul>
-					</div>
+				<div class="mt-4 space-x-3" in:fade={{ duration: 300, delay: 300 }}>
+					<button
+						class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
+						on:click={goToDashboard}
+					>
+						Return to Dashboard
+					</button>
+					<!-- <button
+						class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md transition-colors duration-200 text-sm"
+						on:click={goToPostRegistration}
+					>
+						Post-Registration Services
+					</button> -->
 				</div>
-			</div>
-
-			<!-- Next Steps -->
-			<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-				<div class="flex items-start gap-3">
-					<Icon icon="lucide:clock" width="1.25rem" height="1.25rem" class="text-yellow-600 mt-0.5" />
-					<div>
-						<h3 class="font-semibold text-yellow-900 mb-2">What's Next?</h3>
-						<ol class="text-sm text-yellow-800 space-y-1 list-decimal list-inside">
-							<li>Our patent office will review your assignment documents for completeness.</li>
-							<li>If additional documents are required, you will be notified via email.</li>
-							<li>Once approved, the patent assignment will be recorded in our records.</li>
-							<li>You will receive a confirmation certificate upon successful completion.</li>
-							<li>The updated patent ownership will be reflected in our public database.</li>
-						</ol>
-					</div>
-				</div>
-			</div>
-
-			<!-- Print Receipt (visible when printing) -->
-			<div class="print-only bg-white p-8 mb-6">
-				<div class="text-center mb-6 border-b pb-4">
-					<h1 class="text-2xl font-bold">Patent Assignment Application Receipt</h1>
-					<p class="text-gray-600">Payment Confirmation</p>
-				</div>
-				
-				<div class="grid grid-cols-2 gap-8">
-					<div>
-						<h3 class="font-semibold mb-3">Payment Details</h3>
-						<p><strong>RRR:</strong> {paymentId}</p>
-						<p><strong>Amount:</strong> ₦{amount ? Number(amount).toLocaleString() : 'N/A'}</p>
-						<p><strong>Date:</strong> {submissionDate}</p>
-					</div>
-					<div>
-						<h3 class="font-semibold mb-3">Application Details</h3>
-						<p><strong>Patent File ID:</strong> {fileId}</p>
-						<p><strong>Applicant:</strong> {applicantName}</p>
-						<p><strong>Service:</strong> Patent Assignment Application</p>
-					</div>
-				</div>
-			</div>
-
-			<!-- Action Buttons -->
-			<div class="flex flex-col sm:flex-row gap-4 justify-center no-print">
-				<Button on:click={printPage} variant="outline" class="flex items-center gap-2">
-					<Icon icon="lucide:printer" width="1rem" height="1rem" />
-					Print Receipt
-				</Button>
-				
-				<Button on:click={goToPostRegistration} variant="outline" class="flex items-center gap-2">
-					<Icon icon="lucide:file-text" width="1rem" height="1rem" />
-					Post-Registration Services
-				</Button>
-				
-				<Button on:click={goToDashboard} class="flex items-center gap-2">
-					<Icon icon="lucide:home" width="1rem" height="1rem" />
-					Back to Dashboard
-				</Button>
-			</div>
-		{/if}
-	</div>
-</div>
+			{/if}
+		</div>
+	</main>
+{/if}
 
 <style>
-	@media print {
-		.min-h-screen { min-height: auto; }
-		.bg-gray-50 { background: white !important; }
-		.shadow-sm { box-shadow: none !important; }
+	/* SVG checkmark animation */
+	.checkmark-path {
+		stroke-dasharray: 80;
+		stroke-dashoffset: 80;
+		animation: checkmark 0.8s ease-in-out forwards;
+	}
+
+	@keyframes checkmark {
+		0% {
+			stroke-dashoffset: 80;
+		}
+		100% {
+			stroke-dashoffset: 0;
+		}
 	}
 </style>

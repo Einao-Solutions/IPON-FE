@@ -31,6 +31,12 @@
 	let isLoading = false;
 
 	onMount(async () => {
+		// Check if user is authenticated
+		if (!$loggedInUser) {
+			await goto('/auth');
+			return;
+		}
+
 		const fileNumber = $page.url.searchParams.get('fileId') ?? '';
 		const fileType = $page.url.searchParams.get('fileType') ?? '';
 		await setData(fileNumber, fileType);
@@ -135,7 +141,7 @@
 					fileName: file.name,
 					contentType: file.type,
 					data: base64Data,
-					name: 'SupportingDocument'
+					name: 'PatentassignmentSupportingDocuments'
 				});
 			}
 
@@ -146,34 +152,25 @@
 				assignmentDate: now.toISOString(),
 				assignmentRequestDate: now.toISOString(),
 				assignmentDeed: assignmentDeedData,
-				supportingDocuments: supportingDocsData
+				PatentassignmentSupportingDocuments: supportingDocsData
 			};
 
-			const response = await fetch(`${baseURL}/api/files/PatentAssignmentApplication`, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify(payload)
-			});
-
-			const result = await response.json();
-
-			if (!response.ok) {
-				error = result.message || 'Submission failed.';
-				return;
-			}
-
-			// Store form data for potential future reference
-			localStorage.setItem('patentAssignmentFormData', JSON.stringify({
+			// Store payload data for submission on result page
+			sessionStorage.setItem('patentAssignmentPayload', JSON.stringify(payload));
+			
+			// Store form metadata for display
+			sessionStorage.setItem('patentAssignmentFormData', JSON.stringify({
 				assignmentDeeds: formData.assignmentDeeds.map(f => f.name),
-				supportingDocuments: formData.supportingDocuments.map(f => f.name)
+				supportingDocuments: formData.supportingDocuments.map(f => f.name),
+				patentTitle: patentTitle,
+				applicantName: applicantName,
+				applicantEmail: applicantEmail
 			}));
 
-			toast.success('Patent assignment application submitted successfully!');
+			// Navigate to payment page
 			await handlePayment();
 		} catch (err) {
-			error = 'Form submission failed. Please try again.';
+			error = 'Form processing failed. Please try again.';
 			console.error(err);
 		} finally {
 			isProcessing = false;
@@ -470,7 +467,7 @@
 					</svg>
 					Processing...
 				{:else}
-					Pay ₦{cost?.toLocaleString()}
+					Proceed To Pay
 				{/if}
 			</button>
 		{:else}

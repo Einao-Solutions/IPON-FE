@@ -156,7 +156,7 @@
 				appData.applicants.length > 1
 					? appData.applicants[0].name + ' et al.'
 					: appData.applicants[0].name;
-			responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&applicationId=${applicationId}&title=${fileTitle}&amount=${cost}&applicantName=${userName}&fileType=${fileType}`;
+			responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}`;
 			isLoading = false;
 		}
 		if (type === 'renewal') {
@@ -251,7 +251,7 @@
 			fileTitle = $page.url.searchParams.get('title') ?? undefined;
 			fileApplicant = userName;
 			await setHash();
-			responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&title=${fileTitle}&amount=${cost}`;
+			responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}`;
 			isLoading = false;
 		}
 		if (type === 'tradecertificate') {
@@ -303,7 +303,7 @@
 				await setHash();
 				fileId = appData.id;
 				applicationId = $page.url.searchParams.get('applicationId') ?? '';
-				responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&fileId=${fileId}&title=${fileTitle}&amount=${cost}&applicantName=${userName}&fileType=${fileType}&applicationId=${applicationId}`;
+				responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}`;
 				isLoading = false;
 			}
 		}
@@ -335,7 +335,7 @@
 				await setHash();
 				currentRenewalIndex += 1;
 				localStorage.setItem('currentRenewalIndex', currentRenewalIndex.toString());
-				responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}&applicantName=${fileApplicant}&fileId=${fileId}&title=${fileTitle}&amount=${cost}&fileType=${fileType}`;
+				responseurl = `https://${currentBaseurl}/payment/status?rrr=${paymentId}&paymentType=${type}`;
 				isLoading = false;
 			}
 		}
@@ -379,7 +379,7 @@
 				return;
 			}
 			await setHash();
-			responseurl = `https://${currentBaseurl}/home/postregistration/patentassignment/result?rrr=${paymentId}&paymentType=${type}&fileId=${fileNumber}&amount=${cost}&applicantName=${userName}`;
+			responseurl = `https://${currentBaseurl}/home/postregistration/patentassignment/result?rrr=${paymentId}&paymentType=${type}`;
 			isLoading = false;
 		}
 
@@ -420,7 +420,7 @@
 				return;
 			} else {
 				await setHash();
-				responseurl = `https://${currentBaseurl}/payment/status?rrr=${rrr}&paymentType=${type}&applicationId=${oppositionId}&name=${fileApplicant}&address=${address}&number=${number}&email=${email}&fileUrl=${fileUrl}&amount=${cost}&description=${title}`;
+				responseurl = `https://${currentBaseurl}/payment/status?rrr=${rrr}&paymentType=${type}&applicationId=${oppositionId}`;
 				isLoading = false;
 			}
 		}
@@ -435,7 +435,7 @@
 				return;
 			} else {
 				await setHash();
-				responseurl = `https://${currentBaseurl}/payment/status?rrr=${rrr}&paymentType=${type}&applicationId=${oppositionId}&fileUrl=${fileUrl}&amount=${cost}&description=${title}`;
+				responseurl = `https://${currentBaseurl}/payment/status?rrr=${rrr}&paymentType=${type}&applicationId=${oppositionId}`;
 				isLoading = false;
 			}
 		}
