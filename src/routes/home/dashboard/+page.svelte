@@ -93,10 +93,6 @@
 
   let isStaff: boolean = false;
   
-  // Christmas greeting modal state
-  let showChristmasGreeting = false;
-  let showConfetti = false;
-  
   function canCreateApplication() {
     return (
       $loggedInUser?.userRoles.includes(UserRoles.User) ||
@@ -159,18 +155,6 @@
     };
 
     isLoading = false;
-    
-    // Show Christmas greeting after login with auto-dismiss
-    setTimeout(() => {
-      showConfetti = true;
-      showChristmasGreeting = true;
-      
-      // Auto-dismiss after 15 seconds
-      setTimeout(() => {
-        showChristmasGreeting = false;
-        showConfetti = false;
-      }, 15000);
-    }, 1000);
   });
   let isLoading: boolean = true;
   let updateData = {};
@@ -630,84 +614,9 @@
   <svelte:component this={ownershipForm} {...ownershipData} />
 {/if}
 
-<!-- Christmas Confetti Effect -->
-{#if showConfetti}
-  <div class="fixed inset-0 pointer-events-none z-[9998] overflow-hidden">
-    {#each Array(50) as _, i}
-      <div 
-        class="confetti absolute" 
-        style="left: {Math.random() * 100}%; 
-               animation-delay: {Math.random() * 3}s;
-               background-color: {['#dc2626', '#16a34a', '#eab308', '#3b82f6', '#f59e0b'][Math.floor(Math.random() * 5)]}"
-      ></div>
-    {/each}
-  </div>
-{/if}
 
-<!-- Christmas Greeting Modal -->
-<Dialog.Root bind:open={showChristmasGreeting}>
-  <Dialog.Content class="max-w-[600px] bg-gradient-to-br from-red-50 via-white to-green-50 border-2 border-red-200/50 shadow-2xl">
-    <div class="text-center p-6">
-      <!-- Christmas decorative header -->
-      <div class="flex justify-center mb-4">
-        <div class="relative">
-          <div class="text-6xl animate-bounce">🎄</div>
-          <div class="absolute -top-2 -right-2 text-2xl animate-spin">⭐</div>
-        </div>
-      </div>
 
-      <!-- Christmas message -->
-      <div class="space-y-4">
-        <h2 class="text-2xl font-bold bg-gradient-to-r from-red-600 via-green-600 to-red-600 bg-clip-text text-transparent">
-          🎅 Season's Greetings! 🎄
-        </h2>
-        
-        <div class="bg-white/70 backdrop-blur-sm rounded-xl p-6 border border-green-200/50 shadow-lg">
-          <p class="text-gray-800 leading-relaxed mb-4 text-sm md:text-base">
-            <strong>Dear Esteemed Customer,</strong>
-          </p>
-          
-          <p class="text-gray-700 leading-relaxed mb-4 text-sm md:text-base">
-            Season's greetings and best wishes for a joyful Christmas and a prosperous New Year. 
-            Thank you for your continued trust.
-          </p>
-          
-          <p class="text-gray-700 leading-relaxed text-sm md:text-base">
-            Thank you for choosing the Commercial Law Department, Federal Ministry of Industry, 
-            Trade and Investment, proudly supported by <strong class="text-green-600">Einao Solutions</strong>, 
-            your trusted IP technology support partner.
-          </p>
-        </div>
 
-        <!-- Christmas decorations -->
-        <div class="flex justify-center space-x-4 text-2xl">
-          <span class="animate-pulse">🎁</span>
-          <span class="animate-bounce">🔔</span>
-          <span class="animate-pulse">🎅</span>
-          <span class="animate-bounce">❄️</span>
-          <span class="animate-pulse">🤶</span>
-        </div>
-      </div>
-
-      <!-- Close button -->
-      <div class="mt-6">
-        <Button 
-          on:click={() => {
-            showChristmasGreeting = false;
-            showConfetti = false;
-          }}
-          class="bg-gradient-to-r from-red-600 to-green-600 hover:from-red-700 hover:to-green-700 text-white px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-        >
-          <span class="flex items-center space-x-2">
-            <span>🎄</span>
-            <span>Thank you!</span>
-            <span>🎄</span>
-          </span>
-        </Button>
-      </div>
-    </div>
-  </Dialog.Content>
-</Dialog.Root>
 
 <!-- Pre-Registration Dialog -->
 <Dialog.Root
@@ -1680,13 +1589,9 @@
 {:else}
   <!-- Show marquee banner only for regular users (non-staff) -->
   {#if !isStaff}
-    <!-- Santa Cap decoration hanging above the carousel -->  
     <div class="relative">
-      <div class="absolute -top-6 -left-4 z-20">
-        <img src="/src/lib/assets/santacap.png" alt="Santa Cap" class="w-12 h-12 filter drop-shadow-lg opacity-90" />
-      </div>
       <div
-        class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8 christmas-banner"
+        class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
         <div class="absolute whitespace-nowrap animate-marquee top-1.5">
         You can now file Withdrawals for all application types using the
@@ -1769,33 +1674,22 @@
       <div
         class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
       >
-        <!-- Trademark Card -->
         <button
           class="text-left w-full group relative overflow-hidden"
           on:click={() => (currentView = "trademark")}
         >
           <div
-            class="relative bg-gradient-to-br from-red-50 via-white to-green-50 border border-red-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-red-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-red-300/60 hover:-translate-y-1 christmas-card"
+            class="relative bg-gradient-to-br from-green-50 via-white to-green-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
           >
-            <!-- Christmas Hat decoration -->
-            <div class="absolute top-3 right-3">
-              <svg width="24" height="24" viewBox="0 0 100 100" class="opacity-70 group-hover:opacity-100 transition-opacity duration-300">
-                <path d="M20 60 Q50 40 80 60 L75 75 Q50 65 25 75 Z" fill="#dc2626" stroke="#b91c1c" stroke-width="2"/>
-                <ellipse cx="50" cy="60" rx="30" ry="8" fill="#ffffff"/>
-                <circle cx="75" cy="35" r="12" fill="#ffffff" stroke="#f3f4f6" stroke-width="1"/>
-                <path d="M70 50 Q75 35 75 35" stroke="#dc2626" stroke-width="6" fill="none" stroke-linecap="round"/>
-              </svg>
-            </div>
-            
             <!-- Subtle background pattern -->
             <div
-              class="absolute inset-0 bg-gradient-to-br from-transparent via-red-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             ></div>
 
             <div class="relative z-10">
               <div class="mb-5">
                 <div
-                  class="w-14 h-14 bg-gradient-to-br from-red-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-red-200/30"
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
                 >
                   <Icon
                     icon="mdi:scale-balance"
@@ -1816,7 +1710,7 @@
                   >{getServiceCount("trademark")} services available</span
                 >
                 <div
-                  class="w-8 h-8 bg-gradient-to-br from-red-100 to-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
                 >
                   <Icon
                     icon="heroicons:arrow-right"
@@ -1834,29 +1728,17 @@
           on:click={() => (currentView = "patent")}
         >
           <div
-            class="relative bg-gradient-to-br from-green-50 via-white to-red-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1 christmas-card"
+            class="relative bg-gradient-to-br from-green-50 via-white to-green-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
           >
-            <!-- Christmas Wreath decoration -->
-            <div class="absolute top-3 right-3">
-              <svg width="24" height="24" viewBox="0 0 100 100" class="opacity-70 group-hover:opacity-100 transition-opacity duration-300">
-                <circle cx="50" cy="50" r="35" fill="none" stroke="#16a34a" stroke-width="8"/>
-                <circle cx="30" cy="30" r="3" fill="#dc2626"/>
-                <circle cx="70" cy="35" r="3" fill="#dc2626"/>
-                <circle cx="65" cy="70" r="3" fill="#dc2626"/>
-                <circle cx="35" cy="75" r="3" fill="#dc2626"/>
-                <path d="M45 20 L50 10 L55 20" fill="#dc2626"/>
-              </svg>
-            </div>
-            
             <!-- Subtle background pattern -->
             <div
-              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-red-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             ></div>
 
             <div class="relative z-10">
               <div class="mb-5">
                 <div
-                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-red-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
                 >
                   <Icon
                     icon="mdi:lightbulb-outline"
@@ -1877,7 +1759,7 @@
                   >{getServiceCount("patent")} services available</span
                 >
                 <div
-                  class="w-8 h-8 bg-gradient-to-br from-green-100 to-red-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
                 >
                   <Icon
                     icon="heroicons:arrow-right"
@@ -1895,31 +1777,17 @@
           on:click={() => (currentView = "design")}
         >
           <div
-            class="relative bg-gradient-to-br from-red-50 via-green-50 to-white border border-red-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-red-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-red-300/60 hover:-translate-y-1 christmas-card"
+            class="relative bg-gradient-to-br from-green-50 via-white to-green-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
           >
-            <!-- Christmas Tree decoration -->
-            <div class="absolute top-3 right-3">
-              <svg width="24" height="24" viewBox="0 0 100 100" class="opacity-70 group-hover:opacity-100 transition-opacity duration-300">
-                <polygon points="50,10 35,40 65,40" fill="#16a34a"/>
-                <polygon points="50,25 30,55 70,55" fill="#16a34a"/>
-                <polygon points="50,40 25,70 75,70" fill="#16a34a"/>
-                <rect x="45" y="70" width="10" height="15" fill="#8b4513"/>
-                <circle cx="50" cy="8" r="3" fill="#fbbf24"/>
-                <circle cx="45" cy="30" r="2" fill="#dc2626"/>
-                <circle cx="60" cy="45" r="2" fill="#dc2626"/>
-                <circle cx="40" cy="50" r="2" fill="#dc2626"/>
-              </svg>
-            </div>
-            
             <!-- Subtle background pattern -->
             <div
-              class="absolute inset-0 bg-gradient-to-br from-transparent via-red-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             ></div>
 
             <div class="relative z-10">
               <div class="mb-5">
                 <div
-                  class="w-14 h-14 bg-gradient-to-br from-red-100 via-green-50 to-white rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-red-200/30"
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
                 >
                   <Icon
                     icon="mdi:palette-outline"
@@ -1940,7 +1808,7 @@
                   >{getServiceCount("design")} services available</span
                 >
                 <div
-                  class="w-8 h-8 bg-gradient-to-br from-red-100 to-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
                 >
                   <Icon
                     icon="heroicons:arrow-right"
@@ -1980,56 +1848,54 @@
         <!-- 
 					DETAILED STATISTICS SECTION
 					========================== 
-					This section provides comprehensive statistical breakdowns for Tech and SuperAdmin users only.
+					This section provides comprehensive statistical breakdowns for the logged-in user.
 					It displays detailed application statistics organized by IP type (Patents, Designs, Trademarks) 
-					and further broken down by application types and statuses.
+					and further broken down by application types and statuses for the user's own applications.
 					
 					Visibility Logic:
-					- ONLY visible to User, Tech and SuperAdmin roles
-					- Hidden from all other roles (Agent, Staff, and IP-specific officers)
-					- IP-specific officers get their own StaffDashboard instead
+					- Visible to all users (similar to Portfolio Summary)
+					- Shows user-specific detailed statistics (not system-wide)
+					- Filtered to show only the logged-in user's applications
 				-->
-        {#if $loggedInUser && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin))}
-          <div class="mt-6">
-            <!-- Section Header: Title and description for the detailed statistics -->
-            <div class="mb-4">
-              <div class="flex items-center space-x-3 mb-3">
-                <!-- Optional: Icon for the statistics section (currently commented out) -->
-                <!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+        <div class="mt-6">
+          <!-- Section Header: Title and description for the detailed statistics -->
+          <div class="mb-4">
+            <div class="flex items-center space-x-3 mb-3">
+              <!-- Optional: Icon for the statistics section (currently commented out) -->
+              <!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
 									<Icon icon="mdi:chart-line" class="text-white text-lg" />
 								</div> -->
-                <div>
-                  <!-- Main heading for the statistics section -->
-                  <h2 class="text-xl font-bold text-slate-800">
-                    Detailed Statistics
-                  </h2>
-                  <!-- Descriptive subtext explaining what the statistics show -->
-                  <p class="text-slate-600 text-sm">
-                    Comprehensive breakdown by application types and status
-                  </p>
-                </div>
+              <div>
+                <!-- Main heading for the statistics section -->
+                <h2 class="text-xl font-bold text-slate-800">
+                  Detailed Statistics
+                </h2>
+                <!-- Descriptive subtext explaining what the statistics show -->
+                <p class="text-slate-600 text-sm">
+                  Your portfolio breakdown by application types and status
+                </p>
               </div>
             </div>
-            <!-- 
+          </div>
+          <!-- 
 							Statistics Content Container:
 							- Styled with subtle background, blur effect, and soft borders
 							- Contains the UserDashboard component with showOnlyStatistics=true
 							- This prop tells UserDashboard to render only the detailed statistics accordions
 						-->
-            <div
-              class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
-            >
-              <!-- 
+          <div
+            class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
+          >
+            <!-- 
 								UserDashboard Component (Statistics Mode):
 								- user={$loggedInUser}: Passes the logged-in user data
 								- showOnlyStatistics={true}: Flag to render only the detailed statistics view
 								- This will show accordion sections for Patents, Designs, and Trademarks
-								- Each accordion contains application types and status breakdowns
+								- Each accordion contains application types and status breakdowns for the user's own applications
 							-->
-              <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
-            </div>
+            <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
           </div>
-        {/if}
+        </div>
       </div>
     </div>
   </div>
@@ -2445,111 +2311,4 @@
     animation: marquee 25s linear infinite;
   }
   
-  /* Christmas card effects */
-  .christmas-card {
-    position: relative;
-  }
-  
-  .christmas-card::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #dc2626, #16a34a, #dc2626, #16a34a);
-    background-size: 400% 400%;
-    border-radius: 18px;
-    z-index: -1;
-    animation: christmas-border 4s ease-in-out infinite;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-  }
-  
-  .christmas-card:hover::before {
-    opacity: 0.2;
-  }
-  
-  .christmas-card svg {
-    transition: transform 0.3s ease;
-    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.1));
-  }
-  
-  .christmas-card:hover svg {
-    transform: scale(1.1) rotate(5deg);
-    filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.4));
-  }
-  
-  @keyframes christmas-border {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-  
-  /* Christmas banner cap */
-  .christmas-banner-cap {
-    animation: gentle-bob 3s ease-in-out infinite;
-  }
-  
-  .christmas-banner {
-    position: relative;
-    background: linear-gradient(90deg, #16a34a, #15803d, #16a34a);
-    background-size: 200% 100%;
-    animation: christmas-banner-glow 3s ease-in-out infinite;
-  }
-  
-  .christmas-banner::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: linear-gradient(90deg, #dc2626, #fbbf24, #dc2626);
-    background-size: 200% 100%;
-    animation: christmas-lights 2s linear infinite;
-  }
-  
-  @keyframes gentle-bob {
-    0%, 100% { transform: translateY(0px) rotate(-2deg); }
-    50% { transform: translateY(-3px) rotate(2deg); }
-  }
-  
-  @keyframes christmas-banner-glow {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-  
-  @keyframes christmas-lights {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
-  }
-  
-  /* Christmas confetti animation */
-  .confetti {
-    width: 10px;
-    height: 10px;
-    position: absolute;
-    animation: confetti-fall 3s linear infinite;
-    transform-origin: center;
-  }
-  
-  .confetti:before {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background: inherit;
-    transform: rotate(45deg);
-  }
-  
-  @keyframes confetti-fall {
-    0% {
-      transform: translateY(-100vh) rotate(0deg);
-      opacity: 1;
-    }
-    100% {
-      transform: translateY(100vh) rotate(720deg);
-      opacity: 0;
-    }
-  }
 </style>
