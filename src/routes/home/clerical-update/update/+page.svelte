@@ -48,6 +48,7 @@
     noveltyStatement?: string | null;
     designType: number | null;
     designCreators: DesignCreator[] | null;
+    designAttachments: string[] | null;
   }
   interface NewData {
     fileTitle: string;
@@ -78,6 +79,7 @@
     designType: number | null;
     designCreators: DesignCreator[] | [];
     titleOfDesign?: string | null;
+    designAttachments: File[];
   }
 
   let fileInfo: FileInfo = {
@@ -107,6 +109,7 @@
     noveltyStatement: null,
     designType: null,
     designCreators: [],
+    designAttachments: [],
   };
   let error: string | null = null;
   let isProcessing = false;
@@ -266,6 +269,7 @@
         noveltyStatement: data.noveltyStatement ?? null,
         designType: data.designType ?? null,
         designCreators: data.designCreators ?? [],
+        designAttachments: data.existingDesignAttachments ?? [],
       };
     } catch (err) {
       error = "Error fetching change of name cost.";
@@ -304,13 +308,11 @@
     designType: null,
     titleOfDesign: null,
     designCreators: [],
+    designAttachments: [],
   };
 
   function getFormTitle(type: ClericalUpdateTypes | null): string {
     switch (type) {
-      case ClericalUpdateTypes.ApplicantInformation:
-        return "Application for Clerical Update of Applicant Information";
-
       case ClericalUpdateTypes.CorrespondenceInformation:
         return "Application for Clerical Update of Correspondence Information";
 
@@ -388,11 +390,11 @@
   $: showTitleSection = fileInfo.updateType === ClericalUpdateTypes.FileTitle;
   $: showCreatorInfoSection =
     fileInfo.updateType === ClericalUpdateTypes.CreatorInformation;
-  $: showApplicantInfoSection =
-    fileInfo.updateType === ClericalUpdateTypes.ApplicantInformation;
   $: showDesignInformationSection =
     fileInfo.updateType === ClericalUpdateTypes.DesignInformation;
   $: formTitle = getFormTitle(fileInfo.updateType);
+  $: showDesignAttachmentsSection =
+    fileInfo.updateType === ClericalUpdateTypes.DesignAttachments;
   $: formNumber = getFormNumber(fileInfo.updateType);
 
   // Add helpers to detect linked-field edits
@@ -473,19 +475,27 @@
     const fileNumber = pageData.url.searchParams.get("fileId") ?? "";
 
     try {
+      if (updateType == null) {
+        error = "Update type is not specified.";
+        isProcessing = false;
+        return;
+      }
+
       console.log(fileInfo.fileType, updateType, fileNumber);
-      const formObj: Record<string, any> = {
-        FileId: fileNumber,
-        UpdateType: updateType,
-        FileType: fileInfo.fileType ?? "",
-        PaymentRRR: fileInfo.paymentRRR ?? "",
-        OldApplicantName: fileInfo.applicantName,
-      };
-      // Convert files to Base64 for temporary storage
-      // Add creator information handling
+
+      // Create FormData instead of plain object
+      const formData = new FormData();
+
+      // Add basic fields
+      formData.append("FileId", fileNumber);
+      formData.append("UpdateType", updateType.toString());
+      formData.append("FileType", fileInfo.fileType?.toString() ?? "");
+      formData.append("PaymentRRR", fileInfo.paymentRRR ?? "");
+      formData.append("OldApplicantName", fileInfo.applicantName ?? "");
+
+      // Add specific fields based on update type
       if (updateType === ClericalUpdateTypes.CreatorInformation) {
-        // Only send creators that have been modified or are new
-        formObj.DesignCreators = newData.designCreators.filter(
+        const filteredCreators = newData.designCreators.filter(
           (creator) =>
             creator.name ||
             creator.email ||
@@ -494,60 +504,85 @@
             creator.country
         );
 
+        // Serialize creators as JSON string
+        formData.append("DesignCreators", JSON.stringify(filteredCreators));
+
         if (newData.noveltyStatement) {
-          formObj.NoveltyStatement = newData.noveltyStatement;
+          formData.append("NoveltyStatement", newData.noveltyStatement);
         }
-      }
-      if (updateType === ClericalUpdateTypes.FileTitle) {
+      } else if (updateType === ClericalUpdateTypes.FileTitle) {
         if (newData.Representation) {
-          formObj.Representation = await fileToBase64(newData.Representation);
-          formObj.RepresentationName = newData.Representation.name;
-          // formObj.RepresentationType = newData.Representation.type;
+          formData.append("Representation", newData.Representation); // Append actual File object
         }
         if (newData.trademarkLogo) {
-          formObj.TrademarkLogo = newData.trademarkLogo;
+          formData.append("TrademarkLogo", newData.trademarkLogo.toString());
         }
         if (newData.fileTitle) {
-          formObj.FileTitle = newData.fileTitle;
+          formData.append("FileTitle", newData.fileTitle);
         }
       } else if (updateType === ClericalUpdateTypes.ApplicantName) {
-        formObj.ApplicantName = newData.applicantName;
+        formData.append("ApplicantName", newData.applicantName ?? "");
+      } else if (updateType === ClericalUpdateTypes.DesignAttachments) {
+        // Append design attachments
+        if (newData.designAttachments && newData.designAttachments.length > 0) {
+          newData.designAttachments.forEach((file, index) => {
+            formData.append(`DesignAttachment${index + 1}`, file);
+          });
+        }
       } else if (updateType === ClericalUpdateTypes.ApplicantAddress) {
-        formObj.ApplicantAddress = newData.applicantAddress ?? "";
-        formObj.ApplicantPhone = newData.applicantPhone ?? "";
-        formObj.ApplicantEmail = newData.applicantEmail ?? "";
-        formObj.ApplicantNationality = newData.applicantNationality ?? "";
+        formData.append("ApplicantAddress", newData.applicantAddress ?? "");
+        formData.append("ApplicantPhone", newData.applicantPhone ?? "");
+        formData.append("ApplicantEmail", newData.applicantEmail ?? "");
+        formData.append(
+          "ApplicantNationality",
+          newData.applicantNationality ?? ""
+        );
       } else if (updateType === ClericalUpdateTypes.FileClass) {
-        formObj.FileClass = String(newData.fileClass);
-        formObj.ClassDescription = newData.classDescription ?? "";
-        formObj.Disclaimer = newData.disclaimer ?? "";
+        formData.append("FileClass", String(newData.fileClass));
+        formData.append("ClassDescription", newData.classDescription ?? "");
+        formData.append("Disclaimer", newData.disclaimer ?? "");
       } else if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
-        formObj.CorrespondenceName = newData.correspondenceName ?? "";
-        formObj.CorrespondencePhone = newData.correspondencePhone ?? "";
-        formObj.CorrespondenceEmail = newData.correspondenceEmail ?? "";
-        formObj.CorrespondenceAddress = newData.correspondenceAddress ?? "";
+        formData.append("CorrespondenceName", newData.correspondenceName ?? "");
+        formData.append(
+          "CorrespondencePhone",
+          newData.correspondencePhone ?? ""
+        );
+        formData.append(
+          "CorrespondenceEmail",
+          newData.correspondenceEmail ?? ""
+        );
+        formData.append(
+          "CorrespondenceAddress",
+          newData.correspondenceAddress ?? ""
+        );
+
         if (newData.PowerOfAttorney) {
-          formObj.PowerOfAttorney = await fileToBase64(newData.PowerOfAttorney);
+          formData.append("PowerOfAttorney", newData.PowerOfAttorney); // Append actual File object
         }
         if (newData.OtherAttachment) {
-          formObj.OtherAttachment = await fileToBase64(newData.OtherAttachment);
+          formData.append("OtherAttachment", newData.OtherAttachment); // Append actual File object
         }
       }
 
+      // Store FormData entries as JSON for payment handling
+      const formObj: Record<string, any> = {};
+      formData.forEach((value, key) => {
+        formObj[key] = value instanceof File ? value.name : value;
+      });
       localStorage.setItem("formData", JSON.stringify(formObj));
+
+      // Send FormData directly (no JSON.stringify, no Content-Type header)
       const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
-        body: JSON.stringify(formObj),
-        headers: {
-          "Content-Type": "application/json",
-        },
+        body: formData,
       });
+
       if (!result.ok) {
         const error = await result.json();
         toast.error(`Error submitting clerical update: ${error.message}`);
-        // isStatusUpdating = false;
         return;
       }
+
       await handlePayment();
     } catch (err) {
       error = "Form submission failed.";
@@ -653,6 +688,45 @@
   }
 
   $: isReadyForPayment = fileInfo.fileStatus != null;
+  // Track removed existing attachments (by URL)
+  let removedDesignAttachments: string[] = [];
+
+  function removeExistingAttachment(index: number) {
+    const url = fileInfo.designAttachments?.[index];
+    if (!url) return;
+    removedDesignAttachments = [...removedDesignAttachments, url];
+    fileInfo.designAttachments =
+      fileInfo.designAttachments?.filter((_, i) => i !== index) ?? [];
+  }
+  function undoRemoveExistingAttachment(url: string) {
+    removedDesignAttachments = removedDesignAttachments.filter(
+      (u) => u !== url
+    );
+    fileInfo.designAttachments = [...(fileInfo.designAttachments ?? []), url];
+  }
+  function handleAddDesignAttachments(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const files = Array.from(input.files ?? []);
+    const maxSizeInBytes = 10 * 1024 * 1024;
+
+    const invalid = files.find(
+      (f) => !f.type.startsWith("image/") || f.size > maxSizeInBytes
+    );
+    if (invalid) {
+      error = "Only image files up to 10MB are allowed.";
+      return;
+    }
+
+    newData.designAttachments = [...newData.designAttachments, ...files];
+    // Allow selecting the same file again later
+    input.value = "";
+  }
+
+  function removeNewAttachment(index: number) {
+    newData.designAttachments = newData.designAttachments.filter(
+      (_, i) => i !== index
+    );
+  }
 </script>
 
 <!-- Success Toast Modal -->
@@ -1020,94 +1094,112 @@
         </div>
       {/if}
       <!-- New Applicant Information (conditionally rendered) -->
-      {#if showApplicantInfoSection}
+      {#if showDesignAttachmentsSection}
         <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-          <div class="bg-green-300 px-4 py-2 font-medium text-black">
-            NEW APPLICANT INFORMATION
+          <div class="bg-green-100 px-4 py-2 font-medium text-green-900">
+            UPDATE DESIGN ATTACHMENTS
           </div>
 
-          <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label
-                for=""
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                New Applicant Name:
-              </label>
-              <input
-                type="text"
-                bind:value={newData.applicantName}
-                placeholder={fileInfo.applicantName}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-              />
-            </div>
-            <div>
-              <label
-                for=""
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                New Applicant Email:
-              </label>
-              <input
-                type="text"
-                bind:value={newData.applicantEmail}
-                placeholder={fileInfo.applicantEmail}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-              />
-            </div>
-            <div>
-              <label
-                for=""
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                New Applicant Phone:
-              </label>
-              <input
-                type="text"
-                bind:value={newData.applicantPhone}
-                placeholder={fileInfo.applicantPhone}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-              />
-            </div>
-            <!-- Nationality -->
-            <div class="w-1/2">
-              <label
-                class="block text-sm font-medium text-gray-700 mb-1"
-                for=""
-              >
-                New Applicant Country:
-              </label>
-              <select
-                bind:value={newData.applicantNationality}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900"
-                required
-              >
-                <option value="" disabled selected>Select nationality</option>
-                {#each Object.entries(countriesMap) as [code, name]}
-                  <option value={name}>{name}</option>
+          <!-- Existing attachments (removable) -->
+          <div class="p-4">
+            <label class="block text-sm font-medium text-gray-500 mb-2">
+              Current Attachments
+            </label>
+            {#if fileInfo.designAttachments && fileInfo.designAttachments.length > 0}
+              <div class="flex flex-wrap gap-3">
+                {#each fileInfo.designAttachments as attachment, index}
+                  <div class="relative">
+                    <img
+                      src={String(attachment)}
+                      alt="Design Attachment"
+                      class="max-h-32 max-w-48 rounded border border-gray-300 bg-white object-contain shadow-sm"
+                    />
+                    <button
+                      class="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded shadow hover:bg-red-700"
+                      on:click={() => removeExistingAttachment(index)}
+                      title="Remove this attachment"
+                    >
+                      Remove
+                    </button>
+                  </div>
                 {/each}
-              </select>
-              <p class="text-xs text-gray-500 mt-1">
-                Optional: Select new country for the applicant.
-              </p>
-            </div>
-            <div class="md:col-span-2">
-              <label
-                for=""
-                class="block text-sm font-medium text-gray-700 mb-1"
-              >
-                New Applicant Address:
-              </label>
-              <input
-                type="text"
-                bind:value={newData.applicantAddress}
-                placeholder={fileInfo.applicantAddress}
-                class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-              />
-            </div>
+              </div>
+            {:else}
+              <p class="text-sm text-gray-500">No current attachments.</p>
+            {/if}
+
+            {#if removedDesignAttachments.length > 0}
+              <div class="mt-4">
+                <h4 class="text-sm font-medium text-gray-700 mb-2">
+                  Removed (will be deleted)
+                </h4>
+                <div class="flex flex-wrap gap-3">
+                  {#each removedDesignAttachments as removedUrl}
+                    <div class="relative">
+                      <img
+                        src={removedUrl}
+                        alt="Removed Attachment"
+                        class="opacity-60 max-h-24 max-w-36 rounded border border-gray-300 object-contain"
+                      />
+                      <button
+                        class="absolute top-1 right-1 bg-gray-600 text-white text-xs px-2 py-1 rounded shadow hover:bg-gray-700"
+                        on:click={() =>
+                          undoRemoveExistingAttachment(removedUrl)}
+                        title="Undo remove"
+                      >
+                        Undo
+                      </button>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          </div>
+
+          <!-- Add new attachments -->
+          <div class="p-4 border-t border-gray-200">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              Add New Attachments (images, max 10MB each)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              on:change={handleAddDesignAttachments}
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+            />
+            {#if newData.designAttachments.length > 0}
+              <div class="mt-3 flex flex-wrap gap-3">
+                {#each newData.designAttachments as file, index}
+                  <div class="relative">
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      class="max-h-32 max-w-48 rounded border border-gray-300 bg-white object-contain shadow-sm"
+                      on:load={(e) => {
+                        if (e.target instanceof HTMLImageElement) {
+                          URL.revokeObjectURL(e.target.src);
+                        }
+                      }}
+                    />
+                    <button
+                      class="absolute top-1 right-1 bg-red-600 text-white text-xs px-2 py-1 rounded shadow hover:bg-red-700"
+                      on:click={() => removeNewAttachment(index)}
+                      title="Remove new attachment"
+                    >
+                      Remove
+                    </button>
+                    <p class="text-xs text-gray-600 mt-1 max-w-48 truncate">
+                      {file.name}
+                    </p>
+                  </div>
+                {/each}
+              </div>
+            {/if}
           </div>
         </div>
       {/if}
+
       <!-- Creator Information Section -->
       {#if showCreatorInfoSection}
         <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
@@ -1484,7 +1576,9 @@
                         class="max-h-40 max-w-full rounded border border-gray-300 object-contain"
                         on:load={(e) => {
                           // Revoke the object URL after image loads to avoid memory leaks
-                          URL.revokeObjectURL(e.target.src);
+                          if (e.target instanceof HTMLImageElement) {
+                            URL.revokeObjectURL(e.target.src);
+                          }
                         }}
                       />
                     </div>

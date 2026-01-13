@@ -380,7 +380,6 @@ export enum PatentTypes {
   PCT = 2,
 }
 export enum ClericalUpdateTypes {
-  ApplicantInformation,
   CorrespondenceInformation,
   DesignInformation,
   CreatorInformation,

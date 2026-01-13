@@ -1,26 +1,40 @@
 import { baseURL, ApplicationStatuses } from "$lib/helpers";
 import { get } from "svelte/store";
-import { applicationData, loggedInUser } from "$lib/store";
+import type { Writable } from "svelte/store";
 
 /* ======================================================
    TYPES (INLINE)
 ====================================================== */
 
 export interface PaymentContext {
-  type: string;
-  baseUrl: string;
-  params: URLSearchParams;
-}
-
-export interface PaymentResult {
-  title: string;
-  cost: string;
-  rrr: string;
-  fileNumber?: string;
-  applicantName?: string;
-  fileType?: number | string;
-  responseUrl: string;
-  extra?: Record<string, any>;
+  page: {
+    url: {
+      searchParams: URLSearchParams;
+      host: string;
+    };
+  };
+  applicationData: Writable<any>;
+  assignmentData: Writable<any>;
+  loggedInUser: Writable<any>;
+  state: {
+    setTitle: (v: string | null) => void;
+    setCost: (v: string) => void;
+    setPaymentId: (v: string) => void;
+    setFileNumber: (v: string | null) => void;
+    setFileApplicant: (v: string | null) => void;
+    setFileType: (v: string | null) => void;
+    setFileId: (v: string | null) => void;
+    setApplicationId: (v: string | null) => void;
+    setFileTitle: (v: string | null) => void;
+    setResponseUrl: (v: string | null) => void;
+    setRenewalMeta: (meta: {
+      missedYearsCount?: number;
+      lateYearsCount?: number;
+      isLateRenewal?: boolean;
+      lateRenewalCost?: string;
+      serviceFee?: string;
+    }) => void;
+  };
 }
 
 /* ======================================================
@@ -48,13 +62,12 @@ export async function generateRemitaHash(rrr: string) {
 
 export const paymentHandlers: Record<
   string,
-  (ctx: PaymentContext) => Promise<PaymentResult>
+  (ctx: PaymentContext) => Promise<void>
 > = {
   newapplication,
   renewal,
   dashrenewal,
   update,
-  assignment,
   opposition,
   oppositionCounter,
   oppositionResolution,
@@ -73,11 +86,10 @@ export const paymentHandlers: Record<
    HANDLERS
 ====================================================== */
 
-async function newapplication(ctx: PaymentContext): Promise<PaymentResult> {
-  const appData = get(applicationData);
+async function newapplication(ctx: PaymentContext): Promise<void> {
+  const appData = get(ctx.applicationData);
   if (!appData) throw new Error("Missing application data");
 
-  // Add this check
   if (!appData.applicationHistory || appData.applicationHistory.length === 0) {
     throw new Error("No application history found");
   }
@@ -109,28 +121,28 @@ async function newapplication(ctx: PaymentContext): Promise<PaymentResult> {
       : appData.type === 1
         ? "New Design Application"
         : "New Trademark Application";
+
   if (!appData.applicants || appData.applicants.length === 0) {
     throw new Error("No applicants found");
   }
+
   const applicantName =
     appData.applicants.length > 1
       ? `${appData.applicants[0].name} et al.`
       : appData.applicants[0].name;
 
-  return {
-    title,
-    cost: result.cost ?? result.amount,
-    rrr,
-    fileNumber: appData.fileId ?? undefined,
-    applicantName,
-    fileType: appData.type ?? undefined,
-    responseUrl: `https://${ctx.baseUrl}/payment/status?rrr=${rrr}&paymentType=newapplication&fileId=${appData.id}&applicationId=${history.id}`,
-  };
+  ctx.state.setTitle(title);
+  ctx.state.setCost(result.cost ?? result.amount);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(appData.fileId ?? null);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileType(appData.type?.toString() ?? null);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=newapplication&fileId=${appData.id}&applicationId=${history.id}`
+  );
 }
 
-/* ---------------- RENEWAL ---------------- */
-
-async function renewal(ctx: PaymentContext): Promise<PaymentResult> {
+async function renewal(ctx: PaymentContext): Promise<void> {
   const raw = sessionStorage.getItem("applicationData");
   const parsed = raw ? JSON.parse(raw) : null;
 
@@ -146,48 +158,48 @@ async function renewal(ctx: PaymentContext): Promise<PaymentResult> {
   }
 
   const result = await res.json();
+  const user = get(ctx.loggedInUser);
 
-  return {
-    title: "Patent Renewal",
-    cost: result.cost,
-    rrr: result.rrr,
-    fileNumber: parsed.fileId,
-    applicantName:
-      get(loggedInUser)?.firstName + " " + get(loggedInUser)?.lastName,
-    responseUrl: `https://${ctx.baseUrl}/home/postregistration/paid?paymentType=renewal&fileId=${parsed.fileId}&rrr=${result.rrr}`,
-    extra: {
-      isLateRenewal: result.isLateRenewal,
-      missedYearsCount: result.missedYearsCount,
-      lateYearsCount: result.lateYearsCount,
-    },
-  };
+  ctx.state.setTitle("Patent Renewal");
+  ctx.state.setCost(result.cost);
+  ctx.state.setPaymentId(result.rrr);
+  ctx.state.setFileNumber(parsed.fileId);
+  ctx.state.setFileApplicant(`${user?.firstName} ${user?.lastName}`);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal&fileId=${parsed.fileId}&rrr=${result.rrr}`
+  );
+  ctx.state.setRenewalMeta({
+    isLateRenewal: result.isLateRenewal,
+    missedYearsCount: result.missedYearsCount,
+    lateYearsCount: result.lateYearsCount,
+  });
 }
 
-/* ---------------- DASH RENEWAL ---------------- */
-
-async function dashrenewal(ctx: PaymentContext): Promise<PaymentResult> {
-  const cost = ctx.params.get("amount");
-  const rrr = ctx.params.get("paymentId");
-  const fileId = ctx.params.get("fileId");
+async function dashrenewal(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("paymentId");
+  const fileId = params.get("fileId");
 
   if (!cost || !rrr || !fileId) {
     throw new Error("Missing dash renewal params");
   }
 
-  return {
-    title: "Renewal",
-    cost,
-    rrr,
-    fileNumber: fileId,
-    applicantName:
-      get(loggedInUser)?.firstName + " " + get(loggedInUser)?.lastName,
-    responseUrl: `https://${ctx.baseUrl}/payment/status?rrr=${rrr}&paymentType=dashrenewal&fileId=${fileId}`,
-  };
+  const user = get(ctx.loggedInUser);
+
+  ctx.state.setTitle("Renewal");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setFileApplicant(`${user?.firstName} ${user?.lastName}`);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=dashrenewal&fileId=${fileId}`
+  );
 }
 
 /* ---------------- UPDATE ---------------- */
 
-async function update(ctx: PaymentContext): Promise<PaymentResult> {
+async function update(ctx: PaymentContext): Promise<void> {
   const appData = get(applicationData);
   if (!appData) throw new Error("Missing application data");
 
@@ -211,27 +223,27 @@ async function update(ctx: PaymentContext): Promise<PaymentResult> {
 
   const result = await res.json();
 
-  return {
-    title: "Data Update",
-    cost: result.cost,
-    rrr: result.rrr,
-    fileNumber: appData.fileId ?? undefined,
-    applicantName: appData.applicants?.[0]?.name ?? "",
-    fileType: appData.type ?? undefined,
-    responseUrl: `https://${ctx.baseUrl}/payment/status?rrr=${result.rrr}&paymentType=update&fileId=${appData.id}`,
-  };
+  ctx.state.setTitle("Data Update");
+  ctx.state.setCost(result.cost);
+  ctx.state.setPaymentId(result.rrr);
+  ctx.state.setFileNumber(appData.fileId ?? undefined);
+  ctx.state.setFileApplicant(appData.applicants?.[0]?.name ?? "");
+  ctx.state.setFileType(appData.type ?? undefined);
+  ctx.state.setResponseUrl(
+    `https://${ctx.baseUrl}/payment/status?rrr=${result.rrr}&paymentType=update&fileId=${appData.id}`
+  );
 }
 
-/* ---------------- CLERICAL ---------------- */
+/* ---------------- CLERICAL UPDATE ---------------- */
 
-async function clerical(ctx: PaymentContext): Promise<PaymentResult> {
+async function clerical(ctx: PaymentContext): Promise<void> {
   const raw = localStorage.getItem("formData");
   const parsed = raw ? JSON.parse(raw) : null;
-
+  const params = ctx.page.url.searchParams;
   if (!parsed) throw new Error("Missing clerical data");
 
-  const cost = ctx.params.get("amount");
-  const rrr = ctx.params.get("rrr");
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
 
   if (!cost || !rrr) throw new Error("Missing payment details");
 
@@ -240,36 +252,36 @@ async function clerical(ctx: PaymentContext): Promise<PaymentResult> {
       ? parsed.OldApplicantNames[0]
       : (parsed.OldApplicantName ?? "");
 
-  return {
-    title: "Clerical Update",
-    cost,
-    rrr,
-    fileNumber: parsed.FileId,
-    applicantName,
-    responseUrl: `https://${ctx.baseUrl}/home/clerical-update/paid?paymentType=clerical`,
-  };
+  ctx.state.setTitle("Clerical Update");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(parsed.FileId);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/clerical-update/paid?paymentType=clerical`
+  );
 }
 
 /* ---------------- OPPOSITION ---------------- */
 
-async function opposition(ctx: PaymentContext): Promise<PaymentResult> {
+async function opposition(ctx: PaymentContext): Promise<void> {
   const data = localStorage.getItem("oppositionData");
   const file = localStorage.getItem("fileData");
-
+  const params = ctx.page.url.searchParams;
   if (!data || !file) throw new Error("Missing opposition data");
 
   const opp = JSON.parse(data);
   const f = JSON.parse(file);
   const info = f.fileInfo;
 
-  return {
-    title: `Opposition of ${info.fileTitle}`,
-    cost: ctx.params.get("amount") ?? info.cost,
-    rrr: opp.paymentId,
-    fileNumber: info.fileId,
-    applicantName: opp.name,
-    responseUrl: `https://${ctx.baseUrl}/opposition/paid?rrr=${opp.paymentId}`,
-  };
+  ctx.state.setTitle(`Opposition of ${info.fileTitle}`);
+  ctx.state.setCost(params.get("amount") ?? info.cost);
+  ctx.state.setPaymentId(opp.paymentId);
+  ctx.state.setFileNumber(info.fileId);
+  ctx.state.setFileApplicant(opp.name);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/opposition/paid?rrr=${opp.paymentId}`
+  );
 }
 
 /* ---------------- SIMPLE PARAM HANDLERS ---------------- */
@@ -324,53 +336,55 @@ async function tradecertificate(ctx: PaymentContext) {
    SMALL HELPERS (INLINE)
 ====================================================== */
 
-async function simplePaidHandler(ctx: PaymentContext): Promise<PaymentResult> {
-  const cost = ctx.params.get("amount");
-  const rrr = ctx.params.get("rrr");
+async function simplePaidHandler(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  return {
-    title: "Payment",
-    cost,
-    rrr,
-    applicantName:
-      get(loggedInUser)?.firstName + " " + get(loggedInUser)?.lastName,
-    responseUrl: `https://${ctx.baseUrl}/home/postregistration/paid`,
-  };
+  ctx.state.setTitle("Payment");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(
+    `${get(ctx.loggedInUser)?.firstName} ${get(ctx.loggedInUser)?.lastName}`
+  );
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/paid`
+  );
 }
 
 async function simpleRedirectHandler(
   ctx: PaymentContext,
   path: string
-): Promise<PaymentResult> {
-  const cost = ctx.params.get("amount");
-  const rrr = ctx.params.get("rrr");
+): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  return {
-    title: "Payment",
-    cost,
-    rrr,
-    responseUrl: `https://${ctx.baseUrl}${path}?rrr=${rrr}`,
-  };
+  ctx.state.setTitle("Payment");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setResponseUrl(`https://${ctx.page.url.host}${path}?rrr=${rrr}`);
 }
 
 async function simpleParamHandler(
   ctx: PaymentContext,
   type: string
-): Promise<PaymentResult> {
-  const cost = ctx.params.get("cost");
-  const rrr = ctx.params.get("rrr");
-  const title = ctx.params.get("title") ?? "Payment";
+): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("cost");
+  const rrr = params.get("rrr");
+  const title = params.get("title") ?? "Payment";
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  return {
-    title,
-    cost,
-    rrr,
-    responseUrl: `https://${ctx.baseUrl}/payment/status?rrr=${rrr}&paymentType=${type}`,
-  };
+  ctx.state.setTitle(title);
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=${type}`
+  );
 }

@@ -42,6 +42,7 @@
     titleOfInvention: string;
     patentType: PatentTypes | null;
     fileOrigin: string | null;
+    titleOfDesign: string | null;
   }
 
   let results: SearchResult[] = [];
@@ -188,22 +189,24 @@
             <Table.Head class="w-16">S/N</Table.Head>
             <Table.Head>File Number</Table.Head>
             <Table.Head class="w-128">
-              {#if filteredResults.length > 0 && filteredResults[0].fileTypes === 2}
-                File Title
-              {:else if filteredResults.length > 0 && filteredResults[0].fileTypes === 0}
+              {#if filteredResults.length > 0 && filteredResults[0].fileTypes === FileTypes.Trademark}
+                Title of Trademark
+              {:else if filteredResults.length > 0 && filteredResults[0].fileTypes === FileTypes.Patent}
                 Title Of Invention
+              {:else}
+                Title of Design
               {/if}
             </Table.Head>
             <Table.Head class="w-32">File Applicant</Table.Head>
-            <Table.Head class="w-24">
-              {#if filteredResults.length > 0 && filteredResults[0].fileTypes === 2}
-                Class
-              {:else if filteredResults.length > 0 && filteredResults[0].fileTypes === 0}
-                Patent Type
-              {:else}
-                Class/Patent Type
-              {/if}
-            </Table.Head>
+            {#if filteredResults.length > 0 && filteredResults[0].fileTypes !== FileTypes.Design}
+              <Table.Head class="w-24">
+                {#if filteredResults.length > 0 && filteredResults[0].fileTypes === FileTypes.Trademark}
+                  Class
+                {:else if filteredResults.length > 0 && filteredResults[0].fileTypes === FileTypes.Patent}
+                  Patent Type
+                {/if}
+              </Table.Head>
+            {/if}
             <Table.Head class="w-32">
               {#if filteredResults.length > 0 && filteredResults[0].fileTypes === 2}
                 Representation
@@ -223,22 +226,26 @@
               <Table.Cell class="font-medium">{index + 1}</Table.Cell>
               <Table.Cell>{result.fileId}</Table.Cell>
               <Table.Cell>
-                {#if result.fileTypes === 2}
+                {#if result.fileTypes === FileTypes.Trademark}
                   {result.titleOfTradeMark}
-                {:else if result.fileTypes === 0}
+                {:else if result.fileTypes === FileTypes.Patent}
                   {result.titleOfInvention}
+                {:else}
+                  {result.titleOfDesign}
                 {/if}
               </Table.Cell>
               <Table.Cell>{result.fileApplicant}</Table.Cell>
+              {#if result.fileTypes !== FileTypes.Design}
+                <Table.Cell>
+                  {#if result.fileTypes === FileTypes.Trademark}
+                    {result.tradeMarkClass}
+                  {:else if result.fileTypes === FileTypes.Patent}
+                    {result.patentType}
+                  {/if}
+                </Table.Cell>
+              {/if}
               <Table.Cell>
-                {#if result.fileTypes === 2}
-                  {result.tradeMarkClass}
-                {:else if result.fileTypes === 0}
-                  {result.patentType}
-                {/if}
-              </Table.Cell>
-              <Table.Cell>
-                {#if result.fileTypes === 2}
+                {#if result.fileTypes === FileTypes.Trademark}
                   {#if Number(result.tradeMarkLogo) === 0}
                     Device
                   {:else if Number(result.tradeMarkLogo) === 1}
@@ -280,9 +287,13 @@
                       }
                     } else if (result.fileTypes === FileTypes.Design) {
                       // Design options
-                      if (selectedValue === "applicant-info") {
+                      if (selectedValue === "update-name") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantInformation}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`
+                        );
+                      } else if (selectedValue === "update-address") {
+                        goto(
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`
                         );
                       } else if (selectedValue === "design-info") {
                         goto(
@@ -369,8 +380,9 @@
                     <option value="correspondence">Update Correspondence</option
                     >
                   {:else if result.fileTypes === FileTypes.Design}
-                    <option value="applicant-info"
-                      >Update Applicant Information</option
+                    <option value="update-name">Update Applicant Name</option>
+                    <option value="update-address"
+                      >Update Applicant Address</option
                     >
                     <option value="design-info"
                       >Update Design Information</option
