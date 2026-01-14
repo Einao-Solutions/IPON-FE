@@ -21,7 +21,7 @@
 	let applicantEmail: string | null = null;
 	const dispatch = createEventDispatcher();
 	let type: string = '';
-	let fileTypeOptions = ['Patent', 'Trademark'];
+	let fileTypeOptions = ['Patent', 'Trademark', 'Design'];
 	
 	// NEW: Context-aware functionality
 	let ipType: string | null = null;
@@ -125,7 +125,6 @@
 			await goto(`/home/clerical-update/search/`);
 		}	
 		catch (err) {
-				//error = 'Payment failed';
 			const catchError = err as Error;
 			error = catchError.message || 'An error occurred during search';
 		    
@@ -221,10 +220,6 @@
 
 			<!-- Modal Footer -->
 			<div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
-				<!-- <span class="flex items-center text-xs text-gray-600">
-					<Icon icon="mdi:information-variant-circle" class="mr-2 text-red-500" style="font-size: 1.3em;" />
-					Post Registration is strictly for registered files with active status.
-				</span> -->
 				<button
 					type="button"
 					on:click={closeModal}
