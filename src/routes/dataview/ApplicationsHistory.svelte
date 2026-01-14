@@ -667,7 +667,6 @@
   function changeStatus(application: ApplicationHistoryType) {
     selectedApplication = application;
     showUpdateStatusForm = true;
-    
   }
 
   function showTreatDialog(application: ApplicationHistoryType) {
@@ -1253,7 +1252,7 @@
         </div>
       {/if}
 
-      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some(r => $loggedInUser.userRoles.includes(r))}
+      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r) )}
         {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected}
           <div class="mt-4">
             <Label
@@ -1290,7 +1289,7 @@
 			{/if}
 		{/if}		 -->
       <Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some(r => $loggedInUser.userRoles.includes(r))}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r) )}
           {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
             <Button
               on:click={() => {
@@ -1434,7 +1433,7 @@
             </p>
           {/if}
         </div>
-        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkAcceptance, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin].some(r => $loggedInUser.userRoles.includes(r))}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkAcceptance, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
           <!-- Action Buttons -->
           <div class="flex gap-3 justify-end pt-2 border-t">
             <Button
@@ -2033,7 +2032,7 @@
                     >Verify Payment ({application.paymentId ??
                       "-"})</DropdownMenu.Item
                   >
-                  {#if ($loggedInUser?.userRoles?.includes(UserRoles.Tech || UserRoles.TrademarkCertification) && application.applicationType === 5) || application.applicationType === 8 || application.applicationType === 7 || application.applicationType === 9 || application.applicationType === 10}
+                  {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewRecordalData(application);
@@ -2080,7 +2079,7 @@
                     {/if}
                   {/if}
                   {#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some(r => $loggedInUser.userRoles.includes(r))}
+                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
                       <DropdownMenu.Item
                         on:click={() => viewRecordalData(application)}
                         >View Application</DropdownMenu.Item
@@ -2122,13 +2121,9 @@
                       </DropdownMenu.Item>
                     {/if}
                   {/if}
-
                 </DropdownMenu.Group>
-
               </DropdownMenu.Content>
-
             </DropdownMenu.Root>
-            
           </Table.Cell>
         </Table.Row>
       {/each}

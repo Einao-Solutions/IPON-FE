@@ -92,6 +92,7 @@
   }
 
   let isStaff: boolean = false;
+  
   function canCreateApplication() {
     return (
       $loggedInUser?.userRoles.includes(UserRoles.User) ||
@@ -590,16 +591,9 @@
       appealFileInput.value = "";
     }
   }
-  let showNoticeModal = true; // show on first load
+  let showNoticeModal = false; // show on first load
   const noticeTitle = "Notice";
-  const noticeMessage = `Dear Esteemed Customer,
-We are pleased to inform you that online services on the official website of the Commercial Law Department, Federal Ministry of Industry, Trade and Investment — www.iponigeria.com — have now been fully restored.
-We have also introduced important updates to improve your experience. Here’s what has changed:
-• We have deployed an improved user dashboard for easier access to the modules you use daily.
-• Processing speed for payments has been significantly optimized.
-• Key modules have been enhanced and reorganized for your filing convenience.
-We understand that you may need time to familiarize yourself with the new layout. Our support team is available 24/7 to assist with any requests, enquiries, or issues through the support link on your user dashboard.
-Thank you for choosing the Commercial Law Department, Federal Ministry of Industry, Trade and Investment — proudly supported by Einao Solutions, your trusted IP technology support partner.`;
+  const noticeMessage = "";
 
   function closeNotice() {
     showNoticeModal = false;
@@ -619,6 +613,10 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
 {#if showOwnership && ownershipForm}
   <svelte:component this={ownershipForm} {...ownershipData} />
 {/if}
+
+
+
+
 
 <!-- Pre-Registration Dialog -->
 <Dialog.Root
@@ -1591,10 +1589,11 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
 {:else}
   <!-- Show marquee banner only for regular users (non-staff) -->
   {#if !isStaff}
-    <div
-      class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
-    >
-      <div class="absolute whitespace-nowrap animate-marquee top-1.5">
+    <div class="relative">
+      <div
+        class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
+      >
+        <div class="absolute whitespace-nowrap animate-marquee top-1.5">
         You can now file Withdrawals for all application types using the
         'Withdrawal' Module on the dashboard.
         <b>◆</b>
@@ -1631,6 +1630,7 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
         to be updated via the "Update Patent File" Module on the dashboard to ensure
         the completeness of all fields within the documents.
       </div>
+    </div>
     </div>
   {/if}
 {/if}
@@ -1674,23 +1674,22 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
       <div
         class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
       >
-        <!-- Trademark Card -->
         <button
           class="text-left w-full group relative overflow-hidden"
           on:click={() => (currentView = "trademark")}
         >
           <div
-            class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1"
+            class="relative bg-gradient-to-br from-green-50 via-white to-green-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
           >
             <!-- Subtle background pattern -->
             <div
-              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             ></div>
 
             <div class="relative z-10">
               <div class="mb-5">
                 <div
-                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl"
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
                 >
                   <Icon
                     icon="mdi:scale-balance"
@@ -1711,7 +1710,7 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
                   >{getServiceCount("trademark")} services available</span
                 >
                 <div
-                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300"
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
                 >
                   <Icon
                     icon="heroicons:arrow-right"
@@ -1729,17 +1728,17 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
           on:click={() => (currentView = "patent")}
         >
           <div
-            class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-200-300/60 hover:-translate-y-1"
+            class="relative bg-gradient-to-br from-green-50 via-white to-green-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
           >
             <!-- Subtle background pattern -->
             <div
-              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             ></div>
 
             <div class="relative z-10">
               <div class="mb-5">
                 <div
-                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl"
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
                 >
                   <Icon
                     icon="mdi:lightbulb-outline"
@@ -1760,7 +1759,7 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
                   >{getServiceCount("patent")} services available</span
                 >
                 <div
-                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300"
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
                 >
                   <Icon
                     icon="heroicons:arrow-right"
@@ -1778,17 +1777,17 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
           on:click={() => (currentView = "design")}
         >
           <div
-            class="relative bg-gradient-to-br from-white via-slate-50 to-white border border-slate-200/60 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/20 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
+            class="relative bg-gradient-to-br from-green-50 via-white to-green-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1"
           >
             <!-- Subtle background pattern -->
             <div
-              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             ></div>
 
             <div class="relative z-10">
               <div class="mb-5">
                 <div
-                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-green-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl"
+                  class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
                 >
                   <Icon
                     icon="mdi:palette-outline"
@@ -1809,7 +1808,7 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
                   >{getServiceCount("design")} services available</span
                 >
                 <div
-                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300"
+                  class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
                 >
                   <Icon
                     icon="heroicons:arrow-right"
@@ -1849,56 +1848,54 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
         <!-- 
 					DETAILED STATISTICS SECTION
 					========================== 
-					This section provides comprehensive statistical breakdowns for Tech and SuperAdmin users only.
+					This section provides comprehensive statistical breakdowns for the logged-in user.
 					It displays detailed application statistics organized by IP type (Patents, Designs, Trademarks) 
-					and further broken down by application types and statuses.
+					and further broken down by application types and statuses for the user's own applications.
 					
 					Visibility Logic:
-					- ONLY visible to Tech and SuperAdmin roles
-					- Hidden from all other roles (User, Agent, Staff, and IP-specific officers)
-					- IP-specific officers get their own StaffDashboard instead
+					- Visible to all users (similar to Portfolio Summary)
+					- Shows user-specific detailed statistics (not system-wide)
+					- Filtered to show only the logged-in user's applications
 				-->
-        {#if $loggedInUser && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin))}
-          <div class="mt-6">
-            <!-- Section Header: Title and description for the detailed statistics -->
-            <div class="mb-4">
-              <div class="flex items-center space-x-3 mb-3">
-                <!-- Optional: Icon for the statistics section (currently commented out) -->
-                <!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+        <div class="mt-6">
+          <!-- Section Header: Title and description for the detailed statistics -->
+          <div class="mb-4">
+            <div class="flex items-center space-x-3 mb-3">
+              <!-- Optional: Icon for the statistics section (currently commented out) -->
+              <!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
 									<Icon icon="mdi:chart-line" class="text-white text-lg" />
 								</div> -->
-                <div>
-                  <!-- Main heading for the statistics section -->
-                  <h2 class="text-xl font-bold text-slate-800">
-                    Detailed Statistics
-                  </h2>
-                  <!-- Descriptive subtext explaining what the statistics show -->
-                  <p class="text-slate-600 text-sm">
-                    Comprehensive breakdown by application types and status
-                  </p>
-                </div>
+              <div>
+                <!-- Main heading for the statistics section -->
+                <h2 class="text-xl font-bold text-slate-800">
+                  Detailed Statistics
+                </h2>
+                <!-- Descriptive subtext explaining what the statistics show -->
+                <p class="text-slate-600 text-sm">
+                  Your portfolio breakdown by application types and status
+                </p>
               </div>
             </div>
-            <!-- 
+          </div>
+          <!-- 
 							Statistics Content Container:
 							- Styled with subtle background, blur effect, and soft borders
 							- Contains the UserDashboard component with showOnlyStatistics=true
 							- This prop tells UserDashboard to render only the detailed statistics accordions
 						-->
-            <div
-              class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
-            >
-              <!-- 
+          <div
+            class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
+          >
+            <!-- 
 								UserDashboard Component (Statistics Mode):
 								- user={$loggedInUser}: Passes the logged-in user data
 								- showOnlyStatistics={true}: Flag to render only the detailed statistics view
 								- This will show accordion sections for Patents, Designs, and Trademarks
-								- Each accordion contains application types and status breakdowns
+								- Each accordion contains application types and status breakdowns for the user's own applications
 							-->
-              <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
-            </div>
+            <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
           </div>
-        {/if}
+        </div>
       </div>
     </div>
   </div>
@@ -2313,4 +2310,5 @@ Thank you for choosing the Commercial Law Department, Federal Ministry of Indust
   .animate-marquee {
     animation: marquee 25s linear infinite;
   }
+  
 </style>

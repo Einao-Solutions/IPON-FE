@@ -20,6 +20,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { goto } from '$app/navigation';
 import * as Card from "$lib/components/ui/card"
+import * as Dialog from "$lib/components/ui/dialog"
   import { User } from 'lucide-svelte';
 	import ministry from "$lib/assets/cld.png";
 	let isLoading: boolean = true;
@@ -289,17 +290,18 @@ return show;
 				height="1.6rem"
 	/>
 {:else}
-	<!-- Unified Header -->
-	<div class="bg-green-50 rounded-xl p-5 mb-8 border border-green-100 shadow-md hover:shadow-lg transition-shadow duration-200 sticky top-0 z-10">
+
+	<!-- Professional Header -->
+	<div class="bg-white rounded-xl p-5 mb-8 border border-green-200/40 shadow-lg hover:shadow-xl transition-all duration-300 sticky top-0 z-10">
 		<div class="flex items-center justify-between space-x-6">
 			<!-- Left Logo -->
 			<div class="flex-shrink-0">
-				<img src="{ministry}" alt="Ministry Logo" class="h-16 w-16 md:h-20 md:w-20 object-contain opacity-90" />
+				<img src="{ministry}" alt="Ministry Logo" class="h-16 w-16 md:h-20 md:w-20 object-contain hover:scale-105 transition-transform duration-300" />
 			</div>
 			
 			<!-- Center Content -->
 			<div class="text-center flex-1">
-				<h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-gray-800 mb-1 leading-tight">
+				<h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-green-600 mb-1 leading-tight">
 					Intellectual Property Office Nigeria
 				</h1>
 				<p class="text-green-600 font-semibold text-xs md:text-sm tracking-wide mb-2">
@@ -314,15 +316,15 @@ return show;
 			<!-- Right Logo (Officer's IP Type) -->
 			<div class="flex-shrink-0">
 			{#if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Trademark}
-				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-sm">
+				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105">
 					<Icon icon="mdi:scale-balance" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
 				</div>
 			{:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Patent}
-				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-sm">
+				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105">
 					<Icon icon="mdi:lightbulb-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
 				</div>
 			{:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Design}
-				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-sm">
+				<div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105">
 					<Icon icon="mdi:palette-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
 				</div>
 				{/if}
@@ -567,4 +569,5 @@ return show;
 	:global([data-radix-accordion-trigger]::after) {
 		display: none !important;
 	}
+	
 </style>
