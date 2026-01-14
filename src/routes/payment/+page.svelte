@@ -66,7 +66,9 @@
 		'clerical',
 		'publicationstatusupdate',
 		'filewithdrawal',
-		'patentassignment'
+		'patentassignment',
+		'patentlicense',
+		'patentmortgage'
 	];
 	let currentBaseurl: string = '';
 	beforeUpdate(async () => {
@@ -380,6 +382,46 @@
 			}
 			await setHash();
 			responseurl = `https://${currentBaseurl}/home/postregistration/patentassignment/result?rrr=${paymentId}&paymentType=${type}`;
+			isLoading = false;
+		}
+
+		if (type === 'patentlicense') {
+			title = 'Patent License';
+			fileType = 0;
+			const appData = sessionStorage.getItem('searchParams');
+			const parsed = appData ? JSON.parse(appData) : null;
+			const fileData = sessionStorage.getItem('searchResults');
+			const parsedData = fileData ? JSON.parse(fileData) : null;
+			fileApplicant = userName;
+			fileNumber = parsed.query;
+			cost = $page.url.searchParams.get('amount') ?? undefined;
+			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
+			if (cost == undefined || paymentId == undefined) {
+				await goto(`/home/dashboard`);
+				return;
+			}
+			await setHash();
+			responseurl = `https://${currentBaseurl}/home/postregistration/patentlicense/result?rrr=${paymentId}&paymentType=${type}`;
+			isLoading = false;
+		}
+
+		if (type === 'patentmortgage') {
+			title = 'Patent Mortgage';
+			fileType = 0;
+			const appData = sessionStorage.getItem('searchParams');
+			const parsed = appData ? JSON.parse(appData) : null;
+			const fileData = sessionStorage.getItem('searchResults');
+			const parsedData = fileData ? JSON.parse(fileData) : null;
+			fileApplicant = userName;
+			fileNumber = parsed.query;
+			cost = $page.url.searchParams.get('amount') ?? undefined;
+			paymentId = $page.url.searchParams.get('rrr') ?? undefined;
+			if (cost == undefined || paymentId == undefined) {
+				await goto(`/home/dashboard`);
+				return;
+			}
+			await setHash();
+			responseurl = `https://${currentBaseurl}/home/postregistration/patentmortgage/result?rrr=${paymentId}&paymentType=${type}`;
 			isLoading = false;
 		}
 
