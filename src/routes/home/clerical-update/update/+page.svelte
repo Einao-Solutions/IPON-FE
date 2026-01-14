@@ -79,7 +79,7 @@
     designType: number | null;
     designCreators: DesignCreator[] | [];
     titleOfDesign?: string | null;
-    designAttachments: File[];
+    DesignAttachments: File[];
   }
 
   let fileInfo: FileInfo = {
@@ -308,7 +308,7 @@
     designType: null,
     titleOfDesign: null,
     designCreators: [],
-    designAttachments: [],
+    DesignAttachments: [],
   };
 
   function getFormTitle(type: ClericalUpdateTypes | null): string {
@@ -523,10 +523,16 @@
       } else if (updateType === ClericalUpdateTypes.ApplicantName) {
         formData.append("ApplicantName", newData.applicantName ?? "");
       } else if (updateType === ClericalUpdateTypes.DesignAttachments) {
-        // Append design attachments
-        if (newData.designAttachments && newData.designAttachments.length > 0) {
-          newData.designAttachments.forEach((file, index) => {
-            formData.append(`DesignAttachment${index + 1}`, file);
+        // Append new design attachment files
+        if (newData.DesignAttachments && newData.DesignAttachments.length > 0) {
+          newData.DesignAttachments.forEach((file) => {
+            formData.append("DesignAttachments", file);
+          });
+        }
+        // Append removed attachment URLs
+        if (removedDesignAttachments && removedDesignAttachments.length > 0) {
+          removedDesignAttachments.forEach((url) => {
+            formData.append("RemoveDesignAttachmentUrls", url);
           });
         }
       } else if (updateType === ClericalUpdateTypes.ApplicantAddress) {
@@ -717,13 +723,13 @@
       return;
     }
 
-    newData.designAttachments = [...newData.designAttachments, ...files];
+    newData.DesignAttachments = [...newData.DesignAttachments, ...files];
     // Allow selecting the same file again later
     input.value = "";
   }
 
   function removeNewAttachment(index: number) {
-    newData.designAttachments = newData.designAttachments.filter(
+    newData.DesignAttachments = newData.DesignAttachments.filter(
       (_, i) => i !== index
     );
   }
@@ -1100,7 +1106,7 @@
             UPDATE DESIGN ATTACHMENTS
           </div>
 
-          <!-- Existing attachments (removable) -->
+          <!-- Existing attachments (removable) -->z
           <div class="p-4">
             <label class="block text-sm font-medium text-gray-500 mb-2">
               Current Attachments
@@ -1168,9 +1174,9 @@
               on:change={handleAddDesignAttachments}
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
             />
-            {#if newData.designAttachments.length > 0}
+            {#if newData.DesignAttachments.length > 0}
               <div class="mt-3 flex flex-wrap gap-3">
-                {#each newData.designAttachments as file, index}
+                {#each newData.DesignAttachments as file, index}
                   <div class="relative">
                     <img
                       src={URL.createObjectURL(file)}
