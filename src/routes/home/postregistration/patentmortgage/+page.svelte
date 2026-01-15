@@ -183,7 +183,7 @@
 
 	async function handlePayment() {
 		if (cost && paymentId) {
-			await goto(`/payment/?type=patentmortgage&rrr=${paymentId}&amount=${cost}`);
+			await goto(`/payment/?type=patentmortgage&rrr=${paymentId}&amount=${cost}&fileId=${fileId}`);
 		}
 	}
 
@@ -284,7 +284,7 @@
 				<div class="p-4 space-y-6">
 					<!-- Mortgage Deeds -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<label for="mortgageDeeds" class="block text-sm font-medium text-gray-700 mb-2">
 							Deed of Mortgage: <span class="text-red-500">*</span>
 						</label>
 						
@@ -362,7 +362,7 @@
 
 					<!-- Supporting Documents -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<label for="supportingDocuments" class="block text-sm font-medium text-gray-700 mb-2">
 							Other Supporting Documents: <span class="text-red-500">*</span>
 						</label>
 						

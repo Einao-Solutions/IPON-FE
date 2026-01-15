@@ -80,6 +80,9 @@ export const paymentHandlers: Record<
   changedatarecordal,
   clerical,
   tradecertificate,
+  patentassignment,
+  patentlicense,
+  patentmortgage,
 };
 
 /* ======================================================
@@ -386,5 +389,72 @@ async function simpleParamHandler(
   ctx.state.setPaymentId(rrr);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=${type}`
+  );
+}
+
+/* ======================================================
+   PATENT POST-REGISTRATION HANDLERS
+====================================================== */
+
+async function patentassignment(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+
+  ctx.state.setTitle("Patent Assignment Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}`
+  );
+}
+
+async function patentlicense(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+
+  ctx.state.setTitle("Patent License Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}`
+  );
+}
+
+async function patentmortgage(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+
+  ctx.state.setTitle("Patent Mortgage Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}`
   );
 }

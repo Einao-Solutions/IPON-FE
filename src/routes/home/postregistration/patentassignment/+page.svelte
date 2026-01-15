@@ -179,7 +179,7 @@
 
 	async function handlePayment() {
 		if (cost && paymentId) {
-			await goto(`/payment/?type=patentassignment&rrr=${paymentId}&amount=${cost}`);
+			await goto(`/payment/?type=patentassignment&rrr=${paymentId}&amount=${cost}&fileId=${fileId}`);
 		}
 	}
 
