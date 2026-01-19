@@ -210,7 +210,8 @@
 			'patent-assignment': 'Patent Assignment',
 			'patent-ctc': 'Patent CTC (Certificate to Copy)',
 			'patent-license': 'Patent License',
-			'patent-mortgage': 'Patent Mortgage'
+			'patent-mortgage': 'Patent Mortgage',
+			'patent-merger': 'Patent Merger'
 		};
 		return serviceNames[serviceType as keyof typeof serviceNames] || serviceType;
 	}
@@ -224,7 +225,8 @@
 			'patent-assignment': `/home/postregistration/patentassignment?fileId=${result.fileId}&fileType=0`,
 			'patent-ctc': `/home/postregistration/patentctc?fileId=${result.fileId}&fileType=0`,
 			'patent-license': `/home/postregistration/patentlicense?fileId=${result.fileId}&fileType=0`,
-			'patent-mortgage': `/home/postregistration/patentmortgage?fileId=${result.fileId}&fileType=0`
+			'patent-mortgage': `/home/postregistration/patentmortgage?fileId=${result.fileId}&fileType=0`,
+			'patent-merger': `/home/postregistration/patentmerger?fileId=${result.fileId}&fileType=0`
 		};
 		
 		const route = serviceRoutes[searchParams.serviceType as keyof typeof serviceRoutes];

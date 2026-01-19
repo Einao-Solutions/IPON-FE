@@ -461,7 +461,7 @@ export const patentServices: IPService[] = [
     icon: 'mdi:file-edit-outline',
     route: 'modal', // Will open modal first
     category: 'filing',
-    price: 'TBD'
+    price: ''
   },
   {
     id: 'patent-assignment',
@@ -470,7 +470,7 @@ export const patentServices: IPService[] = [
     icon: 'mdi:account-switch-outline',
     route: 'modal', // Will open modal first
     category: 'filing',
-    price: 'TBD'
+    price: ''
   },
   {
     id: 'patent-ctc',
@@ -479,7 +479,7 @@ export const patentServices: IPService[] = [
     icon: 'mdi:certificate-outline',
     route: 'modal', // Will open modal first
     category: 'filing',
-    price: 'TBD'
+    price: ''
   },
   {
     id: 'patent-license',
@@ -488,7 +488,7 @@ export const patentServices: IPService[] = [
     icon: 'mdi:handshake-outline',
     route: 'modal', // Will open modal first
     category: 'filing',
-    price: 'TBD'
+    price: ''
   },
   {
     id: 'patent-mortgage',
@@ -497,7 +497,16 @@ export const patentServices: IPService[] = [
     icon: 'mdi:bank-outline',
     route: 'modal', // Will open modal first
     category: 'filing',
-    price: 'TBD'
+    price: ''
+  },
+  {
+    id: 'patent-merger',
+    name: 'PATENT MERGER',
+    description: 'Merge patent applications',
+    icon: 'mdi:merge',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price:''
   },
 
 ];

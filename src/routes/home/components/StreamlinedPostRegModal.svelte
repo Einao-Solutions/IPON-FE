@@ -37,7 +37,8 @@
 			'patent-assignment': `/home/postregistration/patentassignment?fileId=${fileId}&fileType=${fileType}`,
 			'patent-ctc': `/home/postregistration/patentctc?fileId=${fileId}&fileType=${fileType}`,
 			'patent-license': `/home/postregistration/patentlicense?fileId=${fileId}&fileType=${fileType}`,
-			'patent-mortgage': `/home/postregistration/patentmortgage?fileId=${fileId}&fileType=${fileType}`
+			'patent-mortgage': `/home/postregistration/patentmortgage?fileId=${fileId}&fileType=${fileType}`,
+			'patent-merger': `/home/postregistration/patentmerger?fileId=${fileId}&fileType=${fileType}`
 		};
 		return routeMap[serviceId] || '';
 	}

@@ -71,7 +71,8 @@
       'patent-assignment', 
       'patent-ctc',
       'patent-license',
-      'patent-mortgage'
+      'patent-mortgage',
+      'patent-merger'
     ].includes(service.id)) {
       // NEW STREAMLINED FLOW - Handle context-aware patent post-registration services
       const event = new CustomEvent('openStreamlinedPostRegModal', {

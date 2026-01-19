@@ -8,13 +8,13 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
 
-	interface PatentLicenseData {
-		licenseDeeds: File[];
+	interface PatentMergerData {
+		mergerDeeds: File[];
 		supportingDocuments: File[];
 	}
 
-	let formData: PatentLicenseData = {
-		licenseDeeds: [],
+	let formData: PatentMergerData = {
+		mergerDeeds: [],
 		supportingDocuments: []
 	};
 
@@ -45,9 +45,9 @@
 	async function setData(fileNumber: string, fileType: string): Promise<void> {
 		isLoading = true;
 		try {
-			// Get cost information for patent license
+			// Get cost information for patent merger
 			const res = await fetch(
-				`${baseURL}/api/files/GetPatentLicenseCost?fileId=${fileNumber}&fileType=${fileType}`
+				`${baseURL}/api/files/GetPatentMergerCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {
 				error = 'Unable to retrieve cost info.';
@@ -64,14 +64,14 @@
 			applicantEmail = data.applicantEmail;
 			applicantPhone = data.applicantPhone;
 		} catch (err) {
-			error = 'Error fetching patent license cost.';
+			error = 'Error fetching patent merger cost.';
 			console.error(err);
 		} finally {
 			isLoading = false;
 		}
 	}
 
-	function handleFileChange(event: Event, type: 'licenseDeeds' | 'supportingDocuments') {
+	function handleFileChange(event: Event, type: 'mergerDeeds' | 'supportingDocuments') {
 		const target = event.target as HTMLInputElement;
 		const files = target.files;
 		
@@ -84,13 +84,13 @@
 		target.value = '';
 	}
 
-	function removeFile(type: 'licenseDeeds' | 'supportingDocuments', index: number) {
+	function removeFile(type: 'mergerDeeds' | 'supportingDocuments', index: number) {
 		formData[type] = formData[type].filter((_, i) => i !== index);
 	}
 
 	function validateForm(): boolean {
-		if (formData.licenseDeeds.length === 0) {
-			error = 'Please upload at least one deed of license document.';
+		if (formData.mergerDeeds.length === 0) {
+			error = 'Please upload at least one deed of merger document.';
 			return false;
 		}
 
@@ -123,14 +123,14 @@
 		isProcessing = true;
 		try {
 			// Convert files to base64
-			const licenseDeedData = [];
-			for (const file of formData.licenseDeeds) {
+			const mergerDeedData = [];
+			for (const file of formData.mergerDeeds) {
 				const base64Data = await convertToBase64(file);
-				licenseDeedData.push({
+				mergerDeedData.push({
 					fileName: file.name,
 					contentType: file.type,
 					data: base64Data,
-					name: 'DeedofLicense'
+					name: 'Deedofmerger'
 				});
 			}
 			
@@ -141,7 +141,7 @@
 					fileName: file.name,
 					contentType: file.type,
 					data: base64Data,
-					name: 'PatentlicenseSupportingDocuments'
+					name: 'PatentMergerSupportingDocuments'
 				});
 			}
 
@@ -149,26 +149,27 @@
 			const payload = {
 				fileId: fileId,
 				rrr: paymentId,
-				licenseDate: now.toISOString(),
-				licenseRequestDate: now.toISOString(),
-				Deedoflicense: licenseDeedData,
-				PatentLicenseSupportingDocuments: supportingDocsData
+				mergerDate: now.toISOString(),
+				mergerRequestDate: now.toISOString(),
+				Deedofmerger: mergerDeedData,
+				PatentMergerSupportingDocuments: supportingDocsData
 			};
 
 			// Debug: Log the payload before storing
-			console.log('Patent License Payload before storing:', payload);
+			console.log('Patent Merger Payload before storing:', payload);
 			console.log('Supporting docs with names:', supportingDocsData);
 
 			// Store payload data for submission on result page
-			sessionStorage.setItem('patentLicensePayload', JSON.stringify(payload));
+			sessionStorage.setItem('patentMergerPayload', JSON.stringify(payload));
 			
 			// Store form metadata for display
-			sessionStorage.setItem('patentLicenseFormData', JSON.stringify({
-				licenseDeeds: formData.licenseDeeds.map(f => f.name),
+			sessionStorage.setItem('patentMergerFormData', JSON.stringify({
+				mergerDeeds: formData.mergerDeeds.map(f => f.name),
 				supportingDocuments: formData.supportingDocuments.map(f => f.name),
 				patentTitle: patentTitle,
 				applicantName: applicantName,
-				applicantEmail: applicantEmail
+				applicantEmail: applicantEmail,
+				fileId: fileId
 			}));
 
 			// Navigate to payment page
@@ -183,7 +184,7 @@
 
 	async function handlePayment() {
 		if (cost && paymentId) {
-			await goto(`/payment/?type=patentlicense&rrr=${paymentId}&amount=${cost}`);
+			await goto(`/payment/?type=patentmerger&rrr=${paymentId}&amount=${cost}&fileId=${fileId}`);
 		}
 	}
 
@@ -201,8 +202,8 @@
 				Back
 			</Button>
 			<div class="flex-1 flex flex-col items-center justify-center">
-				<h1 class="text-xl font-bold">Patent License Application</h1>
-				<p class="font-light">Submit license documentation for patent licensing</p>
+				<h1 class="text-xl font-bold">Patent Merger Application</h1>
+				<p class="font-light">Submit merger documentation for patent merger</p>
 			</div>
 		</div>
 
@@ -282,10 +283,10 @@
 			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
 				<div class="bg-gray-300 px-4 py-2 font-medium text-black">DOCUMENT UPLOADS</div>
 				<div class="p-4 space-y-6">
-					<!-- License Deeds -->
+					<!-- Merger Deeds -->
 					<div>
 						<label class="block text-sm font-medium text-gray-700 mb-2">
-							Deed of License: <span class="text-red-500">*</span>
+							Deed of Merger: <span class="text-red-500">*</span>
 						</label>
 						
 						<!-- File Upload Input -->
@@ -293,17 +294,17 @@
 							<input
 								type="file"
 								accept=".pdf,.doc,.docx"
-								on:change={(e) => handleFileChange(e, 'licenseDeeds')}
+								on:change={(e) => handleFileChange(e, 'mergerDeeds')}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
 								multiple
 							/>
 						</div>
 						
 						<!-- Uploaded Files List -->
-						{#if formData.licenseDeeds.length > 0}
+						{#if formData.mergerDeeds.length > 0}
 							<div class="space-y-2">
 								<p class="text-sm text-gray-600">Uploaded files:</p>
-								{#each formData.licenseDeeds as file, index}
+								{#each formData.mergerDeeds as file, index}
 									<div class="flex items-center gap-2">
 										<input
 											class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -346,7 +347,7 @@
 										<button
 											type="button"
 											class="px-3 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
-											on:click={() => removeFile('licenseDeeds', index)}
+											on:click={() => removeFile('mergerDeeds', index)}
 										>
 											Remove
 										</button>
@@ -356,7 +357,7 @@
 						{/if}
 						
 						<p class="text-xs text-gray-500">
-							Upload the signed deed of license documents (PDF, DOC, or DOCX format)
+							Upload the signed deed of merger documents (PDF, DOC, or DOCX format)
 						</p>
 					</div>
 
