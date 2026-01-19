@@ -35,7 +35,7 @@
 
   let menus = [
     { icon: "radix-icons:dashboard", location: "Dashboard" },
-    // { icon: 'mdi:file-document-multiple-outline', location: 'Publications' },
+    { icon: 'mdi:file-document-multiple-outline', location: 'Publications' },
     { icon: "mdi:book-open-variant", location: "Resources" },
     { icon: "mdi:help-circle-outline", location: "Support" },
     // { icon: 'cil:search', location: 'Opposition' },
@@ -97,6 +97,11 @@
         )
       ) {
         menus = menus.filter((x) => x.location !== "Opposition");
+      }
+
+      // Hide Publications only from agents (User role)
+      if ($loggedInUser.userRoles.includes(UserRoles.User)) {
+        menus = menus.filter((x) => x.location !== "Publications");
       }
 
       if (

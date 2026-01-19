@@ -45,6 +45,7 @@
 		query: string;
 		classId?: number;
 		fileType: string;
+		serviceType?: string;
 	} | null = null;
 	let fileNumber: string | null = null;
 	let title: string;
@@ -201,6 +202,38 @@
 			priorityModalTimer = null;
 		}
 	}
+
+	// Get service name for display
+	function getServiceName(serviceType: string): string {
+		const serviceNames = {
+			'patent-amendment': 'Patent Amendment',
+			'patent-assignment': 'Patent Assignment',
+			'patent-ctc': 'Patent CTC (Certificate to Copy)',
+			'patent-license': 'Patent License',
+			'patent-mortgage': 'Patent Mortgage',
+			'patent-merger': 'Patent Merger'
+		};
+		return serviceNames[serviceType as keyof typeof serviceNames] || serviceType;
+	}
+
+	// Handle proceed to specific patent service
+	function proceedToPatentService(result: SearchResult) {
+		if (!searchParams?.serviceType) return;
+		
+		const serviceRoutes = {
+			'patent-amendment': `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0`,
+			'patent-assignment': `/home/postregistration/patentassignment?fileId=${result.fileId}&fileType=0`,
+			'patent-ctc': `/home/postregistration/patentctc?fileId=${result.fileId}&fileType=0`,
+			'patent-license': `/home/postregistration/patentlicense?fileId=${result.fileId}&fileType=0`,
+			'patent-mortgage': `/home/postregistration/patentmortgage?fileId=${result.fileId}&fileType=0`,
+			'patent-merger': `/home/postregistration/patentmerger?fileId=${result.fileId}&fileType=0`
+		};
+		
+		const route = serviceRoutes[searchParams.serviceType as keyof typeof serviceRoutes];
+		if (route) {
+			goto(route);
+		}
+	}
 </script>
 
 <div class="space-y-4 m-4 p-2">
@@ -209,7 +242,13 @@
 			<Icon icon="lucide:arrow-left" width="1rem" height="1rem" />
 			Back
 		</Button>
-		<h1 class="text-xl font-semibold">Post Registration Search Results</h1>
+		<h1 class="text-xl font-semibold">
+			{#if isPatent && searchParams?.serviceType}
+				{getServiceName(searchParams.serviceType)} - File Details
+			{:else}
+				Post Registration Search Results
+			{/if}
+		</h1>
 		<div></div>
 		<!-- Empty div to balance the flexbox -->
 	</div>
@@ -290,7 +329,13 @@
 							<Table.Head>Representation</Table.Head>
 							
 						{/if}
-						<Table.Head class="w-64">Recordal</Table.Head>
+						<Table.Head class="w-64">
+							{#if isPatent && searchParams?.serviceType}
+								{getServiceName(searchParams.serviceType)}
+							{:else}
+								Recordal
+							{/if}
+						</Table.Head>
 					</Table.Row>
 				</Table.Header>
 				<Table.Body>
@@ -320,7 +365,11 @@
 							{/if}
 							<Table.Cell>
 								{#if isPatent}
-                                <Button on:click={() => renewApplication(result)}>Renewal</Button>
+									{#if searchParams?.serviceType}
+										<Button on:click={() => proceedToPatentService(result)}>Proceed</Button>
+									{:else}
+										<Button on:click={() => renewApplication(result)}>Renewal</Button>
+									{/if}
 								{:else}
 								<select
 									class="border rounded px-2 py-1"

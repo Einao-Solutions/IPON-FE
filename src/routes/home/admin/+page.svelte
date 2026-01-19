@@ -8,7 +8,7 @@
   import FileNumberSearch from "./components/FileNumberSearch.svelte";
   import ApplicationSearchResults from "./components/ApplicationSearchResults.svelte";
   import { baseURL, FormApplicationTypes } from "$lib/helpers";
-  import { form } from "$app/server";
+  //import { form } from "$app/server";
 
   let showSearchDialog = false;
   let showResultsDialog = false;
