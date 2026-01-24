@@ -125,7 +125,7 @@
   function showToast(
     type: "success" | "error",
     message: string,
-    description?: string
+    description?: string,
   ) {
     toast[type](message, {
       description: description || message,
@@ -175,7 +175,7 @@
   // ======================
   async function checkPayment(
     application: ApplicationHistoryType,
-    id: string | null
+    id: string | null,
   ) {
     if (!id) {
       showToast("error", "No Remita ID available");
@@ -227,7 +227,7 @@
     try {
       const result = await fetch(
         `${baseURL}/api/files/UpdateCertificatePaymentStatus?fileId=${fileId}&rrr=${paymentId}`,
-        { method: "POST" }
+        { method: "POST" },
       );
       if (result.ok) {
         toast.success("Certificate status updated successfully");
@@ -245,7 +245,7 @@
     try {
       const res = await fetch(
         `${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
-        { method: "POST" }
+        { method: "POST" },
       );
 
       if (!res.ok) {
@@ -290,7 +290,7 @@
     application: ApplicationHistoryType,
     appType: number,
     letterType: number,
-    useFileId = false
+    useFileId = false,
   ) {
     if (application.applicationType !== appType) {
       showMissingDetailsForm();
@@ -299,7 +299,7 @@
 
     const fileIdProp = useFileId ? "fileId" : "id";
     window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileData[fileIdProp]}&letterType=${letterType}&applicationId=${application.id}`
+      `${baseURL}/api/letters/generate?fileId=${fileData.fileId}&letterType=${letterType}&applicationId=${application.id}`,
     );
   }
 
@@ -381,7 +381,7 @@
       }
 
       const response = await fetch(
-        `${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${application.id}`
+        `${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${application.id}`,
       );
 
       if (response.ok) {
@@ -398,7 +398,7 @@
   async function approveRecordal(
     endpoint: string,
     application: ApplicationHistoryType,
-    successMessage: string
+    successMessage: string,
   ) {
     try {
       const body = {
@@ -476,7 +476,7 @@
   async function viewAppeal(application: ApplicationHistoryType) {
     try {
       const response = await fetch(
-        `${baseURL}/api/files/getappeal?fileId=${fileData.fileId}&appId=${application.id}`
+        `${baseURL}/api/files/getappeal?fileId=${fileData.fileId}&appId=${application.id}`,
       );
 
       if (response.ok) {
@@ -637,28 +637,28 @@
     approveRecordal(
       "/api/files/ApproveMerger",
       app,
-      "Merger approved successfully"
+      "Merger approved successfully",
     );
 
   const approveRegUser = (app: ApplicationHistoryType) =>
     approveRecordal(
       "/api/files/ApproveRegisteredUser",
       app,
-      "Registered user approved successfully"
+      "Registered user approved successfully",
     );
 
   const approveAssignment = (app: ApplicationHistoryType) =>
     approveRecordal(
       "/api/files/ApproveAssignment",
       app,
-      "Assignment approved successfully"
+      "Assignment approved successfully",
     );
 
   const approveChangeDataRecordal = (app: ApplicationHistoryType) =>
     approveRecordal(
       "/api/files/ApproveChangeDataRecordal",
       app,
-      "Change of Applicant Information approved successfully"
+      "Change of Applicant Information approved successfully",
     );
 
   // ======================
@@ -717,7 +717,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       if (response.ok) {
@@ -737,7 +737,7 @@
     if (hasValidCorrespondenceDetails(fileData.correspondence)) {
       window.open(
         `${baseURL}/api/letters/generate?fileId=${fileData?.id}&letterType=${letter}&applicationId=${application.id}`,
-        "_blank"
+        "_blank",
       );
     } else {
       showMissingDetailsForm();
@@ -758,7 +758,7 @@
 
   function printStatusReceipt(application: ApplicationHistoryType) {
     window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileData?.fileId}&letterType=39&applicationId=${application.id}`
+      `${baseURL}/api/letters/generate?fileId=${fileData?.fileId}&letterType=39&applicationId=${application.id}`,
     );
   }
 
@@ -776,7 +776,7 @@
     getDocLoading = true;
     try {
       const response = await fetch(
-        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`
+        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`,
       );
       if (!response.ok) {
         const errorData = await response.json();
@@ -807,7 +807,7 @@
     showPublicationDialog = true;
     try {
       const res = await fetch(
-        `${baseURL}/api/files/publication-details/${encodeURIComponent(fileId)}`
+        `${baseURL}/api/files/publication-details/${encodeURIComponent(fileId)}`,
       );
       if (!res.ok) throw new Error("Could not fetch details");
       publicationDetails = await res.json();
@@ -832,7 +832,7 @@
             Approve: approve,
             Comment: publicationComment,
           }),
-        }
+        },
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed");
@@ -858,7 +858,7 @@
     showWithdrawalDialog = true;
     try {
       const res = await fetch(
-        `${baseURL}/api/files/withdrawal-details/${encodeURIComponent(fileId)}`
+        `${baseURL}/api/files/withdrawal-details/${encodeURIComponent(fileId)}`,
       );
       if (!res.ok) throw new Error("Could not fetch details");
       withdrawalDetails = await res.json();
@@ -884,7 +884,7 @@
             Approve: approve,
             Comment: withdrawalComment,
           }),
-        }
+        },
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed");
@@ -1252,7 +1252,7 @@
         </div>
       {/if}
 
-      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r) )}
+      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
         {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected}
           <div class="mt-4">
             <Label
@@ -1289,14 +1289,14 @@
 			{/if}
 		{/if}		 -->
       <Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r) )}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
           {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
             <Button
               on:click={() => {
                 if (!reason || reason.trim().length < 10) {
                   showToast(
                     "error",
-                    "Please provide a detailed reason (at least 10 characters)"
+                    "Please provide a detailed reason (at least 10 characters)",
                   );
                   return;
                 }
@@ -1321,7 +1321,7 @@
                     approveRecordal(
                       "/api/files/ApproveClericalUpdate",
                       selectedApplication,
-                      "Clerical update approved successfully"
+                      "Clerical update approved successfully",
                     );
                     break;
                 }
@@ -1342,7 +1342,7 @@
                 if (!reason || reason.trim().length < 10) {
                   showToast(
                     "error",
-                    "Please provide a detailed reason (at least 10 characters)"
+                    "Please provide a detailed reason (at least 10 characters)",
                   );
                   return;
                 }
@@ -1433,7 +1433,7 @@
             </p>
           {/if}
         </div>
-        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkAcceptance, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkAcceptance, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
           <!-- Action Buttons -->
           <div class="flex gap-3 justify-end pt-2 border-t">
             <Button
@@ -1546,7 +1546,7 @@
             <span class="text-gray-700">
               {publicationDetails.publicationDate
                 ? new Date(
-                    publicationDetails.publicationDate
+                    publicationDetails.publicationDate,
                   ).toLocaleDateString()
                 : "N/A"}
             </span>
@@ -1717,7 +1717,7 @@
             <p class="mt-1 p-2 bg-gray-50 rounded border">
               {withdrawalDetails.withdrawalRequestDate
                 ? new Date(
-                    withdrawalDetails.withdrawalRequestDate
+                    withdrawalDetails.withdrawalRequestDate,
                   ).toLocaleString()
                 : "N/A"}
             </p>
@@ -1891,7 +1891,7 @@
       <div class="flex flex-col gap-4">
         <Label>Select new Status</Label>
         <div class="grid grid-cols-2 gap-4">
-          {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)) ) as status}
+          {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)), ) as status}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
@@ -2044,13 +2044,13 @@
                       on:click={async () =>
                         await checkPayment(
                           application,
-                          application.certificatePaymentId ?? null
+                          application.certificatePaymentId ?? null,
                         )}
                       >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item
                     >
                   {/if}
 
-                  {#if application.applicationType == FormApplicationTypes.AppealRequest}
+                  {#if application.applicationType === FormApplicationTypes.AppealRequest}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewAppeal(application);
@@ -2059,10 +2059,12 @@
                   {/if}
 
                   <DropdownMenu.Label>Print</DropdownMenu.Label>
-
+                  {#if application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
+                    <DropdownMenu.Item on:click={() => {generateLetter(application,13,2)}}>Acceptance Letter</DropdownMenu.Item>
+                  {/if}
                   <DropdownMenu.Separator />
                   {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
-                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
+                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
                       <DropdownMenu.Item
                         on:click={() => certificate(application)}
                       >
@@ -2079,7 +2081,7 @@
                     {/if}
                   {/if}
                   {#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
+                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
                       <DropdownMenu.Item
                         on:click={() => viewRecordalData(application)}
                         >View Application</DropdownMenu.Item
