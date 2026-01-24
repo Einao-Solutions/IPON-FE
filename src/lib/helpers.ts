@@ -44,7 +44,14 @@ export type InventorValidator = {
   email: boolean | null;
   address: boolean | null;
 };
-
+export type DesignCreator = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  country: string;
+  email: string;
+};
 export type Applicant = {
   id: string;
   name: string;
@@ -372,7 +379,21 @@ export enum PatentTypes {
   Non_Conventional = 1,
   PCT = 2,
 }
-
+export enum ClericalUpdateTypes {
+  CorrespondenceInformation,
+  DesignInformation,
+  CreatorInformation,
+  DesignAttachments,
+  ApplicantName,
+  ApplicantAddress,
+  FileClass,
+  FileTitle,
+  AddApplicant,
+  RemoveApplicant,
+  AddAndRemoveApplicant,
+  EditInventors,
+  PriorityInfo,
+}
 export enum PatentApplicationTypes {
   Patent = 0,
   Business_Method = 1,

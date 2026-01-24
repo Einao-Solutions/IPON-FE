@@ -5,6 +5,7 @@
     baseURL,
     ApplicationStatuses,
     FormApplicationTypes,
+    FileTypes,
   } from "$lib/helpers";
   import { toast } from "svelte-french-toast";
   import { Button } from "$lib/components/ui/button";
@@ -18,6 +19,7 @@
   import { Value } from "$lib/components/ui/select";
   import ApplicationsHistory from "../../../dataview/ApplicationsHistory.svelte";
   import DatePickerCustom from "../../../application/components/DatePickerCustom.svelte";
+  import { FileType } from "lucide-svelte";
   let fileId = "";
   let isLoading = false;
   let showForm = false;
@@ -402,6 +404,55 @@
       isLoading = false;
     }
   };
+  let editingId: string | null = null;
+  let draft: any = {};
+
+  const startEdit = (hist: any) => {
+    editingId = hist.id;
+    draft = { ...hist };
+  };
+
+  const cancelEdit = () => {
+    editingId = null;
+    draft = {};
+  };
+
+  const saveEdit = async () => {
+    const body = {
+      fileNumber: filing.fileId,
+      applicationId: draft.id,
+      applicationDate: draft.applicationDate
+        ? new Date(draft.applicationDate)
+        : null,
+      applicationType: draft.applicationType,
+      currentStatus: draft.currentStatus,
+      paymentId: draft.paymentId ?? null,
+      certificatePaymentId: draft.certificatePaymentId ?? null,
+    };
+    const res = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${$loggedInToken}`,
+      },
+      body: JSON.stringify(body),
+    });
+    if (res.ok) {
+      const idx = filing.applicationHistory.findIndex(
+        (x: any) => x.id === draft.id
+      );
+      if (idx >= 0) filing.applicationHistory[idx] = { ...draft };
+      cancelEdit();
+      toast.success("Application history updated", {
+        position: "top-right",
+      });
+    } else {
+      console.error("Update failed", await res.text());
+      toast.error("Failed to update application history", {
+        position: "top-right",
+      });
+    }
+  };
 
   const saveChanges = async () => {
     try {
@@ -476,7 +527,7 @@
   {#if showForm && filing}
     <div in:fade class="space-y-8">
       <!-- PATENT FILES (fileType = 0) -->
-      {#if filing.type === 0}
+      {#if filing.type === FileTypes.Patent}
         <!-- Patent Information Section -->
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
@@ -562,7 +613,19 @@
                 bind:value={filing.titleOfInvention}
                 placeholder="Title of Invention"
               />
-
+              <div>
+                <label
+                  for="rtm-number"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >RTM Number</label
+                >
+                <input
+                  id="rtm-number"
+                  class="input"
+                  bind:value={filing.rtmNumber}
+                  placeholder="RTM Number"
+                />
+              </div>
               <label for="patent-abstract" class="font-medium text-gray-700"
                 >Patent Abstract</label
               >
@@ -578,7 +641,7 @@
       {/if}
 
       <!-- DESIGN FILES (fileType = 1) -->
-      {#if filing.type === 1}
+      {#if filing.type === FileTypes.Design}
         <!-- Design Information Section -->
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
@@ -632,7 +695,19 @@
                     placeholder="Enter Design Title"
                   />
                 </div>
-
+                <div>
+                  <label
+                    for="rtm-number"
+                    class="block text-sm font-medium text-gray-700 mb-1"
+                    >RTM Number</label
+                  >
+                  <input
+                    id="rtm-number"
+                    class="input"
+                    bind:value={filing.rtmNumber}
+                    placeholder="RTM Number"
+                  />
+                </div>
                 <div>
                   <label
                     for="statement-of-novelty"
@@ -653,7 +728,7 @@
       {/if}
 
       <!-- TRADEMARK FILES (fileType = 2) -->
-      {#if filing.type === 2}
+      {#if filing.type === FileTypes.Trademark}
         <!-- Trademark Information Section -->
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
@@ -754,6 +829,19 @@
                     class="input"
                     bind:value={filing.titleOfTradeMark}
                     placeholder="Title of Trademark"
+                  />
+                </div>
+                <div>
+                  <label
+                    for="rtm-number"
+                    class="block text-sm font-medium text-gray-700 mb-1"
+                    >RTM Number</label
+                  >
+                  <input
+                    id="rtm-number"
+                    class="input"
+                    bind:value={filing.rtmNumber}
+                    placeholder="RTM Number"
                   />
                 </div>
 
@@ -1047,28 +1135,139 @@
                 <th class="px-4 py-2 text-left text-sm font-semibold"
                   >Certificate Payment ID</th
                 >
+                <th class="px-4 py-2 text-left text-sm font-semibold"
+                  >Actions</th
+                >
               </tr>
             </thead>
 
             <tbody>
-              {#each filing.applicationHistory as hist, index (index)}
+              {#each filing.applicationHistory as hist, index (hist.id)}
                 <tr class="border-t hover:bg-slate-50 transition">
                   <td class="px-4 py-3 text-sm">{index + 1}</td>
 
                   <td class="px-4 py-3 text-sm">
-                    {mapDateToString(hist.applicationDate) || "-"}
+                    {#if editingId === hist.id}
+                      <input
+                        type="date"
+                        class="border rounded px-2 py-1 text-sm w-full"
+                        bind:value={draft.applicationDate}
+                      />
+                    {:else}
+                      {mapDateToString(hist.applicationDate) || "-"}
+                    {/if}
                   </td>
 
                   <td class="px-4 py-3 text-sm">
-                    {mapStatusToString(hist.currentStatus)}
+                    {#if editingId === hist.id}
+                      <select
+                        class="border rounded px-2 py-1 text-sm w-full"
+                        bind:value={draft.currentStatus}
+                      >
+                        {#each statusOptions as s}
+                          <option value={s.value}
+                            >{mapStatusToString(s.value)}</option
+                          >
+                        {/each}
+                      </select>
+                    {:else}
+                      {mapStatusToString(hist.currentStatus)}
+                    {/if}
                   </td>
 
                   <td class="px-4 py-3 text-sm">
-                    {hist.paymentId || "-"}
+                    {#if editingId === hist.id}
+                      <input
+                        type="text"
+                        class="border rounded px-2 py-1 text-sm w-full"
+                        placeholder="Payment ID"
+                        bind:value={draft.paymentId}
+                      />
+                    {:else}
+                      {hist.paymentId || "-"}
+                    {/if}
                   </td>
 
                   <td class="px-4 py-3 text-sm">
-                    {hist.certificatePaymentId || "-"}
+                    {#if editingId === hist.id}
+                      <input
+                        type="text"
+                        class="border rounded px-2 py-1 text-sm w-full"
+                        placeholder="Certificate Payment ID"
+                        bind:value={draft.certificatePaymentId}
+                      />
+                    {:else}
+                      {hist.certificatePaymentId || "-"}
+                    {/if}
+                  </td>
+
+                  <td class="px-4 py-3 text-sm">
+                    {#if editingId === hist.id}
+                      <div class="flex items-center gap-2">
+                        <button
+                          class="inline-flex items-center gap-2 bg-emerald-600 text-white px-3 py-1 rounded-md text-sm hover:bg-emerald-700 transition"
+                          on:click={saveEdit}
+                          title="Save"
+                        >
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M5 13l4 4L19 7"
+                            ></path>
+                          </svg>
+                          Save
+                        </button>
+
+                        <button
+                          class="inline-flex items-center gap-2 border border-slate-300 text-slate-700 px-3 py-1 rounded-md text-sm hover:bg-slate-50 transition"
+                          on:click={cancelEdit}
+                          title="Cancel"
+                        >
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            ></path>
+                          </svg>
+                          Cancel
+                        </button>
+                      </div>
+                    {:else}
+                      <button
+                        class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                        on:click={() => startEdit(hist)}
+                        title="Edit"
+                      >
+                        <svg
+                          class="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M15.232 5.232l3.536 3.536M4 20h4.586a1 1 0 00.707-.293l9.414-9.414a2 2 0 000-2.828l-3.586-3.586a2 2 0 00-2.828 0L4.707 13.293A1 1 0 004 14v4z"
+                          ></path>
+                        </svg>
+                        Edit
+                      </button>
+                    {/if}
                   </td>
                 </tr>
               {/each}
@@ -1278,7 +1477,7 @@
       </div>
 
       <!-- PATENT SPECIFIC SECTIONS -->
-      {#if filing.type === 0}
+      {#if filing.type === FileTypes.Patent}
         <!-- Inventors Information (Only for Patents) -->
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
@@ -1665,7 +1864,7 @@
       {/if}
 
       <!-- DESIGN SPECIFIC SECTIONS -->
-      {#if filing.type === 1}
+      {#if filing.type === FileTypes.Design}
         <!-- Design Creators (Only for Designs) -->
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
@@ -1793,7 +1992,7 @@
 
       <!-- ATTACHMENTS SECTIONS -->
       <!-- Patent Attachments (Only for Patents) -->
-      {#if filing.type === 0}
+      {#if filing.type === FileTypes.Patent}
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
             <summary
@@ -1973,7 +2172,7 @@
       {/if}
 
       <!-- Trademark Attachments (Only for Trademarks) -->
-      {#if filing.type === 2}
+      {#if filing.type === FileTypes.Trademark}
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
             <summary
@@ -2152,7 +2351,7 @@
       {/if}
 
       <!-- Design Attachments (Only for Designs) -->
-      {#if filing.type === 1}
+      {#if filing.type === FileTypes.Design}
         <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
           <details class="p-6 open">
             <summary

@@ -38,24 +38,25 @@
     firstPriorityInfo?: FirstPriority[];
   }
 
-  let results: SearchResult[] = [];
-  let isLoading = true;
-  let error: string | null = null;
-  let searchParams: {
-    query: string;
-    classId?: number;
-    fileType: string;
-  } | null = null;
-  let fileNumber: string | null = null;
-  let title: string;
-  let filteredResults: SearchResult[] = [];
-  let showCorrespondenceRequest = false;
-  let applicantDetails: {
-    name: string;
-    email: string;
-    phone: string;
-    fileId: string;
-  } | null = null;
+	let results: SearchResult[] = [];
+	let isLoading = true;
+	let error: string | null = null;
+	let searchParams: {
+		query: string;
+		classId?: number;
+		fileType: string;
+		serviceType?: string;
+	} | null = null;
+	let fileNumber: string | null = null;
+	let title: string;
+	let filteredResults: SearchResult[] = [];
+	let showCorrespondenceRequest = false;
+	let applicantDetails: {
+		name: string;
+		email: string;
+		phone: string;
+		fileId: string;
+	} | null = null;
 
   let isPatent = false;
   let patentError: string | null = null;
@@ -210,25 +211,63 @@
   let priorityModalTimer: NodeJS.Timeout | null = null;
   let priorityModalMessage = "";
 
-  function closePriorityModal() {
-    showPriorityModal = false;
-    if (priorityModalTimer) {
-      clearTimeout(priorityModalTimer);
-      priorityModalTimer = null;
-    }
-  }
+	function closePriorityModal() {
+		showPriorityModal = false;
+		if (priorityModalTimer) {
+			clearTimeout(priorityModalTimer);
+			priorityModalTimer = null;
+		}
+	}
+
+	// Get service name for display
+	function getServiceName(serviceType: string): string {
+		const serviceNames = {
+			'patent-amendment': 'Patent Amendment',
+			'patent-assignment': 'Patent Assignment',
+			'patent-ctc': 'Patent CTC (Certificate to Copy)',
+			'patent-license': 'Patent License',
+			'patent-mortgage': 'Patent Mortgage',
+			'patent-merger': 'Patent Merger'
+		};
+		return serviceNames[serviceType as keyof typeof serviceNames] || serviceType;
+	}
+
+	// Handle proceed to specific patent service
+	function proceedToPatentService(result: SearchResult) {
+		if (!searchParams?.serviceType) return;
+		
+		const serviceRoutes = {
+			'patent-amendment': `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0`,
+			'patent-assignment': `/home/postregistration/patentassignment?fileId=${result.fileId}&fileType=0`,
+			'patent-ctc': `/home/postregistration/patentctc?fileId=${result.fileId}&fileType=0`,
+			'patent-license': `/home/postregistration/patentlicense?fileId=${result.fileId}&fileType=0`,
+			'patent-mortgage': `/home/postregistration/patentmortgage?fileId=${result.fileId}&fileType=0`,
+			'patent-merger': `/home/postregistration/patentmerger?fileId=${result.fileId}&fileType=0`
+		};
+		
+		const route = serviceRoutes[searchParams.serviceType as keyof typeof serviceRoutes];
+		if (route) {
+			goto(route);
+		}
+	}
 </script>
 
 <div class="space-y-4 m-4 p-2">
-  <div class="flex items-center justify-between">
-    <Button variant="outline" on:click={goBack} class="flex items-center gap-2">
-      <Icon icon="lucide:arrow-left" width="1rem" height="1rem" />
-      Back
-    </Button>
-    <h1 class="text-xl font-semibold">Post Registration Search Results</h1>
-    <div></div>
-    <!-- Empty div to balance the flexbox -->
-  </div>
+	<div class="flex items-center justify-between">
+		<Button variant="outline" on:click={goBack} class="flex items-center gap-2">
+			<Icon icon="lucide:arrow-left" width="1rem" height="1rem" />
+			Back
+		</Button>
+		<h1 class="text-xl font-semibold">
+			{#if isPatent && searchParams?.serviceType}
+				{getServiceName(searchParams.serviceType)} - File Details
+			{:else}
+				Post Registration Search Results
+			{/if}
+		</h1>
+		<div></div>
+		<!-- Empty div to balance the flexbox -->
+	</div>
 
   {#if showPriorityModal}
     <div
@@ -277,143 +316,130 @@
     </div>
   {/if}
 
-  {#if isLoading}
-    <div class="flex items-center justify-center p-12">
-      <div class="flex flex-col items-center gap-2">
-        <Icon
-          icon="line-md:loading-loop"
-          width="2rem"
-          height="2rem"
-          class="text-blue-600"
-        />
-        <span class="text-sm text-gray-500">Loading results...</span>
-      </div>
-    </div>
-  {:else if error}
-    <div class="bg-red-50 text-red-600 p-4 rounded-md text-center">
-      <p>{error}</p>
-    </div>
-  {:else if filteredResults.length === 0}
-    <div class="bg-yellow-50 p-8 rounded-md text-center">
-      <Icon
-        icon="lucide:search-x"
-        width="2rem"
-        height="2rem"
-        class="mx-auto mb-2 text-yellow-600"
-      />
-      <h3 class="text-lg font-medium text-gray-800 mb-1">No results found</h3>
-      <p class="text-gray-600">
-        Please ensure that your file status is 'Active' to be able to do a
-        post-registration.
-      </p>
-    </div>
-  {:else}
-    <div class="bg-white rounded-md shadow overflow-hidden">
-      <Table.Root>
-        <Table.Header>
-          <Table.Row>
-            <Table.Head class="w-16">S/N</Table.Head>
-            <Table.Head>File Number</Table.Head>
-            {#if isPatent}
-              <Table.Head>Title of Invention</Table.Head>
-              <Table.Head>File Origin</Table.Head>
-              <Table.Head>Patent Type</Table.Head>
-              <Table.Head>File Applicant</Table.Head>
-            {:else}
-              <Table.Head>File Title</Table.Head>
-              <Table.Head>File Applicant</Table.Head>
-              <Table.Head>Class</Table.Head>
-              <Table.Head>Representation</Table.Head>
-            {/if}
-            <Table.Head class="w-64">Recordal</Table.Head>
-          </Table.Row>
-        </Table.Header>
-        <Table.Body>
-          {#each filteredResults as result, index}
-            <Table.Row>
-              <Table.Cell class="font-medium">{index + 1}</Table.Cell>
-              <Table.Cell>{result.fileId}</Table.Cell>
-              {#if isPatent}
-                <Table.Cell>{result.titleOfInvention}</Table.Cell>
-                <Table.Cell>{result.fileOrigin}</Table.Cell>
-                <Table.Cell>{result.patentType}</Table.Cell>
-                <Table.Cell>{result.fileApplicant}</Table.Cell>
-              {:else}
-                <Table.Cell>{result.titleOfTradeMark}</Table.Cell>
-                <Table.Cell>{result.fileApplicant}</Table.Cell>
-                <Table.Cell>{result.tradeMarkClass}</Table.Cell>
-                <Table.Cell>
-                  {#if Number(result.tradeMarkLogo) === 0}
-                    Device
-                  {:else if Number(result.tradeMarkLogo) === 1}
-                    Wordmark
-                  {:else if Number(result.tradeMarkLogo) === 2}
-                    Word and Device
-                  {/if}
-                </Table.Cell>
-              {/if}
-              <Table.Cell>
-                {#if isPatent}
-                  <!-- <Button on:click={() => renewApplication(result)}>Renewal</Button> -->
-                {:else}
-                  <select
-                    class="border rounded px-2 py-1"
-                    on:change={(e) => {
-                      const selectedValue = e.target.value;
-                      if (selectedValue === "merger") {
-                        goto(
-                          `/home/postregistration/merger?fileId=${result.fileId}&fileType=2`,
-                        );
-                      } else if (selectedValue === "registered-users") {
-                        goto(
-                          `/home/postregistration/registeredusers?fileId=${result.fileId}&fileType=2`,
-                        );
-                      } else if (selectedValue === "assignment") {
-                        goto(
-                          `/home/postregistration/assignment?fileId=${result.fileId}&fileType=2`,
-                        );
-                      } else if (
-                        selectedValue === "name-change" &&
-                        ![20, 21].includes(result.fileStatus)
-                      ) {
-                        goto(
-                          `/home/postregistration/changedata?fileId=${result.fileId}&fileType=2&changeType=Name`,
-                        );
-                      } else if (
-                        selectedValue === "renewal" &&
-                        ![20, 21].includes(result.fileStatus)
-                      ) {
-                        renewApplication(result);
-                      } else if (
-                        selectedValue === "address-change" &&
-                        ![20, 21].includes(result.fileStatus)
-                      ) {
-                        goto(
-                          `/home/postregistration/changedata?fileId=${result.fileId}&fileType=2&changeType=Address`,
-                        );
-                      }
-                    }}
-                  >
-                    <option value="">Select Recordal</option>
-                    <option value="merger">Merger</option>
-                    <option value="registered-users">Registered Users</option>
-                    <option value="assignment">Assignment</option>
-                    {#if ![14, 20, 23].includes(result.fileStatus)}
-                      <option value="name-change"
-                        >Change of Applicant Name</option
-                      >
-                      <option value="address-change"
-                        >Change of Applicant Address</option
-                      >
-                      <option value="renewal">Renewal</option>
-                    {/if}
-                  </select>
-                {/if}
-              </Table.Cell>
-            </Table.Row>
-          {/each}
-        </Table.Body>
-      </Table.Root>
-    </div>
-  {/if}
+	{#if isLoading}
+		<div class="flex items-center justify-center p-12">
+			<div class="flex flex-col items-center gap-2">
+				<Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" />
+				<span class="text-sm text-gray-500">Loading results...</span>
+			</div>
+		</div>
+	{:else if error}
+		<div class="bg-red-50 text-red-600 p-4 rounded-md text-center">
+			<p>{error}</p>
+		</div>
+	{:else if filteredResults.length === 0}
+		<div class="bg-yellow-50 p-8 rounded-md text-center">
+			<Icon
+				icon="lucide:search-x"
+				width="2rem"
+				height="2rem"
+				class="mx-auto mb-2 text-yellow-600"
+			/>
+			<h3 class="text-lg font-medium text-gray-800 mb-1">No results found</h3>
+			<p class="text-gray-600">Please ensure that your file status is 'Active' to be able to do a post-registration.</p>
+		</div>
+	{:else}
+		<div class="bg-white rounded-md shadow overflow-hidden">
+			<Table.Root>
+				<Table.Header>
+					<Table.Row>
+						<Table.Head class="w-16">S/N</Table.Head>
+						<Table.Head>File Number</Table.Head>
+						{#if isPatent}
+							<Table.Head>Title of Invention</Table.Head>
+							<Table.Head>File Origin</Table.Head>
+							<Table.Head>Patent Type</Table.Head>
+							<Table.Head>File Applicant</Table.Head>
+						{:else}
+							<Table.Head>File Title</Table.Head>
+							<Table.Head>File Applicant</Table.Head>
+							<Table.Head>Class</Table.Head>
+							<Table.Head>Representation</Table.Head>
+							
+						{/if}
+						<Table.Head class="w-64">
+							{#if isPatent && searchParams?.serviceType}
+								{getServiceName(searchParams.serviceType)}
+							{:else}
+								Recordal
+							{/if}
+						</Table.Head>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
+					{#each filteredResults as result, index}
+						<Table.Row>
+							<Table.Cell class="font-medium">{index + 1}</Table.Cell>
+							<Table.Cell>{result.fileId}</Table.Cell>
+							 {#if isPatent}
+								<Table.Cell>{result.titleOfInvention}</Table.Cell>
+								<Table.Cell>{result.fileOrigin}</Table.Cell>
+								<Table.Cell>{result.patentType}</Table.Cell>
+								<Table.Cell>{result.fileApplicant}</Table.Cell>
+							{:else}
+								<Table.Cell>{result.titleOfTradeMark}</Table.Cell>
+								<Table.Cell>{result.fileApplicant}</Table.Cell>
+								<Table.Cell>{result.tradeMarkClass}</Table.Cell>
+								<Table.Cell>
+									{#if Number(result.tradeMarkLogo) === 0}
+										Device
+									{:else if Number(result.tradeMarkLogo) === 1}
+										Wordmark
+									{:else if Number(result.tradeMarkLogo) === 2}
+										Word and Device
+									{/if}
+								</Table.Cell>
+								
+							{/if}
+							<Table.Cell>
+								{#if isPatent}
+									{#if searchParams?.serviceType}
+										<Button on:click={() => proceedToPatentService(result)}>Proceed</Button>
+									{:else}
+										<Button on:click={() => renewApplication(result)}>Renewal</Button>
+									{/if}
+								{:else}
+								<select
+									class="border rounded px-2 py-1"
+									on:change={(e) => {
+										const selectedValue = e.target.value;
+										if (selectedValue === 'merger') {
+											goto(`/home/postregistration/merger?fileId=${result.fileId}&fileType=2`);
+										} else if (selectedValue === 'registered-users') {
+											goto(
+												`/home/postregistration/registeredusers?fileId=${result.fileId}&fileType=2`
+											);
+										} else if (selectedValue === 'assignment') {
+											goto(`/home/postregistration/assignment?fileId=${result.fileId}&fileType=2`);
+										} else if (selectedValue === 'name-change' && ![20, 21].includes(result.fileStatus)) {
+											goto(
+												`/home/postregistration/changedata?fileId=${result.fileId}&fileType=2&changeType=Name`
+											);
+										} else if (selectedValue === 'renewal' && ![20, 21].includes(result.fileStatus)) {
+											renewApplication(result);
+										} else if (selectedValue === 'address-change' && ![20, 21].includes(result.fileStatus)) {
+											goto(
+												`/home/postregistration/changedata?fileId=${result.fileId}&fileType=2&changeType=Address`
+											);
+										}
+									}}
+								>
+									<option value="">Select Recordal</option>
+									<option value="merger">Merger</option>
+									<option value="registered-users">Registered Users</option>
+									<option value="assignment">Assignment</option>
+									{#if ![14, 20, 23].includes(result.fileStatus)}
+										<option value="name-change">Change of Applicant Name</option>
+										<option value="address-change">Change of Applicant Address</option>
+										<option value="renewal">Renewal</option>
+									{/if}
+								</select>
+								{/if}
+							</Table.Cell>
+						</Table.Row>
+					{/each}
+				</Table.Body>
+			</Table.Root>
+		</div>
+	{/if}
 </div>
