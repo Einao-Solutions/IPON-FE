@@ -2018,6 +2018,7 @@
               <DropdownMenu.Trigger on:click>More</DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 <DropdownMenu.Group>
+                  <!-- Data Update Application -->
                   {#if application.applicationType === 2}
                     <DropdownMenu.Item
                       on:click={async () =>
@@ -2025,13 +2026,14 @@
                       >View application</DropdownMenu.Item
                     >
                   {/if}
-
+                  <!-- verify payments -->
                   <DropdownMenu.Item
                     on:click={async () =>
                       await checkPayment(application, application.paymentId)}
                     >Verify Payment ({application.paymentId ??
                       "-"})</DropdownMenu.Item
                   >
+                  <!-- View Recordal Data -->
                   {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)}
                     <DropdownMenu.Item
                       on:click={() => {
@@ -2039,7 +2041,8 @@
                       }}>View Application</DropdownMenu.Item
                     >
                   {/if}
-                  {#if application.applicationType === 0 && application.certificatePaymentId != null}
+                  <!-- Verify new app payment -->
+                  {#if application.applicationType === FormApplicationTypes.NewApplication && application.certificatePaymentId != null}
                     <DropdownMenu.Item
                       on:click={async () =>
                         await checkPayment(
@@ -2049,7 +2052,7 @@
                       >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item
                     >
                   {/if}
-
+                  <!-- Appeal Request -->
                   {#if application.applicationType === FormApplicationTypes.AppealRequest}
                     <DropdownMenu.Item
                       on:click={() => {
@@ -2057,38 +2060,7 @@
                       }}>View Application</DropdownMenu.Item
                     >
                   {/if}
-
-                  <DropdownMenu.Label>Print</DropdownMenu.Label>
-                  {#if application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
-                    <DropdownMenu.Item on:click={() => {generateLetter(application,13,2)}}>Acceptance Letter</DropdownMenu.Item>
-                  {/if}
-                  <DropdownMenu.Separator />
-                  {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
-                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
-                      <DropdownMenu.Item
-                        on:click={() => certificate(application)}
-                      >
-                        Certificate
-                      </DropdownMenu.Item>
-                    {/if}
-                  {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-                    {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
-                      <DropdownMenu.Item
-                        on:click={() => renewalCertificate(application)}
-                      >
-                        Renewal Certificate</DropdownMenu.Item
-                      >
-                    {/if}
-                  {/if}
-                  {#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
-                      <DropdownMenu.Item
-                        on:click={() => viewRecordalData(application)}
-                        >View Application</DropdownMenu.Item
-                      >
-                    {/if}
-                  {/if}
-
+                  <!-- Publication status update -->
                   {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
                     <DropdownMenu.Item
                       on:click={() =>
@@ -2097,8 +2069,8 @@
                       View Application
                     </DropdownMenu.Item>
                   {/if}
-
-                  {#if application.applicationType === 15 && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
+                  <!-- Withdrawal App -->
+                  {#if application.applicationType === FormApplicationTypes.WithdrawalRequest && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
                     <!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.userRoles)}</pre>`} -->
                     {#if fileData.type === 0 && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
                       <DropdownMenu.Item
@@ -2121,6 +2093,160 @@
                       >
                         View Withdrawal Application
                       </DropdownMenu.Item>
+                    {/if}
+                  {/if}
+                  <!-- Clerical Update / Amendment -->
+                  {#if (application.applicationType == FormApplicationTypes.ClericalUpdate || application.applicationType == FormApplicationTypes.Amendment) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                      <DropdownMenu.Item
+                        on:click={() => viewRecordalData(application)}
+                        >View Application</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- LETTERS -->
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Label>Print</DropdownMenu.Label>
+                  <DropdownMenu.Separator />
+
+                  <!-- Appeal Docs -->
+                  {#if application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 13, 2);
+                      }}>Acceptance Letter</DropdownMenu.Item
+                    >
+                  {/if}
+                  <!-- Merger Docs -->
+                  {#if application.applicationType === FormApplicationTypes.Merger && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 8, 26);
+                      }}>Merger Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 8, 25);
+                      }}>Merger Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 8, 27);
+                        }}>Certificate of Merger</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Assignment docs -->
+                  {#if application.applicationType === FormApplicationTypes.Assignment && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 5, 12);
+                      }}>Assignment Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 5, 11);
+                      }}>Assignment Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 5, 13);
+                        }}>Certificate of Assignment</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Registered user docs -->
+                  {#if application.applicationType === FormApplicationTypes.RegisteredUser && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 7, 29);
+                      }}>Registered User Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 7, 28);
+                      }}>Registered User Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 7, 30);
+                        }}>Certificate of Registered User</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Change of Name docs -->
+                  {#if application.applicationType === FormApplicationTypes.ChangeOfName && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 9, 32);
+                      }}>Change of Name Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 9, 34);
+                      }}>Change of Name Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 9, 48);
+                        }}>Certificate of Change of Name</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Change of Address docs -->
+                  {#if application.applicationType === FormApplicationTypes.ChangeOfAddress && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 10, 31);
+                      }}>Change of Address Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 10, 33);
+                      }}>Change of Address Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 10, 49);
+                        }}>Certificate of Change of Address</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Clerical Update Docs -->
+                  {#if application.applicationType === FormApplicationTypes.ClericalUpdate && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 11, 36);
+                      }}>Clerical Update Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 11, 35);
+                      }}>Clerical Update Receipt</DropdownMenu.Item
+                    >
+                  {/if}
+                  <!-- Certificate -->
+                  {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
+                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                      <DropdownMenu.Item
+                        on:click={() => certificate(application)}
+                      >
+                        Certificate
+                      </DropdownMenu.Item>
+                    {/if}
+                    <!-- Renewal docs -->
+                  {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
+                    {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
+                      <DropdownMenu.Item
+                        on:click={() => renewalCertificate(application)}
+                      >
+                        Renewal Certificate</DropdownMenu.Item
+                      >
                     {/if}
                   {/if}
                 </DropdownMenu.Group>
