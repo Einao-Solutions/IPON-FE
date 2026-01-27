@@ -1,314 +1,273 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { createEventDispatcher } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { baseURL } from '$lib/helpers';
-	import { loggedInUser } from '$lib/store';
-	import { page } from '$app/stores';
-	import Icon from '@iconify/svelte';
-	export let isOpen = false;
+  import { onMount } from "svelte";
+  import { createEventDispatcher } from "svelte";
+  import { goto } from "$app/navigation";
+  import { baseURL } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
+  import { page } from "$app/stores";
+  import Icon from "@iconify/svelte";
+  export let isOpen = false;
 
-	interface SearchParams {
-		query: string;
-		fileType: string;
-	}
-	
-	// Form data
-	let searchQuery = '';
-	// OLD IMPLEMENTATION (commented for future deletion)
-	// let selectedFileType: string = 'patent'; // Default to patent
-	
-	// NEW IMPLEMENTATION - Context-aware file type selection
-	let selectedFileType: string = 'patent'; // Default to patent
-	let ipContext: string | null = null;
-	let isFileTypeAutoSet = false;
-	
-	// Check for IP context from URL parameters
-	$: {
-		if (typeof window !== 'undefined') {
-			const urlParams = new URLSearchParams(window.location.search);
-			const contextParam = urlParams.get('ipType') || urlParams.get('context');
-			if (contextParam && !isFileTypeAutoSet) {
-				ipContext = contextParam.toLowerCase();
-				if (contextParam.toLowerCase() === 'trademark') {
-					selectedFileType = 'trademark';
-				} else if (contextParam.toLowerCase() === 'patent') {
-					selectedFileType = 'patent';
-				}
-				isFileTypeAutoSet = true;
-			}
-		}
-	}
-	
-	// Determine if file type dropdown should be shown
-	$: showFileTypeDropdown = !ipContext;
-	
-	// Helper function to get file type icon
-	function getFileTypeIcon(fileType: string): string {
-		const iconMap: Record<string, string> = {
-			'trademark': 'mdi:scale-balance',
-			'patent': 'mdi:lightbulb-outline', 
-			'design': 'mdi:palette-outline'
-		};
-		return iconMap[fileType.toLowerCase()] || 'mdi:file';
-	}
-	let isLoading = false;
-	let error: string | null = null;
-	let applicantName: string | null = null;
-	let applicantEmail: string | null = null;
-	const dispatch = createEventDispatcher();
-	let type: string;
-	
-	onMount(() => {
-        isOpen = true;
-    });
+  interface SearchParams {
+    query: string;
+    fileType: string;
+  }
+  // Form data
+  let searchQuery = "";
 
-	// Close modal function
-	function closeModal(): void {
-		dispatch('close');
-		goto('/home/dashboard');
-		isOpen = false;
-	}
+  // NEW IMPLEMENTATION - Context-aware file type selection
+  let selectedFileType: string = "patent"; // Default to patent
+  let ipContext: string | null = null;
+  let isFileTypeAutoSet = false;
 
-	// function handleOutsideClick(event: MouseEvent): void {
-    //     const target = event.target as HTMLElement;
-    //     if (target.classList.contains('modal-overlay')) {
-    //         closeModal();
-    //     }
-    // }
-
-	async function handleSearch(): Promise<void> {
-        if (!searchQuery) {
-            error = 'Please enter a file number';
-            return;
+  // Check for IP context from URL parameters
+  $: {
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const contextParam = urlParams.get("ipType") || urlParams.get("context");
+      if (contextParam && !isFileTypeAutoSet) {
+        ipContext = contextParam.toLowerCase();
+        if (contextParam.toLowerCase() === "trademark") {
+          selectedFileType = "trademark";
+        } else if (contextParam.toLowerCase() === "patent") {
+          selectedFileType = "patent";
         }
-        if (!selectedFileType) {
-            error = 'Please select a file type';
-            return;
-        }
-        isLoading = true;
-        error = null;
-        try {
-            // Call backend to check file type
-            const response = await fetch(`${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`);
-            const result = await response.json();
-            if (!response.ok) {
-                error = result.message || 'File not found.';
-                isLoading = false;
-                return;
-            }
-            if (result.type.toLowerCase() !== selectedFileType.toLowerCase()) {
-                error = `File type mismatch. You selected "${selectedFileType}", but file is "${result.type}".`;
-                isLoading = false;
-                return;
-            }
-            // Store search parameters
-            const searchParams: SearchParams = {
-                query: searchQuery,
-                fileType: selectedFileType
-            };
-            sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
-            applicantName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName || 'Unknown';
-            applicantEmail = $loggedInUser?.email || 'unknown@email.com';
-            await goto(`/home/postregistration/search/`);
-        } catch (err) {
-            error = 'Error checking file type.';
-        } finally {
-            isLoading = false;
-        }
+        isFileTypeAutoSet = true;
+      }
     }
-	// onMount(async () => {
-	// 	const file = $page.url.searchParams.get('type') ?? '';
-	// 	type = file;
-	// 	isOpen = true;
-	// });
-	// Handle click outside
-	// function handleOutsideClick(event: MouseEvent): void {
-	// 	const target = event.target as HTMLElement;
-	// 	if (target.classList.contains('modal-overlay')) {
-	// 		closeModal();
-	// 	}
-	// }
-	// // Handle search submission
-	// async function handleSearch(): Promise<void> {
-	// 	if (!searchQuery) {
-	// 		error = 'Please enter a search term';
-	// 		return;
-	// 	}
+  }
 
-	// 	try {
-	// 		isLoading = true;
-	// 		error = null;
+  // Determine if file type dropdown should be shown
+  $: showFileTypeDropdown = !ipContext;
 
-	// 		const searchParams: SearchParams = {
-	// 			query: searchQuery,
-	// 			fileType: type
-	// 		};
-	// 		// console.log('searchParams', searchParams);
-	// 		// Store search parameters
-	// 		sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
+  // Helper function to get file type icon
+  function getFileTypeIcon(fileType: string): string {
+    const iconMap: Record<string, string> = {
+      trademark: "mdi:scale-balance",
+      patent: "mdi:lightbulb-outline",
+      design: "mdi:palette-outline",
+    };
+    return iconMap[fileType.toLowerCase()] || "mdi:file";
+  }
+  let isLoading = false;
+  let error: string | null = null;
+  let applicantName: string | null = null;
+  let applicantEmail: string | null = null;
+  const dispatch = createEventDispatcher();
+  let type: string;
 
-	// 		try {
-	// 			applicantName = $loggedInUser.name;
-	// 			// console.log('applicantName', applicantName);
-	// 			applicantEmail = $loggedInUser.email;
-	// 			// console.log('applicantEmail', applicantEmail);
+  onMount(() => {
+    isOpen = true;
+  });
 
-	// 			await goto(`/home/postregistration/search/`);
-	// 		} catch (err) {
-	// 			error = 'Payment failed';
-	// 		}
-	// 	} catch (err) {
-	// 		const catchError = err as Error;
-	// 		error = catchError.message || 'An error occurred during search';
-	// 	} finally {
-	// 		isLoading = false;
-	// 	}
-	// }
-	// Handle keyboard events for accessibility
-	function handleKeydown(event: KeyboardEvent): void {
-		if (event.key === 'Escape') {
-			closeModal();
-		}
-		if (event.key === 'Enter') {
-			handleSearch();
-		}
-	}
+  // Close modal function
+  function closeModal(): void {
+    dispatch("close");
+    goto("/home/dashboard");
+    isOpen = false;
+  }
+
+  async function handleSearch(): Promise<void> {
+    if (!searchQuery) {
+      error = "Please enter a file number";
+      return;
+    }
+    if (!selectedFileType) {
+      error = "Please select a file type";
+      return;
+    }
+    isLoading = true;
+    error = null;
+    try {
+      // Call backend to check file type
+      const response = await fetch(
+        `${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`,
+      );
+      const result = await response.json();
+      if (!response.ok) {
+        error = result.message || "File not found.";
+        isLoading = false;
+        return;
+      }
+      if (result.type.toLowerCase() !== selectedFileType.toLowerCase()) {
+        error = `File type mismatch. You selected "${selectedFileType}", but file is "${result.type}".`;
+        isLoading = false;
+        return;
+      }
+      // Store search parameters
+      const searchParams: SearchParams = {
+        query: searchQuery,
+        fileType: selectedFileType,
+      };
+      sessionStorage.setItem("searchParams", JSON.stringify(searchParams));
+      applicantName =
+        $loggedInUser?.firstName + " " + $loggedInUser?.lastName || "Unknown";
+      applicantEmail = $loggedInUser?.email || "unknown@email.com";
+      await goto(`/home/postregistration/search/`);
+    } catch (err) {
+      error = "Error checking file type.";
+    } finally {
+      isLoading = false;
+    }
+  }
+  // Handle keyboard events for accessibility
+  function handleKeydown(event: KeyboardEvent): void {
+    if (event.key === "Escape") {
+      closeModal();
+    }
+    if (event.key === "Enter") {
+      handleSearch();
+    }
+  }
 </script>
 
 {#if isOpen}
-	<div
-		class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-		
-		on:keydown={handleKeydown}
-		role="presentation"
-	>
-		<div
-			class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md mx-auto"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="modal-title"
-		>
-			<!-- Modal Header -->
-			<div class="border-b px-6 py-4">
-				<h3 id="modal-title" class="text-lg font-bold text-black">Post Registration Search</h3>
-				<p>Search for the File</p>
-			</div>
+  <div
+    class="modal-overlay fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    on:keydown={handleKeydown}
+    role="presentation"
+  >
+    <div
+      class="modal-content bg-white rounded-lg shadow-xl w-full max-w-md mx-auto"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <!-- Modal Header -->
+      <div class="border-b px-6 py-4">
+        <h3 id="modal-title" class="text-lg font-bold text-black">
+          Post Registration Search
+        </h3>
+        <p>Search for the File</p>
+      </div>
 
-			<!-- Modal Body -->
-			<div class="p-6">
-				{#if error}
-					<div class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
-						{error}
-					</div>
-				{/if}
+      <!-- Modal Body -->
+      <div class="p-6">
+        {#if error}
+          <div class="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+            {error}
+          </div>
+        {/if}
 
-				<div class="space-y-4 mx-auto">
-					<!-- Search and Class selection layout -->
-					<div class="flex flex-col md:flex-row gap-3">
-						<!-- Search Input -->
-						<div class="w-full md:w-2/3">
-							<label for="search-query" class="block text-sm font-medium text-gray-700 mb-1">
-								File Number or RTM:
-							</label>
-							<input
-								id="search-query"
-								type="text"
-								bind:value={searchQuery}
-								placeholder="Enter file number or RTM number"
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-							/>
-						</div>
+        <div class="space-y-4 mx-auto">
+          <!-- Search and Class selection layout -->
+          <div class="flex flex-col md:flex-row gap-3">
+            <!-- Search Input -->
+            <div class="w-full md:w-2/3">
+              <label
+                for="search-query"
+                class="block text-sm font-medium text-gray-700 mb-1"
+              >
+                File Number or RTM:
+              </label>
+              <input
+                id="search-query"
+                type="text"
+                bind:value={searchQuery}
+                placeholder="Enter file number or RTM number"
+                class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
 
-						<!-- File Type Dropdown - Context-aware display -->
-						{#if showFileTypeDropdown}
-							<!-- OLD IMPLEMENTATION (visible when no context) -->
-							<div class="w-full md:w-1/3">
-								<label for="file-type" class="block text-sm font-medium text-gray-700 mb-1">
-									File Type
-								</label>
-								<select
-									id="file-type"
-									class="border rounded w-full p-2"
-									bind:value={selectedFileType}
-								>
-									<option value="patent">Patent</option>
-									<option value="trademark">Trademark</option>
-								</select>
-							</div>
-						{:else}
-							<!-- NEW IMPLEMENTATION - Show selected file type as readonly when context is provided -->
-							<div class="w-full md:w-1/3">
-								<label for="file-type-display" class="block text-sm font-medium text-gray-700 mb-1">
-									File Type
-								</label>
-								<div class="w-full p-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center">
-									<Icon icon={getFileTypeIcon(selectedFileType)} class="w-4 h-4 mr-2 text-green-600" />
-									{selectedFileType.charAt(0).toUpperCase() + selectedFileType.slice(1)}
-									<!-- <span class="ml-2 text-xs text-green-600">(auto-selected)</span> -->
-								</div>
-							</div>
-						{/if}
-							<!-- <input
-								id="search-query"
-								type="text"
-								placeholder={type && type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}
-								value={type && type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}
-								disabled
-								class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-							/> -->
-					</div>
-				</div>
-			</div>
+            <!-- File Type Dropdown - Context-aware display -->
+            {#if showFileTypeDropdown}
+              <!-- OLD IMPLEMENTATION (visible when no context) -->
+              <div class="w-full md:w-1/3">
+                <label
+                  for="file-type"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  File Type
+                </label>
+                <select
+                  id="file-type"
+                  class="border rounded w-full p-2"
+                  bind:value={selectedFileType}
+                >
+                  <option value="patent">Patent</option>
+                  <option value="trademark">Trademark</option>
+                </select>
+              </div>
+            {:else}
+              <!-- NEW IMPLEMENTATION - Show selected file type as readonly when context is provided -->
+              <div class="w-full md:w-1/3">
+                <label
+                  for="file-type-display"
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                >
+                  File Type
+                </label>
+                <div
+                  class="w-full p-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center"
+                >
+                  <Icon
+                    icon={getFileTypeIcon(selectedFileType)}
+                    class="w-4 h-4 mr-2 text-green-600"
+                  />
+                  {selectedFileType.charAt(0).toUpperCase() +
+                    selectedFileType.slice(1)}
+                  <!-- <span class="ml-2 text-xs text-green-600">(auto-selected)</span> -->
+                </div>
+              </div>
+            {/if}
+          </div>
+        </div>
+      </div>
 
-			<!-- Modal Footer -->
-			<div class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3">
-				<span class="flex items-center text-xs text-gray-600">
-					<Icon icon="mdi:information-variant-circle" class="mr-2 text-green-600" style="font-size: 1.3em;" />
-					Post Registration is strictly for registered files with active status.
-				</span>
-				<button
-					type="button"
-					on:click={closeModal}
-					class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-				>
-					Cancel
-				</button>
-				<button
-					type="button"
-					on:click={handleSearch}
-					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
-				>
-					{#if isLoading}
-						<span class="inline-block mr-2">
-							<svg
-								class="animate-spin h-4 w-4 text-white"
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-							>
-								<circle
-									class="opacity-25"
-									cx="12"
-									cy="12"
-									r="10"
-									stroke="currentColor"
-									stroke-width="4"
-								></circle>
-								<path
-									class="opacity-75"
-									fill="currentColor"
-									d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-								></path>
-							</svg>
-						</span>
-						Searching...
-					{:else}
-						Search
-					{/if}
-				</button>
-			</div>
-		</div>
-	</div>
+      <!-- Modal Footer -->
+      <div
+        class="px-6 py-4 bg-gray-50 border-t rounded-b-lg flex justify-end space-x-3"
+      >
+        <span class="flex items-center text-xs text-gray-600">
+          <Icon
+            icon="mdi:information-variant-circle"
+            class="mr-2 text-green-600"
+            style="font-size: 1.3em;"
+          />
+          Post Registration is strictly for registered files with active status.
+        </span>
+        <button
+          type="button"
+          on:click={closeModal}
+          class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          on:click={handleSearch}
+          disabled={isLoading}
+          class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
+        >
+          {#if isLoading}
+            <span class="inline-block mr-2">
+              <svg
+                class="animate-spin h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+            </span>
+            Searching...
+          {:else}
+            Search
+          {/if}
+        </button>
+      </div>
+    </div>
+  </div>
 {/if}
