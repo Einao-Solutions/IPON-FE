@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { baseURL } from '$lib/helpers';
+	import { baseURL, getPatentTypeLabel, getPatentApplicationTypeLabel } from '$lib/helpers';
 	import { loggedInUser } from '$lib/store';
 	import { page } from '$app/stores';
+	import { countriesMap } from '$lib/constants';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
@@ -13,9 +14,27 @@
 		supportingDocuments: File[];
 	}
 
+	interface LicenseeData {
+		name: string;
+		email: string;
+		phone: string;
+		nationality: string;
+		address: string;
+		state: string;
+	}
+
 	let formData: PatentLicenseData = {
 		licenseDeeds: [],
 		supportingDocuments: []
+	};
+
+	let licenseeData: LicenseeData = {
+		name: '',
+		email: '',
+		phone: '',
+		nationality: '',
+		address: '',
+		state: ''
 	};
 
 	// API and UI state
@@ -24,9 +43,15 @@
 	let paymentId: string | null = null;
 	let fileId: string | null = null;
 	let patentTitle: string = '';
+	let patentType: number | null = null;
+	let patentApplicationType: number | null = null;
+	let fileOrigin: string = '';
 	let applicantName: string = '';
 	let applicantEmail: string = '';
 	let applicantPhone: string = '';
+	let applicantAddress: string = '';
+	let applicantNationality: string = '';
+	let applicantState: string = '';
 	let isProcessing = false;
 	let isLoading = false;
 
@@ -60,9 +85,15 @@
 			paymentId = data.rrr;
 			applicantName = data.applicantName;
 			patentTitle = data.fileTitle || data.titleOfInvention;
+			patentType = data.patentType;
+			patentApplicationType = data.patentApplicationType;
+			fileOrigin = data.fileOrigin || '';
 			fileId = data.fileId;
 			applicantEmail = data.applicantEmail;
 			applicantPhone = data.applicantPhone;
+			applicantAddress = data.applicantAddress || '';
+			applicantNationality = data.applicantNationality || '';
+			applicantState = data.applicantState || '';
 		} catch (err) {
 			error = 'Error fetching patent license cost.';
 			console.error(err);
@@ -96,6 +127,36 @@
 
 		if (formData.supportingDocuments.length === 0) {
 			error = 'Please upload at least one supporting document.';
+			return false;
+		}
+
+		if (!licenseeData.name.trim()) {
+			error = 'Please enter licensee name.';
+			return false;
+		}
+
+		if (!licenseeData.email.trim()) {
+			error = 'Please enter licensee email.';
+			return false;
+		}
+
+		if (!licenseeData.phone.trim()) {
+			error = 'Please enter licensee phone number.';
+			return false;
+		}
+
+		if (!licenseeData.nationality.trim()) {
+			error = 'Please select licensee nationality.';
+			return false;
+		}
+
+		if (!licenseeData.address.trim()) {
+			error = 'Please enter licensee address.';
+			return false;
+		}
+
+		if (!licenseeData.state.trim()) {
+			error = 'Please enter licensee state.';
 			return false;
 		}
 
@@ -151,8 +212,23 @@
 				rrr: paymentId,
 				licenseDate: now.toISOString(),
 				licenseRequestDate: now.toISOString(),
+				// Document attachments (existing)
 				Deedoflicense: licenseDeedData,
-				PatentLicenseSupportingDocuments: supportingDocsData
+				PatentLicenseSupportingDocuments: supportingDocsData,
+				// Old licensor information (current patent holder)
+				oldLicensorName: applicantName,
+				oldLicensorEmail: applicantEmail,
+				oldLicensorPhone: applicantPhone,
+				oldLicensorAddress: applicantAddress,
+				oldLicensorNationality: applicantNationality,
+				oldLicensorState: applicantState,
+				// New licensee information (from input fields)
+				newLicenseeName: licenseeData.name,
+				newLicenseeEmail: licenseeData.email,
+				newLicenseePhone: licenseeData.phone,
+				newLicenseeAddress: licenseeData.address,
+				newLicenseeNationality: licenseeData.nationality,
+				newLicenseeState: licenseeData.state
 			};
 
 			// Debug: Log the payload before storing
@@ -183,7 +259,7 @@
 
 	async function handlePayment() {
 		if (cost && paymentId) {
-			await goto(`/payment/?type=patentlicense&rrr=${paymentId}&amount=${cost}`);
+			await goto(`/payment/?type=patentlicense&rrr=${paymentId}&amount=${cost}&fileId=${fileId}`);
 		}
 	}
 
@@ -216,7 +292,7 @@
 
 			<!-- Patent Information Section -->
 			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-				<div class="bg-gray-300 px-4 py-2 font-medium text-black">PATENT INFORMATION</div>
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">LICENSE INFORMATION</div>
 				{#if isLoading}
 					<div class="flex items-center justify-center p-12">
 						<div class="flex flex-col items-center gap-2">
@@ -226,18 +302,6 @@
 					</div>
 				{:else}
 					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-						<div>
-							<label for="title" class="block text-sm font-medium text-gray-700 mb-1">
-								Title of Invention:
-							</label>
-							<input
-								id="title"
-								type="text"
-								value={patentTitle}
-								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-								disabled
-							/>
-						</div>
 						<div>
 							<label for="fileNumber" class="block text-sm font-medium text-gray-700 mb-1">
 								File Number:
@@ -251,11 +315,72 @@
 							/>
 						</div>
 						<div>
-							<label for="applicantName" class="block text-sm font-medium text-gray-700 mb-1">
-								Applicant Name:
+							<label for="fileOrigin" class="block text-sm font-medium text-gray-700 mb-1">
+								File Origin:
 							</label>
 							<input
-								id="applicantName"
+								id="fileOrigin"
+								type="text"
+								value={fileOrigin}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="patentType" class="block text-sm font-medium text-gray-700 mb-1">
+								Patent Type:
+							</label>
+							<input
+								id="patentType"
+								type="text"
+								value={patentType !== null ? getPatentTypeLabel(patentType) : ''}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="patentApplicationType" class="block text-sm font-medium text-gray-700 mb-1">
+								Patent Application Type:
+							</label>
+							<input
+								id="patentApplicationType"
+								type="text"
+								value={patentApplicationType !== null ? getPatentApplicationTypeLabel(patentApplicationType) : ''}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div class="md:col-span-2">
+							<label for="title" class="block text-sm font-medium text-gray-700 mb-1">
+								Title of Invention:
+							</label>
+							<input
+								id="title"
+								type="text"
+								value={patentTitle}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Licensor Information Section -->
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">LICENSOR INFORMATION</div>
+				{#if isLoading}
+					<div class="flex items-center justify-center p-12">
+						<div class="flex flex-col items-center gap-2">
+							<Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" />
+							<span class="text-sm text-gray-500">Loading Licensor Information...</span>
+						</div>
+					</div>
+				{:else}
+					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div>
+							<label for="applicantName" class="block text-sm font-medium text-gray-700 mb-1">Name:</label>
+							<input
 								type="text"
 								value={applicantName}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -263,19 +388,139 @@
 							/>
 						</div>
 						<div>
-							<label for="applicantEmail" class="block text-sm font-medium text-gray-700 mb-1">
-								Applicant Email:
-							</label>
+							<label for="applicantEmail" class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
 							<input
-								id="applicantEmail"
 								type="email"
 								value={applicantEmail}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
 								disabled
 							/>
 						</div>
+						<div>
+							<label for="applicantPhone" class="block text-sm font-medium text-gray-700 mb-1">Phone:</label>
+							<input
+								type="text"
+								value={applicantPhone}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="applicantNationality" class="block text-sm font-medium text-gray-700 mb-1">Nationality:</label>
+							<input
+								type="text"
+								value={applicantNationality}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
+							<label for="applicantState" class="block text-sm font-medium text-gray-700 mb-1">State:</label>
+							<input
+								type="text"
+								value={applicantState}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div class="md:col-span-2">
+							<label for="applicantAddress" class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
+							<input
+								type="text"
+								value={applicantAddress}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
 					</div>
 				{/if}
+			</div>
+
+			<!-- Licensee Information Section -->
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">LICENSEE INFORMATION</div>
+				<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							Name: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="text"
+							bind:value={licenseeData.name}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter licensee name"
+							required
+						/>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							Email: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="email"
+							bind:value={licenseeData.email}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter licensee email"
+							required
+						/>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							Phone Number: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="tel"
+							bind:value={licenseeData.phone}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter licensee phone number"
+							required
+						/>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							Nationality: <span class="text-red-500">*</span>
+						</label>
+						<select
+							bind:value={licenseeData.nationality}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							required
+						>
+							<option value="" disabled selected>Select nationality</option>
+							{#each Object.entries(countriesMap) as [code, name]}
+								<option value={name}>{name}</option>
+							{/each}
+						</select>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							State: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="text"
+							bind:value={licenseeData.state}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter licensee state"
+							required
+						/>
+					</div>
+
+					<div class="md:col-span-2">
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							Address: <span class="text-red-500">*</span>
+						</label>
+						<textarea
+							bind:value={licenseeData.address}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter licensee full address"
+							rows="3"
+							required
+						></textarea>
+					</div>
+				</div>
 			</div>
 
 			<!-- Document Upload Section -->
