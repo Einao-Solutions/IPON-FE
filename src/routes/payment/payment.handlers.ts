@@ -77,6 +77,7 @@ export const paymentHandlers: Record<
   availabilitysearch,
   merger,
   registeredusers,
+  assignment,
   changedatarecordal,
   clerical,
   tradecertificate,
@@ -323,7 +324,9 @@ async function availabilitysearch(ctx: PaymentContext) {
 async function merger(ctx: PaymentContext) {
   return simplePaidHandler(ctx);
 }
-
+async function assignment(ctx: PaymentContext) {
+  return simplePaidHandler(ctx);
+}
 async function registeredusers(ctx: PaymentContext) {
   return simplePaidHandler(ctx);
 }
@@ -344,10 +347,13 @@ async function simplePaidHandler(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
+  const data = localStorage.getItem("formData");
+  const parsed = data ? JSON.parse(data) : null;
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
   ctx.state.setTitle("Payment");
+  ctx.state.setFileNumber(parsed?.FileId ?? null);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(
