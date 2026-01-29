@@ -1077,37 +1077,72 @@
           {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
             <!-- Assignment Details -->
             <div class="border rounded-lg p-4 bg-gray-50">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {#each Object.entries(recordalData) as [key, value]}
-                  {#if !["id", "isApproved", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
-                      .toLowerCase()
-                      .endsWith("url")}
-                    <div class="break-words">
+              <!-- Assignor Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  Assignor Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if value != null && !key
+                        .toLowerCase()
+                        .startsWith("assignee") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
+                        .toLowerCase()
+                        .endsWith("url") && key.toLowerCase() !== "isapproved"}
+                      <div class="break-words">
                         <Label
-                        class="font-semibold capitalize text-sm text-gray-700"
+                          class="font-semibold capitalize text-sm text-gray-700"
                         >
-                        {(() => {
-                          const lowerKey = key.toLowerCase();
-                          const fieldsToPrefix = ['name', 'email', 'phone', 'address', 'nationality'];
-                          const shouldPrefix = fieldsToPrefix.some(field => lowerKey.includes(field));
-                          const displayKey = shouldPrefix ? `assignee ${key}` : key;
-                          return displayKey.replace(/([A-Z])/g, " $1").trim();
-                        })()}:
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
                         </Label>
-                      <div class="mt-1 p-3 bg-white rounded border shadow-sm">
-                        {#if Array.isArray(value)}
-                          <ul class="list-disc pl-5 space-y-1">
-                            {#each value as item}
-                              <li class="break-words text-sm">{item}</li>
-                            {/each}
-                          </ul>
-                        {:else}
-                          <p class="text-sm text-gray-900">{value}</p>
-                        {/if}
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
                       </div>
-                    </div>
-                  {/if}
-                {/each}
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Assignee Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  Assignee Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
+                        .toLowerCase()
+                        .endsWith("url") && key.toLowerCase() && key.toLowerCase() !== "isapproved"}
+                      <div class="break-words">
+                        <Label
+                          class="font-semibold capitalize text-sm text-gray-700"
+                        >
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </Label>
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
               </div>
 
               <!-- Handle attachment images -->

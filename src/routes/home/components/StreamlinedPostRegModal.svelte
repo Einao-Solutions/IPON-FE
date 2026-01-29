@@ -432,8 +432,8 @@
           {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage"].includes(serviceId)}
             This service is only available for Active patent files.
           {:else}
-            This service is only available for registered {ipType} files with active
-            status.
+            This service is only available for accepted and registered {ipType} files
+            with status 'Publication' 'Awaiting Certification' and 'Active'
           {/if}
         </div>
 
