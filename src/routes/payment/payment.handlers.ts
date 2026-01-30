@@ -48,7 +48,7 @@ export async function generateRemitaHash(rrr: string) {
 
   const buffer = await crypto.subtle.digest(
     "SHA-512",
-    new TextEncoder().encode(raw)
+    new TextEncoder().encode(raw),
   );
 
   return [...new Uint8Array(buffer)]
@@ -110,7 +110,7 @@ async function newapplication(ctx: PaymentContext): Promise<void> {
   let response;
   if (appData.type === 0 && appData.fileOrigin === "Local") {
     response = await fetch(
-      `${baseURL}/api/files/GetNonConventionalCost?fileId=${appData.fileId}&fileType=${appData.type}`
+      `${baseURL}/api/files/GetNonConventionalCost?fileId=${appData.fileId}&fileType=${appData.type}`,
     );
   } else {
     response = await fetch(`${baseURL}/api/files/GetRRRCost?rrr=${rrr}`);
@@ -143,7 +143,7 @@ async function newapplication(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileType(appData.type?.toString() ?? null);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=newapplication&fileId=${appData.id}&applicationId=${history.id}`
+    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=newapplication&fileId=${appData.id}&applicationId=${history.id}`,
   );
 }
 
@@ -154,7 +154,7 @@ async function renewal(ctx: PaymentContext): Promise<void> {
   if (!parsed?.fileId) throw new Error("Invalid renewal data");
 
   const res = await fetch(
-    `${baseURL}/api/files/GetPatentRenewalCost?fileId=${parsed.fileId}&fileType=0`
+    `${baseURL}/api/files/GetPatentRenewalCost?fileId=${parsed.fileId}&fileType=0`,
   );
 
   if (!res.ok) {
@@ -171,7 +171,7 @@ async function renewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(parsed.fileId);
   ctx.state.setFileApplicant(`${user?.firstName} ${user?.lastName}`);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal&fileId=${parsed.fileId}&rrr=${result.rrr}`
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal&fileId=${parsed.fileId}&rrr=${result.rrr}`,
   );
   ctx.state.setRenewalMeta({
     isLateRenewal: result.isLateRenewal,
@@ -198,7 +198,7 @@ async function dashrenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(fileId);
   ctx.state.setFileApplicant(`${user?.firstName} ${user?.lastName}`);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=dashrenewal&fileId=${fileId}`
+    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=dashrenewal&fileId=${fileId}`,
   );
 }
 
@@ -235,7 +235,7 @@ async function update(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(appData.applicants?.[0]?.name ?? "");
   ctx.state.setFileType(appData.type ?? undefined);
   ctx.state.setResponseUrl(
-    `https://${ctx.baseUrl}/payment/status?rrr=${result.rrr}&paymentType=update&fileId=${appData.id}`
+    `https://${ctx.baseUrl}/payment/status?rrr=${result.rrr}&paymentType=update&fileId=${appData.id}`,
   );
 }
 
@@ -263,7 +263,7 @@ async function clerical(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(parsed.FileId);
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/clerical-update/paid?paymentType=clerical`
+    `https://${ctx.page.url.host}/home/clerical-update/paid?paymentType=clerical`,
   );
 }
 
@@ -285,7 +285,7 @@ async function opposition(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(info.fileId);
   ctx.state.setFileApplicant(opp.name);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/opposition/paid?rrr=${opp.paymentId}`
+    `https://${ctx.page.url.host}/opposition/paid?rrr=${opp.paymentId}`,
   );
 }
 
@@ -306,14 +306,14 @@ async function statussearch(ctx: PaymentContext) {
 async function publicationstatusupdate(ctx: PaymentContext) {
   return simpleRedirectHandler(
     ctx,
-    "/home/publications/publicationstatusupdate/result"
+    "/home/publications/publicationstatusupdate/result",
   );
 }
 
 async function filewithdrawal(ctx: PaymentContext) {
   return simpleRedirectHandler(
     ctx,
-    "/home/file-withdrawal/file-withdrawal-result"
+    "/home/file-withdrawal/file-withdrawal-result",
   );
 }
 
@@ -357,16 +357,16 @@ async function simplePaidHandler(ctx: PaymentContext): Promise<void> {
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(
-    `${get(ctx.loggedInUser)?.firstName} ${get(ctx.loggedInUser)?.lastName}`
+    `${get(ctx.loggedInUser)?.firstName} ${get(ctx.loggedInUser)?.lastName}`,
   );
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid`
+    `https://${ctx.page.url.host}/home/postregistration/paid`,
   );
 }
 
 async function simpleRedirectHandler(
   ctx: PaymentContext,
-  path: string
+  path: string,
 ): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
@@ -382,7 +382,7 @@ async function simpleRedirectHandler(
 
 async function simpleParamHandler(
   ctx: PaymentContext,
-  type: string
+  type: string,
 ): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("cost");
@@ -395,7 +395,7 @@ async function simpleParamHandler(
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=${type}`
+    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=${type}`,
   );
 }
 
@@ -412,7 +412,8 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   if (!cost || !rrr) throw new Error("Missing payment data");
 
   const user = get(ctx.loggedInUser);
-  const applicantName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
   ctx.state.setTitle("Patent Assignment Application");
   ctx.state.setCost(cost);
@@ -420,7 +421,7 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}`
+    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}`,
   );
 }
 
@@ -433,7 +434,8 @@ async function patentlicense(ctx: PaymentContext): Promise<void> {
   if (!cost || !rrr) throw new Error("Missing payment data");
 
   const user = get(ctx.loggedInUser);
-  const applicantName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
   ctx.state.setTitle("Patent License Application");
   ctx.state.setCost(cost);
@@ -441,7 +443,7 @@ async function patentlicense(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}`
+    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}`,
   );
 }
 
@@ -454,7 +456,8 @@ async function patentmortgage(ctx: PaymentContext): Promise<void> {
   if (!cost || !rrr) throw new Error("Missing payment data");
 
   const user = get(ctx.loggedInUser);
-  const applicantName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
   ctx.state.setTitle("Patent Mortgage Application");
   ctx.state.setCost(cost);
@@ -462,7 +465,7 @@ async function patentmortgage(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}`
+    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}`,
   );
 }
 
@@ -475,7 +478,8 @@ async function patentmerger(ctx: PaymentContext): Promise<void> {
   if (!cost || !rrr) throw new Error("Missing payment data");
 
   const user = get(ctx.loggedInUser);
-  const applicantName = `${user?.firstName || ''} ${user?.lastName || ''}`.trim();
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
   ctx.state.setTitle("Patent Merger Application");
   ctx.state.setCost(cost);
@@ -483,6 +487,6 @@ async function patentmerger(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}`
+    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}`,
   );
 }
