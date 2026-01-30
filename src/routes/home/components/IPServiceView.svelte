@@ -4,6 +4,7 @@
     getServicesByCategory,
     type IPService,
   } from "$lib/services";
+  import { goto } from "$app/navigation";
   import ServiceGrid from "./ServiceGrid.svelte";
   import Icon from "@iconify/svelte";
   import { Button } from "$lib/components/ui/button";
@@ -110,7 +111,7 @@
       console.log("🔍 Searching for file:", payCertFileNumber);
 
       const response = await fetch(
-        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`
+        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`,
       );
 
       if (response.ok) {
@@ -118,7 +119,7 @@
         console.log("📁 API Response:", payCertResults);
 
         filteredResults = payCertResults?.filter(
-          (result) => result.fileStatus == 20
+          (result) => result.fileStatus == 20,
         );
         console.log("🎯 Filtered results (status 20):", filteredResults);
 
@@ -150,7 +151,7 @@
 
     try {
       const response = await fetch(
-        `${baseURL}/api/files/CertificatePayment?id=${fileNumber}&userId=${$loggedInUser?.id}`
+        `${baseURL}/api/files/CertificatePayment?id=${fileNumber}&userId=${$loggedInUser?.id}`,
       );
 
       if (!response.ok) {
@@ -158,7 +159,7 @@
         console.error(
           "❌ Certificate Payment API Error:",
           response.status,
-          errorText
+          errorText,
         );
         error = `Payment setup failed: ${response.status} - ${response.statusText}`;
         return;
@@ -179,12 +180,12 @@
       localStorage.setItem("name", res.name || "");
       localStorage.setItem("rrr", res.rrr);
 
-      // Navigate to payment page
-      const paymentUrl = `/payment?type=tradecertificate&amount=${res.total}&paymentId=${res.rrr}&fileId=${res.fileId}&name=${encodeURIComponent(res.name || "")}`;
-      console.log("🚀 Navigating to payment:", paymentUrl);
+      await goto(
+        `/payment/?type=tradecertificate&rrr=${res.rrr}&amount=${res.total}`,
+      );
 
       // Use window.location for navigation
-      window.location.href = paymentUrl;
+      // window.location.href = paymentUrl;
     } catch (err) {
       console.error("❌ Certificate Payment Error:", err);
       error = `Payment error: ${err instanceof Error ? err.message : "Unknown error"}`;
@@ -201,7 +202,7 @@
     verifyPaymentLoading = true;
     try {
       const response = await fetch(
-        `${baseURL}/api/payments/check?id=${verifyRRR.trim()}`
+        `${baseURL}/api/payments/check?id=${verifyRRR.trim()}`,
       );
       if (!response.ok) throw new Error("Verification failed");
       const result = await response.json();
@@ -228,11 +229,11 @@
     try {
       console.log(
         "🔍 Searching for change of agent file:",
-        changeAgentFileNumber
+        changeAgentFileNumber,
       );
 
       const response = await fetch(
-        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(changeAgentFileNumber.trim())}`
+        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(changeAgentFileNumber.trim())}`,
       );
 
       if (!response.ok) {
@@ -298,7 +299,7 @@
     getDocLoading = true;
     try {
       const response = await fetch(
-        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`
+        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`,
       );
       if (!response.ok) {
         const errorData = await response.json();
@@ -321,10 +322,10 @@
   function generateLetter(
     fileId: string,
     letterType: any,
-    applicationId: string
+    applicationId: string,
   ) {
     window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`
+      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`,
     );
   }
 
@@ -340,7 +341,7 @@
 
     try {
       const response = await fetch(
-        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(appealsFileNumber.trim())}`
+        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(appealsFileNumber.trim())}`,
       );
 
       if (!response.ok) {
@@ -353,7 +354,7 @@
 
       // First filter by status (rejected files)
       const rejectedFiles = data.filter(
-        (result: any) => result.fileStatus == 11
+        (result: any) => result.fileStatus == 11,
       );
 
       if (rejectedFiles?.length == 0) {
@@ -372,7 +373,7 @@
               ? 1
               : null;
       const filteredAppealsResults = rejectedFiles.filter(
-        (result: any) => result.fileTypes === expectedFileType
+        (result: any) => result.fileTypes === expectedFileType,
       );
 
       if (filteredAppealsResults?.length == 0) {
@@ -567,26 +568,26 @@
 
     window.addEventListener(
       "openAvailabilitySearch",
-      handleOpenAvailabilitySearch
+      handleOpenAvailabilitySearch,
     );
     window.addEventListener("openPayCertModal", handleOpenPayCertModal);
     window.addEventListener(
       "openVerifyPaymentModal",
-      handleOpenVerifyPaymentModal
+      handleOpenVerifyPaymentModal,
     );
     window.addEventListener(
       "openChangeOfAgentModal",
-      handleOpenChangeOfAgentModal
+      handleOpenChangeOfAgentModal,
     );
     window.addEventListener(
       "openGetDocumentsModal",
-      handleOpenGetDocumentsModal
+      handleOpenGetDocumentsModal,
     );
     window.addEventListener("openFileAppealsModal", handleOpenFileAppealsModal);
     // NEW - Streamlined post-registration modal
     window.addEventListener(
       "openStreamlinedPostRegModal",
-      handleOpenStreamlinedPostRegModal
+      handleOpenStreamlinedPostRegModal,
     );
   });
 
@@ -594,29 +595,29 @@
     window.removeEventListener("resize", handleResize);
     window.removeEventListener(
       "openAvailabilitySearch",
-      handleOpenAvailabilitySearch
+      handleOpenAvailabilitySearch,
     );
     window.removeEventListener("openPayCertModal", handleOpenPayCertModal);
     window.removeEventListener(
       "openVerifyPaymentModal",
-      handleOpenVerifyPaymentModal
+      handleOpenVerifyPaymentModal,
     );
     window.removeEventListener(
       "openChangeOfAgentModal",
-      handleOpenChangeOfAgentModal
+      handleOpenChangeOfAgentModal,
     );
     window.removeEventListener(
       "openGetDocumentsModal",
-      handleOpenGetDocumentsModal
+      handleOpenGetDocumentsModal,
     );
     window.removeEventListener(
       "openFileAppealsModal",
-      handleOpenFileAppealsModal
+      handleOpenFileAppealsModal,
     );
     // NEW - Streamlined post-registration modal
     window.removeEventListener(
       "openStreamlinedPostRegModal",
-      handleOpenStreamlinedPostRegModal
+      handleOpenStreamlinedPostRegModal,
     );
   });
 
@@ -1396,7 +1397,7 @@
               class="text-xs text-gray-700 overflow-auto max-h-32">{JSON.stringify(
                 getDocResult,
                 null,
-                2
+                2,
               )}</pre>
           </div>
         {/if}
