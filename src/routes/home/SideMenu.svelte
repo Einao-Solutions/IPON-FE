@@ -30,12 +30,12 @@
       "Certificate Authentication using QR code",
     ],
     priority: "feature",
-    isActive: true,
+    isActive: false,
   };
 
   let menus = [
     { icon: "radix-icons:dashboard", location: "Dashboard" },
-    { icon: 'mdi:file-document-multiple-outline', location: 'Publications' },
+    { icon: "mdi:file-document-multiple-outline", location: "Publications" },
     { icon: "mdi:book-open-variant", location: "Resources" },
     { icon: "mdi:help-circle-outline", location: "Support" },
     // { icon: 'cil:search', location: 'Opposition' },
@@ -75,7 +75,7 @@
         !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)
       ) {
         menus = menus.filter(
-          (x) => x.location !== "Performance" && x.location !== "Users"
+          (x) => x.location !== "Performance" && x.location !== "Users",
         );
       }
 
@@ -93,7 +93,7 @@
             UserRoles.TrademarkOpposition,
             UserRoles.TrademarkRegistrar,
             UserRoles.Tech,
-          ].includes(role)
+          ].includes(role),
         )
       ) {
         menus = menus.filter((x) => x.location !== "Opposition");
@@ -106,7 +106,7 @@
 
       if (
         !$loggedInUser.userRoles.some((role) =>
-          [UserRoles.SuperAdmin, UserRoles.Tech].includes(role)
+          [UserRoles.SuperAdmin, UserRoles.Tech].includes(role),
         )
       ) {
         menus = menus.filter((x) => x.location !== "AdminPanel");
@@ -116,7 +116,7 @@
 
       // Show Resources only for agents (User role), tech team, and superadmin
       const canSeeResources = $loggedInUser.userRoles.some((role) =>
-        [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
+        [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin].includes(role),
       );
 
       if (!canSeeResources) {
@@ -149,7 +149,7 @@
 
     // Find matching menu item (case-insensitive)
     const menuMatch = menus.find(
-      (m) => m.location.toLowerCase() === currentLocation
+      (m) => m.location.toLowerCase() === currentLocation,
     );
 
     if (menuMatch) {
@@ -181,14 +181,14 @@
     notificationsLoading = true;
 
     let showSupportTickets = $loggedInUser.userRoles?.includes(
-      UserRoles.Tech || UserRoles.SuperAdmin
+      UserRoles.Tech || UserRoles.SuperAdmin,
     );
     let showAllOpposition = $loggedInUser.userRoles?.some((role) =>
       [
         UserRoles.TrademarkOpposition,
         UserRoles.Tech,
         UserRoles.SuperAdmin,
-      ].includes(role)
+      ].includes(role),
     );
 
     let url = `${baseURL}/api/files/UserNotifications?userId=${$loggedInUser.creatorId}`;
@@ -230,7 +230,7 @@
           headers: {
             Authorization: `Bearer ${$loggedInToken}`,
           },
-        }
+        },
       );
       if (response.ok) {
         const claims = await response.json();

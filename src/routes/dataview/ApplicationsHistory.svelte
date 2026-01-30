@@ -1080,13 +1080,13 @@
               <!-- Assignor Details Section -->
               <div class="mb-6">
                 <h3 class="font-bold text-lg text-gray-900 mb-4">
-                  Assignor Details
+                  Assignee Details
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {#each Object.entries(recordalData) as [key, value]}
                     {#if value != null && !key
                         .toLowerCase()
-                        .startsWith("assignee") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
+                        .startsWith("assignor") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
                         .toLowerCase()
                         .endsWith("url") && key.toLowerCase() !== "isapproved"}
                       <div class="break-words">
@@ -1115,13 +1115,15 @@
               <!-- Assignee Details Section -->
               <div class="mb-6">
                 <h3 class="font-bold text-lg text-gray-900 mb-4">
-                  Assignee Details
+                  Assignor Details
                 </h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {#each Object.entries(recordalData) as [key, value]}
-                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
+                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "isapproved", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
                         .toLowerCase()
-                        .endsWith("url") && key.toLowerCase() && key.toLowerCase() !== "isapproved"}
+                        .endsWith("url") && key
+                        .toLowerCase()
+                        .startsWith("assignor")}
                       <div class="break-words">
                         <Label
                           class="font-semibold capitalize text-sm text-gray-700"
@@ -1219,7 +1221,152 @@
                 </Button>
               {/if}
             </div>
-          {:else if [7, 8, 9, 10].includes(selectedApplication?.applicationType ?? -1)}
+          {:else if selectedApplication?.applicationType === FormApplicationTypes.Merger}
+            <!-- Assignment Details -->
+            <div class="border rounded-lg p-4 bg-gray-50">
+              <!-- Assignor Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  New Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if value != null && !key
+                        .toLowerCase()
+                        .startsWith("old") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
+                        .toLowerCase()
+                        .endsWith("url") && key.toLowerCase() !== "isapproved"}
+                      <div class="break-words">
+                        <Label
+                          class="font-semibold capitalize text-sm text-gray-700"
+                        >
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </Label>
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Assignee Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  Existing Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "isapproved", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
+                        .toLowerCase()
+                        .endsWith("url") && key.toLowerCase().startsWith("old")}
+                      <div class="break-words">
+                        <Label
+                          class="font-semibold capitalize text-sm text-gray-700"
+                        >
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </Label>
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Handle attachment images -->
+              {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
+                <div class="mt-4">
+                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
+                    >Old Attachment:</Label
+                  >
+                  <div class="border rounded-lg p-3 bg-white">
+                    <img
+                      src={recordalData.oldAttachmentUrl ||
+                        recordalData.OldAttachmentUrl}
+                      alt="Old Attachment"
+                      class="max-w-full h-auto rounded border mx-auto"
+                      style="max-height: 400px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+              {/if}
+              {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+                <div class="mt-4">
+                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
+                    >New Attachment:</Label
+                  >
+                  <div class="border rounded-lg p-3 bg-white">
+                    <img
+                      src={recordalData.newAttachmentUrl ||
+                        recordalData.NewAttachmentUrl}
+                      alt="New Attachment"
+                      class="max-w-full h-auto rounded border mx-auto"
+                      style="max-height: 400px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <!-- Document Buttons Section -->
+            <div class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
+              {#if recordalData.documentUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.documentUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-document-outline" width="1.2em" />
+                  View Document
+                </Button>
+              {/if}
+              {#if recordalData.assignmentDeedUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.assignmentDeedUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-sign" width="1.2em" />
+                  View Assignment Deed
+                </Button>
+              {/if}
+              {#if recordalData.authorizationLetterUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.authorizationLetterUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-document" width="1.2em" />
+                  View Authorization Letter
+                </Button>
+              {/if}
+            </div>
+          {:else if [7, 9, 10].includes(selectedApplication?.applicationType ?? -1)}
             <div class="border rounded-lg p-4 bg-gray-50">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {#each Object.entries(recordalData) as [key, value]}
@@ -1336,7 +1483,7 @@
                 </Button>
               {/if}
             </div>
-          {:else if selectedApplication?.applicationType === 11 || selectedApplication?.applicationType === 17}
+          {:else if selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment}
             <!-- Clerical Update / Amendment Details -->
             <div class="border rounded-lg p-4 bg-gray-50">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
