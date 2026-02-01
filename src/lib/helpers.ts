@@ -289,6 +289,9 @@ export enum FormApplicationTypes {
   NewOpposition = 16,
   Amendment = 17,
   Certification = 18,
+  License = 19,
+  Mortgage = 20,
+  CertifiedTrueCopy = 21,
 }
 
 export enum ApplicationLetters {
