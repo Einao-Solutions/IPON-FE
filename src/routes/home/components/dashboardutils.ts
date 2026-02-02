@@ -470,6 +470,12 @@ export function mapTypeToString(type: number) {
       return "Clerical Update";
     case 18:
       return "Certification";
+    case 19:  
+      return "License";
+    case 20:  
+      return "Mortgage";
+    case 21: 
+      return "Certified True Copy (CTC)";
     default:
       return "";
   }

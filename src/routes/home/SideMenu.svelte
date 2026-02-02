@@ -99,8 +99,8 @@
         menus = menus.filter((x) => x.location !== "Opposition");
       }
 
-      // Hide Publications only from agents (User role)
-      if ($loggedInUser.userRoles.includes(UserRoles.User)) {
+      // Show Publications only for super admin
+      if (!$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)) {
         menus = menus.filter((x) => x.location !== "Publications");
       }
 

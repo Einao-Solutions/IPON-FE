@@ -289,6 +289,9 @@ export enum FormApplicationTypes {
   NewOpposition = 16,
   Amendment = 17,
   Certification = 18,
+  License = 19,
+  Mortgage = 20,
+  CertifiedTrueCopy = 21,
 }
 
 export enum ApplicationLetters {
@@ -815,5 +818,31 @@ export function mapRoleToString(type: number) {
       return "Super Admin";
     default:
       return "Unknown";
+  }
+}
+
+export function getPatentTypeLabel(value: number): string {
+  switch (value) {
+    case PatentTypes.Conventional:
+      return 'Conventional';
+    case PatentTypes.Non_Conventional:
+      return 'Non-Conventional';
+    case PatentTypes.PCT:
+      return 'PCT';
+    default:
+      return value.toString();
+  }
+}
+
+export function getPatentApplicationTypeLabel(value: number): string {
+  switch (value) {
+    case PatentApplicationTypes.Patent:
+      return 'Patent';
+    case PatentApplicationTypes.Business_Method:
+      return 'Business Method';
+    case PatentApplicationTypes.Utility_Model:
+      return 'Utility Model';
+    default:
+      return value.toString();
   }
 }
