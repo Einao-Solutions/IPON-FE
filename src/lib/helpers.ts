@@ -6,9 +6,9 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = 'http://localhost:5044';
-export const baseURL="https://backend.einaotest.com";
-// export const baseURL="https://integration.iponigeria.com";
+// export const baseURL = "http://localhost:5044";
+export const baseURL = "https://backend.einaotest.com";
+// export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
 export const nonConventionalDescription =
@@ -448,7 +448,7 @@ export enum FilingType {
 
 export function GetCountryImageLink(country: string) {
   const key = Object.keys(countriesMap).find(
-    (key) => countriesMap[key as keyof typeof countriesMap] === country
+    (key) => countriesMap[key as keyof typeof countriesMap] === country,
   );
   return `https://flagcdn.com/20x15/${key}.png`;
 }
@@ -755,7 +755,7 @@ export function hasValidCorrespondenceDetails(data?: CorrespondenceType) {
   const validEmail = valid.isEmail(data?.email?.trim() ?? "");
   const validNigerianNumber = isValidPhoneNumber(
     data?.phone?.trim() ?? "",
-    "NG"
+    "NG",
   );
   const validAddress =
     data?.address !== "-" &&

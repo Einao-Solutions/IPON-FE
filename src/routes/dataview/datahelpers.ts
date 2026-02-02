@@ -370,6 +370,7 @@ export function CanTreatApplication(
       ApplicationStatuses.KivSearch,
       ApplicationStatuses.Rejected,
       ApplicationStatuses.AwaitingSearch,
+      ApplicationStatuses.Publication
     ].includes(applicationStatus)
   ) {
     if (type === FilingType.Design) {

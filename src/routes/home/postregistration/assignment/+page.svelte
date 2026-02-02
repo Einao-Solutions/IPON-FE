@@ -123,7 +123,7 @@
 		}
 	}
 	async function handleSubmit() {
-		if (!validateForm()) return;
+		// if (!validateForm()) return;
 		isProcessing = true;
 		const fileNumber = $page.url.searchParams.get('fileId') ?? '';
 

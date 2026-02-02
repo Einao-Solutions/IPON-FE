@@ -328,15 +328,15 @@ export const patentServices: IPService[] = [
     price: "",
     isCommon: true,
   },
-  {
-    id: "renewal-patent",
-    name: "RENEWAL",
-    description: "File Patent Recordal Applications",
-    icon: "mdi:refresh",
-    route: "/home/postregistration",
-    category: "filing",
-    price: "",
-  },
+  // {
+  //   id: 'renewal-patent',
+  //   name: 'RENEWAL',
+  //   description: 'File Patent Recordal Applications',
+  //   icon: 'mdi:refresh',
+  //   route: '/home/postregistration',
+  //   category: 'filing',
+  //   price: ''
+  // },
   {
     id: "file-withdrawal",
     name: "WITHDRAWAL",

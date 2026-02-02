@@ -1,19 +1,19 @@
 <script lang="ts">
-	import { Button } from '$lib/components/ui/button/index';
-	import * as Dialog from '$lib/components/ui/dialog';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index';
-	import type { LayoutServerData } from '../../../.svelte-kit/types/src/routes/$types';
-	import { goto } from '$app/navigation';
+	import { Button } from "$lib/components/ui/button/index";
+	import * as Dialog from "$lib/components/ui/dialog";
+	import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index";
+	import type { LayoutServerData } from "../../../.svelte-kit/types/src/routes/$types";
+	import { goto } from "$app/navigation";
 	import {
 		CanTreatApplication,
 		CanUpdateApplication,
 		getNewStatusColour,
 		getStatuses,
 		mapStatusOptionToString,
-		parseLoggedInUser
-	} from './datahelpers';
-	import { Textarea } from '$lib/components/ui/textarea/index.js';
-	import { writable } from 'svelte/store';
+		parseLoggedInUser,
+	} from "./datahelpers";
+	import { Textarea } from "$lib/components/ui/textarea/index.js";
+	import { writable } from "svelte/store";
 	import {
 		type ApplicationHistoryType,
 		ApplicationStatuses,
@@ -21,9 +21,9 @@
 		FilingType,
 		type PatentData,
 		UserRoles,
-		UserTypes
-	} from '$lib/helpers';
-	import { page } from '$app/stores';
+		UserTypes,
+	} from "$lib/helpers";
+	import { page } from "$app/stores";
 	import {
 		appattachmentsData,
 		applicationData,
@@ -36,17 +36,17 @@
 		queryBody,
 		savePageData,
 		validatedPages,
-		validatePage
-	} from '$lib/store';
-	import { type DateValue, parseDate } from '@internationalized/date';
-	import Icon from '@iconify/svelte';
-	import { Toaster } from '$lib/components/ui/sonner';
-	import { toast } from 'svelte-sonner';
-	import { mapTypeToString } from '../home/components/dashboardutils';
-	import { redirect } from '@sveltejs/kit';
-	import { onMount } from 'svelte';
-	import dayjs from 'dayjs';
-	import ApplicationsHistory from './ApplicationsHistory.svelte';
+		validatePage,
+	} from "$lib/store";
+	import { type DateValue, parseDate } from "@internationalized/date";
+	import Icon from "@iconify/svelte";
+	import { Toaster } from "$lib/components/ui/sonner";
+	import { toast } from "svelte-sonner";
+	import { mapTypeToString } from "../home/components/dashboardutils";
+	import { redirect } from "@sveltejs/kit";
+	import { onMount } from "svelte";
+	import dayjs from "dayjs";
+	import ApplicationsHistory from "./ApplicationsHistory.svelte";
 	let canUpdate: boolean = false;
 	let canTreat: boolean = false;
 	let fileData: any;
@@ -67,7 +67,11 @@
 	}
 
 	$: validateForm = (): boolean => {
-		return $newStatusReason !== null && $newStatusReason != '' && selectedStatus != null;
+		return (
+			$newStatusReason !== null &&
+			$newStatusReason != "" &&
+			selectedStatus != null
+		);
 	};
 
 	function getDates() {
@@ -81,7 +85,7 @@
 			beforeStatus: selectedApplication?.currentStatus,
 			afterStatus: selectedStatus,
 			message: $newStatusReason,
-			user: $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName,
+			user: $loggedInUser?.firstName + " " + $loggedInUser?.lastName,
 			userId: $loggedInUser?.creatorId,
 			applicationType: selectedApplication?.applicationType,
 			fileId: fileData?.id,
@@ -89,13 +93,16 @@
 			fieldToUpdate: selectedApplication?.fieldToChange,
 			newValue: selectedApplication?.newValue,
 			fileType: fileData?.type,
-			dates: getDates()
+			dates: getDates(),
 		};
-		const res = await fetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
+		const res = await fetch(
+			`${baseURL}/api/files/UpdateApplicationStatus`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify(body),
+			},
+		);
 		if (res.ok) {
 			const result = await res.json();
 			console.log(result);
@@ -103,12 +110,12 @@
 			isSaving = false;
 			treatApplicationDialog = false;
 			treatConfirmationDialog = false;
-			toast.success('Successfully updated status', {
-				position: 'top-right'
+			toast.success("Successfully updated status", {
+				position: "top-right",
 			});
 			newStatusReason.set(null);
 			selectedStatus = null;
-			const loggeduser = $loggedInUser?.id.toString() ?? '';
+			const loggeduser = $loggedInUser?.id.toString() ?? "";
 			const userRoles = $loggedInUser?.userRoles ?? [];
 			const filingType = $applicationData?.type;
 			const appStatus = $applicationData?.fileStatus;
@@ -116,13 +123,13 @@
 				loggeduser,
 				$applicationData.creatorAccount,
 				userRoles,
-				appStatus
+				appStatus,
 			);
 			canTreat = CanTreatApplication(
 				userRoles,
 				filingType,
 				appStatus,
-				fileData.applicationHistory.map((x) => x.currentStatus)
+				fileData.applicationHistory.map((x) => x.currentStatus),
 			);
 		}
 	}
@@ -133,8 +140,8 @@
 		if (fileData.priorityInfo) {
 			(fileData as PatentData)?.priorityInfo.forEach((x) => {
 				console.log(x.date);
-				if (x.date.includes('/')) {
-					x.date = dayjs(x.date, 'M/D/YYYY').format('YYYY-MM-DD');
+				if (x.date.includes("/")) {
+					x.date = dayjs(x.date, "M/D/YYYY").format("YYYY-MM-DD");
 				} else {
 					x.date = parseDate(x.date);
 				}
@@ -142,7 +149,7 @@
 		}
 		formsData.set([]);
 		applicationScreen.set(0);
-		appattachmentsData.set([{ name: '', data: [] }]);
+		appattachmentsData.set([{ name: "", data: [] }]);
 		savePageData.set(null);
 		validatedPages.set([]);
 		validatePage.set(null);
@@ -155,24 +162,26 @@
 		getDates();
 		console.log(
 			fileData.applicationHistory.filter(
-				(x) => [0, 1].includes(x.applicationType) && ![0, 1].includes(x.currentStatus)
-			)
+				(x) =>
+					[0, 1].includes(x.applicationType) &&
+					![0, 1].includes(x.currentStatus),
+			),
 		);
 	});
 
 	async function loadData() {
 		isDataLoading = true;
-		const id = $currentUrl.searchParams.get('id');
+		const id = $currentUrl.searchParams.get("id");
 		if (!$loggedInUser) {
 			const user = parseLoggedInUser(document.cookie);
 			if (!user) {
-				console.log('the logged in user');
-				await goto('/auth');
+				console.log("the logged in user");
+				await goto("/auth");
 			} else {
 				loggedInUser.set(user);
 			}
 		}
-		const loggeduser = $loggedInUser?.id.toString() ?? '';
+		const loggeduser = $loggedInUser?.id.toString() ?? "";
 		const res = await fetch(`${baseURL}/api/files/${id}`);
 		const file = await res.json();
 		const userRoles = $loggedInUser?.userRoles ?? [];
@@ -180,39 +189,48 @@
 		const appStatus = file.fileStatus;
 		applicationData.set(file);
 		fileData = file;
-		canUpdate = CanUpdateApplication(loggeduser, file.creatorAccount, userRoles, appStatus);
+		canUpdate = CanUpdateApplication(
+			loggeduser,
+			file.creatorAccount,
+			userRoles,
+			appStatus,
+		);
 		canTreat = CanTreatApplication(
 			userRoles,
 			filingType,
 			appStatus,
-			fileData.applicationHistory.map((x) => x.currentStatus)
+			fileData.applicationHistory.map((x) => x.currentStatus),
 		);
 		currentStatus = appStatus;
 		isDataLoading = false;
 	}
 
 	async function gotoPrevious() {
-		const currentID = $currentUrl.searchParams.get('id');
+		const currentID = $currentUrl.searchParams.get("id");
 		let currentIndex: number = $listOfIds.indexOf(currentID);
 		if (currentIndex != 0) {
 			currentIndex -= 1;
 			const nextId = $listOfIds[currentIndex];
 			if (!nextId || nextId === undefined) {
-				toast.info('No more files of selected type available', { position: 'top-right' });
+				toast.info("No more files of selected type available", {
+					position: "top-right",
+				});
 			} else {
 				currentUrl.update((curr) => {
-					curr.searchParams.set('id', nextId);
+					curr.searchParams.set("id", nextId);
 					return curr;
 				});
 				await loadData();
 			}
 		} else {
-			toast.info('No more files of selected type available', { position: 'top-right' });
+			toast.info("No more files of selected type available", {
+				position: "top-right",
+			});
 		}
 	}
 
 	async function gotoNext() {
-		const currentID = $currentUrl.searchParams.get('id');
+		const currentID = $currentUrl.searchParams.get("id");
 		let currentIndex: number = $listOfIds.indexOf(currentID);
 		currentIndex += 1;
 		// if we are close to the end of the list, at 9,load next 10,
@@ -223,11 +241,13 @@
 		}
 		const nextId = $listOfIds[currentIndex];
 		if (!nextId || nextId === undefined) {
-			toast.info('No more files of selected type available', { position: 'top-right' });
+			toast.info("No more files of selected type available", {
+				position: "top-right",
+			});
 			// goto('home/dashboard');
 		} else {
 			currentUrl.update((curr) => {
-				curr.searchParams.set('id', nextId);
+				curr.searchParams.set("id", nextId);
 				return curr;
 			});
 			await loadData();
@@ -243,12 +263,15 @@
 				ApplicationStatuses.Re_conduct,
 				ApplicationStatuses.Rejected,
 				ApplicationStatuses.KivExaminer,
-				ApplicationStatuses.KivSearch
+				ApplicationStatuses.KivSearch,
 			].includes(fileData.applicationHistory[0].currentStatus)
 		) {
-			toast.error('A Renewal Application  cannot be treated until the new application is treated', {
-				position: 'top-right'
-			});
+			toast.error(
+				"A Renewal Application  cannot be treated until the new application is treated",
+				{
+					position: "top-right",
+				},
+			);
 			return;
 		}
 		currentStatus = data.currentStatus;
@@ -258,32 +281,35 @@
 	async function getNextIds() {
 		const index = $listOfIds.length;
 		const _queryBody = $queryBody;
-		const response = await fetch(`${baseURL}/api/files/GetListOfIds?index=${index}`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: _queryBody
-		});
+		const response = await fetch(
+			`${baseURL}/api/files/GetListOfIds?index=${index}`,
+			{
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: _queryBody,
+			},
+		);
 		const result = await response.json();
 		if (response.ok) {
 			listOfIds.update((ll) => {
 				ll = [...ll, ...result];
-				console.log('updated is', ll);
+				console.log("updated is", ll);
 				return ll;
 			});
 		}
 	}
 	function searchAvailability() {
 		// let classNo = string
-		console.log('fileData', fileData);
+		console.log("fileData", fileData);
 		const searchParams = {
-			query: fileData?.titleOfTradeMark?.split(' ')[0],
+			query: fileData?.titleOfTradeMark?.split(" ")[0],
 			classId: fileData?.trademarkClass,
-			fileType: fileData?.type
+			fileType: fileData?.type,
 		};
-		sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
+		sessionStorage.setItem("searchParams", JSON.stringify(searchParams));
 		// console.log('searchParams', searchParams);
 
-		window.open(`/availabilitysearch`, '_blank');
+		window.open(`/availabilitysearch`, "_blank");
 	}
 </script>
 
@@ -304,7 +330,13 @@
 						fill="none"
 						viewBox="0 0 24 24"
 					>
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+						<circle
+							class="opacity-25"
+							cx="12"
+							cy="12"
+							r="10"
+							stroke="currentColor"
+							stroke-width="4"
 						></circle>
 						<path
 							class="opacity-75"
@@ -318,6 +350,18 @@
 				Availability Search
 			{/if}</Button
 		>
+		{#if selectedApplication?.currentStatus === ApplicationStatuses.Publication && $loggedInUser?.userRoles?.some( (x) => [UserRoles.Staff, UserRoles.Tech, UserRoles.TrademarkOpposition].includes(x), )}
+			<Button
+				class="bg-red-600 hover:bg-red-700 text-white"
+				on:click={() => {
+					// handle oppose action
+					console.log("Oppose clicked", selectedApplication);
+					// e.g., open oppose dialog or call an API
+				}}
+			>
+				Oppose
+			</Button>
+		{/if}
 		<div class="gap-2 flex">
 			{#each getStatuses(currentStatus, $applicationData.type) as status}
 				<button
@@ -335,7 +379,11 @@
 			{/each}
 		</div>
 		<br />
-		<Textarea class="min-h-[120px]" placeholder="Enter reason" bind:value={$newStatusReason} />
+		<Textarea
+			class="min-h-[120px]"
+			placeholder="Enter reason"
+			bind:value={$newStatusReason}
+		/>
 		<Dialog.Footer class="sm:flex gap-3">
 			<Button
 				variant="outline"
@@ -344,7 +392,10 @@
 					resetForm();
 				}}>Cancel</Button
 			>
-			<Button disabled={!validateForm()} on:click={() => (treatConfirmationDialog = true)}>
+			<Button
+				disabled={!validateForm()}
+				on:click={() => (treatConfirmationDialog = true)}
+			>
 				Continue
 			</Button>
 		</Dialog.Footer>
@@ -376,7 +427,7 @@
 			>
 			<Button disabled={isSaving} on:click={() => saveNewStatus()}>
 				<Icon
-					class={isSaving ? '' : 'hidden'}
+					class={isSaving ? "" : "hidden"}
 					icon="line-md:loading-twotone-loop"
 					width="1.2rem"
 					height="1.2rem"
@@ -403,15 +454,18 @@
 		</div>
 		<div class="flex justify-between p-4 basis-1/12">
 			<Button on:click={() => gotoPrevious()}>Previous</Button>
-			{#if $loggedInUser?.userRoles?.some((x) => [UserRoles.Staff, UserRoles.Tech].includes(x))}
+			{#if $loggedInUser?.userRoles?.some( (x) => [UserRoles.Staff, UserRoles.Tech].includes(x), )}
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						<Button>Treat Applications</Button>
 					</DropdownMenu.Trigger>
 					<DropdownMenu.Content>
 						{#if canTreat}
-							<DropdownMenu.Item on:click={() => treatApplication(fileData.applicationHistory[0])}
-								>Treat New Application</DropdownMenu.Item
+							<DropdownMenu.Item
+								on:click={() =>
+									treatApplication(
+										fileData.applicationHistory[0],
+									)}>Treat New Application</DropdownMenu.Item
 							>
 						{/if}
 						<!-- {#if  }
@@ -431,7 +485,10 @@
 			{/if}
 
 			{#if $loggedInUser?.userRoles?.includes(UserRoles.Tech) && fileData.type === FilingType.Design}
-				<Button class={canUpdate ? 'block' : 'hidden'} on:click={() => updateApplication()}>
+				<Button
+					class={canUpdate ? "block" : "hidden"}
+					on:click={() => updateApplication()}
+				>
 					Update Record
 				</Button>
 			{/if}

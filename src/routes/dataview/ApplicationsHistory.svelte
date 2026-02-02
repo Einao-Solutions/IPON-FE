@@ -125,7 +125,7 @@
   function showToast(
     type: "success" | "error",
     message: string,
-    description?: string
+    description?: string,
   ) {
     toast[type](message, {
       description: description || message,
@@ -175,7 +175,7 @@
   // ======================
   async function checkPayment(
     application: ApplicationHistoryType,
-    id: string | null
+    id: string | null,
   ) {
     if (!id) {
       showToast("error", "No Remita ID available");
@@ -227,7 +227,7 @@
     try {
       const result = await fetch(
         `${baseURL}/api/files/UpdateCertificatePaymentStatus?fileId=${fileId}&rrr=${paymentId}`,
-        { method: "POST" }
+        { method: "POST" },
       );
       if (result.ok) {
         toast.success("Certificate status updated successfully");
@@ -245,7 +245,7 @@
     try {
       const res = await fetch(
         `${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
-        { method: "POST" }
+        { method: "POST" },
       );
 
       if (!res.ok) {
@@ -290,7 +290,7 @@
     application: ApplicationHistoryType,
     appType: number,
     letterType: number,
-    useFileId = false
+    useFileId = false,
   ) {
     if (application.applicationType !== appType) {
       showMissingDetailsForm();
@@ -299,7 +299,7 @@
 
     const fileIdProp = useFileId ? "fileId" : "id";
     window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileData[fileIdProp]}&letterType=${letterType}&applicationId=${application.id}`
+      `${baseURL}/api/letters/generate?fileId=${fileData.fileId}&letterType=${letterType}&applicationId=${application.id}`,
     );
   }
 
@@ -381,7 +381,7 @@
       }
 
       const response = await fetch(
-        `${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${application.id}`
+        `${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${application.id}`,
       );
 
       if (response.ok) {
@@ -398,7 +398,7 @@
   async function approveRecordal(
     endpoint: string,
     application: ApplicationHistoryType,
-    successMessage: string
+    successMessage: string,
   ) {
     try {
       const body = {
@@ -476,7 +476,7 @@
   async function viewAppeal(application: ApplicationHistoryType) {
     try {
       const response = await fetch(
-        `${baseURL}/api/files/getappeal?fileId=${fileData.fileId}&appId=${application.id}`
+        `${baseURL}/api/files/getappeal?fileId=${fileData.fileId}&appId=${application.id}`,
       );
 
       if (response.ok) {
@@ -637,28 +637,28 @@
     approveRecordal(
       "/api/files/ApproveMerger",
       app,
-      "Merger approved successfully"
+      "Merger approved successfully",
     );
 
   const approveRegUser = (app: ApplicationHistoryType) =>
     approveRecordal(
       "/api/files/ApproveRegisteredUser",
       app,
-      "Registered user approved successfully"
+      "Registered user approved successfully",
     );
 
   const approveAssignment = (app: ApplicationHistoryType) =>
     approveRecordal(
       "/api/files/ApproveAssignment",
       app,
-      "Assignment approved successfully"
+      "Assignment approved successfully",
     );
 
   const approveChangeDataRecordal = (app: ApplicationHistoryType) =>
     approveRecordal(
       "/api/files/ApproveChangeDataRecordal",
       app,
-      "Change of Applicant Information approved successfully"
+      "Change of Applicant Information approved successfully",
     );
 
   // ======================
@@ -717,7 +717,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       if (response.ok) {
@@ -737,7 +737,7 @@
     if (hasValidCorrespondenceDetails(fileData.correspondence)) {
       window.open(
         `${baseURL}/api/letters/generate?fileId=${fileData?.id}&letterType=${letter}&applicationId=${application.id}`,
-        "_blank"
+        "_blank",
       );
     } else {
       showMissingDetailsForm();
@@ -758,7 +758,7 @@
 
   function printStatusReceipt(application: ApplicationHistoryType) {
     window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileData?.fileId}&letterType=39&applicationId=${application.id}`
+      `${baseURL}/api/letters/generate?fileId=${fileData?.fileId}&letterType=39&applicationId=${application.id}`,
     );
   }
 
@@ -776,7 +776,7 @@
     getDocLoading = true;
     try {
       const response = await fetch(
-        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`
+        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`,
       );
       if (!response.ok) {
         const errorData = await response.json();
@@ -807,7 +807,7 @@
     showPublicationDialog = true;
     try {
       const res = await fetch(
-        `${baseURL}/api/files/publication-details/${encodeURIComponent(fileId)}`
+        `${baseURL}/api/files/publication-details/${encodeURIComponent(fileId)}`,
       );
       if (!res.ok) throw new Error("Could not fetch details");
       publicationDetails = await res.json();
@@ -832,7 +832,7 @@
             Approve: approve,
             Comment: publicationComment,
           }),
-        }
+        },
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed");
@@ -858,7 +858,7 @@
     showWithdrawalDialog = true;
     try {
       const res = await fetch(
-        `${baseURL}/api/files/withdrawal-details/${encodeURIComponent(fileId)}`
+        `${baseURL}/api/files/withdrawal-details/${encodeURIComponent(fileId)}`,
       );
       if (!res.ok) throw new Error("Could not fetch details");
       withdrawalDetails = await res.json();
@@ -884,7 +884,7 @@
             Approve: approve,
             Comment: withdrawalComment,
           }),
-        }
+        },
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed");
@@ -1074,7 +1074,299 @@
         </div>
       {:else if recordalData}
         <div class="p-4 space-y-4">
-          {#if [5, 7, 8, 9, 10].includes(selectedApplication?.applicationType ?? -1)}
+          {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
+            <!-- Assignment Details -->
+            <div class="border rounded-lg p-4 bg-gray-50">
+              <!-- Assignor Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  Assignee Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if value != null && !key
+                        .toLowerCase()
+                        .startsWith("assignor") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
+                        .toLowerCase()
+                        .endsWith("url") && key.toLowerCase() !== "isapproved"}
+                      <div class="break-words">
+                        <Label
+                          class="font-semibold capitalize text-sm text-gray-700"
+                        >
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </Label>
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Assignee Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  Assignor Details
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "isapproved", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
+                        .toLowerCase()
+                        .endsWith("url") && key
+                        .toLowerCase()
+                        .startsWith("assignor")}
+                      <div class="break-words">
+                        <Label
+                          class="font-semibold capitalize text-sm text-gray-700"
+                        >
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </Label>
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Handle attachment images -->
+              {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
+                <div class="mt-4">
+                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
+                    >Old Attachment:</Label
+                  >
+                  <div class="border rounded-lg p-3 bg-white">
+                    <img
+                      src={recordalData.oldAttachmentUrl ||
+                        recordalData.OldAttachmentUrl}
+                      alt="Old Attachment"
+                      class="max-w-full h-auto rounded border mx-auto"
+                      style="max-height: 400px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+              {/if}
+              {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+                <div class="mt-4">
+                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
+                    >New Attachment:</Label
+                  >
+                  <div class="border rounded-lg p-3 bg-white">
+                    <img
+                      src={recordalData.newAttachmentUrl ||
+                        recordalData.NewAttachmentUrl}
+                      alt="New Attachment"
+                      class="max-w-full h-auto rounded border mx-auto"
+                      style="max-height: 400px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <!-- Document Buttons Section -->
+            <div class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
+              {#if recordalData.documentUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.documentUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-document-outline" width="1.2em" />
+                  View Document
+                </Button>
+              {/if}
+              {#if recordalData.assignmentDeedUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.assignmentDeedUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-sign" width="1.2em" />
+                  View Assignment Deed
+                </Button>
+              {/if}
+              {#if recordalData.authorizationLetterUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.authorizationLetterUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-document" width="1.2em" />
+                  View Authorization Letter
+                </Button>
+              {/if}
+            </div>
+          {:else if selectedApplication?.applicationType === FormApplicationTypes.Merger}
+            <!-- Assignment Details -->
+            <div class="border rounded-lg p-4 bg-gray-50">
+              <!-- Assignor Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  New Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if value != null && !key
+                        .toLowerCase()
+                        .startsWith("old") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
+                        .toLowerCase()
+                        .endsWith("url") && key.toLowerCase() !== "isapproved"}
+                      <div class="break-words">
+                        <Label
+                          class="font-semibold capitalize text-sm text-gray-700"
+                        >
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </Label>
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Assignee Details Section -->
+              <div class="mb-6">
+                <h3 class="font-bold text-lg text-gray-900 mb-4">
+                  Existing Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {#each Object.entries(recordalData) as [key, value]}
+                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "isapproved", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
+                        .toLowerCase()
+                        .endsWith("url") && key.toLowerCase().startsWith("old")}
+                      <div class="break-words">
+                        <Label
+                          class="font-semibold capitalize text-sm text-gray-700"
+                        >
+                          {key.replace(/([A-Z])/g, " $1").trim()}:
+                        </Label>
+                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+                          {#if Array.isArray(value)}
+                            <ul class="list-disc pl-5 space-y-1">
+                              {#each value as item}
+                                <li class="break-words text-sm">{item}</li>
+                              {/each}
+                            </ul>
+                          {:else}
+                            <p class="text-sm text-gray-900">{value}</p>
+                          {/if}
+                        </div>
+                      </div>
+                    {/if}
+                  {/each}
+                </div>
+              </div>
+
+              <!-- Handle attachment images -->
+              {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
+                <div class="mt-4">
+                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
+                    >Old Attachment:</Label
+                  >
+                  <div class="border rounded-lg p-3 bg-white">
+                    <img
+                      src={recordalData.oldAttachmentUrl ||
+                        recordalData.OldAttachmentUrl}
+                      alt="Old Attachment"
+                      class="max-w-full h-auto rounded border mx-auto"
+                      style="max-height: 400px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+              {/if}
+              {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+                <div class="mt-4">
+                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
+                    >New Attachment:</Label
+                  >
+                  <div class="border rounded-lg p-3 bg-white">
+                    <img
+                      src={recordalData.newAttachmentUrl ||
+                        recordalData.NewAttachmentUrl}
+                      alt="New Attachment"
+                      class="max-w-full h-auto rounded border mx-auto"
+                      style="max-height: 400px; object-fit: contain;"
+                    />
+                  </div>
+                </div>
+              {/if}
+            </div>
+
+            <!-- Document Buttons Section -->
+            <div class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
+              {#if recordalData.documentUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.documentUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-document-outline" width="1.2em" />
+                  View Document
+                </Button>
+              {/if}
+              {#if recordalData.assignmentDeedUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.assignmentDeedUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-sign" width="1.2em" />
+                  View Assignment Deed
+                </Button>
+              {/if}
+              {#if recordalData.authorizationLetterUrl}
+                <Button
+                  on:click={() =>
+                    window.open(recordalData.authorizationLetterUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="flex items-center gap-2"
+                >
+                  <Icon icon="mdi:file-document" width="1.2em" />
+                  View Authorization Letter
+                </Button>
+              {/if}
+            </div>
+          {:else if [7, 9, 10].includes(selectedApplication?.applicationType ?? -1)}
             <div class="border rounded-lg p-4 bg-gray-50">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {#each Object.entries(recordalData) as [key, value]}
@@ -1191,7 +1483,7 @@
                 </Button>
               {/if}
             </div>
-          {:else if selectedApplication?.applicationType === 11 || selectedApplication?.applicationType === 17}
+          {:else if selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment}
             <!-- Clerical Update / Amendment Details -->
             <div class="border rounded-lg p-4 bg-gray-50">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1252,7 +1544,7 @@
         </div>
       {/if}
 
-      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r) )}
+      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
         {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected}
           <div class="mt-4">
             <Label
@@ -1289,14 +1581,14 @@
 			{/if}
 		{/if}		 -->
       <Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r) )}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
           {#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
             <Button
               on:click={() => {
                 if (!reason || reason.trim().length < 10) {
                   showToast(
                     "error",
-                    "Please provide a detailed reason (at least 10 characters)"
+                    "Please provide a detailed reason (at least 10 characters)",
                   );
                   return;
                 }
@@ -1321,7 +1613,7 @@
                     approveRecordal(
                       "/api/files/ApproveClericalUpdate",
                       selectedApplication,
-                      "Clerical update approved successfully"
+                      "Clerical update approved successfully",
                     );
                     break;
                 }
@@ -1342,7 +1634,7 @@
                 if (!reason || reason.trim().length < 10) {
                   showToast(
                     "error",
-                    "Please provide a detailed reason (at least 10 characters)"
+                    "Please provide a detailed reason (at least 10 characters)",
                   );
                   return;
                 }
@@ -1433,7 +1725,7 @@
             </p>
           {/if}
         </div>
-        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkAcceptance, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
+        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkAcceptance, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
           <!-- Action Buttons -->
           <div class="flex gap-3 justify-end pt-2 border-t">
             <Button
@@ -1546,7 +1838,7 @@
             <span class="text-gray-700">
               {publicationDetails.publicationDate
                 ? new Date(
-                    publicationDetails.publicationDate
+                    publicationDetails.publicationDate,
                   ).toLocaleDateString()
                 : "N/A"}
             </span>
@@ -1717,7 +2009,7 @@
             <p class="mt-1 p-2 bg-gray-50 rounded border">
               {withdrawalDetails.withdrawalRequestDate
                 ? new Date(
-                    withdrawalDetails.withdrawalRequestDate
+                    withdrawalDetails.withdrawalRequestDate,
                   ).toLocaleString()
                 : "N/A"}
             </p>
@@ -1891,7 +2183,7 @@
       <div class="flex flex-col gap-4">
         <Label>Select new Status</Label>
         <div class="grid grid-cols-2 gap-4">
-          {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)) ) as status}
+          {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)), ) as status}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
             <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
@@ -2018,6 +2310,7 @@
               <DropdownMenu.Trigger on:click>More</DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 <DropdownMenu.Group>
+                  <!-- Data Update Application -->
                   {#if application.applicationType === 2}
                     <DropdownMenu.Item
                       on:click={async () =>
@@ -2025,13 +2318,14 @@
                       >View application</DropdownMenu.Item
                     >
                   {/if}
-
+                  <!-- verify payments -->
                   <DropdownMenu.Item
                     on:click={async () =>
                       await checkPayment(application, application.paymentId)}
                     >Verify Payment ({application.paymentId ??
                       "-"})</DropdownMenu.Item
                   >
+                  <!-- View Recordal Data -->
                   {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)}
                     <DropdownMenu.Item
                       on:click={() => {
@@ -2039,54 +2333,26 @@
                       }}>View Application</DropdownMenu.Item
                     >
                   {/if}
-                  {#if application.applicationType === 0 && application.certificatePaymentId != null}
+                  <!-- Verify new app payment -->
+                  {#if application.applicationType === FormApplicationTypes.NewApplication && application.certificatePaymentId != null}
                     <DropdownMenu.Item
                       on:click={async () =>
                         await checkPayment(
                           application,
-                          application.certificatePaymentId ?? null
+                          application.certificatePaymentId ?? null,
                         )}
                       >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item
                     >
                   {/if}
-
-                  {#if application.applicationType == FormApplicationTypes.AppealRequest}
+                  <!-- Appeal Request -->
+                  {#if application.applicationType === FormApplicationTypes.AppealRequest}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewAppeal(application);
                       }}>View Application</DropdownMenu.Item
                     >
                   {/if}
-
-                  <DropdownMenu.Label>Print</DropdownMenu.Label>
-
-                  <DropdownMenu.Separator />
-                  {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
-                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
-                      <DropdownMenu.Item
-                        on:click={() => certificate(application)}
-                      >
-                        Certificate
-                      </DropdownMenu.Item>
-                    {/if}
-                  {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-                    {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
-                      <DropdownMenu.Item
-                        on:click={() => renewalCertificate(application)}
-                      >
-                        Renewal Certificate</DropdownMenu.Item
-                      >
-                    {/if}
-                  {/if}
-                  {#if (application.applicationType == 11 || application.applicationType == 17) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r) )}
-                      <DropdownMenu.Item
-                        on:click={() => viewRecordalData(application)}
-                        >View Application</DropdownMenu.Item
-                      >
-                    {/if}
-                  {/if}
-
+                  <!-- Publication status update -->
                   {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
                     <DropdownMenu.Item
                       on:click={() =>
@@ -2095,8 +2361,8 @@
                       View Application
                     </DropdownMenu.Item>
                   {/if}
-
-                  {#if application.applicationType === 15 && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
+                  <!-- Withdrawal App -->
+                  {#if application.applicationType === FormApplicationTypes.WithdrawalRequest && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
                     <!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.userRoles)}</pre>`} -->
                     {#if fileData.type === 0 && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
                       <DropdownMenu.Item
@@ -2119,6 +2385,160 @@
                       >
                         View Withdrawal Application
                       </DropdownMenu.Item>
+                    {/if}
+                  {/if}
+                  <!-- Clerical Update / Amendment -->
+                  {#if (application.applicationType == FormApplicationTypes.ClericalUpdate || application.applicationType == FormApplicationTypes.Amendment) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                      <DropdownMenu.Item
+                        on:click={() => viewRecordalData(application)}
+                        >View Application</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- LETTERS -->
+                  <DropdownMenu.Separator />
+                  <DropdownMenu.Label>Print</DropdownMenu.Label>
+                  <DropdownMenu.Separator />
+
+                  <!-- Appeal Docs -->
+                  {#if application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 13, 2);
+                      }}>Acceptance Letter</DropdownMenu.Item
+                    >
+                  {/if}
+                  <!-- Merger Docs -->
+                  {#if application.applicationType === FormApplicationTypes.Merger && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 8, 26);
+                      }}>Merger Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 8, 25);
+                      }}>Merger Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 8, 27);
+                        }}>Certificate of Merger</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Assignment docs -->
+                  {#if application.applicationType === FormApplicationTypes.Assignment && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 5, 12);
+                      }}>Assignment Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 5, 11);
+                      }}>Assignment Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 5, 13);
+                        }}>Certificate of Assignment</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Registered user docs -->
+                  {#if application.applicationType === FormApplicationTypes.RegisteredUser && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 7, 29);
+                      }}>Registered User Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 7, 28);
+                      }}>Registered User Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 7, 30);
+                        }}>Certificate of Registered User</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Change of Name docs -->
+                  {#if application.applicationType === FormApplicationTypes.ChangeOfName && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 9, 32);
+                      }}>Change of Name Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 9, 34);
+                      }}>Change of Name Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 9, 48);
+                        }}>Certificate of Change of Name</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Change of Address docs -->
+                  {#if application.applicationType === FormApplicationTypes.ChangeOfAddress && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 10, 31);
+                      }}>Change of Address Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 10, 33);
+                      }}>Change of Address Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 10, 49);
+                        }}>Certificate of Change of Address</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
+                  <!-- Clerical Update Docs -->
+                  {#if application.applicationType === FormApplicationTypes.ClericalUpdate && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 11, 36);
+                      }}>Clerical Update Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 11, 35);
+                      }}>Clerical Update Receipt</DropdownMenu.Item
+                    >
+                  {/if}
+                  <!-- Certificate -->
+                  {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
+                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                      <DropdownMenu.Item
+                        on:click={() => certificate(application)}
+                      >
+                        Certificate
+                      </DropdownMenu.Item>
+                    {/if}
+                    <!-- Renewal docs -->
+                  {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
+                    {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
+                      <DropdownMenu.Item
+                        on:click={() => renewalCertificate(application)}
+                      >
+                        Renewal Certificate</DropdownMenu.Item
+                      >
                     {/if}
                   {/if}
                 </DropdownMenu.Group>
