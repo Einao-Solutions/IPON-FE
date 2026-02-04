@@ -49,6 +49,7 @@
   import OppositionHistory from "./OppositionHistory.svelte";
   import DialogContent from "$lib/components/ui/dialog/dialog-content.svelte";
   import { useAnimation } from "svelte-motion";
+  import PatentAssignmentDialog from "./Components/PatentAssignmentDialog.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -106,6 +107,11 @@
   let withdrawalSubmitting = false;
   let withdrawalFileId = "";
   let withdrawalApplicationId = "";
+
+  // Patent Assignment Modal State
+  let showPatentAssignmentDialog = false;
+  let patentAssignmentFileId = "";
+  let patentAssignmentApplicationId = "";
   // Appeal Requests
   let appealDocs: string[] = [];
   let showAppealRequest = false;
@@ -902,7 +908,12 @@
     }
   }
 
-  // console.log("fileData:", fileData);
+  // Open patent assignment dialog
+  function openPatentAssignmentDialog(fileId: string, applicationId: string) {
+    patentAssignmentFileId = fileId;
+    patentAssignmentApplicationId = applicationId;
+    showPatentAssignmentDialog = true;
+  }
 </script>
 
 <Toaster />
@@ -2160,6 +2171,13 @@
   </Dialog.Content>
 </Dialog.Root>
 
+<!-- Patent Assignment Dialog -->
+<PatentAssignmentDialog 
+  bind:open={showPatentAssignmentDialog}
+  fileId={patentAssignmentFileId}
+  applicationId={patentAssignmentApplicationId}
+/>
+
 {#if showStatusHistory}
   <svelte:component this={historyComponent} {...historyData} />
 {/if}
@@ -2326,12 +2344,21 @@
                       "-"})</DropdownMenu.Item
                   >
                   <!-- View Recordal Data -->
-                  {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)}
+                  <!-- {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)} -->
+                    {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewRecordalData(application);
                       }}>View Application</DropdownMenu.Item
                     >
+                  {/if}
+                  <!-- Patent Assignment Application -->
+                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                    <DropdownMenu.Item
+                      on:click={() => openPatentAssignmentDialog(fileData.fileId, application.id)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
                   {/if}
                   <!-- Verify new app payment -->
                   {#if application.applicationType === FormApplicationTypes.NewApplication && application.certificatePaymentId != null}
@@ -2341,8 +2368,7 @@
                           application,
                           application.certificatePaymentId ?? null,
                         )}
-                      >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item
-                    >
+                      >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item>
                   {/if}
                   <!-- Appeal Request -->
                   {#if application.applicationType === FormApplicationTypes.AppealRequest}
