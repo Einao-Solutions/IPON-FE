@@ -87,15 +87,15 @@ export const commonServices: IPService[] = [
     category: "agent",
     isCommon: true,
   },
-  {
-    id: "update-file",
-    name: "UPDATE FILE",
-    description: 'Edit/Update files with status "Awaiting Search"',
-    icon: "mdi:update",
-    route: "/home/update-files",
-    category: "agent",
-    isCommon: true,
-  },
+  // {
+  //   id: "update-file",
+  //   name: "UPDATE FILE",
+  //   description: 'Edit/Update files with status "Awaiting Search"',
+  //   icon: "mdi:update",
+  //   route: "/home/update-files",
+  //   category: "agent",
+  //   isCommon: true,
+  // },
   {
     id: "appeal",
     name: "APPEAL",
@@ -192,15 +192,15 @@ export const trademarkServices: IPService[] = [
     category: "agent",
     price: "₦2,000",
   },
-  {
-    id: "update-file",
-    name: "EDIT/UPDATE FILE IN AWAITING SEARCH",
-    description: "Update file information for files in awaiting search status",
-    icon: "mdi:update",
-    route: "/home/update-files",
-    category: "filing",
-    price: "",
-  },
+  // {
+  //   id: "update-file",
+  //   name: "EDIT/UPDATE FILE IN AWAITING SEARCH",
+  //   description: "Update file information for files in awaiting search status",
+  //   icon: "mdi:update",
+  //   route: "/home/update-files",
+  //   category: "filing",
+  //   price: "",
+  // },
   {
     id: "update-publication-status",
     name: "UPDATE PUBLICATION STATUS",
@@ -455,58 +455,58 @@ export const patentServices: IPService[] = [
 
   // PATENT POST-REGISTRATION SERVICES
   {
-    id: 'patent-amendment',
-    name: 'PATENT AMENDMENT',
-    description: 'Amend existing patent applications',
-    icon: 'mdi:file-edit-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-amendment",
+    name: "PATENT AMENDMENT",
+    description: "Amend existing patent applications",
+    icon: "mdi:file-edit-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-assignment',
-    name: 'PATENT ASSIGNMENT',
-    description: 'Transfer patent ownership rights',
-    icon: 'mdi:account-switch-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-assignment",
+    name: "PATENT ASSIGNMENT",
+    description: "Transfer patent ownership rights",
+    icon: "mdi:account-switch-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-ctc',
-    name: 'PATENT CTC (CERTIFIED TRUE COPY)',
-    description: 'Request certified true copies of patent documents',
-    icon: 'mdi:certificate-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-ctc",
+    name: "PATENT CTC (CERTIFIED TRUE COPY)",
+    description: "Request certified true copies of patent documents",
+    icon: "mdi:certificate-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-license',
-    name: 'PATENT LICENSE',
-    description: 'License patent rights to third parties',
-    icon: 'mdi:handshake-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-license",
+    name: "PATENT LICENSE",
+    description: "License patent rights to third parties",
+    icon: "mdi:handshake-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-mortgage',
-    name: 'PATENT MORTGAGE',
-    description: 'Mortgage patent as security for loans',
-    icon: 'mdi:bank-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-mortgage",
+    name: "PATENT MORTGAGE",
+    description: "Mortgage patent as security for loans",
+    icon: "mdi:bank-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-merger',
-    name: 'PATENT MERGER',
-    description: 'Merge patent applications',
-    icon: 'mdi:merge',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price:''
+    id: "patent-merger",
+    name: "PATENT MERGER",
+    description: "Merge patent applications",
+    icon: "mdi:merge",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
 ];
 
@@ -631,7 +631,7 @@ export const designServices: IPService[] = [
 ];
 
 export function getServicesForIPType(
-  ipType: "trademark" | "patent" | "design"
+  ipType: "trademark" | "patent" | "design",
 ): IPService[] {
   switch (ipType) {
     case "trademark":
@@ -654,13 +654,13 @@ export function getServicesByCategory(services: IPService[]) {
       acc[service.category].push(service);
       return acc;
     },
-    {} as Record<string, IPService[]>
+    {} as Record<string, IPService[]>,
   );
 }
 
 export function resolveServiceRoute(
   service: IPService,
-  ipType?: string
+  ipType?: string,
 ): string {
   if (typeof service.route === "function") {
     return service.route(ipType);
@@ -669,7 +669,7 @@ export function resolveServiceRoute(
 }
 
 export function getServiceCount(
-  ipType: "trademark" | "patent" | "design"
+  ipType: "trademark" | "patent" | "design",
 ): number {
   return getServicesForIPType(ipType).length;
 }

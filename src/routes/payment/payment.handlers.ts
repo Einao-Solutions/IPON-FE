@@ -85,6 +85,7 @@ export const paymentHandlers: Record<
   patentlicense,
   patentmortgage,
   patentmerger,
+  trademarkRenewal,
 };
 
 /* ======================================================
@@ -363,7 +364,24 @@ async function simplePaidHandler(ctx: PaymentContext): Promise<void> {
     `https://${ctx.page.url.host}/home/postregistration/paid`,
   );
 }
+async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
 
+  const data = sessionStorage.getItem("renewalData");
+  const parsed = data ? JSON.parse(data) : null;
+  const cost = parsed?.cost ?? params.get("amount");
+  const rrr = parsed?.rrr ?? params.get("rrr");
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  ctx.state.setTitle("Renewal Payment");
+  ctx.state.setFileNumber(parsed?.fileId ?? null);
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(parsed?.applicantName ?? "");
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/paid`,
+  );
+}
 async function simpleRedirectHandler(
   ctx: PaymentContext,
   path: string,

@@ -274,6 +274,7 @@
 
       const fileResult = results[0];
       const isPatent = fileResult.fileTypes === 0;
+      const isTrademark = fileResult.fileTypes === 2;
 
       // Follow exact same renewal logic as postregistration/search
       if (isPatent) {
@@ -314,25 +315,13 @@
         sessionStorage.setItem("applicationData", JSON.stringify(patentData));
       } else {
         // Trademark renewal logic
-        const currentStatus = fileResult?.fileStatus;
-        if (currentStatus === "20") {
-          // AwaitingPayment status
-          error = "Cannot renew an application currently under review";
-          return;
-        }
-
-        // Store trademark data for payment
-        sessionStorage.removeItem("applicationData");
-        const applicantDetails = {
-          name: fileResult.fileApplicant || "",
-          email: fileResult.applicantEmail || "",
-          phone: fileResult.applicantPhone || "",
-          fileId: fileResult.fileId,
-          type: 2, // trademark
-        };
-        sessionStorage.setItem(
-          "applicantDetails",
-          JSON.stringify(applicantDetails),
+        const renewalCost = await fetch(
+          `${baseURL}/api/files/GetRenewalCost?fileId=${fileNumber}&fileType=2&userId=${$loggedInUser?.id}`,
+        );
+        const renewalData = await renewalCost.json();
+        sessionStorage.setItem("renewalData", JSON.stringify(renewalData));
+        await goto(
+          `/payment?type=trademarkRenewal&fileId=${fileResult.fileId}`,
         );
       }
 
