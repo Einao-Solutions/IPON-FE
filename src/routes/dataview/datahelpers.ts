@@ -12,7 +12,7 @@ import { faker } from "@faker-js/faker";
 
 export function getStatuses(
   currentStatus: ApplicationStatuses,
-  fileType: FilingType
+  fileType: FilingType,
 ): ApplicationStatuses[] {
   if (
     fileType === FilingType.Trademark &&
@@ -151,7 +151,7 @@ export function getNewStatusColour(obj: ApplicationStatuses | null): string {
 }
 
 export function getRevisionStatuses(
-  currentStatus: ApplicationStatuses
+  currentStatus: ApplicationStatuses,
 ): ApplicationStatuses[] {
   let responses: ApplicationStatuses[] = [];
   switch (currentStatus) {
@@ -188,7 +188,7 @@ export function getRevisionStatuses(
 export function showTreatUpdateAppButton(
   currentStatus: ApplicationStatuses,
   applicationType: FilingType,
-  userroles: UserRoles[]
+  userroles: UserRoles[],
 ) {
   let hasRequiredPatentSearchPatentRoles = [
     UserRoles.PatentSearch,
@@ -337,7 +337,7 @@ export function CanUpdateApplication(
   loggedInId: string,
   creatorId: string,
   userRoles: UserRoles[],
-  applicationStatuses: ApplicationStatuses
+  applicationStatuses: ApplicationStatuses,
 ) {
   // can only update if user is creator or support
   const isCreator = creatorId === loggedInId;
@@ -360,7 +360,7 @@ export function CanTreatApplication(
   userRoles: UserRoles[],
   type: FilingType,
   applicationStatus: ApplicationStatuses,
-  appHistory?: []
+  appHistory?: [],
 ) {
   let hasRole: boolean = false;
   if (
@@ -370,7 +370,7 @@ export function CanTreatApplication(
       ApplicationStatuses.KivSearch,
       ApplicationStatuses.Rejected,
       ApplicationStatuses.AwaitingSearch,
-      ApplicationStatuses.Publication
+      ApplicationStatuses.Publication,
     ].includes(applicationStatus)
   ) {
     if (type === FilingType.Design) {
@@ -378,13 +378,13 @@ export function CanTreatApplication(
     }
     if (type === FilingType.Patent) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.PatentSearch, UserRoles.Tech].includes(x)
+        [UserRoles.PatentSearch, UserRoles.Tech].includes(x),
       );
     }
 
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkSearch, UserRoles.Tech].includes(x)
+        [UserRoles.TrademarkSearch, UserRoles.Tech].includes(x),
       );
     }
   }
@@ -396,7 +396,7 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Patent) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.PatentExaminer, UserRoles.Tech].includes(x)
+        [UserRoles.PatentExaminer, UserRoles.Tech].includes(x),
       );
     }
 
@@ -406,7 +406,7 @@ export function CanTreatApplication(
 
     if (type == FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkExaminer, UserRoles.Tech].includes(x)
+        [UserRoles.TrademarkExaminer, UserRoles.Tech].includes(x),
       );
     }
   }
@@ -417,13 +417,13 @@ export function CanTreatApplication(
           UserRoles.PatentExaminer,
           UserRoles.Tech,
           UserRoles.AppealExaminer,
-        ].includes(x)
+        ].includes(x),
       );
     }
 
     if (type == FilingType.Design) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.DesignExaminer, UserRoles.AppealExaminer].includes(x)
+        [UserRoles.DesignExaminer, UserRoles.AppealExaminer].includes(x),
       );
     }
 
@@ -433,7 +433,7 @@ export function CanTreatApplication(
           UserRoles.TrademarkExaminer,
           UserRoles.Tech,
           UserRoles.AppealExaminer,
-        ].includes(x)
+        ].includes(x),
       );
     }
   }
@@ -443,7 +443,21 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkCertification, UserRoles.Tech].includes(x)
+        [UserRoles.TrademarkCertification, UserRoles.Tech].includes(x),
+      );
+    }
+  }
+  if (
+    applicationStatus === ApplicationStatuses.AwaitingCertificateConfirmation
+  ) {
+    if (type === FilingType.Patent || type === FilingType.Design) {
+      hasRole = userRoles.some((x) =>
+        [
+          UserRoles.PatentCertification,
+          UserRoles.DesignCertification,
+          UserRoles.SuperAdmin,
+          UserRoles.Tech,
+        ].includes(x),
       );
     }
   }

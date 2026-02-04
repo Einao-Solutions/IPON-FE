@@ -12,8 +12,8 @@
   /* ✅ IMPORT YOUR EXISTING HANDLERS */
   import { paymentHandlers } from "./payment.handlers";
   import { Toaster } from "$lib/components/ui/sonner";
-//   import { form } from "$app/server";
-//   import { loginSchema } from "../auth/schema";
+  //   import { form } from "$app/server";
+  //   import { loginSchema } from "../auth/schema";
 
   /* ---------------- STATE (UNCHANGED) ---------------- */
 
@@ -108,7 +108,6 @@
           setApplicationId: (v) => (applicationId = v),
           setFileTitle: (v) => (fileTitle = v),
           setResponseUrl: (v) => (responseurl = v),
-
           setRenewalMeta: (meta) => {
             missedYearsCount = meta.missedYearsCount ?? 0;
             lateYearsCount = meta.lateYearsCount ?? 0;
@@ -131,7 +130,7 @@
       await setHash();
     } catch (err: any) {
       renewalErrorMessage = err?.message ?? "Unable to initialize payment";
-      showRenewalErrorModal = true;
+      // showRenewalErrorModal = true;
     } finally {
       isLoading = false;
     }
@@ -149,7 +148,7 @@
       .then((res) =>
         Array.from(new Uint8Array(res))
           .map((x) => ("00" + x.toString(16)).slice(-2))
-          .join("")
+          .join(""),
       );
   }
 
@@ -185,7 +184,7 @@
       `${baseURL}/api/files/ConfirmClericalUpdate?fileId=${fileId}&clericalId=${clericalId}`,
       {
         method: "POST",
-      }
+      },
     );
 
     if (!result.ok) {
@@ -296,7 +295,7 @@
                       >
                       <span
                         >₦{(lateYearsCount * 5000).toLocaleString(
-                          "en-NG"
+                          "en-NG",
                         )}</span
                       >
                     </div>
@@ -335,7 +334,7 @@
                     {
                       style: "currency",
                       currency: "NGN",
-                    }
+                    },
                   )}
                 </span>
               </div>
