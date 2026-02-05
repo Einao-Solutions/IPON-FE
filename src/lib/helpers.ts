@@ -7,8 +7,8 @@ import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
 // export const baseURL = "http://localhost:5044";
-export const baseURL = "https://backend.einaotest.com";
-// export const baseURL = "https://integration.iponigeria.com";
+// export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
 export const nonConventionalDescription =
@@ -824,11 +824,11 @@ export function mapRoleToString(type: number) {
 export function getPatentTypeLabel(value: number): string {
   switch (value) {
     case PatentTypes.Conventional:
-      return 'Conventional';
+      return "Conventional";
     case PatentTypes.Non_Conventional:
-      return 'Non-Conventional';
+      return "Non-Conventional";
     case PatentTypes.PCT:
-      return 'PCT';
+      return "PCT";
     default:
       return value.toString();
   }
@@ -837,11 +837,11 @@ export function getPatentTypeLabel(value: number): string {
 export function getPatentApplicationTypeLabel(value: number): string {
   switch (value) {
     case PatentApplicationTypes.Patent:
-      return 'Patent';
+      return "Patent";
     case PatentApplicationTypes.Business_Method:
-      return 'Business Method';
+      return "Business Method";
     case PatentApplicationTypes.Utility_Model:
-      return 'Utility Model';
+      return "Utility Model";
     default:
       return value.toString();
   }
