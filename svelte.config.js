@@ -99,11 +99,10 @@ const config = {
         "/home/postregistration/patentctc",
         "/home/postregistration/patentlicense",
         "/home/postregistration/patentlicense/result",
-        "/home/postregistration/patentmerger",  
+        "/home/postregistration/patentmerger",
         "/home/postregistration/patentmerger/result",
         "/home/postregistration/patentmortgage",
-        "/home/postregistration/patentmortgage/result"
-
+        "/home/postregistration/patentmortgage/result",
       ],
     },
   },
