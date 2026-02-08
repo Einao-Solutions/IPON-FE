@@ -20,6 +20,7 @@
 		phone: string;
 		nationality: string;
 		address: string;
+		city: string;
 		state: string;
 	}
 
@@ -34,6 +35,7 @@
 		phone: '',
 		nationality: '',
 		address: '',
+		city: '',
 		state: ''
 	};
 
@@ -51,6 +53,7 @@
 	let applicantPhone: string = '';
 	let applicantAddress: string = '';
 	let applicantNationality: string = '';
+	let applicantCity: string = '';
 	let applicantState: string = '';
 	let isProcessing = false;
 	let isLoading = false;
@@ -93,6 +96,7 @@
 			applicantPhone = data.applicantPhone;
 			applicantAddress = data.applicantAddress || '';
 			applicantNationality = data.applicantNationality || '';
+			applicantCity = data.applicantCity || '';
 			applicantState = data.applicantState || '';
 		} catch (err) {
 			error = 'Error fetching patent mortgage cost.';
@@ -152,6 +156,11 @@
 
 		if (!newMortgagorData.address.trim()) {
 			error = 'Please enter new mortgagor address.';
+			return false;
+		}
+
+		if (!newMortgagorData.city.trim()) {
+			error = 'Please enter new mortgagor city.';
 			return false;
 		}
 
@@ -221,6 +230,7 @@
 				oldMortgageePhone: applicantPhone,
 				oldMortgageeAddress: applicantAddress,
 				oldMortgageeNationality: applicantNationality,
+				oldMortgageeCity: applicantCity,
 				oldMortgageeState: applicantState,
 				// New mortgagor (from input fields)
 				newMortgagorName: newMortgagorData.name,
@@ -228,6 +238,7 @@
 				newMortgagorPhone: newMortgagorData.phone,
 				newMortgagorAddress: newMortgagorData.address,
 				newMortgagorNationality: newMortgagorData.nationality,
+				newMortgagorCity: newMortgagorData.city,
 				newMortgagorState: newMortgagorData.state
 			};
 
@@ -415,6 +426,15 @@
 							/>
 						</div>
 						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-1">City:</label>
+							<input
+								type="text"
+								value={applicantCity}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
 							<label class="block text-sm font-medium text-gray-700 mb-1">State:</label>
 							<input
 								type="text"
@@ -493,6 +513,19 @@
 								<option value={name}>{name}</option>
 							{/each}
 						</select>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							City: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="text"
+							bind:value={newMortgagorData.city}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter new mortgagor city"
+							required
+						/>
 					</div>
 
 					<div>

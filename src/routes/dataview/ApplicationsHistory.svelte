@@ -50,6 +50,9 @@
   import DialogContent from "$lib/components/ui/dialog/dialog-content.svelte";
   import { useAnimation } from "svelte-motion";
   import PatentAssignmentDialog from "./Components/PatentAssignmentDialog.svelte";
+  import PatentLicenseDialog from "./Components/PatentLicenseDialog.svelte";
+  import PatentMergerDialog from "./Components/PatentMergerDialog.svelte";
+  import PatentMortgageDialog from "./Components/PatentMortgageDialog.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -112,6 +115,22 @@
   let showPatentAssignmentDialog = false;
   let patentAssignmentFileId = "";
   let patentAssignmentApplicationId = "";
+  
+  // Patent License Modal State
+  let showPatentLicenseDialog = false;
+  let patentLicenseFileId = "";
+  let patentLicenseApplicationId = "";
+  
+  // Patent Merger Modal State
+  let showPatentMergerDialog = false;
+  let patentMergerFileId = "";
+  let patentMergerApplicationId = "";
+  
+  // Patent Mortgage Modal State
+  let showPatentMortgageDialog = false;
+  let patentMortgageFileId = "";
+  let patentMortgageApplicationId = "";
+  
   // Appeal Requests
   let appealDocs: string[] = [];
   let showAppealRequest = false;
@@ -913,6 +932,27 @@
     patentAssignmentFileId = fileId;
     patentAssignmentApplicationId = applicationId;
     showPatentAssignmentDialog = true;
+  }
+
+  // Open patent license dialog
+  function openPatentLicenseDialog(fileId: string, applicationId: string) {
+    patentLicenseFileId = fileId;
+    patentLicenseApplicationId = applicationId;
+    showPatentLicenseDialog = true;
+  }
+
+  // Open patent merger dialog
+  function openPatentMergerDialog(fileId: string, applicationId: string) {
+    patentMergerFileId = fileId;
+    patentMergerApplicationId = applicationId;
+    showPatentMergerDialog = true;
+  }
+
+  // Open patent mortgage dialog
+  function openPatentMortgageDialog(fileId: string, applicationId: string) {
+    patentMortgageFileId = fileId;
+    patentMortgageApplicationId = applicationId;
+    showPatentMortgageDialog = true;
   }
 </script>
 
@@ -2178,6 +2218,27 @@
   applicationId={patentAssignmentApplicationId}
 />
 
+<!-- Patent License Dialog -->
+<PatentLicenseDialog 
+  bind:open={showPatentLicenseDialog}
+  fileId={patentLicenseFileId}
+  applicationId={patentLicenseApplicationId}
+/>
+
+<!-- Patent Merger Dialog -->
+<PatentMergerDialog 
+  bind:open={showPatentMergerDialog}
+  fileId={patentMergerFileId}
+  applicationId={patentMergerApplicationId}
+/>
+
+<!-- Patent Mortgage Dialog -->
+<PatentMortgageDialog 
+  bind:open={showPatentMortgageDialog}
+  fileId={patentMortgageFileId}
+  applicationId={patentMortgageApplicationId}
+/>
+
 {#if showStatusHistory}
   <svelte:component this={historyComponent} {...historyData} />
 {/if}
@@ -2356,6 +2417,30 @@
                   {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
                     <DropdownMenu.Item
                       on:click={() => openPatentAssignmentDialog(fileData.fileId, application.id)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Patent License Application -->
+                  {#if application.applicationType === FormApplicationTypes.License && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                    <DropdownMenu.Item
+                      on:click={() => openPatentLicenseDialog(fileData.fileId, application.id)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Patent Merger Application -->
+                  {#if application.applicationType === FormApplicationTypes.Merger && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                    <DropdownMenu.Item
+                      on:click={() => openPatentMergerDialog(fileData.fileId, application.id)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Patent Mortgage Application -->
+                  {#if application.applicationType === FormApplicationTypes.Mortgage && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                    <DropdownMenu.Item
+                      on:click={() => openPatentMortgageDialog(fileData.fileId, application.id)}
                     >
                       View Application
                     </DropdownMenu.Item>

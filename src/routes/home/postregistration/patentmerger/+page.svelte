@@ -20,6 +20,7 @@
 		phone: string;
 		nationality: string;
 		address: string;
+		city: string;
 		state: string;
 	}
 
@@ -34,6 +35,7 @@
 		phone: '',
 		nationality: '',
 		address: '',
+		city: '',
 		state: ''
 	};
 
@@ -51,6 +53,7 @@
 	let applicantPhone: string = '';
 	let applicantAddress: string = '';
 	let applicantNationality: string = '';
+	let applicantCity: string = '';
 	let applicantState: string = '';
 	let isProcessing = false;
 	let isLoading = false;
@@ -93,6 +96,7 @@
 			applicantPhone = data.applicantPhone;
 			applicantAddress = data.applicantAddress || '';
 			applicantNationality = data.applicantNationality || '';
+			applicantCity = data.applicantCity || '';
 			applicantState = data.applicantState || '';
 		} catch (err) {
 			error = 'Error fetching patent merger cost.';
@@ -152,6 +156,11 @@
 
 		if (!newMergerData.address.trim()) {
 			error = 'Please enter new merger party address.';
+			return false;
+		}
+
+		if (!newMergerData.city.trim()) {
+			error = 'Please enter new merger party city.';
 			return false;
 		}
 
@@ -221,6 +230,7 @@
 				oldMergerPhone: applicantPhone,
 				oldMergerAddress: applicantAddress,
 				oldMergerNationality: applicantNationality,
+				oldMergerCity: applicantCity,
 				oldMergerState: applicantState,
 				// New merged party (from input fields)
 				newMergerName: newMergerData.name,
@@ -228,6 +238,7 @@
 				newMergerPhone: newMergerData.phone,
 				newMergerAddress: newMergerData.address,
 				newMergerNationality: newMergerData.nationality,
+				newMergerCity: newMergerData.city,
 				newMergerState: newMergerData.state
 			};
 
@@ -416,6 +427,15 @@
 							/>
 						</div>
 						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-1">City:</label>
+							<input
+								type="text"
+								value={applicantCity}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
 							<label class="block text-sm font-medium text-gray-700 mb-1">State:</label>
 							<input
 								type="text"
@@ -494,6 +514,19 @@
 								<option value={name}>{name}</option>
 							{/each}
 						</select>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							City: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="text"
+							bind:value={newMergerData.city}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter new merged party city"
+							required
+						/>
 					</div>
 
 					<div>

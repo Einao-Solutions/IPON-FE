@@ -20,6 +20,7 @@
 		phone: string;
 		nationality: string;
 		address: string;
+		city: string;
 		state: string;
 	}
 
@@ -34,6 +35,7 @@
 		phone: '',
 		nationality: '',
 		address: '',
+		city: '',
 		state: ''
 	};
 
@@ -52,6 +54,7 @@
 	let applicantAddress: string = '';
 	let applicantNationality: string = '';
 	let applicantState: string = '';
+	let applicantCity: string = '';
 	let isProcessing = false;
 	let isLoading = false;
 
@@ -94,6 +97,7 @@
 			applicantAddress = data.applicantAddress || '';
 			applicantNationality = data.applicantNationality || '';
 			applicantState = data.applicantState || '';
+			applicantCity = data.applicantCity || '';
 		} catch (err) {
 			error = 'Error fetching patent assignment cost.';
 			console.error(err);
@@ -152,6 +156,11 @@
 
 		if (!assigneeData.address.trim()) {
 			error = 'Please enter assignee address.';
+			return false;
+		}
+
+		if (!assigneeData.city.trim()) {
+			error = 'Please enter assignee city.';
 			return false;
 		}
 
@@ -222,11 +231,13 @@
 				oldAssignorAddress: applicantAddress,
 				oldAssignorNationality: applicantNationality,
 				oldAssignorState: applicantState,
+				oldAssignorCity: applicantCity,
 				// New assignee information (from input fields)
 				newAssigneeName: assigneeData.name,
 				newAssigneeEmail: assigneeData.email,
 				newAssigneePhone: assigneeData.phone,
 				newAssigneeAddress: assigneeData.address,
+				newAssigneeCity: assigneeData.city,
 				newAssigneeNationality: assigneeData.nationality,
 				newAssigneeState: assigneeData.state
 			};
@@ -419,6 +430,15 @@
 								disabled
 							/>
 						</div>
+						<div>
+							<label for="applicantCity" class="block text-sm font-medium text-gray-700 mb-1">City:</label>
+							<input
+								type="text"
+								value={applicantCity}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
 						<div class="md:col-span-2">
 							<label for="applicantAddress" class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
 							<input
@@ -437,7 +457,7 @@
 				<div class="bg-gray-300 px-4 py-2 font-medium text-black">ASSIGNEE INFORMATION</div>
 				<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeName" class="block text-sm font-medium text-gray-700 mb-1">
 							Name: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -450,7 +470,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeEmail" class="block text-sm font-medium text-gray-700 mb-1">
 							Email: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -463,7 +483,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneePhone" class="block text-sm font-medium text-gray-700 mb-1">
 							Phone Number: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -476,7 +496,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeNationality" class="block text-sm font-medium text-gray-700 mb-1">
 							Nationality: <span class="text-red-500">*</span>
 						</label>
 						<select
@@ -492,7 +512,20 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeCity" class="block text-sm font-medium text-gray-700 mb-1">
+							City: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="text"
+							bind:value={assigneeData.city}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter assignee city"
+							required
+						/>
+					</div>
+
+					<div>
+						<label for="assigneeState" class="block text-sm font-medium text-gray-700 mb-1">
 							State: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -505,7 +538,7 @@
 					</div>
 
 					<div class="md:col-span-2">
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeAddress" class="block text-sm font-medium text-gray-700 mb-1">
 							Address: <span class="text-red-500">*</span>
 						</label>
 						<textarea
@@ -525,7 +558,7 @@
 				<div class="p-4 space-y-6">
 					<!-- Assignment Deeds -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<label for="assignmentDeeds" class="block text-sm font-medium text-gray-700 mb-2">
 							Deed of Assignment: <span class="text-red-500">*</span>
 						</label>
 						
@@ -603,7 +636,7 @@
 
 					<!-- Supporting Documents -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<label for="supportingDocuments" class="block text-sm font-medium text-gray-700 mb-2">
 							Other Supporting Documents: <span class="text-red-500">*</span>
 						</label>
 						

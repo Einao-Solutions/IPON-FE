@@ -20,6 +20,7 @@
 		phone: string;
 		nationality: string;
 		address: string;
+		city: string;
 		state: string;
 	}
 
@@ -34,6 +35,7 @@
 		phone: '',
 		nationality: '',
 		address: '',
+		city: '',
 		state: ''
 	};
 
@@ -51,6 +53,7 @@
 	let applicantPhone: string = '';
 	let applicantAddress: string = '';
 	let applicantNationality: string = '';
+	let applicantCity: string = '';
 	let applicantState: string = '';
 	let isProcessing = false;
 	let isLoading = false;
@@ -93,6 +96,7 @@
 			applicantPhone = data.applicantPhone;
 			applicantAddress = data.applicantAddress || '';
 			applicantNationality = data.applicantNationality || '';
+			applicantCity = data.applicantCity || '';
 			applicantState = data.applicantState || '';
 		} catch (err) {
 			error = 'Error fetching patent license cost.';
@@ -221,6 +225,7 @@
 				oldLicensorPhone: applicantPhone,
 				oldLicensorAddress: applicantAddress,
 				oldLicensorNationality: applicantNationality,
+				oldLicensorCity: applicantCity,
 				oldLicensorState: applicantState,
 				// New licensee information (from input fields)
 				newLicenseeName: licenseeData.name,
@@ -228,6 +233,7 @@
 				newLicenseePhone: licenseeData.phone,
 				newLicenseeAddress: licenseeData.address,
 				newLicenseeNationality: licenseeData.nationality,
+				newLicenseeCity: licenseeData.city,
 				newLicenseeState: licenseeData.state
 			};
 
@@ -415,6 +421,15 @@
 							/>
 						</div>
 						<div>
+							<label for="applicantCity" class="block text-sm font-medium text-gray-700 mb-1">City:</label>
+							<input
+								type="text"
+								value={applicantCity}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
 							<label for="applicantState" class="block text-sm font-medium text-gray-700 mb-1">State:</label>
 							<input
 								type="text"
@@ -494,6 +509,19 @@
 							{/each}
 						</select>
 					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+						City: <span class="text-red-500">*</span>
+					</label>
+					<input
+						type="text"
+						bind:value={licenseeData.city}
+						class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+						placeholder="Enter licensee city"
+						required
+					/>
+				</div>
 
 					<div>
 						<label class="block text-sm font-medium text-gray-700 mb-1">
