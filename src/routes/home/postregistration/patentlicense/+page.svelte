@@ -8,6 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	interface PatentLicenseData {
 		licenseDeeds: File[];
@@ -57,6 +58,7 @@
 	let applicantState: string = '';
 	let isProcessing = false;
 	let isLoading = false;
+	let showExistingApplicationModal = false;
 
 	onMount(async () => {
 		// Check if user is authenticated
@@ -84,6 +86,13 @@
 
 			const response = await res.json();
 			const data = response.data || response; // Handle both nested and direct response formats
+			
+			// Check if there's already an existing application
+			if (data.hasExistingApplication) {
+				showExistingApplicationModal = true;
+				return;
+			}
+			
 			cost = data.amount;
 			paymentId = data.rrr;
 			applicantName = data.applicantName;
@@ -271,6 +280,10 @@
 
 	function goBack() {
 		window.history.back();
+	}
+
+	function goToDashboard() {
+		goto('/home/dashboard');
 	}
 </script>
 
@@ -755,4 +768,29 @@
 		</div>
 	</div>
 </div>
+
+<!-- Existing Application Modal -->
+<Dialog.Root bind:open={showExistingApplicationModal}>
+	<Dialog.Content class="w-11/12 max-w-md mx-auto">
+		<Dialog.Header>
+			<Dialog.Title class="text-xl font-bold text-red-600 flex items-center gap-2">
+				<Icon icon="mdi:alert-circle" width="1.5em" height="1.5em" />
+				Application Already Exists
+			</Dialog.Title>
+		</Dialog.Header>
+		<div class="py-4">
+			<p class="text-gray-700">
+				A patent license application has already been submitted for this file. You cannot create multiple license applications for the same patent.
+			</p>
+		</div>
+		<Dialog.Footer class="flex gap-3 justify-end">
+			<Button variant="outline" on:click={() => showExistingApplicationModal = false}>
+				Close
+			</Button>
+			<Button on:click={goToDashboard} class="bg-blue-600 hover:bg-blue-700">
+				Go to Dashboard
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
 </div>
