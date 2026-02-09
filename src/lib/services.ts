@@ -87,15 +87,15 @@ export const commonServices: IPService[] = [
     category: "agent",
     isCommon: true,
   },
-  {
-    id: "update-file",
-    name: "UPDATE FILE",
-    description: 'Edit/Update files with status "Awaiting Search"',
-    icon: "mdi:update",
-    route: "/home/update-files",
-    category: "agent",
-    isCommon: true,
-  },
+  // {
+  //   id: "update-file",
+  //   name: "UPDATE FILE",
+  //   description: 'Edit/Update files with status "Awaiting Search"',
+  //   icon: "mdi:update",
+  //   route: "/home/update-files",
+  //   category: "agent",
+  //   isCommon: true,
+  // },
   {
     id: "appeal",
     name: "APPEAL",
@@ -192,15 +192,15 @@ export const trademarkServices: IPService[] = [
     category: "agent",
     price: "₦2,000",
   },
-  {
-    id: "update-file",
-    name: "EDIT/UPDATE FILE IN AWAITING SEARCH",
-    description: "Update file information for files in awaiting search status",
-    icon: "mdi:update",
-    route: "/home/update-files",
-    category: "filing",
-    price: "",
-  },
+  // {
+  //   id: "update-file",
+  //   name: "EDIT/UPDATE FILE IN AWAITING SEARCH",
+  //   description: "Update file information for files in awaiting search status",
+  //   icon: "mdi:update",
+  //   route: "/home/update-files",
+  //   category: "filing",
+  //   price: "",
+  // },
   {
     id: "update-publication-status",
     name: "UPDATE PUBLICATION STATUS",
@@ -632,7 +632,7 @@ export const designServices: IPService[] = [
 ];
 
 export function getServicesForIPType(
-  ipType: "trademark" | "patent" | "design"
+  ipType: "trademark" | "patent" | "design",
 ): IPService[] {
   switch (ipType) {
     case "trademark":
@@ -655,13 +655,13 @@ export function getServicesByCategory(services: IPService[]) {
       acc[service.category].push(service);
       return acc;
     },
-    {} as Record<string, IPService[]>
+    {} as Record<string, IPService[]>,
   );
 }
 
 export function resolveServiceRoute(
   service: IPService,
-  ipType?: string
+  ipType?: string,
 ): string {
   if (typeof service.route === "function") {
     return service.route(ipType);
@@ -670,7 +670,7 @@ export function resolveServiceRoute(
 }
 
 export function getServiceCount(
-  ipType: "trademark" | "patent" | "design"
+  ipType: "trademark" | "patent" | "design",
 ): number {
   return getServicesForIPType(ipType).length;
 }
