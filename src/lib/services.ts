@@ -463,15 +463,15 @@ export const patentServices: IPService[] = [
   //   category: 'filing',
   //   price: ''
   // },
-  // {
-  //   id: 'patent-assignment',
-  //   name: 'PATENT ASSIGNMENT',
-  //   description: 'Transfer patent ownership rights',
-  //   icon: 'mdi:account-switch-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'patent-assignment',
+    name: 'PATENT ASSIGNMENT',
+    description: 'Transfer patent ownership rights',
+    icon: 'mdi:account-switch-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
   // {
   //   id: 'patent-ctc',
   //   name: 'PATENT CTC (CERTIFIED TRUE COPY)',
@@ -481,33 +481,34 @@ export const patentServices: IPService[] = [
   //   category: 'filing',
   //   price: ''
   // },
-  // {
-  //   id: 'patent-license',
-  //   name: 'PATENT LICENSE',
-  //   description: 'License patent rights to third parties',
-  //   icon: 'mdi:handshake-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'patent-mortgage',
-  //   name: 'PATENT MORTGAGE',
-  //   description: 'Mortgage patent as security for loans',
-  //   icon: 'mdi:bank-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'patent-merger',
-  //   name: 'PATENT MERGER',
-  //   description: 'Merge patent applications',
-  //   icon: 'mdi:merge',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price:''
-  // },
+  {
+    id: 'patent-license',
+    name: 'PATENT LICENSE',
+    description: 'License patent rights to third parties',
+    icon: 'mdi:handshake-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'patent-mortgage',
+    name: 'PATENT MORTGAGE',
+    description: 'Mortgage patent as security for loans',
+    icon: 'mdi:bank-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'patent-merger',
+    name: 'PATENT MERGER',
+    description: 'Merge patent applications',
+    icon: 'mdi:merge',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price:''
+  },
+
 ];
 
 // Design-specific services

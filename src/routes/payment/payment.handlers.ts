@@ -439,7 +439,7 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
 
@@ -461,7 +461,7 @@ async function patentlicense(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
 
@@ -483,7 +483,7 @@ async function patentmortgage(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
 
@@ -505,6 +505,6 @@ async function patentmerger(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }

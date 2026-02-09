@@ -616,6 +616,30 @@ export function getLetterName(letter: number): string {
       return "Withdrawal Request Approval";
     case 53:
       return "Withdrawal Request Refusal";
+    case 54:
+      return "Patent Assignment Acknowledgement";
+    case 55:
+      return "Patent License Acknowledgement";
+    case 56:
+      return "Patent Mortgage Acknowledgement";
+    case 57:
+      return "Patent Merger Acknowledgement";
+    case 58:
+      return "Patent CTC Acknowledgement";
+    case 59:
+      return "Patent Amendment Acknowledgement";
+    case 60:
+      return "Patent Assignment Refusal Letter";
+    case 61:
+      return "Patent License Refusal Letter";
+    case 62:
+      return "Patent Mortgage Refusal Letter";
+    case 63:
+      return "Patent Merger Refusal Letter";
+    case 64:
+      return "Patent CTC Refusal Letter";
+    case 65:
+      return "Patent Amendment Refusal Letter";
     default:
       return "Unknown Document";
   }
