@@ -49,6 +49,7 @@
     designType: number | null;
     designCreators: DesignCreator[] | null;
     designAttachments: string[] | null;
+    trademarkType?: number | null;
   }
   interface NewData {
     fileTitle: string;
@@ -73,6 +74,7 @@
     correspondenceAddress: string | null;
     updateType: ClericalUpdateTypes | null;
     trademarkLogo: string | null;
+    trademarkType: number | null;
     wordMark: string | null;
     disclaimer: string | null;
     noveltyStatement?: string | null;
@@ -103,6 +105,7 @@
     correspondenceEmail: null,
     correspondenceAddress: null,
     updateType: null,
+    trademarkType: null,
     trademarkLogo: null,
     fileType: null,
     disclaimer: null,
@@ -810,13 +813,6 @@
           <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">
-                Applicant Name
-              </label>
-              <p class="text-base text-gray-900">{fileInfo.applicantName}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">
                 File Number
               </label>
               <p class="text-base text-gray-900">{fileInfo.fileId}</p>
@@ -827,6 +823,25 @@
                 Title
               </label>
               <p class="text-base text-gray-900">{fileInfo.fileTitle}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">
+                Trademark Type
+              </label>
+              <p class="text-base text-gray-900">
+                {fileInfo.trademarkType !== null &&
+                fileInfo.trademarkType !== undefined
+                  ? fileInfo.trademarkType === 0
+                    ? "Local"
+                    : "Foreign"
+                  : "N/A"}
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">
+                Applicant Name
+              </label>
+              <p class="text-base text-gray-900">{fileInfo.applicantName}</p>
             </div>
 
             <div>

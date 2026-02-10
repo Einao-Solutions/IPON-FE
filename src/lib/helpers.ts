@@ -396,6 +396,7 @@ export enum ClericalUpdateTypes {
   AddAndRemoveApplicant,
   EditInventors,
   PriorityInfo,
+  TrademarkType,
 }
 export enum PatentApplicationTypes {
   Patent = 0,
