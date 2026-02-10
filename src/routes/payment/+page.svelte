@@ -46,7 +46,7 @@
 
   let showRenewalErrorModal = false;
   let renewalErrorMessage = "";
-
+  let clerical: string | null = null;
   let searchParams: {
     query: string;
     classId?: number;
@@ -77,12 +77,15 @@
 
     type = $page.url.searchParams.get("type");
     const storedParams = sessionStorage.getItem("searchParams");
+
     try {
       searchParams = storedParams ? JSON.parse(storedParams) : null;
     } catch (e) {
       console.error("Failed to parse searchParams from sessionStorage:", e);
       searchParams = null;
     }
+
+    clerical = sessionStorage.getItem("clericalId");
 
     const handler = paymentHandlers[type ?? ""];
 
@@ -118,14 +121,14 @@
         },
       });
 
-      freeApplication = cost === "0";
-      if (type === "clerical") {
-        const formData = localStorage.getItem("formData");
-        if (formData) {
-          const parsedForm = JSON.parse(formData);
-          await submitForm(parsedForm);
-        }
-      }
+      // freeApplication = cost === "0";
+      // if (type === "clerical") {
+      //   const formData = localStorage.getItem("formData");
+      //   if (formData) {
+      //     const parsedForm = JSON.parse(formData);
+      //     await submitForm(parsedForm);
+      //   }
+      // }
 
       await setHash();
     } catch (err: any) {
@@ -153,31 +156,31 @@
   }
 
   /* ---------------- Submit form ---------------- */
-  async function submitForm(formObj: Record<string, any>) {
-    console.log("Resubmitting after payment:", formObj);
+  // async function submitForm(formObj: Record<string, any>) {
+  //   // console.log("Resubmitting after payment:", formObj);
 
-    // Reconstruct FormData from stored JSON
-    const formData = new FormData();
-    Object.entries(formObj).forEach(([key, value]) => {
-      if (value !== null && value !== undefined) {
-        formData.append(key, String(value));
-      }
-    });
-    const filey = formObj.fileId;
-    fileId = filey;
-    const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
-      method: "POST",
-      body: formData,
-    });
-    const data = await result.text();
-    clericalId = data;
-    if (!result.ok) {
-      const error = await result.text();
-      toast.error(`Failed to save clerical update application`);
-      return;
-    }
-    toast.success("Application Saved");
-  }
+  //   // Reconstruct FormData from stored JSON
+  //   const formData = new FormData();
+  //   Object.entries(formObj).forEach(([key, value]) => {
+  //     if (value !== null && value !== undefined) {
+  //       formData.append(key, String(value));
+  //     }
+  //   });
+  //   const filey = formObj.fileId;
+  //   fileId = filey;
+  //   const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+  //     method: "POST",
+  //     body: formData,
+  //   });
+  //   const data = await result.text();
+  //   clericalId = data;
+  //   if (!result.ok) {
+  //     const error = await result.text();
+  //     toast.error(`Failed to save clerical update application`);
+  //     return;
+  //   }
+  //   toast.success("Application Saved");
+  // }
 
   async function freeUpdate(fileId: string, clericalId: string) {
     const result = await fetch(
@@ -188,11 +191,22 @@
     );
 
     if (!result.ok) {
-      const error = await result.json();
-      toast.error(`Failed to submit clerical update`);
+      const errorText = await result.text();
+      let errorMessage = "Failed to submit clerical update";
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorMessage;
+      } catch {
+        // Response wasn't JSON
+      }
+      toast.error(errorMessage);
       return;
     }
+
     toast.success("Clerical Update Submitted Successfully");
+
+    // Delay navigation to allow toast to display
+    await new Promise((resolve) => setTimeout(resolve, 1500));
     await goto("/home/dashboard");
   }
   function goBack() {
@@ -391,7 +405,7 @@
                     height="1.2rem"
                     class="text-gray-500"
                   />
-                  <span class="text-gray-700 font-medium">Applicant Name</span>
+                  <span class="text-gray-700 font-medium">Name</span>
                 </div>
                 <span class="text-gray-900 bg-white px-3 py-1 rounded border">
                   {fileApplicant}
@@ -444,9 +458,7 @@
                 type="button"
                 class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
                 on:click={() =>
-                  fileNumber &&
-                  clericalId &&
-                  freeUpdate(fileNumber, clericalId)}
+                  fileNumber && clerical && freeUpdate(fileNumber, clerical)}
               >
                 <div class="flex items-center justify-center gap-2">
                   <Icon
