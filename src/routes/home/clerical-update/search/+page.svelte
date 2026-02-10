@@ -81,7 +81,7 @@
       if (searchParams) {
         // Fetch search results from the backend
         const response = await fetch(
-          `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${searchParams.query}`
+          `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${searchParams.query}`,
         );
         if (response.ok) {
           results = await response.json();
@@ -99,7 +99,7 @@
             (result.fileTypes === FileTypes.Patent &&
               [3, 4, 6, 7, 14].includes(result.fileStatus)) ||
             (result.fileTypes === FileTypes.Design &&
-              [3, 4, 6, 7, 14].includes(result.fileStatus))
+              [3, 4, 6, 7, 14].includes(result.fileStatus)),
         );
       } else {
         error = "Search parameters are missing";
@@ -266,81 +266,85 @@
                       // Trademark options
                       if (selectedValue === "update-name") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`,
                         );
                       } else if (selectedValue === "update-address") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
                         );
                       } else if (selectedValue === "update-title") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`,
                         );
                       } else if (selectedValue === "update-class") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileClass}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileClass}`,
                         );
                       } else if (selectedValue === "update-correspondence") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
+                        );
+                      } else if (selectedValue === "update-trademark-type") {
+                        goto(
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.TrademarkType}`,
                         );
                       }
                     } else if (result.fileTypes === FileTypes.Design) {
                       // Design options
                       if (selectedValue === "update-name") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`,
                         );
                       } else if (selectedValue === "update-address") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
                         );
                       } else if (selectedValue === "design-info") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.DesignInformation}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.DesignInformation}`,
                         );
                       } else if (selectedValue === "creator-info") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CreatorInformation}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CreatorInformation}`,
                         );
                       } else if (selectedValue === "correspondence") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
                         );
                       } else if (selectedValue === "design-att") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.DesignAttachments}`
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.DesignAttachments}`,
                         );
                       }
                     } else if (result.fileTypes === FileTypes.Patent) {
                       // Patent options
                       if (selectedValue === "update-name") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`,
                         );
                       } else if (selectedValue === "update-address") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
                         );
                       } else if (selectedValue === "update-title") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`,
                         );
                       } else if (selectedValue === "addorremove-applicant") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}`
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}`,
                         );
                       } else if (selectedValue === "edit-inventors") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.EditInventors}`
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.EditInventors}`,
                         );
                       } else if (selectedValue === "priorityinfo") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.PriorityInfo}`
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.PriorityInfo}`,
                         );
                       } else if (selectedValue === "correspondence") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
                         );
                       }
                     }
@@ -361,6 +365,9 @@
 
                     <option value="update-correspondence"
                       >Update Correspondence/Attachments</option
+                    >
+                    <option value="update-trademark-type"
+                      >Update Trademark Type</option
                     >
                   {:else if result.fileTypes === FileTypes.Patent}
                     <option value="update-name">Update Applicant Name</option>
