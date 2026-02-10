@@ -2414,7 +2414,7 @@
                     >
                   {/if}
                   <!-- Patent Assignment Application -->
-                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openPatentAssignmentDialog(fileData.fileId, application.id)}
                     >
@@ -2422,7 +2422,7 @@
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent License Application -->
-                  {#if application.applicationType === FormApplicationTypes.License && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                  {#if application.applicationType === FormApplicationTypes.License && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openPatentLicenseDialog(fileData.fileId, application.id)}
                     >
@@ -2430,7 +2430,7 @@
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent Merger Application -->
-                  {#if application.applicationType === FormApplicationTypes.Merger && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                  {#if application.applicationType === FormApplicationTypes.Merger && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openPatentMergerDialog(fileData.fileId, application.id)}
                     >
@@ -2438,7 +2438,7 @@
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent Mortgage Application -->
-                  {#if application.applicationType === FormApplicationTypes.Mortgage && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && $loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer)}
+                  {#if application.applicationType === FormApplicationTypes.Mortgage && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openPatentMortgageDialog(fileData.fileId, application.id)}
                     >
