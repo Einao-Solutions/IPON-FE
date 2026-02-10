@@ -123,7 +123,7 @@
     const fileTypeParam = pageData.url.searchParams.get("fileType");
     const parsed = Number(fileTypeParam);
     const validValues = Object.values(FileTypes).filter(
-      (v) => typeof v === "number"
+      (v) => typeof v === "number",
     ) as number[];
     fileType =
       !Number.isNaN(parsed) && validValues.includes(parsed)
@@ -133,7 +133,7 @@
     const updateTypeParam = pageData.url.searchParams.get("updateType") ?? "";
     const upt = Number(updateTypeParam);
     const validUp = Object.values(ClericalUpdateTypes).filter(
-      (v) => typeof v === "number"
+      (v) => typeof v === "number",
     ) as number[];
 
     updateType =
@@ -216,7 +216,7 @@
   async function setData(
     fileNumber: string,
     fileType: FileTypes | null,
-    updateType: ClericalUpdateTypes | null
+    updateType: ClericalUpdateTypes | null,
   ): Promise<void> {
     isLoading = true;
     try {
@@ -443,7 +443,7 @@
 
   async function handleFileChange(
     event: Event,
-    field: "PowerOfAttorney" | "OtherAttachment"
+    field: "PowerOfAttorney" | "OtherAttachment",
   ) {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0];
@@ -501,7 +501,7 @@
             creator.email ||
             creator.phone ||
             creator.address ||
-            creator.country
+            creator.country,
         );
 
         // Serialize creators as JSON string
@@ -541,7 +541,7 @@
         formData.append("ApplicantEmail", newData.applicantEmail ?? "");
         formData.append(
           "ApplicantNationality",
-          newData.applicantNationality ?? ""
+          newData.applicantNationality ?? "",
         );
       } else if (updateType === ClericalUpdateTypes.FileClass) {
         formData.append("FileClass", String(newData.fileClass));
@@ -551,15 +551,15 @@
         formData.append("CorrespondenceName", newData.correspondenceName ?? "");
         formData.append(
           "CorrespondencePhone",
-          newData.correspondencePhone ?? ""
+          newData.correspondencePhone ?? "",
         );
         formData.append(
           "CorrespondenceEmail",
-          newData.correspondenceEmail ?? ""
+          newData.correspondenceEmail ?? "",
         );
         formData.append(
           "CorrespondenceAddress",
-          newData.correspondenceAddress ?? ""
+          newData.correspondenceAddress ?? "",
         );
 
         if (newData.PowerOfAttorney) {
@@ -584,10 +584,20 @@
       });
 
       if (!result.ok) {
-        const error = await result.json();
-        toast.error(`Error submitting clerical update: ${error.message}`);
+        const errorText = await result.text();
+        let errorMessage = result.statusText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          // Response wasn't JSON, use statusText
+        }
+        toast.error(`Error submitting clerical update: ${errorMessage}`);
         return;
       }
+
+      const data = await result.text();
+      sessionStorage.setItem("clericalId", data);
 
       await handlePayment();
     } catch (err) {
@@ -616,7 +626,7 @@
   async function handlePayment() {
     if (fileInfo.cost && fileInfo.paymentRRR) {
       await goto(
-        `/payment/?type=clerical&rrr=${fileInfo.paymentRRR}&amount=${fileInfo.cost}`
+        `/payment/?type=clerical&rrr=${fileInfo.paymentRRR}&amount=${fileInfo.cost}`,
       );
     }
     if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
@@ -644,7 +654,7 @@
 
   function removeCreator(index: number) {
     newData.designCreators = newData.designCreators.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
@@ -706,7 +716,7 @@
   }
   function undoRemoveExistingAttachment(url: string) {
     removedDesignAttachments = removedDesignAttachments.filter(
-      (u) => u !== url
+      (u) => u !== url,
     );
     fileInfo.designAttachments = [...(fileInfo.designAttachments ?? []), url];
   }
@@ -716,7 +726,7 @@
     const maxSizeInBytes = 10 * 1024 * 1024;
 
     const invalid = files.find(
-      (f) => !f.type.startsWith("image/") || f.size > maxSizeInBytes
+      (f) => !f.type.startsWith("image/") || f.size > maxSizeInBytes,
     );
     if (invalid) {
       error = "Only image files up to 10MB are allowed.";
@@ -730,7 +740,7 @@
 
   function removeNewAttachment(index: number) {
     newData.DesignAttachments = newData.DesignAttachments.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 </script>
