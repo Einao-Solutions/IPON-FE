@@ -268,6 +268,7 @@
         representationUrl: data.representationUrl ?? null,
         updateType: updateType,
         trademarkLogo: data.trademarkLogo ?? null,
+        trademarkType: data.trademarkType ?? null,
         disclaimer: data.disclaimer ?? null,
         noveltyStatement: data.noveltyStatement ?? null,
         designType: data.designType ?? null,
@@ -304,6 +305,7 @@
     correspondenceAddress: null,
     updateType: null,
     trademarkLogo: null,
+    trademarkType: null,
     wordMark: null,
     disclaimer: null,
     OtherAttachment: null,
@@ -354,7 +356,8 @@
 
       case ClericalUpdateTypes.PriorityInfo:
         return "Application for Clerical Update of Priority Information";
-
+      case ClericalUpdateTypes.TrademarkType:
+        return "Application for Clerical Update of Trademark Type";
       default:
         return "Application for Clerical Update";
     }
@@ -393,6 +396,8 @@
   $: showTitleSection = fileInfo.updateType === ClericalUpdateTypes.FileTitle;
   $: showCreatorInfoSection =
     fileInfo.updateType === ClericalUpdateTypes.CreatorInformation;
+  $: showTrademarkTypeSection =
+    fileInfo.updateType === ClericalUpdateTypes.TrademarkType;
   $: showDesignInformationSection =
     fileInfo.updateType === ClericalUpdateTypes.DesignInformation;
   $: formTitle = getFormTitle(fileInfo.updateType);
@@ -542,6 +547,11 @@
         formData.append("ApplicantAddress", newData.applicantAddress ?? "");
         formData.append("ApplicantPhone", newData.applicantPhone ?? "");
         formData.append("ApplicantEmail", newData.applicantEmail ?? "");
+      } else if (updateType === ClericalUpdateTypes.TrademarkType) {
+        formData.append(
+          "TrademarkType",
+          newData.trademarkType != null ? newData.trademarkType.toString() : "",
+        );
         formData.append(
           "ApplicantNationality",
           newData.applicantNationality ?? "",
@@ -600,7 +610,7 @@
       }
 
       const data = await result.text();
-      sessionStorage.setItem("clericalId", data);
+      localStorage.setItem("clericalId", data);
 
       await handlePayment();
     } catch (err) {
@@ -663,11 +673,11 @@
 
   function validateForm(): boolean {
     // Enforce linked change between country and address
-    if ((addressEdited || countryEdited) && !(addressEdited && countryEdited)) {
-      error =
-        "If you change either New Applicant Country or New Applicant Address, you must change both.";
-      return false;
-    }
+    // if ((addressEdited || countryEdited) && !(addressEdited && countryEdited)) {
+    //   error =
+    //     "If you change either New Applicant Country or New Applicant Address, you must change both.";
+    //   return false;
+    // }
     // Add creator validation
     if (showCreatorInfoSection) {
       if (newData.designCreators.length === 0) {
@@ -829,12 +839,11 @@
                 Trademark Type
               </label>
               <p class="text-base text-gray-900">
-                {fileInfo.trademarkType !== null &&
-                fileInfo.trademarkType !== undefined
-                  ? fileInfo.trademarkType === 0
-                    ? "Local"
-                    : "Foreign"
-                  : "N/A"}
+                {fileInfo.trademarkType === 0
+                  ? "Local"
+                  : fileInfo.trademarkType === 1
+                    ? "Foreign"
+                    : "N/A"}
               </p>
             </div>
             <div>
@@ -945,6 +954,69 @@
                 />
                 <p class="text-xs text-gray-500 mt-1">
                   This will replace the current applicant name shown above.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/if}
+      {#if showTrademarkTypeSection}
+        <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+          <div class="bg-blue-100 px-4 py-2 font-medium text-blue-900">
+            NEW INFORMATION
+          </div>
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <!-- svelte-ignore a11y-label-has-associated-control -->
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  New Trademark Type: <span class="text-red-500">*</span>
+                </label>
+                <select
+                  bind:value={newData.trademarkType}
+                  on:change={() => {
+                    if (newData.trademarkType === 0) {
+                      newData.applicantNationality = "Nigeria";
+                    }
+                  }}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value={null} disabled selected
+                    >Select trademark type</option
+                  >
+                  <option value={0}>Local</option>
+                  <option value={1}>Foreign</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                  This will replace the current trademark type shown above.
+                </p>
+              </div>
+              <!-- Nationality -->
+              <div class="w-1/2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  New Applicant Country:
+                </label>
+                <select
+                  bind:value={newData.applicantNationality}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 {newData.trademarkType ===
+                  0
+                    ? 'bg-gray-100 cursor-not-allowed'
+                    : ''}"
+                  required
+                  disabled={newData.trademarkType === 0}
+                >
+                  <option value="" disabled selected>Select nationality</option>
+                  {#each Object.entries(countriesMap) as [code, name]}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                  {#if newData.trademarkType === 0}
+                    Local trademarks are automatically set to Nigeria.
+                  {:else}
+                    Optional: Select new country for the applicant.
+                  {/if}
                 </p>
               </div>
             </div>
@@ -1431,28 +1503,6 @@
                   />
                   <p class="text-xs text-gray-500 mt-1">
                     Optional: Enter new phone number for the applicant.
-                  </p>
-                </div>
-
-                <!-- Nationality -->
-                <div class="w-1/2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    New Applicant Country:
-                  </label>
-                  <select
-                    bind:value={newData.applicantNationality}
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900"
-                    required
-                  >
-                    <option value="" disabled selected
-                      >Select nationality</option
-                    >
-                    {#each Object.entries(countriesMap) as [code, name]}
-                      <option value={name}>{name}</option>
-                    {/each}
-                  </select>
-                  <p class="text-xs text-gray-500 mt-1">
-                    Optional: Select new country for the applicant.
                   </p>
                 </div>
               </div>
