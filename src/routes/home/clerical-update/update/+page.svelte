@@ -49,6 +49,7 @@
     designType: number | null;
     designCreators: DesignCreator[] | null;
     designAttachments: string[] | null;
+    trademarkType?: number | null;
   }
   interface NewData {
     fileTitle: string;
@@ -73,6 +74,7 @@
     correspondenceAddress: string | null;
     updateType: ClericalUpdateTypes | null;
     trademarkLogo: string | null;
+    trademarkType: number | null;
     wordMark: string | null;
     disclaimer: string | null;
     noveltyStatement?: string | null;
@@ -103,6 +105,7 @@
     correspondenceEmail: null,
     correspondenceAddress: null,
     updateType: null,
+    trademarkType: null,
     trademarkLogo: null,
     fileType: null,
     disclaimer: null,
@@ -123,7 +126,7 @@
     const fileTypeParam = pageData.url.searchParams.get("fileType");
     const parsed = Number(fileTypeParam);
     const validValues = Object.values(FileTypes).filter(
-      (v) => typeof v === "number"
+      (v) => typeof v === "number",
     ) as number[];
     fileType =
       !Number.isNaN(parsed) && validValues.includes(parsed)
@@ -133,7 +136,7 @@
     const updateTypeParam = pageData.url.searchParams.get("updateType") ?? "";
     const upt = Number(updateTypeParam);
     const validUp = Object.values(ClericalUpdateTypes).filter(
-      (v) => typeof v === "number"
+      (v) => typeof v === "number",
     ) as number[];
 
     updateType =
@@ -216,7 +219,7 @@
   async function setData(
     fileNumber: string,
     fileType: FileTypes | null,
-    updateType: ClericalUpdateTypes | null
+    updateType: ClericalUpdateTypes | null,
   ): Promise<void> {
     isLoading = true;
     try {
@@ -265,6 +268,7 @@
         representationUrl: data.representationUrl ?? null,
         updateType: updateType,
         trademarkLogo: data.trademarkLogo ?? null,
+        trademarkType: data.trademarkType ?? null,
         disclaimer: data.disclaimer ?? null,
         noveltyStatement: data.noveltyStatement ?? null,
         designType: data.designType ?? null,
@@ -301,6 +305,7 @@
     correspondenceAddress: null,
     updateType: null,
     trademarkLogo: null,
+    trademarkType: null,
     wordMark: null,
     disclaimer: null,
     OtherAttachment: null,
@@ -351,7 +356,8 @@
 
       case ClericalUpdateTypes.PriorityInfo:
         return "Application for Clerical Update of Priority Information";
-
+      case ClericalUpdateTypes.TrademarkType:
+        return "Application for Clerical Update of Trademark Type";
       default:
         return "Application for Clerical Update";
     }
@@ -390,6 +396,8 @@
   $: showTitleSection = fileInfo.updateType === ClericalUpdateTypes.FileTitle;
   $: showCreatorInfoSection =
     fileInfo.updateType === ClericalUpdateTypes.CreatorInformation;
+  $: showTrademarkTypeSection =
+    fileInfo.updateType === ClericalUpdateTypes.TrademarkType;
   $: showDesignInformationSection =
     fileInfo.updateType === ClericalUpdateTypes.DesignInformation;
   $: formTitle = getFormTitle(fileInfo.updateType);
@@ -443,7 +451,7 @@
 
   async function handleFileChange(
     event: Event,
-    field: "PowerOfAttorney" | "OtherAttachment"
+    field: "PowerOfAttorney" | "OtherAttachment",
   ) {
     const target = event.target as HTMLInputElement;
     const file = target.files?.[0];
@@ -501,7 +509,7 @@
             creator.email ||
             creator.phone ||
             creator.address ||
-            creator.country
+            creator.country,
         );
 
         // Serialize creators as JSON string
@@ -539,9 +547,14 @@
         formData.append("ApplicantAddress", newData.applicantAddress ?? "");
         formData.append("ApplicantPhone", newData.applicantPhone ?? "");
         formData.append("ApplicantEmail", newData.applicantEmail ?? "");
+      } else if (updateType === ClericalUpdateTypes.TrademarkType) {
+        formData.append(
+          "TrademarkType",
+          newData.trademarkType != null ? newData.trademarkType.toString() : "",
+        );
         formData.append(
           "ApplicantNationality",
-          newData.applicantNationality ?? ""
+          newData.applicantNationality ?? "",
         );
       } else if (updateType === ClericalUpdateTypes.FileClass) {
         formData.append("FileClass", String(newData.fileClass));
@@ -551,15 +564,15 @@
         formData.append("CorrespondenceName", newData.correspondenceName ?? "");
         formData.append(
           "CorrespondencePhone",
-          newData.correspondencePhone ?? ""
+          newData.correspondencePhone ?? "",
         );
         formData.append(
           "CorrespondenceEmail",
-          newData.correspondenceEmail ?? ""
+          newData.correspondenceEmail ?? "",
         );
         formData.append(
           "CorrespondenceAddress",
-          newData.correspondenceAddress ?? ""
+          newData.correspondenceAddress ?? "",
         );
 
         if (newData.PowerOfAttorney) {
@@ -584,10 +597,20 @@
       });
 
       if (!result.ok) {
-        const error = await result.json();
-        toast.error(`Error submitting clerical update: ${error.message}`);
+        const errorText = await result.text();
+        let errorMessage = result.statusText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          // Response wasn't JSON, use statusText
+        }
+        toast.error(`Error submitting clerical update: ${errorMessage}`);
         return;
       }
+
+      const data = await result.text();
+      localStorage.setItem("clericalId", data);
 
       await handlePayment();
     } catch (err) {
@@ -616,7 +639,7 @@
   async function handlePayment() {
     if (fileInfo.cost && fileInfo.paymentRRR) {
       await goto(
-        `/payment/?type=clerical&rrr=${fileInfo.paymentRRR}&amount=${fileInfo.cost}`
+        `/payment/?type=clerical&rrr=${fileInfo.paymentRRR}&amount=${fileInfo.cost}`,
       );
     }
     if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
@@ -644,17 +667,17 @@
 
   function removeCreator(index: number) {
     newData.designCreators = newData.designCreators.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 
   function validateForm(): boolean {
     // Enforce linked change between country and address
-    if ((addressEdited || countryEdited) && !(addressEdited && countryEdited)) {
-      error =
-        "If you change either New Applicant Country or New Applicant Address, you must change both.";
-      return false;
-    }
+    // if ((addressEdited || countryEdited) && !(addressEdited && countryEdited)) {
+    //   error =
+    //     "If you change either New Applicant Country or New Applicant Address, you must change both.";
+    //   return false;
+    // }
     // Add creator validation
     if (showCreatorInfoSection) {
       if (newData.designCreators.length === 0) {
@@ -706,7 +729,7 @@
   }
   function undoRemoveExistingAttachment(url: string) {
     removedDesignAttachments = removedDesignAttachments.filter(
-      (u) => u !== url
+      (u) => u !== url,
     );
     fileInfo.designAttachments = [...(fileInfo.designAttachments ?? []), url];
   }
@@ -716,7 +739,7 @@
     const maxSizeInBytes = 10 * 1024 * 1024;
 
     const invalid = files.find(
-      (f) => !f.type.startsWith("image/") || f.size > maxSizeInBytes
+      (f) => !f.type.startsWith("image/") || f.size > maxSizeInBytes,
     );
     if (invalid) {
       error = "Only image files up to 10MB are allowed.";
@@ -730,7 +753,7 @@
 
   function removeNewAttachment(index: number) {
     newData.DesignAttachments = newData.DesignAttachments.filter(
-      (_, i) => i !== index
+      (_, i) => i !== index,
     );
   }
 </script>
@@ -800,13 +823,6 @@
           <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">
-                Applicant Name
-              </label>
-              <p class="text-base text-gray-900">{fileInfo.applicantName}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">
                 File Number
               </label>
               <p class="text-base text-gray-900">{fileInfo.fileId}</p>
@@ -817,6 +833,24 @@
                 Title
               </label>
               <p class="text-base text-gray-900">{fileInfo.fileTitle}</p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">
+                Trademark Type
+              </label>
+              <p class="text-base text-gray-900">
+                {fileInfo.trademarkType === 0
+                  ? "Local"
+                  : fileInfo.trademarkType === 1
+                    ? "Foreign"
+                    : "N/A"}
+              </p>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-500 mb-1">
+                Applicant Name
+              </label>
+              <p class="text-base text-gray-900">{fileInfo.applicantName}</p>
             </div>
 
             <div>
@@ -920,6 +954,69 @@
                 />
                 <p class="text-xs text-gray-500 mt-1">
                   This will replace the current applicant name shown above.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      {/if}
+      {#if showTrademarkTypeSection}
+        <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+          <div class="bg-blue-100 px-4 py-2 font-medium text-blue-900">
+            NEW INFORMATION
+          </div>
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <!-- svelte-ignore a11y-label-has-associated-control -->
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  New Trademark Type: <span class="text-red-500">*</span>
+                </label>
+                <select
+                  bind:value={newData.trademarkType}
+                  on:change={() => {
+                    if (newData.trademarkType === 0) {
+                      newData.applicantNationality = "Nigeria";
+                    }
+                  }}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value={null} disabled selected
+                    >Select trademark type</option
+                  >
+                  <option value={0}>Local</option>
+                  <option value={1}>Foreign</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                  This will replace the current trademark type shown above.
+                </p>
+              </div>
+              <!-- Nationality -->
+              <div class="w-1/2">
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                  New Applicant Country:
+                </label>
+                <select
+                  bind:value={newData.applicantNationality}
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900 {newData.trademarkType ===
+                  0
+                    ? 'bg-gray-100 cursor-not-allowed'
+                    : ''}"
+                  required
+                  disabled={newData.trademarkType === 0}
+                >
+                  <option value="" disabled selected>Select nationality</option>
+                  {#each Object.entries(countriesMap) as [code, name]}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                  {#if newData.trademarkType === 0}
+                    Local trademarks are automatically set to Nigeria.
+                  {:else}
+                    Optional: Select new country for the applicant.
+                  {/if}
                 </p>
               </div>
             </div>
@@ -1406,28 +1503,6 @@
                   />
                   <p class="text-xs text-gray-500 mt-1">
                     Optional: Enter new phone number for the applicant.
-                  </p>
-                </div>
-
-                <!-- Nationality -->
-                <div class="w-1/2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">
-                    New Applicant Country:
-                  </label>
-                  <select
-                    bind:value={newData.applicantNationality}
-                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900"
-                    required
-                  >
-                    <option value="" disabled selected
-                      >Select nationality</option
-                    >
-                    {#each Object.entries(countriesMap) as [code, name]}
-                      <option value={name}>{name}</option>
-                    {/each}
-                  </select>
-                  <p class="text-xs text-gray-500 mt-1">
-                    Optional: Select new country for the applicant.
                   </p>
                 </div>
               </div>

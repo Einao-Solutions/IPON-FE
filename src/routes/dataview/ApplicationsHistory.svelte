@@ -213,7 +213,9 @@
       return;
     }
 
-    isCertificate = fileData.applicationHistory[0].certificatePaymentId === id;
+    isCertificate =
+      fileData.applicationHistory[0].certificatePaymentId === id ||
+      application.applicationType === FormApplicationTypes.Certification;
     manualUpdate = application;
     validateRRR = id;
     remita_confirmation = "checking";
@@ -228,7 +230,11 @@
       remita_confirmation = "verify_update";
 
       if (status === "00") {
-        if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
+        if (
+          application.currentStatus === ApplicationStatuses.AwaitingPayment ||
+          application.currentStatus ===
+            ApplicationStatuses.AwaitingCertification
+        ) {
           showManualUpdate = true;
           updateCert = false;
         } else if (
