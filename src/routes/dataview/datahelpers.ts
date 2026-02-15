@@ -640,6 +640,18 @@ export function getLetterName(letter: number): string {
       return "Patent CTC Refusal Letter";
     case 65:
       return "Patent Amendment Refusal Letter";
+    case 66:
+      return "Patent Assignment Receipt";
+    case 67:
+      return "Patent License Receipt";  
+    case 68:
+      return "Patent Mortgage Receipt"; 
+    case 69:
+      return "Patent Merger Receipt";
+    case 70:
+      return "Patent CTC Receipt";
+    case 71:
+      return "Patent Amendment Receipt";
     default:
       return "Unknown Document";
   }

@@ -351,6 +351,12 @@ export enum ApplicationLetters {
   PatentMergerRefusalLetter = 63,
   PatentCtcRefusalLetter = 64,
   PatentAmendmentRefusalLetter = 65,
+  PatentAssignmentReceipt = 66,
+  PatentLicenseReceipt = 67,
+  PatentMortgageReceipt = 68,
+  PatentMergerReceipt = 69,
+  PatentCtcReceipt = 70,
+  PatentAmendmentReceipt = 71,
 }
 
 export enum ApplicationStatuses {
