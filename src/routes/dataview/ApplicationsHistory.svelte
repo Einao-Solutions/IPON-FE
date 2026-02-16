@@ -131,6 +131,12 @@
   let patentMortgageFileId = "";
   let patentMortgageApplicationId = "";
   
+  // Patent Dialog Statuses
+  let patentAssignmentStatus: number | null = null;
+  let patentLicenseStatus: number | null = null;
+  let patentMergerStatus: number | null = null;
+  let patentMortgageStatus: number | null = null;
+  
   // Appeal Requests
   let appealDocs: string[] = [];
   let showAppealRequest = false;
@@ -934,30 +940,34 @@
   }
 
   // Open patent assignment dialog
-  function openPatentAssignmentDialog(fileId: string, applicationId: string) {
+  function openPatentAssignmentDialog(fileId: string, applicationId: string, status: number) {
     patentAssignmentFileId = fileId;
     patentAssignmentApplicationId = applicationId;
+    patentAssignmentStatus = status;
     showPatentAssignmentDialog = true;
   }
 
   // Open patent license dialog
-  function openPatentLicenseDialog(fileId: string, applicationId: string) {
+  function openPatentLicenseDialog(fileId: string, applicationId: string, status: number) {
     patentLicenseFileId = fileId;
     patentLicenseApplicationId = applicationId;
+    patentLicenseStatus = status;
     showPatentLicenseDialog = true;
   }
 
   // Open patent merger dialog
-  function openPatentMergerDialog(fileId: string, applicationId: string) {
+  function openPatentMergerDialog(fileId: string, applicationId: string, status: number) {
     patentMergerFileId = fileId;
     patentMergerApplicationId = applicationId;
+    patentMergerStatus = status;
     showPatentMergerDialog = true;
   }
 
   // Open patent mortgage dialog
-  function openPatentMortgageDialog(fileId: string, applicationId: string) {
+  function openPatentMortgageDialog(fileId: string, applicationId: string, status: number) {
     patentMortgageFileId = fileId;
     patentMortgageApplicationId = applicationId;
+    patentMortgageStatus = status;
     showPatentMortgageDialog = true;
   }
 </script>
@@ -2222,6 +2232,7 @@
   bind:open={showPatentAssignmentDialog}
   fileId={patentAssignmentFileId}
   applicationId={patentAssignmentApplicationId}
+  status={patentAssignmentStatus}
 />
 
 <!-- Patent License Dialog -->
@@ -2229,6 +2240,7 @@
   bind:open={showPatentLicenseDialog}
   fileId={patentLicenseFileId}
   applicationId={patentLicenseApplicationId}
+  status={patentLicenseStatus}
 />
 
 <!-- Patent Merger Dialog -->
@@ -2236,6 +2248,7 @@
   bind:open={showPatentMergerDialog}
   fileId={patentMergerFileId}
   applicationId={patentMergerApplicationId}
+  status={patentMergerStatus}
 />
 
 <!-- Patent Mortgage Dialog -->
@@ -2243,6 +2256,7 @@
   bind:open={showPatentMortgageDialog}
   fileId={patentMortgageFileId}
   applicationId={patentMortgageApplicationId}
+  status={patentMortgageStatus}
 />
 
 {#if showStatusHistory}
@@ -2410,9 +2424,8 @@
                     >Verify Payment ({application.paymentId ??
                       "-"})</DropdownMenu.Item
                   >
-                  <!-- View Recordal Data -->
-                  <!-- {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)} -->
-                    {#if (Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType)}
+                  <!-- View Recordal Data (Trademarks Only) -->
+                  {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType))}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewRecordalData(application);
@@ -2420,33 +2433,33 @@
                     >
                   {/if}
                   <!-- Patent Assignment Application -->
-                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openPatentAssignmentDialog(fileData.fileId, application.id)}
+                      on:click={() => openPatentAssignmentDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent License Application -->
-                  {#if application.applicationType === FormApplicationTypes.License && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                  {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openPatentLicenseDialog(fileData.fileId, application.id)}
+                      on:click={() => openPatentLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent Merger Application -->
-                  {#if application.applicationType === FormApplicationTypes.Merger && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                  {#if application.applicationType === FormApplicationTypes.Merger && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openPatentMergerDialog(fileData.fileId, application.id)}
+                      on:click={() => openPatentMergerDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent Mortgage Application -->
-                  {#if application.applicationType === FormApplicationTypes.Mortgage && fileData.type === 0 && application.currentStatus === ApplicationStatuses.AwaitingRecordalProcess && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                  {#if application.applicationType === FormApplicationTypes.Mortgage && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openPatentMortgageDialog(fileData.fileId, application.id)}
+                      on:click={() => openPatentMortgageDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
@@ -2519,7 +2532,7 @@
                   <DropdownMenu.Separator />
 
                   <!-- Appeal Docs -->
-                  {#if application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
+                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 13, 2);
@@ -2527,7 +2540,7 @@
                     >
                   {/if}
                   <!-- Merger Docs -->
-                  {#if application.applicationType === FormApplicationTypes.Merger && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.Merger && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 8, 26);
@@ -2547,7 +2560,7 @@
                     {/if}
                   {/if}
                   <!-- Assignment docs -->
-                  {#if application.applicationType === FormApplicationTypes.Assignment && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.Assignment && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 5, 12);
@@ -2567,7 +2580,7 @@
                     {/if}
                   {/if}
                   <!-- Registered user docs -->
-                  {#if application.applicationType === FormApplicationTypes.RegisteredUser && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.RegisteredUser && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 7, 29);
@@ -2587,7 +2600,7 @@
                     {/if}
                   {/if}
                   <!-- Change of Name docs -->
-                  {#if application.applicationType === FormApplicationTypes.ChangeOfName && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.ChangeOfName && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 9, 32);
@@ -2607,7 +2620,7 @@
                     {/if}
                   {/if}
                   <!-- Change of Address docs -->
-                  {#if application.applicationType === FormApplicationTypes.ChangeOfAddress && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.ChangeOfAddress && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 10, 31);

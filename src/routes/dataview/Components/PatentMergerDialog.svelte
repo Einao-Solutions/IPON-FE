@@ -11,6 +11,7 @@
   export let open = false;
   export let fileId = "";
   export let applicationId = "";
+  export let status: number | null = null;
 
   // Component state
   let mergerDetails: any = null;
@@ -18,6 +19,10 @@
   let error: string | null = null;
   let comment = "";
   let submitting = false;
+
+  // Check if application is already processed (read-only mode)
+  // ApplicationStatuses: Approved = 10, Rejected = 11
+  $: isReadOnly = status === 10 || status === 11;
 
   // Reactive statement to fetch data when dialog opens
   $: if (open && fileId && !mergerDetails) {
@@ -76,7 +81,7 @@
               Phone: mergerDetails.newMergedParty.phone,
               City: mergerDetails.newMergedParty.city,
               State: mergerDetails.newMergedParty.state,
-              Nationality: mergerDetails.newMergedParty.nationality
+              Country: mergerDetails.newMergedParty.nationality
             } : null,
           }),
         }
@@ -331,7 +336,7 @@
           <!-- Comment Section -->
           <div class="mb-4">
             <Label for="merger-comment" class="block font-medium mb-1">
-              Decision Comment: <span class="text-red-500">*</span>
+              Decision Comment: {#if !isReadOnly}<span class="text-red-500">*</span>{/if}
             </Label>
             <Textarea
               id="merger-comment"
@@ -340,10 +345,15 @@
               class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-200"
               placeholder="Enter your review comment and decision reason..."
               required
+              disabled={isReadOnly}
             />
+            {#if isReadOnly}
+              <p class="text-sm text-gray-500 mt-1">This application has already been processed.</p>
+            {/if}
           </div>
 
           <!-- Action Buttons -->
+          {#if !isReadOnly}
           <div class="flex gap-4 mt-4 justify-end">
             <Button
               class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
@@ -372,6 +382,7 @@
               Reject Merger
             </Button>
           </div>
+          {/if}
         </div>
       {/if}
     </div>
