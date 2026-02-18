@@ -472,15 +472,15 @@ export const patentServices: IPService[] = [
     category: 'filing',
     price: ''
   },
-  // {
-  //   id: 'patent-ctc',
-  //   name: 'PATENT CTC (CERTIFIED TRUE COPY)',
-  //   description: 'Request certified true copies of patent documents',
-  //   icon: 'mdi:certificate-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'patent-ctc',
+    name: 'PATENT CTC (CERTIFIED TRUE COPY)',
+    description: 'Request certified true copies of patent documents',
+    icon: 'mdi:certificate-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
   {
     id: 'patent-license',
     name: 'PATENT LICENSE',

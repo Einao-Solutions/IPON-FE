@@ -9,6 +9,7 @@
 	import { toast } from 'svelte-sonner';
 
 	interface PatentAttachment {
+		id?: string;
 		name?: string;
 		url?: string;
 		fileName?: string;
@@ -17,7 +18,8 @@
 
 	// API and UI state
 	let error: string | null = null;
-	let cost: number | null = null;
+	let baseCost: number | null = null;
+	let calculatedCost: number = 0;
 	let paymentId: string | null = null;
 	let fileId: string | null = null;
 	let patentTitle: string = '';
@@ -34,6 +36,24 @@
 	let isLoading = false;
 	let isProcessing = false;
 	let attachments: PatentAttachment[] = [];
+	let selectedAttachmentIndices: number[] = [];
+
+	// Reactive statement to calculate cost based on selected attachments
+	$: {
+		if (baseCost && selectedAttachmentIndices.length > 0) {
+			calculatedCost = baseCost * selectedAttachmentIndices.length;
+		} else {
+			calculatedCost = 0;
+		}
+	}
+
+	function toggleAttachmentSelection(index: number) {
+		if (selectedAttachmentIndices.includes(index)) {
+			selectedAttachmentIndices = selectedAttachmentIndices.filter(i => i !== index);
+		} else {
+			selectedAttachmentIndices = [...selectedAttachmentIndices, index];
+		}
+	}
 
 	onMount(async () => {
 		// Check if user is authenticated
@@ -62,7 +82,8 @@
 			const response = await res.json();
 			const data = response.data || response;
 			
-			cost = data.amount;
+			baseCost = data.amount;
+			calculatedCost = 0; // Will be calculated when attachments are selected
 			paymentId = data.rrr;
 			applicantName = data.applicantName;
 			patentTitle = data.fileTitle || data.titleOfInvention;
@@ -89,28 +110,51 @@
 	}
 
 	async function handleSubmit() {
+		if (selectedAttachmentIndices.length === 0) {
+			toast.error('Please select at least one attachment');
+			return;
+		}
+
 		isProcessing = true;
 		try {
+			// Get the selected attachments based on indices
+			const selectedAttachments = selectedAttachmentIndices.map(index => attachments[index]);
+			
+			// Extract IDs or use a fallback identifier (name, url, or index)
+			const attachmentIds = selectedAttachments.map((attachment, idx) => 
+				attachment.id || attachment.name || attachment.fileName || `attachment_${selectedAttachmentIndices[idx]}`
+			);
+			
+			// Generate new RRR with the correct (multiplied) cost
+			const finalCost = calculatedCost;
+			const rrrResponse = await fetch(
+				`${baseURL}/api/files/GetPatentCTCCost?fileId=${fileId}&fileType=0&numberOfAttachments=${selectedAttachmentIndices.length}`
+			);
+			
+			if (!rrrResponse.ok) {
+				toast.error('Failed to generate payment reference');
+				return;
+			}
+			
+			const rrrData = await rrrResponse.json();
+			const finalRRR = rrrData.data?.rrr || rrrData.rrr;
+			
 			// Store CTC request data for submission on result page
 			sessionStorage.setItem('patentCTCPayload', JSON.stringify({
 				fileId: fileId,
-				rrr: paymentId,
+				rrr: finalRRR,
+				attachmentIds: attachmentIds,
 				ctcRequestDate: new Date().toISOString()
 			}));
 			
-			// Navigate to payment page
-			await handlePayment();
+			// Navigate to payment page with the new RRR and calculated cost
+			await goto(`/payment/?type=patentctc&rrr=${finalRRR}&amount=${finalCost}&fileId=${fileId}`);
 		} catch (err) {
 			error = 'CTC request processing failed. Please try again.';
 			console.error(err);
+			toast.error('An error occurred while processing your request');
 		} finally {
 			isProcessing = false;
-		}
-	}
-
-	async function handlePayment() {
-		if (cost && paymentId) {
-			await goto(`/payment/?type=patentctc&rrr=${paymentId}&amount=${cost}&fileId=${fileId}`);
 		}
 	}
 
@@ -230,8 +274,9 @@
 				{:else}
 					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">Name:</label>
+							<label for="applicantName" class="block text-sm font-medium text-gray-700 mb-1">Name:</label>
 							<input
+								id="applicantName"	
 								type="text"
 								value={applicantName}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -239,8 +284,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+							<label for="applicantEmail" class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
 							<input
+								id="applicantEmail"
 								type="email"
 								value={applicantEmail}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -248,8 +294,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">Phone:</label>
+							<label for="applicantPhone" class="block text-sm font-medium text-gray-700 mb-1">Phone:</label>
 							<input
+								id="applicantPhone"
 								type="text"
 								value={applicantPhone}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -257,8 +304,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">Nationality:</label>
+							<label for="applicantNationality" class="block text-sm font-medium text-gray-700 mb-1">Nationality:</label>
 							<input
+								id="applicantNationality"
 								type="text"
 								value={applicantNationality}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -266,8 +314,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">City:</label>
+							<label for="applicantCity" class="block text-sm font-medium text-gray-700 mb-1">City:</label>
 							<input
+								id="applicantCity"
 								type="text"
 								value={applicantCity}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -275,8 +324,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">State:</label>
+							<label for="applicantState" class="block text-sm font-medium text-gray-700 mb-1">State:</label>
 							<input
+								id="applicantState"
 								type="text"
 								value={applicantState}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -284,8 +334,9 @@
 							/>
 						</div>
 						<div class="md:col-span-2">
-							<label class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
+							<label for="applicantAddress" class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
 							<input
+								id="applicantAddress"	
 								type="text"
 								value={applicantAddress}
 								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
@@ -298,7 +349,14 @@
 
 			<!-- File Attachments Section -->
 			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-				<div class="bg-gray-300 px-4 py-2 font-medium text-black">FILE ATTACHMENTS</div>
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black flex items-center justify-between">
+					<span>FILE ATTACHMENTS - SELECT DOCUMENTS FOR CERTIFIED TRUE COPY</span>
+					{#if selectedAttachmentIndices.length > 0}
+						<span class="text-sm bg-blue-600 text-white px-3 py-1 rounded-full">
+							{selectedAttachmentIndices.length} selected
+						</span>
+					{/if}
+				</div>
 				<div class="p-4">
 					{#if isLoading}
 						<div class="flex items-center justify-center py-8">
@@ -308,17 +366,32 @@
 							</div>
 						</div>
 					{:else if attachments && attachments.length}
-						<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+						<div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+							<p class="text-sm text-blue-800">
+								<Icon icon="mdi:information" class="inline" width="1.2em" height="1.2em" />
+								Select the documents you want certified true copies of. Cost per document: ₦{baseCost?.toLocaleString()}
+							</p>
+						</div>
+						<div class="grid grid-cols-1 gap-3">
 							{#each attachments as attachment, index}
-								<div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
-									<div class="flex items-center justify-between gap-3">
+								<div class="border rounded-lg p-3 bg-gray-50 hover:bg-gray-100 transition-colors {selectedAttachmentIndices.includes(index) ? 'border-blue-500 bg-blue-50' : ''}">
+									<div class="flex items-center gap-3">
+										<input
+											type="checkbox"
+											id="attachment-{index}"
+											checked={selectedAttachmentIndices.includes(index)}
+											on:change={() => toggleAttachmentSelection(index)}
+											class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+										/>
 										<div class="flex-1 min-w-0">
-											<div class="font-medium text-gray-800 truncate">
-												{attachment.name || attachment.fileName || `Document ${index + 1}`}
-											</div>
-											<div class="text-xs text-gray-500 mt-1">
-												Document {index + 1} of {attachments.length}
-											</div>
+											<label for="attachment-{index}" class="cursor-pointer">
+												<div class="font-medium text-gray-800">
+													{attachment.name || attachment.fileName || `Document ${index + 1}`}
+												</div>
+												<div class="text-xs text-gray-500 mt-1">
+													Document {index + 1} of {attachments.length}
+												</div>
+											</label>
 										</div>
 										<div class="flex-shrink-0">
 											{#if attachment.url}
@@ -327,6 +400,7 @@
 													target="_blank"
 													rel="noopener"
 													class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+													on:click={(e) => e.stopPropagation()}
 												>
 													<Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
 													<span>View</span>
@@ -350,13 +424,45 @@
 				</div>
 			</div>
 
+			<!-- Cost Summary and Submit Button -->
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">COST SUMMARY</div>
+				<div class="p-4">
+					<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+						<div class="flex justify-between items-center mb-2">
+							<span class="text-gray-700">Cost per document:</span>
+							<span class="font-semibold text-gray-900">₦{baseCost?.toLocaleString() || '0'}</span>
+						</div>
+						<div class="flex justify-between items-center mb-2">
+							<span class="text-gray-700">Number of documents selected:</span>
+							<span class="font-semibold text-gray-900">{selectedAttachmentIndices.length}</span>
+						</div>
+						<div class="border-t border-blue-300 pt-2 mt-2">
+							<div class="flex justify-between items-center">
+								<span class="text-lg font-semibold text-gray-900">Total Cost:</span>
+								<span class="text-2xl font-bold text-blue-600">₦{calculatedCost.toLocaleString()}</span>
+							</div>
+						</div>
+					</div>
+					
+					{#if selectedAttachmentIndices.length === 0}
+						<div class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+							<p class="text-sm text-amber-800">
+								<Icon icon="mdi:alert" class="inline" width="1.2em" height="1.2em" />
+								Please select at least one document to proceed
+							</p>
+						</div>
+					{/if}
+				</div>
+			</div>
+
 			<!-- Submit Button -->
 			<div class="flex justify-end">
-				{#if cost !== null}
+				{#if baseCost !== null}
 					<button
 						on:click={handleSubmit}
-						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
-						disabled={isProcessing}
+						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+						disabled={isProcessing || selectedAttachmentIndices.length === 0}
 					>
 						{#if isProcessing}
 							<svg
@@ -381,7 +487,7 @@
 							</svg>
 							Processing...
 						{:else}
-							Request CTC - Pay ₦{cost?.toLocaleString()}
+							Proceed To Pay
 						{/if}
 					</button>
 				{:else}
