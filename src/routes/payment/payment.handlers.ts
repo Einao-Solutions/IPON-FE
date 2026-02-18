@@ -144,8 +144,14 @@ async function newapplication(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileType(appData.type?.toString() ?? null);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=newapplication&fileId=${appData.id}&applicationId=${history.id}`,
+    `https://${ctx.page.url.host}/payment/paid?paymentType=newapplication`,
   );
+  const fileInfo = {
+    fileId: appData.id,
+    appId: history.id,
+    userId: get(ctx.loggedInUser)?.id,
+  };
+  localStorage.setItem("FileData", JSON.stringify(fileInfo));
 }
 
 async function renewal(ctx: PaymentContext): Promise<void> {

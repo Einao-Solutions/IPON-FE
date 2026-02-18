@@ -411,6 +411,7 @@
         fileId: fileData?.fileId,
         appId: application.id,
         reason: reason,
+        userId: $loggedInUser?.id
       };
 
       const res = await fetch(`${baseURL}${endpoint}`, {
@@ -435,6 +436,7 @@
         fileId: fileData?.fileId,
         appId: application.id,
         reason: reason,
+        userId: $loggedInUser?.id
       };
 
       const res = await fetch(`${baseURL}/api/files/approve-amendment`, {
@@ -459,6 +461,7 @@
         fileId: fileData?.fileId,
         appId: application.id,
         reason: reason,
+        userId: $loggedInUser?.id
       };
 
       const res = await fetch(`${baseURL}/api/files/DenyRecordal`, {
