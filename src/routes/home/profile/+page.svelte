@@ -12,6 +12,8 @@
     UserRoles,
     type UsersType,
     UserTypes,
+    mapRoleToString,
+    AccountType,
   } from "$lib/helpers.js";
   import { parseLoggedInUser } from "../../dataview/datahelpers";
   import { goto } from "$app/navigation";
@@ -27,6 +29,8 @@
   import { writable } from "svelte/store";
   import { isValidPhoneNumber } from "libphonenumber-js";
   import * as valid from "validator";
+  import { mapAccountTypeToString } from "$lib/helpers";
+  import type { User } from "lucide-svelte";
 
   let selectedSignature: File | undefined = undefined;
   let selectedSignatureUrl: undefined | string = undefined;
@@ -35,6 +39,7 @@
   let profileLoading: boolean = true;
   let showNewPassword: boolean = false;
   let showConfirmPassword: boolean = false;
+  let userDetails: UsersType | null = null;
   onMount(async () => {
     profileLoading = true;
     if (
@@ -57,7 +62,8 @@
         loggedInUser.set(user);
       }
     }
-    loadDefaultCorr();
+    // loadDefaultCorr();
+    await loadUserDetails();
     profileLoading = false;
   });
 
@@ -77,10 +83,25 @@
     );
   }
   let showCorrDialog = false;
+  let updateProfileDialog = false;
   function defaultCorrespondence() {
     showCorrDialog = true;
   }
-
+  async function loadUserDetails() {
+    if (!user) return;
+    try {
+      const res = await fetch(`${baseURL}/api/Auth/GetUser?userId=${user.id}`, {
+        headers: {
+          Authorization: `Bearer ${$loggedInToken}`,
+        },
+      });
+      if (res.ok) {
+        userDetails = await res.json();
+      }
+    } catch (e) {
+      console.error("Error fetching user details:", e);
+    }
+  }
   async function fileSelected(event: Event | null) {
     const input = event?.target as HTMLInputElement;
     if (input.files) {
@@ -287,6 +308,168 @@
       isPwdSaving = false;
     }
   }
+
+  // Profile update variables
+  let profileName = "";
+  let firstName = "";
+  let lastName = "";
+  let profileEmail = "";
+  let profilePhone = "";
+  let profileAddress = "";
+  let profileState = "";
+  let profileNationality = "";
+  let accountType: AccountType;
+  let isProfileSaving = false;
+
+  // Profile validation errors
+  let showProfileNameError = false;
+  let showFirstNameError = false;
+  let showLastNameError = false;
+  let showProfilePhoneError = false;
+  let showProfileStateError = false;
+  let showAccountTypeError = false;
+
+  // Popover states
+  let openProfileStateSelection = writable<boolean>(false);
+  let openAccountTypeSelection = writable<boolean>(false);
+
+  function closeProfileStateAndFocusTrigger(triggerId: string) {
+    openProfileStateSelection.update(() => false);
+    tick().then(() => {
+      document.getElementById(triggerId)?.focus();
+    });
+  }
+
+  function closeAccountTypeAndFocusTrigger(triggerId: string) {
+    openAccountTypeSelection.update(() => false);
+    tick().then(() => {
+      document.getElementById(triggerId)?.focus();
+    });
+  }
+
+  function openUpdateProfile() {
+    updateProfileDialog = true;
+    loadProfileData();
+  }
+
+  function loadProfileData() {
+    if (userDetails) {
+      profileName = userDetails.name || "";
+      firstName = userDetails.firstName || "";
+      lastName = userDetails.lastName || "";
+      profileEmail = userDetails.email || user?.email || "";
+      profilePhone = userDetails.phoneNumber || "";
+      profileAddress = userDetails.address || "";
+      profileState = userDetails.state || "";
+      profileNationality = userDetails.nationality || "";
+      accountType = userDetails.accountType;
+    }
+    // Reset errors
+    showProfileNameError = false;
+    showFirstNameError = false;
+    showLastNameError = false;
+    showProfilePhoneError = false;
+    showProfileStateError = false;
+    showAccountTypeError = false;
+  }
+
+  function validateProfileUpdate(): boolean {
+    showProfileNameError =
+      accountType === AccountType.Corporate &&
+      (!profileName || profileName.trim() === "");
+    showFirstNameError = !firstName || firstName.trim() === "";
+    showLastNameError = !lastName || lastName.trim() === "";
+    showProfilePhoneError = profilePhone
+      ? !isValidPhoneNumber(profilePhone, "NG")
+      : false;
+    // showProfileStateError = !profileState || profileState.trim() === "";
+    showAccountTypeError = !accountType;
+
+    return !(
+      showProfileNameError ||
+      showFirstNameError ||
+      showLastNameError ||
+      showProfilePhoneError ||
+      showAccountTypeError
+    );
+  }
+
+  async function saveProfileUpdate() {
+    if (!validateProfileUpdate()) return;
+
+    try {
+      isProfileSaving = true;
+      const response = await fetch(`${baseURL}/api/Auth/UpdateProfile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${$loggedInToken}`,
+        },
+        body: JSON.stringify({
+          userId: user?.id,
+          name: profileName.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phoneNumber: profilePhone,
+          address: profileAddress.trim(),
+          accountType: accountType,
+        }),
+      });
+
+      if (response.ok) {
+        // Update stores and cookies
+        loggedInUser.update((currentUser) => ({
+          ...currentUser,
+          id: currentUser?.id || user?.id || "",
+          name: profileName.trim(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phoneNumber: profilePhone,
+          address: profileAddress.trim(),
+          state: profileState,
+          nationality: profileNationality.trim(),
+          accountType: accountType,
+        }));
+
+        // Update cookie
+        const userCookieData = parseLoggedInUser(document.cookie);
+        if (userCookieData) {
+          userCookieData.name = profileName.trim();
+          userCookieData.firstName = firstName.trim();
+          userCookieData.lastName = lastName.trim();
+          userCookieData.phoneNumber = profilePhone;
+          userCookieData.address = profileAddress.trim();
+          userCookieData.state = profileState;
+          userCookieData.nationality = profileNationality.trim();
+          userCookieData.accountType = accountType;
+          const userCookie = `user=${encodeURIComponent(JSON.stringify(userCookieData))}; path=/`;
+          document.cookie = userCookie;
+        }
+
+        // Refresh user details
+        await loadUserDetails();
+
+        toast.success("Profile updated successfully", {
+          position: "top-right",
+        });
+        updateProfileDialog = false;
+      } else {
+        const errorMsg = await response
+          .text()
+          .catch(() => "Failed to update profile");
+        toast.error(errorMsg, {
+          position: "top-right",
+        });
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("Network error while updating profile", {
+        position: "top-right",
+      });
+    } finally {
+      isProfileSaving = false;
+    }
+  }
 </script>
 
 <Toaster />
@@ -407,7 +590,7 @@
                       icon="ph:check"
                       class={cn(
                         "mr-2 h-4 w-4",
-                        state !== stateselect && "text-transparent"
+                        state !== stateselect && "text-transparent",
                       )}
                     />
                     {stateselect}
@@ -440,6 +623,405 @@
           />
         {/if}
         Save Changes
+      </Button>
+    </Dialog.Footer>
+  </Dialog.Content>
+</Dialog.Root>
+<Dialog.Root bind:open={updateProfileDialog}>
+  <Dialog.Content class="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <Dialog.Header class="pb-4 border-b">
+      <Dialog.Title class="text-xl font-semibold tracking-tight">
+        Update Profile
+      </Dialog.Title>
+      <Dialog.Description class="text-sm text-muted-foreground">
+        Manage your personal information and account settings.
+      </Dialog.Description>
+    </Dialog.Header>
+
+    <div class="flex-1 overflow-y-auto py-6 px-1">
+      <div class="grid gap-6">
+        <!-- Personal Information Section -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider"
+          >
+            <Icon icon="ph:user-circle" width="1.2rem" height="1.2rem" />
+            Personal Information
+          </div>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <Label for="firstName" class="text-sm font-medium"
+                >First Name <span class="text-red-500">*</span></Label
+              >
+              <Input
+                bind:value={firstName}
+                id="firstName"
+                class="h-11"
+                placeholder="John"
+              />
+              {#if showFirstNameError}
+                <p class="text-xs text-red-600 flex items-center gap-1">
+                  <Icon
+                    icon="ph:warning-circle"
+                    width="0.875rem"
+                    height="0.875rem"
+                  />
+                  First name is required
+                </p>
+              {/if}
+            </div>
+
+            <div class="space-y-2">
+              <Label for="lastName" class="text-sm font-medium"
+                >Last Name <span class="text-red-500">*</span></Label
+              >
+              <Input
+                bind:value={lastName}
+                id="lastName"
+                class="h-11"
+                placeholder="Doe"
+              />
+              {#if showLastNameError}
+                <p class="text-xs text-red-600 flex items-center gap-1">
+                  <Icon
+                    icon="ph:warning-circle"
+                    width="0.875rem"
+                    height="0.875rem"
+                  />
+                  Last name is required
+                </p>
+              {/if}
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <Label for="profileName" class="text-sm font-medium">
+              Name <span class="text-red-500">*</span>
+            </Label>
+            <Input
+              bind:value={profileName}
+              id="profileName"
+              class="h-11"
+              placeholder="John Doe"
+            />
+            {#if showProfileNameError}
+              <p class="text-xs text-red-600 flex items-center gap-1">
+                <Icon
+                  icon="ph:warning-circle"
+                  width="0.875rem"
+                  height="0.875rem"
+                />
+                Company Name is required
+              </p>
+            {/if}
+          </div>
+        </div>
+
+        <!-- Account Type Section -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider"
+          >
+            <Icon
+              icon="ph:identification-card"
+              width="1.2rem"
+              height="1.2rem"
+            />
+            Account Type
+          </div>
+
+          <div class="space-y-2">
+            <Label class="text-sm font-medium"
+              >Account Type <span class="text-red-500">*</span></Label
+            >
+            <Popover.Root bind:open={$openAccountTypeSelection} let:ids>
+              <Popover.Trigger asChild let:builder>
+                <Button
+                  builders={[builder]}
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={$openAccountTypeSelection}
+                  class="w-full h-11 justify-between font-normal"
+                >
+                  <span class={cn(!accountType && "text-muted-foreground")}>
+                    {#if accountType === AccountType.Individual}
+                      <span class="flex items-center gap-2">
+                        <Icon icon="ph:user" width="1rem" height="1rem" />
+                        Individual
+                      </span>
+                    {:else if accountType === AccountType.Corporate}
+                      <span class="flex items-center gap-2">
+                        <Icon icon="ph:buildings" width="1rem" height="1rem" />
+                        Corporate / Organization
+                      </span>
+                    {:else}
+                      Select account type
+                    {/if}
+                  </span>
+                  <Icon
+                    icon="ph:caret-up-down"
+                    width="1rem"
+                    height="1rem"
+                    class="opacity-50 shrink-0"
+                  />
+                </Button>
+              </Popover.Trigger>
+              <Popover.Content class="w-[--radix-popover-trigger-width] p-0">
+                <Command.Root>
+                  <Command.Group>
+                    <Command.Item
+                      value="individual"
+                      onSelect={() => {
+                        accountType = AccountType.Individual;
+                        closeAccountTypeAndFocusTrigger(ids.trigger);
+                      }}
+                      class="flex items-center gap-3 py-3"
+                    >
+                      <Icon
+                        icon="ph:check"
+                        class={cn(
+                          "h-4 w-4",
+                          accountType !== AccountType.Individual &&
+                            "text-transparent",
+                        )}
+                      />
+                      <Icon
+                        icon="ph:user"
+                        width="1.25rem"
+                        height="1.25rem"
+                        class="text-blue-600"
+                      />
+                      <div class="flex flex-col">
+                        <span class="font-medium">Individual</span>
+                        <span class="text-xs text-muted-foreground"
+                          >Personal account for individuals</span
+                        >
+                      </div>
+                    </Command.Item>
+                    <Command.Item
+                      value="corporate"
+                      onSelect={() => {
+                        accountType = AccountType.Corporate;
+                        closeAccountTypeAndFocusTrigger(ids.trigger);
+                      }}
+                      class="flex items-center gap-3 py-3"
+                    >
+                      <Icon
+                        icon="ph:check"
+                        class={cn(
+                          "h-4 w-4",
+                          accountType !== AccountType.Corporate &&
+                            "text-transparent",
+                        )}
+                      />
+                      <Icon
+                        icon="ph:buildings"
+                        width="1.25rem"
+                        height="1.25rem"
+                        class="text-emerald-600"
+                      />
+                      <div class="flex flex-col">
+                        <span class="font-medium">Corporate / Organization</span
+                        >
+                        <span class="text-xs text-muted-foreground"
+                          >Business or organizational account</span
+                        >
+                      </div>
+                    </Command.Item>
+                  </Command.Group>
+                </Command.Root>
+              </Popover.Content>
+            </Popover.Root>
+            {#if showAccountTypeError}
+              <p class="text-xs text-red-600 flex items-center gap-1">
+                <Icon
+                  icon="ph:warning-circle"
+                  width="0.875rem"
+                  height="0.875rem"
+                />
+                Account type is required
+              </p>
+            {/if}
+          </div>
+        </div>
+
+        <!-- Contact Information Section -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider"
+          >
+            <Icon icon="ph:phone" width="1.2rem" height="1.2rem" />
+            Contact Information
+          </div>
+
+          <div class="space-y-2">
+            <Label for="profileEmail" class="text-sm font-medium"
+              >Email Address</Label
+            >
+            <div class="relative">
+              <Input
+                bind:value={profileEmail}
+                id="profileEmail"
+                type="email"
+                class="h-11 bg-slate-50 dark:bg-slate-800/50 pr-10"
+                placeholder="name@example.com"
+                disabled
+              />
+              <Icon
+                icon="ph:lock-simple"
+                width="1rem"
+                height="1rem"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+            </div>
+            <!-- <p class="text-xs text-muted-foreground">
+              Contact support to change your email address.
+            </p> -->
+          </div>
+
+          <div class="space-y-2">
+            <Label for="profilePhone" class="text-sm font-medium"
+              >Phone Number</Label
+            >
+            <Input
+              bind:value={profilePhone}
+              id="profilePhone"
+              class="h-11"
+              placeholder="+234 xxx xxx xxxx"
+            />
+            {#if showProfilePhoneError}
+              <p class="text-xs text-red-600 flex items-center gap-1">
+                <Icon
+                  icon="ph:warning-circle"
+                  width="0.875rem"
+                  height="0.875rem"
+                />
+                Please enter a valid Nigerian phone number
+              </p>
+            {/if}
+          </div>
+        </div>
+
+        <!-- Address Section -->
+        <div class="space-y-4">
+          <div
+            class="flex items-center gap-2 text-sm font-medium text-muted-foreground uppercase tracking-wider"
+          >
+            <Icon icon="ph:map-pin" width="1.2rem" height="1.2rem" />
+            Address
+          </div>
+
+          <div class="space-y-2">
+            <Label for="profileAddress" class="text-sm font-medium"
+              >Address</Label
+            >
+            <Textarea
+              bind:value={profileAddress}
+              id="profileAddress"
+              class="min-h-[80px] resize-none"
+              placeholder="Enter your full address"
+            />
+          </div>
+          <div class="space-y-2">
+            <Label for="profileNationality" class="text-sm font-medium"
+              >Nationality</Label
+            >
+            <Textarea
+              bind:value={profileNationality}
+              id="profileNationality"
+              class="min-h-[80px] resize-none"
+              placeholder="Enter your nationality"
+            />
+          </div>
+          <!-- <div class="space-y-2">
+            <Label class="text-sm font-medium"
+              >State <span class="text-red-500">*</span></Label
+            >
+            <Popover.Root bind:open={$openProfileStateSelection} let:ids>
+              <Popover.Trigger asChild let:builder>
+                <Button
+                  builders={[builder]}
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={$openProfileStateSelection}
+                  class="w-full h-11 justify-between font-normal"
+                >
+                  <span class={cn(!profileState && "text-muted-foreground")}>
+                    {profileState || "Select your state"}
+                  </span>
+                  <Icon
+                    icon="ph:caret-up-down"
+                    width="1rem"
+                    height="1rem"
+                    class="opacity-50 shrink-0"
+                  />
+                </Button>
+              </Popover.Trigger>
+              <Popover.Content class="w-[--radix-popover-trigger-width] p-0">
+                <Command.Root>
+                  <Command.Input placeholder="Search states..." class="h-10" />
+                  <Command.Empty>No state found.</Command.Empty>
+                  <Command.Group class="max-h-[200px] overflow-y-auto">
+                    {#each nigeriaStates as stateOption}
+                      <Command.Item
+                        value={stateOption}
+                        onSelect={(currentValue) => {
+                          profileState = currentValue;
+                          closeProfileStateAndFocusTrigger(ids.trigger);
+                        }}
+                      >
+                        <Icon
+                          icon="ph:check"
+                          class={cn(
+                            "mr-2 h-4 w-4",
+                            profileState !== stateOption && "text-transparent",
+                          )}
+                        />
+                        {stateOption}
+                      </Command.Item>
+                    {/each}
+                  </Command.Group>
+                </Command.Root>
+              </Popover.Content>
+            </Popover.Root>
+            {#if showProfileStateError}
+              <p class="text-xs text-red-600 flex items-center gap-1">
+                <Icon
+                  icon="ph:warning-circle"
+                  width="0.875rem"
+                  height="0.875rem"
+                />
+                State is required
+              </p>
+            {/if}
+          </div> -->
+        </div>
+      </div>
+    </div>
+
+    <Dialog.Footer
+      class="pt-4 border-t flex flex-col-reverse sm:flex-row gap-2"
+    >
+      <Button
+        variant="ghost"
+        on:click={() => (updateProfileDialog = false)}
+        class="w-full sm:w-auto"
+      >
+        Cancel
+      </Button>
+      <Button
+        on:click={() => saveProfileUpdate()}
+        disabled={isProfileSaving}
+        class="w-full sm:w-auto gap-2"
+      >
+        {#if isProfileSaving}
+          <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+          Saving...
+        {:else}
+          <Icon icon="ph:check" width="1.2rem" height="1.2rem" />
+          Save Changes
+        {/if}
       </Button>
     </Dialog.Footer>
   </Dialog.Content>
@@ -559,197 +1141,198 @@
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>
-
 {#if !profileLoading}
   <div
-    class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
+    class="min-h-screen bg-slate-50 dark:bg-slate-950
+  [background-image:radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.04)_1px,transparent_0)]
+  dark:[background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.03)_1px,transparent_0)]
+  [background-size:24px_24px]"
   >
-    <div class="max-w-4xl mx-auto p-6 md:p-8 space-y-6">
+    <div class="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
       <!-- Header -->
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-3xl font-bold tracking-tight">Profile Settings</h1>
-          <p class="text-muted-foreground mt-1">
-            Manage your account information and preferences
-          </p>
-        </div>
+      <div>
+        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
+          Profile Settings
+        </h1>
+        <p class="text-sm text-muted-foreground mt-2 max-w-xl">
+          Manage your account information
+        </p>
       </div>
 
-      <!-- Main Content Card -->
+      <!-- Main Card -->
       <div
-        class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden"
+        class="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl
+      rounded-2xl shadow-lg shadow-black/5
+      border border-white/40 dark:border-slate-800 overflow-hidden"
       >
-        <!-- Profile Info Section -->
-        <div class="p-6 md:p-8 space-y-6">
-          <div>
-            <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-              <Icon icon="ph:user-circle" width="1.5rem" height="1.5rem" />
+        <!-- Profile Section -->
+        <div class="p-6 md:p-8 space-y-10">
+          <!-- Personal Info -->
+          <section>
+            <h2
+              class="text-lg font-semibold tracking-tight mb-6 flex items-center gap-2"
+            >
+              <Icon icon="ph:user-circle" width="1.4rem" height="1.4rem" />
               Personal Information
             </h2>
+
             <div class="grid gap-4 md:grid-cols-2">
               <div
-                class="space-y-2 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 transition-all hover:shadow-md"
+                class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40 md:col-span-2"
               >
-                <Label
-                  class="text-xs uppercase tracking-wide text-muted-foreground font-medium"
-                  >Name</Label
-                >
-                <p class="text-base font-medium">{name}</p>
+                <Label class="text-xs text-muted-foreground">Name</Label>
+                <p class="mt-1 text-sm font-semibold">
+                  {userDetails?.name || "—"}
+                </p>
               </div>
-              <div
-                class="space-y-2 p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 transition-all hover:shadow-md"
-              >
-                <Label
-                  class="text-xs uppercase tracking-wide text-muted-foreground font-medium"
-                  >Email</Label
+
+              {#if userDetails?.accountType !== AccountType.Corporate}
+                <div
+                  class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40"
                 >
-                <p class="text-base font-medium break-all">{user?.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {#if userIsExaminer()}
-            <div class="pt-6 border-t border-slate-200 dark:border-slate-800">
-              <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Icon icon="ph:signature" width="1.5rem" height="1.5rem" />
-                Digital Signature
-              </h2>
-
-              <div class="space-y-4">
-                {#if user.signatureUrl}
-                  <div
-                    class="p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700"
+                  <Label class="text-xs text-muted-foreground">First Name</Label
                   >
-                    <Label
-                      class="text-xs uppercase tracking-wide text-muted-foreground font-medium mb-2 block"
-                      >Current Signature</Label
-                    >
-                    <a
-                      class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-                      href={user.signatureUrl}
-                      target="_blank"
-                    >
-                      <Icon
-                        icon="ph:file-image"
-                        width="1.2rem"
-                        height="1.2rem"
-                      />
-                      View signature
-                      <Icon
-                        icon="ph:arrow-square-out"
-                        width="1rem"
-                        height="1rem"
-                      />
-                    </a>
-                  </div>
-                {/if}
-
-                <div class="space-y-3">
-                  <Label class="text-sm font-medium flex items-center gap-2">
-                    <Icon
-                      icon="ph:upload-simple"
-                      width="1.2rem"
-                      height="1.2rem"
-                    />
-                    Upload New Signature
-                  </Label>
-                  <div class="flex flex-col sm:flex-row gap-3">
-                    <Input
-                      id="signatureUrl"
-                      accept=".png, .jpeg, .jpg"
-                      multiple={false}
-                      type="file"
-                      on:change={(event) => fileSelected(event)}
-                      class="flex-1"
-                    />
-                  </div>
-                  <p class="text-xs text-muted-foreground">
-                    PNG or JPEG format, maximum 5MB
+                  <p class="mt-1 text-sm font-semibold">
+                    {userDetails?.firstName || "—"}
                   </p>
                 </div>
 
-                {#if selectedSignatureUrl}
-                  <div
-                    class="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900"
+                <div
+                  class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40"
+                >
+                  <Label class="text-xs text-muted-foreground">Last Name</Label>
+                  <p class="mt-1 text-sm font-semibold">
+                    {userDetails?.lastName || "—"}
+                  </p>
+                </div>
+              {/if}
+
+              <div class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40">
+                <Label class="text-xs text-muted-foreground">Email</Label>
+                <p class="mt-1 text-sm font-semibold break-all">
+                  {userDetails?.email || user?.email || "—"}
+                </p>
+              </div>
+
+              <div class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40">
+                <Label class="text-xs text-muted-foreground">Phone Number</Label
+                >
+                <p class="mt-1 text-sm font-semibold">
+                  {userDetails?.phoneNumber || "—"}
+                </p>
+              </div>
+
+              {#if userDetails?.accountType !== undefined}
+                <div
+                  class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40"
+                >
+                  <Label class="text-xs text-muted-foreground"
+                    >Account Type</Label
                   >
-                    <a
-                      class="flex items-center gap-2 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors mb-3"
-                      target="_blank"
-                      href={selectedSignatureUrl}
-                    >
-                      <Icon
-                        icon="ph:file-image"
-                        width="1.2rem"
-                        height="1.2rem"
-                      />
-                      Preview uploaded signature
-                      <Icon
-                        icon="ph:arrow-square-out"
-                        width="1rem"
-                        height="1rem"
-                      />
-                    </a>
-                    <Button
-                      on:click={() => saveSignature()}
-                      disabled={isSignatureSaving}
-                      class="w-full sm:w-auto"
-                    >
-                      {#if isSignatureSaving}
-                        <Icon
-                          icon="line-md:loading-loop"
-                          width="1.2rem"
-                          height="1.2rem"
-                          class="mr-2"
-                        />
-                      {:else}
-                        <Icon
-                          icon="ph:check-circle"
-                          width="1.2rem"
-                          height="1.2rem"
-                          class="mr-2"
-                        />
-                      {/if}
-                      Save Signature
-                    </Button>
+                  <p class="mt-1 text-sm font-semibold">
+                    {mapAccountTypeToString(userDetails.accountType)}
+                  </p>
+                </div>
+              {/if}
+              <div class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40">
+                <Label class="text-xs text-muted-foreground">Nationality</Label>
+                <p class="mt-1 text-sm font-semibold">
+                  {userDetails?.nationality || "—"}
+                </p>
+              </div>
+              <div
+                class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40 md:col-span-2"
+              >
+                <Label class="text-xs text-muted-foreground">Address</Label>
+                <p class="mt-1 text-sm font-semibold">
+                  {userDetails?.address || "—"}
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- Role(s) -->
+          {#if !userDetails?.userRoles.includes(UserRoles.User)}
+            <section>
+              <h2
+                class="text-lg font-semibold tracking-tight mb-6 flex items-center gap-2"
+              >
+                <Icon icon="ph:user-gear" width="1.4rem" height="1.4rem" />
+                Role(s)
+              </h2>
+
+              <div class="grid gap-4 md:grid-cols-2">
+                {#if userDetails?.userRoles && userDetails.userRoles.length > 0}
+                  <div
+                    class="p-4 rounded-xl bg-slate-100/60 dark:bg-slate-800/40 md:col-span-2"
+                  >
+                    <!-- <Label class="text-xs text-muted-foreground">Roles</Label> -->
+
+                    <div class="flex flex-wrap gap-2 mt-2">
+                      {#each userDetails.userRoles as role}
+                        <span
+                          class="px-3 py-1 text-xs font-medium rounded-md
+                bg-blue-500/10 text-blue-600 dark:text-blue-400
+                ring-1 ring-inset ring-blue-500/20"
+                        >
+                          {mapRoleToString(role)}
+                        </span>
+                      {/each}
+                    </div>
                   </div>
                 {/if}
               </div>
-            </div>
+            </section>
           {/if}
         </div>
 
-        <!-- Actions Section -->
+        <!-- Actions -->
         <div
-          class="p-6 md:p-8 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-200 dark:border-slate-800"
+          class="p-6 md:p-8 bg-slate-100/40 dark:bg-slate-800/30 border-t border-slate-200/60 dark:border-slate-800"
         >
-          <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
-            <Icon icon="ph:gear" width="1.5rem" height="1.5rem" />
+          <h2
+            class="text-lg font-semibold tracking-tight mb-4 flex items-center gap-2"
+          >
+            <Icon icon="ph:gear" width="1.4rem" height="1.4rem" />
             Account Actions
           </h2>
-          <div class="flex flex-col sm:flex-row gap-3">
-            <Button
+
+          <div class="flex flex-wrap gap-3">
+            {#if userDetails?.accountType !== AccountType.Officer}
+              <Button
+                on:click={() => openUpdateProfile()}
+                variant="outline"
+                class="gap-2 rounded-lg"
+              >
+                <Icon icon="ph:user" width="1.1rem" height="1.1rem" />
+                Update Profile
+              </Button>
+            {/if}
+
+            <!-- <Button
               on:click={() => defaultCorrespondence()}
               variant="outline"
-              class="flex items-center gap-2"
+              class="gap-2 rounded-lg"
             >
-              <Icon icon="ph:envelope" width="1.2rem" height="1.2rem" />
-              Update Correspondence
-            </Button>
+              <Icon icon="ph:envelope" width="1.1rem" height="1.1rem" />
+              Default Correspondence
+            </Button> -->
 
             <Button
               on:click={openChangePassword}
               variant="outline"
-              class="flex items-center gap-2"
+              class="gap-2 rounded-lg"
             >
-              <Icon icon="ph:lock-key" width="1.2rem" height="1.2rem" />
+              <Icon icon="ph:lock-key" width="1.1rem" height="1.1rem" />
               Change Password
             </Button>
+
             <Button
               on:click={logout}
               variant="destructive"
-              class="flex items-center gap-2"
+              class="gap-2 rounded-lg"
             >
-              <Icon icon="ph:sign-out" width="1.2rem" height="1.2rem" />
+              <Icon icon="ph:sign-out" width="1.1rem" height="1.1rem" />
               Logout
             </Button>
           </div>
@@ -759,7 +1342,7 @@
   </div>
 {:else}
   <div
-    class="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900"
+    class="flex items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-950"
   >
     <div class="text-center space-y-4">
       <Icon
