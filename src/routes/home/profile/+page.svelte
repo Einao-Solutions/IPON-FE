@@ -923,17 +923,17 @@
               placeholder="Enter your full address"
             />
           </div>
-          <div class="space-y-2">
+            <div class="space-y-2">
             <Label for="profileNationality" class="text-sm font-medium"
               >Nationality</Label
             >
-            <Textarea
+            <Input
               bind:value={profileNationality}
               id="profileNationality"
-              class="min-h-[80px] resize-none"
+              class="h-11"
               placeholder="Enter your nationality"
             />
-          </div>
+            </div>
           <!-- <div class="space-y-2">
             <Label class="text-sm font-medium"
               >State <span class="text-red-500">*</span></Label
@@ -1150,13 +1150,25 @@
   >
     <div class="max-w-5xl mx-auto p-6 md:p-10 space-y-8">
       <!-- Header -->
-      <div>
-        <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
-          Profile Settings
-        </h1>
-        <p class="text-sm text-muted-foreground mt-2 max-w-xl">
-          Manage your account information
-        </p>
+      <div class="space-y-4">
+        <div>
+          <h1 class="text-3xl md:text-4xl font-semibold tracking-tight">
+            Profile Settings
+          </h1>
+          <p class="text-sm text-muted-foreground mt-2 max-w-xl">
+            Manage your account information
+          </p>
+        </div>
+        {#if userDetails?.accountType !== AccountType.Officer}
+          <Button
+            on:click={() => openUpdateProfile()}
+            variant="outline"
+            class="gap-2 rounded-lg w-fit"
+          >
+            <Icon icon="ph:user" width="1.1rem" height="1.1rem" />
+            Update Profile
+          </Button>
+        {/if}
       </div>
 
       <!-- Main Card -->
@@ -1298,7 +1310,7 @@
           </h2>
 
           <div class="flex flex-wrap gap-3">
-            {#if userDetails?.accountType !== AccountType.Officer}
+            <!-- {#if userDetails?.accountType !== AccountType.Officer}
               <Button
                 on:click={() => openUpdateProfile()}
                 variant="outline"
@@ -1307,7 +1319,7 @@
                 <Icon icon="ph:user" width="1.1rem" height="1.1rem" />
                 Update Profile
               </Button>
-            {/if}
+            {/if} -->
 
             <!-- <Button
               on:click={() => defaultCorrespondence()}
