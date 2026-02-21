@@ -314,6 +314,7 @@
 
         // Set auth tokens and user info (stores + cookies)
         setAuthCookies(data);
+        sessionStorage.setItem("User", JSON.stringify(data.user));
 
         toast.success("Login successful", {
           position: "top-right",

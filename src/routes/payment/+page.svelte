@@ -85,7 +85,7 @@
       searchParams = null;
     }
 
-    clerical = sessionStorage.getItem("clericalId");
+    clerical = localStorage.getItem("clericalId");
 
     const handler = paymentHandlers[type ?? ""];
 
@@ -121,7 +121,9 @@
         },
       });
 
-      // freeApplication = cost === "0";
+      freeApplication = cost === "0";
+      console.log("File number:", fileNumber);
+      console.log("Clerical ID:", clerical);
       // if (type === "clerical") {
       //   const formData = localStorage.getItem("formData");
       //   if (formData) {
@@ -454,11 +456,14 @@
               Back
             </Button>
             {#if freeApplication || cost == "0"}
-              <Button
+              <button
                 type="button"
                 class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
-                on:click={() =>
-                  fileNumber && clerical && freeUpdate(fileNumber, clerical)}
+                on:click={async () => {
+                  if (fileNumber && clerical) {
+                    await freeUpdate(fileNumber, clerical);
+                  }
+                }}
               >
                 <div class="flex items-center justify-center gap-2">
                   <Icon
@@ -468,7 +473,7 @@
                   />
                   Submit
                 </div>
-              </Button>
+              </button>
             {:else}
               <Button
                 type="submit"

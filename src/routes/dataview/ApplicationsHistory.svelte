@@ -220,7 +220,12 @@
       return;
     }
 
-    isCertificate = fileData.applicationHistory[0].certificatePaymentId === id;
+    isCertificate =
+      fileData.applicationHistory[0].certificatePaymentId === id ||
+      application.applicationType === FormApplicationTypes.Certification;
+    isCertificate =
+      fileData.applicationHistory[0].certificatePaymentId === id ||
+      application.applicationType === FormApplicationTypes.Certification;
     manualUpdate = application;
     validateRRR = id;
     remita_confirmation = "checking";
@@ -443,6 +448,7 @@
         fileId: fileData?.fileId,
         appId: application.id,
         reason: reason,
+        userId: $loggedInUser?.id
       };
 
       const res = await fetch(`${baseURL}${endpoint}`, {
@@ -467,6 +473,7 @@
         fileId: fileData?.fileId,
         appId: application.id,
         reason: reason,
+        userId: $loggedInUser?.id
       };
 
       const res = await fetch(`${baseURL}/api/files/approve-amendment`, {
@@ -491,6 +498,7 @@
         fileId: fileData?.fileId,
         appId: application.id,
         reason: reason,
+        userId: $loggedInUser?.id
       };
 
       const res = await fetch(`${baseURL}/api/files/DenyRecordal`, {
@@ -2555,7 +2563,30 @@
                   <DropdownMenu.Separator />
                   <DropdownMenu.Label>Print</DropdownMenu.Label>
                   <DropdownMenu.Separator />
-
+                  {#if application.applicationType === FormApplicationTypes.NewApplication && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 0, 1);
+                      }}>Acknowledgement Letter</DropdownMenu.Item
+                    >
+                     <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 0, 2);
+                      }}>Acceptance Letter</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 0, 37);
+                      }}>Receipt</DropdownMenu.Item
+                    >
+                    <!-- {#if application.currentStatus === ApplicationStatuses.Active}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 0, 3);
+                        }}>Certificate of Registration</DropdownMenu.Item
+                      >
+                    {/if} -->
+                  {/if}
                   <!-- Appeal Docs -->
                   {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
                     <DropdownMenu.Item
