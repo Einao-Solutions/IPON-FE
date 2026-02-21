@@ -52,7 +52,7 @@
 
 			const payload = JSON.parse(payloadData);
 
-			const response = await fetch(`${baseURL}/api/files/PatentCTCApplication`, {
+			const response = await fetch(`${baseURL}/api/files/PatentCtcApplication`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'

@@ -53,6 +53,7 @@
   import PatentLicenseDialog from "./Components/PatentLicenseDialog.svelte";
   import PatentMergerDialog from "./Components/PatentMergerDialog.svelte";
   import PatentMortgageDialog from "./Components/PatentMortgageDialog.svelte";
+  import PatentCTCDialog from "./Components/PatentCTCDialog.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -131,11 +132,17 @@
   let patentMortgageFileId = "";
   let patentMortgageApplicationId = "";
   
+  // Patent CTC Modal State
+  let showPatentCTCDialog = false;
+  let patentCTCFileId = "";
+  let patentCTCApplicationId = "";
+  
   // Patent Dialog Statuses
   let patentAssignmentStatus: number | null = null;
   let patentLicenseStatus: number | null = null;
   let patentMergerStatus: number | null = null;
   let patentMortgageStatus: number | null = null;
+  let patentCTCStatus: number | null = null;
   
   // Appeal Requests
   let appealDocs: string[] = [];
@@ -213,9 +220,7 @@
       return;
     }
 
-    isCertificate =
-      fileData.applicationHistory[0].certificatePaymentId === id ||
-      application.applicationType === FormApplicationTypes.Certification;
+    isCertificate = fileData.applicationHistory[0].certificatePaymentId === id;
     manualUpdate = application;
     validateRRR = id;
     remita_confirmation = "checking";
@@ -230,11 +235,7 @@
       remita_confirmation = "verify_update";
 
       if (status === "00") {
-        if (
-          application.currentStatus === ApplicationStatuses.AwaitingPayment ||
-          application.currentStatus ===
-            ApplicationStatuses.AwaitingCertification
-        ) {
+        if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
           showManualUpdate = true;
           updateCert = false;
         } else if (
@@ -969,6 +970,14 @@
     patentMortgageApplicationId = applicationId;
     patentMortgageStatus = status;
     showPatentMortgageDialog = true;
+  }
+
+  // Open patent CTC dialog
+  function openPatentCTCDialog(fileId: string, applicationId: string, status: number) {
+    patentCTCFileId = fileId;
+    patentCTCApplicationId = applicationId;
+    patentCTCStatus = status;
+    showPatentCTCDialog = true;
   }
 </script>
 
@@ -2259,6 +2268,14 @@
   status={patentMortgageStatus}
 />
 
+<!-- Patent CTC Dialog -->
+<PatentCTCDialog 
+  bind:open={showPatentCTCDialog}
+  fileId={patentCTCFileId}
+  applicationId={patentCTCApplicationId}
+  status={patentCTCStatus}
+/>
+
 {#if showStatusHistory}
   <svelte:component this={historyComponent} {...historyData} />
 {/if}
@@ -2460,6 +2477,14 @@
                   {#if application.applicationType === FormApplicationTypes.Mortgage && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openPatentMortgageDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Patent CTC Application -->
+                  {#if application.applicationType === FormApplicationTypes.CertifiedTrueCopy && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() => openPatentCTCDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>

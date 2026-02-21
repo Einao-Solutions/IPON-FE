@@ -559,14 +559,14 @@ export const designServices: IPService[] = [
     route: "/home/claim-files",
     category: "agent",
   },
-  {
-    id: "claim-files",
-    name: "CLAIM FILES",
-    description: "Claim files from previous system",
-    icon: "mdi:file-download",
-    route: "/home/claim-files",
-    category: "agent",
-  },
+  // {
+  //   id: "claim-files",
+  //   name: "CLAIM FILES",
+  //   description: "Claim files from previous system",
+  //   icon: "mdi:file-download",
+  //   route: "/home/claim-files",
+  //   category: "agent",
+  // },
 
   // PRE-REGISTRATION CATEGORY
   {
