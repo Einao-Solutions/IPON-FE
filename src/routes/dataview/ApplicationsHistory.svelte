@@ -298,7 +298,7 @@
         } catch {
           msg = txt || msg;
         }
-        showToast("error", msg);
+        showToast("error", "Failed to Update Application");
         remita_confirmation = "failed";
         return;
       }
