@@ -2522,13 +2522,13 @@
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent Amendment Application -->
-                  {#if application.applicationType === FormApplicationTypes.Amendment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                  <!-- {#if application.applicationType === FormApplicationTypes.Amendment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openPatentAmendmentDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
-                  {/if}
+                  {/if} -->
                   <!-- Verify new app payment -->
                   {#if application.applicationType === FormApplicationTypes.NewApplication && application.certificatePaymentId != null}
                     <DropdownMenu.Item
@@ -2582,11 +2582,17 @@
                       </DropdownMenu.Item>
                     {/if}
                   {/if}
-                  <!-- Clerical Update / Amendment (Trademark Only) -->
-                  {#if (application.applicationType == FormApplicationTypes.ClericalUpdate || application.applicationType == FormApplicationTypes.Amendment) && fileData.type === FileTypes.Trademark && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                  <!-- Clerical Update / Amendment (Trademark & Patent) -->
+                  {#if ((application.applicationType == FormApplicationTypes.ClericalUpdate || application.applicationType == FormApplicationTypes.Amendment) && fileData.type === FileTypes.Trademark && application.currentStatus !== ApplicationStatuses.AwaitingPayment) || (application.applicationType === FormApplicationTypes.Amendment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus))}
+                    {#if (fileData.type === FileTypes.Trademark && $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some((r) => $loggedInUser.userRoles.includes(r))) || (fileData.type === FileTypes.Patent && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin)))}
                       <DropdownMenu.Item
-                        on:click={() => viewRecordalData(application)}
+                        on:click={() => {
+                          if (fileData.type === FileTypes.Patent) {
+                            openPatentAmendmentDialog(fileData.fileId, application.id, application.currentStatus ?? 0);
+                          } else {
+                            viewRecordalData(application);
+                          }
+                        }}
                         >View Application</DropdownMenu.Item
                       >
                     {/if}
