@@ -29,7 +29,7 @@
         city?: string;
     }
 
-    interface PatentFileInfo {
+    interface PatentFileInfo {2
         fileId: string | null;
         fileStatus: ApplicationStatuses | null;
         paymentRRR: string | null;
