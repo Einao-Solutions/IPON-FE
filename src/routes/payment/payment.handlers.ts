@@ -86,6 +86,7 @@ export const paymentHandlers: Record<
   patentmortgage,
   patentmerger,
   patentctc,
+  "patent-amendment": patentAmendment,
   trademarkRenewal,
 };
 
@@ -145,14 +146,8 @@ async function newapplication(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileType(appData.type?.toString() ?? null);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/paid?paymentType=newapplication`,
+    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=newapplication&fileId=${appData.id}&applicationId=${history.id}`,
   );
-  const fileInfo = {
-    fileId: appData.id,
-    appId: history.id,
-    userId: get(ctx.loggedInUser)?.id,
-  };
-  localStorage.setItem("FileData", JSON.stringify(fileInfo));
 }
 
 async function renewal(ctx: PaymentContext): Promise<void> {
@@ -535,5 +530,36 @@ async function patentctc(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/home/postregistration/patentctc/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function patentAmendment(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId")
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  // DEBUG: Log values being set
+  console.log('Patent Amendment Payment Handler - Setting values:', {
+    title: 'Patent Amendment Application',
+    cost,
+    paymentId: rrr,
+    fileApplicant: applicantName,
+    fileNumber: fileId
+  });
+
+  ctx.state.setTitle("Patent Amendment Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+   `https://${ctx.page.url.host}/home/postregistration/patentamendment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }

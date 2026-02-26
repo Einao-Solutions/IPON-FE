@@ -453,16 +453,16 @@ export const patentServices: IPService[] = [
     category: "agent",
   },
 
-  // PATENT POST-REGISTRATION SERVICES
-  // {
-  //   id: 'patent-amendment',
-  //   name: 'PATENT AMENDMENT',
-  //   description: 'Amend existing patent applications',
-  //   icon: 'mdi:file-edit-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
+  //PATENT POST-REGISTRATION SERVICES
+  {
+    id: 'patent-amendment',
+    name: 'PATENT AMENDMENT',
+    description: 'Amend existing patent applications',
+    icon: 'mdi:file-edit-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
   {
     id: 'patent-assignment',
     name: 'PATENT ASSIGNMENT',
@@ -559,14 +559,6 @@ export const designServices: IPService[] = [
     route: "/home/claim-files",
     category: "agent",
   },
-  // {
-  //   id: "claim-files",
-  //   name: "CLAIM FILES",
-  //   description: "Claim files from previous system",
-  //   icon: "mdi:file-download",
-  //   route: "/home/claim-files",
-  //   category: "agent",
-  // },
 
   // PRE-REGISTRATION CATEGORY
   {

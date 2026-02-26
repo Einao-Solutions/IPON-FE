@@ -7,6 +7,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	interface PatentAttachment {
 		id?: string;
@@ -37,6 +38,7 @@
 	let isProcessing = false;
 	let attachments: PatentAttachment[] = [];
 	let selectedAttachmentIndices: number[] = [];
+	let showExistingApplicationModal = false;
 
 	// Reactive statement to calculate cost based on selected attachments
 	$: {
@@ -81,6 +83,12 @@
 
 			const response = await res.json();
 			const data = response.data || response;
+			
+			// Check if there's already an existing application
+			if (data.hasExistingApplication) {
+				showExistingApplicationModal = true;
+				return;
+			}
 			
 			baseCost = data.amount;
 			calculatedCost = 0; // Will be calculated when attachments are selected
@@ -499,3 +507,28 @@
 		</div>
 	</div>
 </div>
+
+<!-- Existing Application Modal -->
+<Dialog.Root bind:open={showExistingApplicationModal}>
+	<Dialog.Content class="w-11/12 max-w-md mx-auto">
+		<Dialog.Header>
+			<Dialog.Title class="text-xl font-bold text-red-600 flex items-center gap-2">
+				<Icon icon="mdi:alert-circle" width="1.5em" height="1.5em" />
+				Application Already Exists
+			</Dialog.Title>
+		</Dialog.Header>
+		<div class="py-4">
+			<p class="text-gray-700">
+				A Patent CTC (Certified True Copy) application has already been submitted for this file. You cannot create multiple CTC applications for the same patent.
+			</p>
+		</div>
+		<Dialog.Footer class="flex gap-3 justify-end">
+			<Button variant="outline" on:click={() => showExistingApplicationModal = false}>
+				Close
+			</Button>
+			<Button on:click={goBack} class="bg-blue-600 hover:bg-blue-700">
+				Go to Dashboard
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>

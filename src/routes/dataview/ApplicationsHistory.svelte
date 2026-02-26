@@ -54,6 +54,7 @@
   import PatentMergerDialog from "./Components/PatentMergerDialog.svelte";
   import PatentMortgageDialog from "./Components/PatentMortgageDialog.svelte";
   import PatentCTCDialog from "./Components/PatentCTCDialog.svelte";
+  import PatentAmendmentDialog from "./Components/PatentAmendmentDialog.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -137,12 +138,19 @@
   let patentCTCFileId = "";
   let patentCTCApplicationId = "";
   
+  // Patent Amendment Modal State
+  let showPatentAmendmentDialog = false;
+  let patentAmendmentFileId = "";
+  let patentAmendmentApplicationId = "";
+  
   // Patent Dialog Statuses
   let patentAssignmentStatus: number | null = null;
   let patentLicenseStatus: number | null = null;
   let patentMergerStatus: number | null = null;
   let patentMortgageStatus: number | null = null;
   let patentCTCStatus: number | null = null;
+  let patentAmendmentStatus: number | null = null;
+  //let patentCTCStatus: number | null = null;
   
   // Appeal Requests
   let appealDocs: string[] = [];
@@ -986,6 +994,14 @@
     patentCTCApplicationId = applicationId;
     patentCTCStatus = status;
     showPatentCTCDialog = true;
+  }
+
+  // Open patent amendment dialog
+  function openPatentAmendmentDialog(fileId: string, applicationId: string, status: number) {
+    patentAmendmentFileId = fileId;
+    patentAmendmentApplicationId = applicationId;
+    patentAmendmentStatus = status;
+    showPatentAmendmentDialog = true;
   }
 </script>
 
@@ -2284,6 +2300,14 @@
   status={patentCTCStatus}
 />
 
+<!-- Patent Amendment Dialog -->
+<PatentAmendmentDialog 
+  bind:open={showPatentAmendmentDialog}
+  fileId={patentAmendmentFileId}
+  applicationId={patentAmendmentApplicationId}
+  status={patentAmendmentStatus}
+/>
+
 {#if showStatusHistory}
   <svelte:component this={historyComponent} {...historyData} />
 {/if}
@@ -2497,6 +2521,14 @@
                       View Application
                     </DropdownMenu.Item>
                   {/if}
+                  <!-- Patent Amendment Application -->
+                  {#if application.applicationType === FormApplicationTypes.Amendment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() => openPatentAmendmentDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
                   <!-- Verify new app payment -->
                   {#if application.applicationType === FormApplicationTypes.NewApplication && application.certificatePaymentId != null}
                     <DropdownMenu.Item
@@ -2550,8 +2582,8 @@
                       </DropdownMenu.Item>
                     {/if}
                   {/if}
-                  <!-- Clerical Update / Amendment -->
-                  {#if (application.applicationType == FormApplicationTypes.ClericalUpdate || application.applicationType == FormApplicationTypes.Amendment) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                  <!-- Clerical Update / Amendment (Trademark Only) -->
+                  {#if (application.applicationType == FormApplicationTypes.ClericalUpdate || application.applicationType == FormApplicationTypes.Amendment) && fileData.type === FileTypes.Trademark && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                     {#if $loggedInUser?.userRoles && [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
                       <DropdownMenu.Item
                         on:click={() => viewRecordalData(application)}

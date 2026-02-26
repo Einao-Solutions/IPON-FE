@@ -122,8 +122,8 @@
       });
 
       freeApplication = cost === "0";
-      console.log("File number:", fileNumber);
-      console.log("Clerical ID:", clerical);
+      // console.log("File number:", fileNumber);
+      // console.log("Clerical ID:", clerical);
       // if (type === "clerical") {
       //   const formData = localStorage.getItem("formData");
       //   if (formData) {

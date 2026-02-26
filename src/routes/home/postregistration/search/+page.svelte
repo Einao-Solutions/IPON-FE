@@ -13,6 +13,7 @@
   import {
     ApplicationStatuses,
     baseURL,
+    ClericalUpdateTypes,
     FileTypes,
     hasValidCorrespondenceDetails,
     UserRoles,
@@ -404,7 +405,53 @@
               {/if}
               <Table.Cell>
                 {#if isPatent}
-                  {#if searchParams?.serviceType}
+                  {#if searchParams?.serviceType === "patent-amendment"}
+                    <!-- Dropdown for Patent Amendment -->
+                    <select
+                      class="border rounded px-2 py-1"
+                      on:change={(e) => {
+                        const selectedValue = e.currentTarget.value;
+                        if (selectedValue === "update-name") {
+                          goto(
+                            `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0&updateType=${ClericalUpdateTypes.ApplicantName}`,
+                          );
+                        } else if (selectedValue === "update-address") {
+                          goto(
+                            `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
+                          );
+                        } else if (selectedValue === "update-title") {
+                          goto(
+                            `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0&updateType=${ClericalUpdateTypes.FileTitle}`,
+                          );
+                        } else if (selectedValue === "addorremove-applicant") {
+                          goto(
+                            `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0&updateType=${ClericalUpdateTypes.AddAndRemoveApplicant}`,
+                          );
+                        } else if (selectedValue === "edit-inventors") {
+                          goto(
+                            `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0&updateType=${ClericalUpdateTypes.EditInventors}`,
+                          );
+                        } else if (selectedValue === "priorityinfo") {
+                          goto(
+                            `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0&updateType=${ClericalUpdateTypes.PriorityInfo}`,
+                          );
+                        } else if (selectedValue === "correspondence") {
+                          goto(
+                            `/home/postregistration/patentamendment?fileId=${result.fileId}&fileType=0&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
+                          );
+                        }
+                      }}
+                    >
+                      <option value="">--Select Amendment Type--</option>
+                      <option value="update-name">Update Applicant Name</option>
+                      <option value="update-address">Update Applicant Address</option>
+                      <option value="update-title">Update Abstract/Application Type/Title Of Invention</option>
+                      <option value="addorremove-applicant">Add/Remove Applicant</option>
+                      <option value="edit-inventors">Update Inventors</option>
+                      <option value="priorityinfo">Update Priority Information</option>
+                      <option value="correspondence">Update Correspondence</option>
+                    </select>
+                  {:else if searchParams?.serviceType}
                     <Button on:click={() => proceedToPatentService(result)}
                       >Proceed</Button
                     >
@@ -417,7 +464,8 @@
                   <select
                     class="border rounded px-2 py-1"
                     on:change={(e) => {
-                      const selectedValue = e.target.value;
+                     // const selectedValue = e.target.value;
+                      const selectedValue = e.currentTarget.value;
                       if (selectedValue === "merger") {
                         goto(
                           `/home/postregistration/merger?fileId=${result.fileId}&fileType=2`,
