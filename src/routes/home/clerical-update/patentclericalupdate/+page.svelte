@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import { goto } from '$app/navigation';
-    import { ApplicationStatuses, baseURL, FileTypes, PatentTypes, PatentApplicationTypes } from '$lib/helpers';
+    import { ApplicationStatuses, baseURL, FileTypes, PatentTypes, PatentApplicationTypes, ClericalUpdateTypes } from '$lib/helpers';
     import { page } from '$app/stores';
     import { get } from 'svelte/store';
     import Icon from '@iconify/svelte';
@@ -35,7 +35,7 @@
         paymentRRR: string | null;
         cost: number | null;
         serviceFee: number | null;
-        updateType: string;
+        updateType: ClericalUpdateTypes | null;
         fileType: FileTypes | null;
         patentType: PatentTypes | null;
         patentApplicationType: PatentApplicationTypes | null;
@@ -64,7 +64,7 @@
         paymentRRR: null,
         cost: null,
         serviceFee: null,
-        updateType: '',
+        updateType: null,
         fileType: null,
         patentType: null,
         patentApplicationType: null,
@@ -88,8 +88,8 @@
     let error: string | null = null;
     let isProcessing = false;
     let isLoading = false;
-    let updateType: string | null = null;
-    let fileType = '';
+    let updateType: ClericalUpdateTypes | null = null;
+    let fileType: FileTypes | null = FileTypes.Patent; // Default to Patent since this page is for patent clerical updates
     const pageData = get(page);
     let patentTypeValue: number | null = null;
 
@@ -109,14 +109,32 @@
     }
 
     onMount(async () => {
-        const fileNumber = pageData.url.searchParams.get('fileId') ?? '';
-        fileType = pageData.url.searchParams.get('fileType') ?? '';
-        updateType = pageData.url.searchParams.get('updateType') ?? '';
-        sessionStorage.setItem('updateType', updateType);
-        await setData(fileNumber, fileType, updateType);
+          const fileNumber = pageData.url.searchParams.get("fileId") ?? "";
+    const fileTypeParam = pageData.url.searchParams.get("fileType");
+    const parsed = Number(fileTypeParam);
+    const validValues = Object.values(FileTypes).filter(
+      (v) => typeof v === "number",
+    ) as number[];
+    fileType =
+      !Number.isNaN(parsed) && validValues.includes(parsed)
+        ? (parsed as FileTypes)
+        : null;
+
+    const updateTypeParam = pageData.url.searchParams.get("updateType") ?? "";
+    const upt = Number(updateTypeParam);
+    const validUp = Object.values(ClericalUpdateTypes).filter(
+      (v) => typeof v === "number",
+    ) as number[];
+
+    updateType =
+      !Number.isNaN(upt) && validUp.includes(upt)
+        ? (upt as ClericalUpdateTypes)
+        : null;
+
+    await setData(fileNumber, fileType, updateType);
     });
 
-    async function setData(fileNumber: string, fileType: string, updateType: string): Promise<void> {
+    async function setData(fileNumber: string, fileType: FileTypes | null, updateType: ClericalUpdateTypes | null): Promise<void> {
         isLoading = true;
         try {
             const res = await fetch(
@@ -146,7 +164,7 @@
 
             patentTypeValue = Number(data.patentType);
 
-            if (updateType === 'Correspondence' && data.correspondenceName) {
+            if (updateType === ClericalUpdateTypes.CorrespondenceInformation && data.correspondenceName) {
                 correspondenceName = data.correspondenceName ?? '';
                 correspondenceAddress = data.correspondenceAddress ?? '';
                 correspondencePhone = data.correspondencePhone ?? '';
@@ -156,13 +174,13 @@
             }
 
             // Ensure nationality defaults to Nigeria for correspondence updates
-            if (updateType === 'Correspondence') {
+            if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
                 if (!correspondenceNationality || correspondenceNationality.trim() === '') {
                     correspondenceNationality = 'Nigeria';
                 }
             }
 
-            if(updateType === 'EditInventors' && data.inventors) {
+            if(updateType === ClericalUpdateTypes.EditInventors && data.inventors) {
                 inventors = data.inventors;
 
                 // Initialize openInventors for all loaded inventors as collapsed
@@ -208,13 +226,13 @@
         return patentTypeValue === 0 || patentTypeValue === 2;
     }
 
-    function getFormTitle(type: string): string {
+    function getFormTitle(type: ClericalUpdateTypes): string {
         switch (type) {
-            case 'ApplicantName':
+            case ClericalUpdateTypes.ApplicantName:
                 return 'Application for Clerical Update Of Applicant Name';
-            case 'ApplicantAddress':
+            case ClericalUpdateTypes.ApplicantAddress:
                 return 'Application for Clerical Update Of Applicant Address';
-            case 'FileTitle':
+            case ClericalUpdateTypes.FileTitle:
                 return 'Application for Clerical Update of File Title/Representation';
             default:
                 return 'Application for Clerical Update';
@@ -230,11 +248,11 @@
     }
 
     // Show sections for Patent clerical update
-    $: showNameSection = updateType === 'ApplicantName';
-    $: showAddressSection = updateType === 'ApplicantAddress';
-    $: showTitleOfInventionSection = updateType === 'FileTitle';
-    $: formTitle = getFormTitle(fileInfo.updateType);
-    $: showAddApplicantSection = updateType === 'AddApplicant' || updateType === null || updateType === '';
+    $: showNameSection = updateType === ClericalUpdateTypes.ApplicantName;
+    $: showAddressSection = updateType === ClericalUpdateTypes.ApplicantAddress;
+    $: showTitleOfInventionSection = updateType === ClericalUpdateTypes.FileTitle;
+    $: formTitle = fileInfo.updateType !== null ? getFormTitle(fileInfo.updateType) : 'Application for Clerical Update';
+    $: showAddApplicantSection = updateType === ClericalUpdateTypes.AddApplicant;
 
     let newApplicants: ApplicantInfo[] = [];
 
@@ -339,7 +357,7 @@
     let showSuccessToast = false;
 
     async function handleSubmit() {
-        // console.log('Submit clicked');
+        console.log('Submit clicked');
         // if (showAddApplicantSection && !validateAddApplicantForm()) return;
         // if (!validateForm()) return;
         isProcessing = true;
@@ -360,14 +378,14 @@
             };
             
            // console.log('fileType', fileInfo.fileType);
-           if (updateType === 'PriorityInfo') {
+           if (updateType === ClericalUpdateTypes.PriorityInfo) {
                 if (isPCTorConventional()) {
                     formObj.FirstPriorityInfo = [firstPriorityInfo];
                 }
                 formObj.PriorityInfo = priorityInfoList;
             }
 
-           if (updateType === 'EditInventors') {
+           if (updateType === ClericalUpdateTypes.EditInventors) {
                 // Remove inventors marked for deletion before sending
                 const filteredInventors = inventors.filter((_, i) => !inventorsMarkedForDeletion.includes(i));
                 formObj.NewInventors = filteredInventors;
@@ -388,21 +406,21 @@
                 }
             }
 
-            if (updateType === 'ApplicantName') {
+            if (updateType === ClericalUpdateTypes.ApplicantName) {
                 formObj.ApplicantNames = newData.applicantNames;
                  if (fileInfo.fileType === 0) {
                         formObj.OldApplicantNames = fileInfo.applicants?.map(a => a.name) ?? [];
                     } else {
                         formObj.OldApplicantName = fileInfo.applicants?.[0]?.name ?? '';
                     }
-            } else if (updateType === 'ApplicantAddress') {
+            } else if (updateType === ClericalUpdateTypes.ApplicantAddress) {
                 formObj.ApplicantAddresses = newData.applicantAddresses;
                 formObj.ApplicantEmails = newData.applicantEmails;
                 formObj.ApplicantPhones = newData.applicantPhones;
                 formObj.ApplicantNationalities = newData.applicantNationalities;
                 formObj.ApplicantStates = newData.applicantStates;
                 formObj.ApplicantCities = newData.applicantCities;
-            } else if (updateType === 'FileTitle') {
+            } else if (updateType === ClericalUpdateTypes.FileTitle) {
                 formObj.FileTitle = newData.fileTitle ?? '';
                 formObj.PatentAbstract = newData.patentAbstract ?? '';
                 if (newData.patentApplicationType !== undefined && newData.patentApplicationType !== null && newData.patentApplicationType !== '') {
@@ -410,7 +428,7 @@
                 }
             }
 
-            if (updateType === 'Correspondence') {
+            if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
                 formObj.CorrespondenceName = correspondenceName;
                 formObj.CorrespondenceAddress = correspondenceAddress;
                 formObj.CorrespondencePhone = correspondencePhone;
@@ -579,7 +597,7 @@
 
     $: isWithdrawn = fileInfo.fileStatus === ApplicationStatuses.Withdrawn;
     $: isReadyForPayment = fileInfo.fileStatus != null && fileInfo.fileStatus !== ApplicationStatuses.Withdrawn;
-    $: isPriorityInfoNotAllowed = updateType === 'PriorityInfo' && patentTypeValue !== null && fileInfo.patentType === 1;
+    $: isPriorityInfoNotAllowed = updateType === ClericalUpdateTypes.PriorityInfo && patentTypeValue !== null && fileInfo.patentType === 1;
 </script>
 
 {#if showSuccessToast}
@@ -989,7 +1007,7 @@
                 </div>
             {/if}
 
-            {#if updateType === 'EditInventors'}
+            {#if updateType === ClericalUpdateTypes.EditInventors}
                 <div class="mb-6 border border-purple-300 rounded-md overflow-hidden">
                     <div class="bg-purple-100 px-4 py-2 font-medium text-purple-900">EXISTING INVENTORS</div>
                     <div class="p-4">
@@ -1068,7 +1086,7 @@
                         <span class="text-sm text-gray-500">Loading...</span>
                     </div>
                 </div>
-            {:else if updateType === 'PriorityInfo' && patentTypeValue !== null && fileInfo.patentType !== 1}
+            {:else if updateType === ClericalUpdateTypes.PriorityInfo && patentTypeValue !== null && fileInfo.patentType !== 1}
                  {#if isPCTorConventional()}
                     <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
                         <div class="bg-blue-100 px-4 py-2 font-medium text-blue-900">FIRST PRIORITY INFORMATION</div>
@@ -1120,7 +1138,7 @@
                         </button>
                     </div>
                 </div>
-            {:else if updateType === 'PriorityInfo' && patentTypeValue !== null && fileInfo.patentType === 1}
+            {:else if updateType === ClericalUpdateTypes.PriorityInfo && patentTypeValue !== null && fileInfo.patentType === 1}
                 <div class="mb-6 border border-red-300 rounded-md overflow-hidden">
                     <div class="bg-red-100 px-4 py-2 font-medium text-red-900">NOT ALLOWED</div>
                     <div class="p-4 text-red-700">
@@ -1129,7 +1147,7 @@
                 </div>
             {/if}
 
-            {#if updateType === 'Correspondence'}
+            {#if updateType === ClericalUpdateTypes.CorrespondenceInformation}
                 <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
                     <div class="bg-indigo-100 px-4 py-2 font-medium text-indigo-900">CORRESPONDENCE INFORMATION</div>
                     <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">

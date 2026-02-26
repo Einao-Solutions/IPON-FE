@@ -376,6 +376,7 @@
   // Computed properties for section visibility
   $: isDesign = fileInfo.fileType === FileTypes.Design;
   $: isTrademark = fileInfo.fileType === FileTypes.Trademark;
+  $: isPatent = fileInfo.fileType === FileTypes.Patent;
 
   function getDesignTypeString(des: number | null): string {
     if (des === 0) {
