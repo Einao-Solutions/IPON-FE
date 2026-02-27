@@ -104,7 +104,8 @@ const config = {
         "/home/postregistration/patentmortgage",
         "/home/postregistration/patentmortgage/result",
         "/home/postregistration/patentamendment/result",
-        "/home/postregistration/patentctc/result"
+        "/home/postregistration/patentctc/result",
+        "/statistics",
       ],
     },
   },

@@ -667,6 +667,46 @@ export const ROLE_DISPLAY_CONFIG: Record<UserRoles, RoleDisplayInfo> = {
 		department: 'Design Department',
 		fileTypes: [FileTypes.Design]
 	},
+	[UserRoles.TrademarkRegistrar]: {
+		title: 'Trademark Registrar',
+		department: 'Trademark Department',
+		fileTypes: [FileTypes.Trademark]
+	},
+	[UserRoles.PatentDesignRegistrar]: {
+		title: 'Patent & Design Registrar',
+		department: 'Patent & Design Department',
+		fileTypes: [FileTypes.Patent, FileTypes.Design]
+	},
+	[UserRoles.Finance]: {
+		title: 'Finance Officer',
+		department: 'Finance Department',
+		fileTypes: [FileTypes.Patent, FileTypes.Design, FileTypes.Trademark]
+	},
+	[UserRoles.PermSec]: {
+		title: 'Permanent Secretary',
+		department: 'Executive Office',
+		fileTypes: [FileTypes.Patent, FileTypes.Design, FileTypes.Trademark]
+	},
+	[UserRoles.Minister]: {
+		title: 'Minister',
+		department: 'Executive Office',
+		fileTypes: [FileTypes.Patent, FileTypes.Design, FileTypes.Trademark]
+	},
+	[UserRoles.AppealExaminer]: {
+		title: 'Appeal Examiner',
+		department: 'Appeals Department',
+		fileTypes: [FileTypes.Patent, FileTypes.Design, FileTypes.Trademark]
+	},
+	[UserRoles.Tech]: {
+		title: 'Technical Support',
+		department: 'IT Department',
+		fileTypes: [FileTypes.Patent, FileTypes.Design, FileTypes.Trademark]
+	},
+	[UserRoles.SuperAdmin]: {
+		title: 'Super Administrator',
+		department: 'Administration',
+		fileTypes: [FileTypes.Patent, FileTypes.Design, FileTypes.Trademark]
+	},
 	// Default roles
 	[UserRoles.User]: {
 		title: 'User',

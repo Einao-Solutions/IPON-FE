@@ -190,7 +190,12 @@
     } else if (!menu.submenus) {
       activeMenu = menu.location;
       activeSubmenu = null;
-      goto(`/home/${menu.location.trim().toLowerCase()}`);
+      // Route Statistics to /statistics instead of /home/statistics
+      if (menu.location === "Statistics") {
+        goto(`/statistics`);
+      } else {
+        goto(`/home/${menu.location.trim().toLowerCase()}`);
+      }
     }
   }
 
