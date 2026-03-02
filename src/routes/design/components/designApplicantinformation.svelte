@@ -21,16 +21,31 @@
   const initialDesignApplicants = (get(designForm).applicants as any[]) ?? [];
 
   let applicants: Applicant[] = initialDesignApplicants.length
-    ? initialDesignApplicants.map((a) => ({
-        name: a.name ?? '',
-        country: a.nationality ?? '',
-        state: a.state ?? '',
-        city: a.city ?? '',
-        phone: a.phone ?? '',
-        phonePrefix: '',
-        email: a.email ?? '',
-        address: a.address ?? ''
-      }))
+    ? initialDesignApplicants.map((a) => {
+        const country = a.nationality ?? '';
+        const combinedPhone: string = a.phone ?? '';
+        const detectedPrefix = country ? countryDialingCodes[country] ?? '' : '';
+
+        let phonePrefix = detectedPrefix;
+        let phone = combinedPhone;
+
+        // If stored phone already includes the country prefix (e.g. +234...),
+        // strip it out so only the local part appears in the phone input.
+        if (detectedPrefix && combinedPhone.startsWith(detectedPrefix)) {
+          phone = combinedPhone.slice(detectedPrefix.length);
+        }
+
+        return {
+          name: a.name ?? '',
+          country,
+          state: a.state ?? '',
+          city: a.city ?? '',
+          phone,
+          phonePrefix,
+          email: a.email ?? '',
+          address: a.address ?? ''
+        } as Applicant;
+      })
     : [
         {
           name: '',
@@ -91,6 +106,12 @@
       if (a.country) {
         const dial = countryDialingCodes[a.country];
         applicants[i].phonePrefix = dial ?? '';
+
+        // If stored phone includes the prefix (e.g. +234...), strip it so the input is blank/local
+        if (dial && applicants[i].phone && applicants[i].phone.startsWith(dial)) {
+          applicants[i].phone = applicants[i].phone.slice(dial.length);
+        }
+
         fetchStatesForApplicant(i, a.country);
       }
     });
@@ -266,10 +287,12 @@
 
 <div class="max-w-4xl mx-auto">
   <div class="rounded-lg shadow bg-white p-6 mb-6">
-    <h2 class="text-2xl font-bold mb-6 text-green-700">Applicant Information</h2>
-    <div class="rounded-md bg-accent h-20 pl-2 pr-2 text-center flex flex-col justify-center mb-6">
-      {applicantDesignDescription}
-    </div>
+    <h2 class="text-2xl font-bold mb-6 text-green-700">
+      Applicant Information
+      <span class="ml-2 text-base font-normal text-gray-600">
+        ({applicantDesignDescription})
+      </span>
+    </h2>
 
     <div class="space-y-6">
       {#each applicants as applicant, index}
