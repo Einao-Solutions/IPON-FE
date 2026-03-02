@@ -48,6 +48,10 @@
     
     // Only call updateStatus if it's a tm certificate payment
     switch (paymentType) {
+      case "clerical":
+        console.log("Processing clerical payment");
+        success = await updateManual(data, false);
+        break;
       case "tradecertificate":
         console.log("Processing trade certificate payment");
         success = await updateManual(data, true);
