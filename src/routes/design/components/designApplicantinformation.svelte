@@ -1,391 +1,480 @@
 <script lang="ts">
   import { applicantDesignDescription } from '$lib/helpers';
-  import Icon from '@iconify/svelte';
-  import { Button } from '$lib/components/ui/button';
-  import { designForm } from '$lib/utils/design';
-  import { get, writable } from 'svelte/store';
-  import { tick } from 'svelte';
-  import * as Table from '$lib/components/ui/table';
-  import * as Popover from '$lib/components/ui/popover';
-  import * as Command from '$lib/components/ui/command';
+  import { designForm, currentStep } from '$lib/utils/design';
+  import { get } from 'svelte/store';
+  import { onMount } from 'svelte';
   import { countriesMap } from '$lib/constants';
-  import { cn } from '$lib/utils';
-  import { Input } from '$lib/components/ui/input';
   import { countryDialingCodes } from '$lib/utils/patent';
 
-  type ApplicantRow = {
+  type Applicant = {
     name: string;
-    email: string;
-    phone: string;
-    phonePrefix: string;
-    nationality: string;
+    country: string; // nationality
     state: string;
+    city: string;
+    phone: string; // raw phone (without prefix)
+    phonePrefix: string;
+    email: string;
     address: string;
   };
 
-  let allApplicants = writable<ApplicantRow[]>(
-    (get(designForm).applicants as ApplicantRow[])?.length
-      ? (get(designForm).applicants as ApplicantRow[])
-      : [
-          {
-            name: '',
-            email: '',
-            phone: '',
-            phonePrefix: '',
-            nationality: '',
-            state: '',
-            address: ''
-          }
-        ]
-  );
+  // Initialize from designForm, mapping nationality -> country
+  const initialDesignApplicants = (get(designForm).applicants as any[]) ?? [];
 
-  let listofValidatedApplicants = writable<
-    {
-      phone: boolean | null;
-      nationality: boolean | null;
-      email: boolean | null;
-      address: boolean | null;
-      name: boolean | null;
-      state: boolean | null;
-    }[]
-  >([]);
+  let applicants: Applicant[] = initialDesignApplicants.length
+    ? initialDesignApplicants.map((a) => ({
+        name: a.name ?? '',
+        country: a.nationality ?? '',
+        state: a.state ?? '',
+        city: a.city ?? '',
+        phone: a.phone ?? '',
+        phonePrefix: '',
+        email: a.email ?? '',
+        address: a.address ?? ''
+      }))
+    : [
+        {
+          name: '',
+          country: '',
+          state: '',
+          city: '',
+          phone: '',
+          phonePrefix: '',
+          email: '',
+          address: ''
+        }
+      ];
 
-  let listOfOpenCountries = writable<boolean[]>([]);
-  let isEditing: boolean = true;
-  let showResetButton: boolean = true;
+  // UI state per applicant (same pattern as patent Applicants)
+  let showCountryDropdowns = applicants.map(() => false);
+  let showStateDropdowns = applicants.map(() => false);
+  let perApplicantStates: string[][] = applicants.map(() => []);
+  let perApplicantFilteredStates: string[][] = applicants.map(() => []);
+  let perApplicantCountrySearch = applicants.map(() => '');
+  let perApplicantStateSearch = applicants.map(() => '');
 
+  // shared filtered countries
+  let filteredCountries: string[] = [];
+
+  // validation errors
+  let errors = applicants.map(() => ({
+    name: '',
+    country: '',
+    state: '',
+    city: '',
+    phone: '',
+    email: '',
+    address: ''
+  }));
+
+  // normalize countries into name strings using countriesMap
+  function getCountryNames(): string[] {
+    const map = countriesMap as Record<string, string>;
+    return Object.values(map);
+  }
+
+  // Ensure snapshot on mount
+  onMount(() => {
+    filteredCountries = getCountryNames();
+
+    // if applicants already have countries, set prefixes and fetch their states
+    applicants.forEach((a, i) => {
+      if (a.country) {
+        const dial = countryDialingCodes[a.country];
+        applicants[i].phonePrefix = dial ?? '';
+        fetchStatesForApplicant(i, a.country);
+      }
+    });
+  });
+
+  function updateStore() {
+    designForm.update((form: any) => {
+      form.applicants = applicants.map((a) => ({
+        name: a.name,
+        email: a.email,
+        // store combined phone (prefix + number) for design payload
+        phone: `${a.phonePrefix}${a.phone}`.trim(),
+        nationality: a.country,
+        state: a.state,
+        address: a.address,
+        city: a.city
+      }));
+      return form;
+    });
+  }
+
+  // Country search / select
+  function onCountryInput(index: number, input: string) {
+    perApplicantCountrySearch[index] = input;
+    const list = getCountryNames();
+    filteredCountries = list.filter((name) => name.toLowerCase().includes(input.toLowerCase()));
+  }
+
+  // Helpers to safely read input values from DOM events (no TS syntax in markup)
+  function handleCountryInputEvent(index: number, event: Event) {
+    const target = event.target as HTMLInputElement | null;
+    const value = target?.value ?? '';
+    onCountryInput(index, value);
+  }
+
+  async function fetchStatesForApplicant(index: number, countryName: string) {
+    if (!countryName) {
+      perApplicantStates[index] = [];
+      perApplicantFilteredStates[index] = [];
+      return;
+    }
+    try {
+      const res = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country: countryName })
+      });
+      const json = await res.json();
+      const stateArr = json.data?.states ?? json.states ?? [];
+      const normalized = stateArr
+        .map((s: any) => (typeof s === 'string' ? s : s.name ?? s.state ?? ''))
+        .filter(Boolean);
+      perApplicantStates[index] = normalized;
+      perApplicantFilteredStates[index] = normalized;
+    } catch (err) {
+      console.error('Failed to fetch states for', countryName, err);
+      perApplicantStates[index] = [];
+      perApplicantFilteredStates[index] = [];
+    }
+  }
+
+  async function selectCountry(index: number, countryName: string) {
+    applicants[index].country = countryName;
+    applicants[index].state = '';
+    perApplicantStateSearch[index] = '';
+    perApplicantStates[index] = [];
+    perApplicantFilteredStates[index] = [];
+    perApplicantCountrySearch[index] = countryName;
+
+    const dialCode = countryDialingCodes[countryName];
+    applicants[index].phonePrefix = dialCode ?? '';
+    applicants[index].phone = '';
+
+    updateStore();
+    await fetchStatesForApplicant(index, countryName);
+  }
+
+  // State search / select (per applicant)
+  function onStateInput(index: number, input: string) {
+    perApplicantStateSearch[index] = input;
+    const list = perApplicantStates[index] ?? [];
+    perApplicantFilteredStates[index] = list.filter((s) =>
+      s.toLowerCase().includes(input.toLowerCase())
+    );
+  }
+
+  function handleStateInputEvent(index: number, event: Event) {
+    const target = event.target as HTMLInputElement | null;
+    const value = target?.value ?? '';
+    onStateInput(index, value);
+  }
+
+  function selectState(index: number, stateName: string) {
+    applicants[index].state = stateName;
+    perApplicantStateSearch[index] = stateName;
+    updateStore();
+  }
+
+  // Add / remove applicants (keep per-applicant arrays in sync)
   function addApplicant() {
-    allApplicants.update((applicants) => [
+    applicants = [
       ...applicants,
       {
         name: '',
-        email: '',
+        country: '',
+        state: '',
+        city: '',
         phone: '',
         phonePrefix: '',
-        nationality: '',
-        state: '',
+        email: '',
         address: ''
       }
-    ]);
-    listofValidatedApplicants.update((valid) => [
-      ...valid,
-      { phone: null, nationality: null, email: null, address: null, name: null, state: null }
-    ]);
-    listOfOpenCountries.update((countries) => [...countries, false]);
-    isEditing = true;
+    ];
+    showCountryDropdowns = [...showCountryDropdowns, false];
+    showStateDropdowns = [...showStateDropdowns, false];
+    perApplicantStates = [...perApplicantStates, []];
+    perApplicantFilteredStates = [...perApplicantFilteredStates, []];
+    perApplicantCountrySearch = [...perApplicantCountrySearch, ''];
+    perApplicantStateSearch = [...perApplicantStateSearch, ''];
+    errors = [
+      ...errors,
+      { name: '', country: '', state: '', city: '', phone: '', email: '', address: '' }
+    ];
+    updateStore();
   }
 
   function removeApplicant(index: number) {
-    allApplicants.update((applicants) => {
-      applicants.splice(index, 1);
-      return [...applicants];
+    if (applicants.length <= 1) return;
+    applicants = applicants.filter((_, i) => i !== index);
+    showCountryDropdowns = showCountryDropdowns.filter((_, i) => i !== index);
+    showStateDropdowns = showStateDropdowns.filter((_, i) => i !== index);
+    perApplicantStates = perApplicantStates.filter((_, i) => i !== index);
+    perApplicantFilteredStates = perApplicantFilteredStates.filter((_, i) => i !== index);
+    perApplicantCountrySearch = perApplicantCountrySearch.filter((_, i) => i !== index);
+    perApplicantStateSearch = perApplicantStateSearch.filter((_, i) => i !== index);
+    errors = errors.filter((_, i) => i !== index);
+    updateStore();
+  }
+
+  // Validation + navigation (mirrors patent Applicants)
+  function validateApplicants() {
+    let isValid = true;
+    errors = applicants.map((a) => {
+      const e = {
+        name: a.name.trim() ? '' : 'Name is required',
+        country: a.country ? '' : 'Nationality is required',
+        state: a.state.trim() ? '' : 'State is required',
+        city: a.city.trim() ? '' : 'City is required',
+        phone: /^\+?\d{7,15}$/.test(a.phone.trim()) ? '' : 'Valid phone number is required',
+        email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(a.email.trim()) ? '' : 'Valid email is required',
+        address: a.address.trim() ? '' : 'Address is required'
+      };
+      if (Object.values(e).some((v) => v)) isValid = false;
+      return e;
     });
-    listOfOpenCountries.update((opener) => {
-      opener.splice(index, 1);
-      return [...opener];
-    });
-    listofValidatedApplicants.update((valid) => {
-      valid.splice(index, 1);
-      return [...valid];
-    });
+    return isValid;
   }
 
-  function UpdateApplicantField(field: keyof ApplicantRow, value: string, index: number) {
-    allApplicants.update((applicants) => {
-      const updated = { ...applicants[index] };
-      (updated as any)[field] = value;
-      if (field === 'nationality') {
-        updated.phonePrefix = countryDialingCodes[value] ?? '';
-        updated.phone = '';
-      }
-      applicants[index] = updated;
-      return [...applicants];
-    });
+  function handleNext() {
+    if (!validateApplicants()) return;
+    updateStore();
+    currentStep.update((n) => n + 1);
   }
 
-  function EditorSave() {
-    if (isEditing) {
-      if (validate()) {
-        isEditing = false;
-        designForm.update((f) => ({ ...f, applicants: get(allApplicants) }));
-      }
-      return;
-    }
-    isEditing = !isEditing;
-  }
-
-  function validate(): boolean {
-    const applicants = get(allApplicants);
-    let listOfStatus: boolean[] = [];
-
-    const validators =
-      get(listofValidatedApplicants).length === applicants.length
-        ? get(listofValidatedApplicants)
-        : applicants.map(() => ({
-            phone: null,
-            nationality: null,
-            email: null,
-            address: null,
-            name: null,
-            state: null
-          }));
-
-    for (let i = 0; i < applicants.length; i++) {
-      const a = applicants[i];
-      validators[i].name = a.name.trim() !== '';
-      validators[i].phone = a.phone.trim() !== '';
-      validators[i].email = a.email.trim() !== '';
-      validators[i].address = a.address.trim() !== '';
-      validators[i].nationality = a.nationality.trim() !== '';
-      validators[i].state = a.state.trim() !== '';
-
-      listOfStatus.push(
-        !!validators[i].name &&
-          !!validators[i].phone &&
-          !!validators[i].email &&
-          !!validators[i].address &&
-          !!validators[i].nationality &&
-          !!validators[i].state
-      );
-    }
-
-    listofValidatedApplicants.set(validators);
-    return listOfStatus.every((x) => x === true) && applicants.length >= 1;
-  }
-
-  function GetCountryImageLink(country: string) {
-    const map = countriesMap as Record<string, string>;
-    const key = Object.keys(map).find((k) => map[k] === country);
-    return key ? `https://flagcdn.com/20x15/${key}.png` : '';
-  }
-
-  function closeCountryAndFocusTrigger(triggerId: string, index: number) {
-    const openers = get(listOfOpenCountries);
-    openers[index] = false;
-    listOfOpenCountries.set(openers);
-    tick().then(() => {
-      document.getElementById(triggerId)?.focus();
-    });
-  }
-
-  function getInputValue(event: Event): string {
-    const target = event.target as HTMLInputElement;
-    return target.value ?? '';
+  function handleBack() {
+    updateStore();
+    currentStep.update((n) => (n > 0 ? n - 1 : 0));
   }
 </script>
 
 <div class="max-w-4xl mx-auto">
   <div class="rounded-lg shadow bg-white p-6 mb-6">
     <h2 class="text-2xl font-bold mb-6 text-green-700">Applicant Information</h2>
-    <div class="rounded-md bg-accent h-20 pl-2 pr-2 text-center flex flex-col justify-center mb-4">
+    <div class="rounded-md bg-accent h-20 pl-2 pr-2 text-center flex flex-col justify-center mb-6">
       {applicantDesignDescription}
     </div>
-    <div class="flex justify-between items-center mb-4">
-      <strong>List of Applicants</strong>
-      <div class="flex gap-4">
-        <Button
-          variant="ghost"
-          class="{showResetButton ? 'inline' : 'hidden'} text-blue-500"
-          on:click={() => allApplicants.set([])}
-        >
-          reset
-        </Button>
-        {#if get(allApplicants).length !== 0}
-          <Button variant="outline" on:click={() => EditorSave()}>{isEditing ? 'Save' : 'Edit'}</Button>
-        {/if}
-        <Button variant="default" on:click={() => addApplicant()}>
-          <Icon icon="mdi:plus" width="1.2rem" height="1.2rem" />
-          Add Applicant
-        </Button>
+
+    <div class="space-y-6">
+      {#each applicants as applicant, index}
+        <div class="border p-4 rounded-lg space-y-3 relative">
+          <h3 class="text-sm font-semibold">Applicant {index + 1}</h3>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium mb-1">Name</label>
+              <input
+                placeholder="Name"
+                bind:value={applicant.name}
+                class="input"
+                on:input={updateStore}
+              />
+              {#if errors[index]?.name}
+                <p class="error">{errors[index].name}</p>
+              {/if}
+            </div>
+
+            <!-- Nationality -->
+            <div class="relative">
+              <label class="block text-sm font-medium mb-1">Nationality</label>
+              <div class="relative">
+                <input
+                  type="text"
+                  class="input"
+                  placeholder="Search Nationality..."
+                  on:focus={() => {
+                    showCountryDropdowns[index] = true;
+                    if (!perApplicantCountrySearch[index]) filteredCountries = getCountryNames();
+                  }}
+                  on:input={(event) => handleCountryInputEvent(index, event)}
+                  on:blur={() => setTimeout(() => (showCountryDropdowns[index] = false), 200)}
+                  bind:value={applicant.country}
+                />
+                <span
+                  class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                  >▼</span
+                >
+              </div>
+
+              {#if errors[index]?.country}
+                <p class="error">{errors[index].country}</p>
+              {/if}
+
+              {#if showCountryDropdowns[index] && filteredCountries.length}
+                <ul
+                  class="absolute bg-white border w-full mt-1 max-h-60 overflow-y-auto z-10 rounded-md shadow"
+                >
+                  {#each filteredCountries as c}
+                    <li
+                      class="p-2 hover:bg-gray-100 cursor-pointer"
+                      on:mousedown={() => {
+                        selectCountry(index, c);
+                        perApplicantCountrySearch[index] = c;
+                        showCountryDropdowns[index] = false;
+                      }}
+                    >
+                      {c}
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
+            </div>
+
+            <div class="relative">
+              <label class="block text-sm font-medium mb-1">State</label>
+              <div class="relative">
+                <input
+                  type="text"
+                  class="input"
+                  placeholder="Search state..."
+                  on:focus={() => {
+                    showStateDropdowns[index] = true;
+                    if (!perApplicantStateSearch[index])
+                      perApplicantFilteredStates[index] = perApplicantStates[index] ?? [];
+                  }}
+                  on:input={(event) => handleStateInputEvent(index, event)}
+                  on:blur={() => setTimeout(() => (showStateDropdowns[index] = false), 200)}
+                  bind:value={applicant.state}
+                />
+                <span
+                  class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+                  >▼</span
+                >
+              </div>
+
+              {#if showStateDropdowns[index] && perApplicantFilteredStates[index]?.length}
+                <ul
+                  class="absolute bg-white border w-full mt-1 max-h-60 overflow-y-auto z-10 rounded-md shadow"
+                >
+                  {#each perApplicantFilteredStates[index] as s}
+                    <li
+                      class="p-2 hover:bg-gray-100 cursor-pointer"
+                      on:mousedown={() => {
+                        perApplicantStateSearch[index] = s;
+                        applicant.state = s;
+                        selectState(index, s);
+                        showStateDropdowns[index] = false;
+                      }}
+                    >
+                      {s}
+                    </li>
+                  {/each}
+                </ul>
+              {/if}
+              {#if errors[index]?.state}
+                <p class="error">{errors[index].state}</p>
+              {/if}
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">City</label>
+              <input
+                placeholder="City"
+                bind:value={applicant.city}
+                class="input"
+                on:input={updateStore}
+              />
+              {#if errors[index]?.city}
+                <p class="error">{errors[index].city}</p>
+              {/if}
+            </div>
+
+            <!-- Phone -->
+            <div class="form-group">
+              <label class="block text-sm font-medium mb-1" for={`phone-${index}`}>
+                Phone
+              </label>
+              <div class="flex w-full">
+                <input
+                  id={`phone-${index}-prefix`}
+                  readonly
+                  tabindex="-1"
+                  bind:value={applicant.phonePrefix}
+                  class="p-3 border rounded-l-md w-20 bg-gray-100 text-gray-700"
+                />
+                <input
+                  id={`phone-${index}`}
+                  type="tel"
+                  bind:value={applicant.phone}
+                  on:input={updateStore}
+                  placeholder="Enter phone number"
+                  class="input rounded-l-none"
+                />
+              </div>
+              {#if errors[index]?.phone}
+                <p class="error">{errors[index].phone}</p>
+              {/if}
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium mb-1">Email</label>
+              <input
+                placeholder="Email"
+                bind:value={applicant.email}
+                class="input"
+                on:input={updateStore}
+              />
+              {#if errors[index]?.email}
+                <p class="error">{errors[index].email}</p>
+              {/if}
+            </div>
+
+            <div class="col-span-2">
+              <label class="block text-sm font-medium mb-1">Address</label>
+              <textarea
+                placeholder="Address"
+                bind:value={applicant.address}
+                class="input h-24"
+                on:input={updateStore}
+              />
+              {#if errors[index]?.address}
+                <p class="error">{errors[index].address}</p>
+              {/if}
+            </div>
+          </div>
+
+          {#if applicants.length > 1}
+            <button
+              type="button"
+              on:click={() => removeApplicant(index)}
+              class="rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-red-200 px-4 py-1 text-sm font-medium transition shadow-sm border border-red-200 absolute top-2 right-2"
+            >
+              Remove
+            </button>
+          {/if}
+        </div>
+      {/each}
+
+      <div class="flex justify-end">
+        <button type="button" class="btn-black" on:click={addApplicant}>
+          + Add Applicant
+        </button>
       </div>
-    </div>
-    <div class="text-xs text-gray-500 mb-4">(Allow more than one applicant)</div>
-    <div class="rounded-md border overflow-y-auto h-[300px] flex-grow overflow-x-auto">
-      <Table.Root>
-        {#if get(allApplicants).length === 0}
-          <p class="text-center justify-center text-xl flex flex-col h-[400px]">
-            Enter at least one applicant
-          </p>
-        {:else}
-          <Table.Header>
-            <Table.Row>
-              <Table.Head class="w-1">s/n</Table.Head>
-              <Table.Head class="w-1"></Table.Head>
-              <Table.Head>Name</Table.Head>
-              <Table.Head>Nationality</Table.Head>
-              <Table.Head>Phone Number</Table.Head>
-              <Table.Head>Email</Table.Head>
-              <Table.Head>State</Table.Head>
-              <Table.Head>Address</Table.Head>
-            </Table.Row>
-          </Table.Header>
-          <Table.Body>
-            {#each get(allApplicants) as applicant, i (i)}
-              <Table.Row>
-                {#if isEditing}
-                  <Table.Cell>{i + 1}</Table.Cell>
-                  <Table.Cell>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      style="color: darkred"
-                      on:click={() => removeApplicant(i)}
-                    >
-                      <Icon icon="ei:minus" class="h-7 w-7" />
-                    </Button>
-                  </Table.Cell>
-                  <Table.Cell class="min-w-40">
-                    <Input
-                      value={applicant.name}
-                      on:input={(event) =>
-                        UpdateApplicantField('name', getInputValue(event), i)}
-                    />
-                    {#if $listofValidatedApplicants[i]?.name !== true &&
-                      $listofValidatedApplicants[i]?.name !== null}
-                      <span style="color: darkred">name cannot be empty</span>
-                    {/if}
-                  </Table.Cell>
-                  <Table.Cell class="flex flex-col">
-                    <Popover.Root open={$listOfOpenCountries[i]} let:ids>
-                      <Popover.Trigger asChild let:builder>
-                        <Button
-                          builders={[builder]}
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={false}
-                          class="w-[200px] justify-between"
-                        >
-                          <img
-                            class={applicant.nationality !== '' ? 'block' : 'hidden'}
-                            src={GetCountryImageLink(applicant.nationality)}
-                            width="20"
-                            height="15"
-                            alt="@flag"
-                          />
-                          {applicant.nationality !== '' ? applicant.nationality : 'Select a country'}
-                          <Icon
-                            icon="ph:caret-up-down-thin"
-                            width="1.2rem"
-                            height="1.2rem"
-                            class="opacity-50 shrink-0 ml-2"
-                          />
-                        </Button>
-                      </Popover.Trigger>
-                      <Popover.Content class="w-[250px] h-[250px] p-0 z-50">
-                        <Command.Root>
-                          <Command.Input placeholder="Search countries..." />
-                          <Command.Empty>No countries found.</Command.Empty>
-                          <Command.Group class="overflow-y-auto">
-                            {#each Object.values(countriesMap) as country}
-                              <Command.Item
-                                value={country}
-                                onSelect={(currentValue) => {
-                                  UpdateApplicantField('nationality', currentValue, i);
-                                  closeCountryAndFocusTrigger(ids.trigger, i);
-                                }}
-                              >
-                                <Icon
-                                  icon="basil:check-solid"
-                                  class={cn(
-                                    'mr-2 h-4 w-4',
-                                    applicant.nationality !== country && 'text-transparent'
-                                  )}
-                                />
-                                {country}
-                              </Command.Item>
-                            {/each}
-                          </Command.Group>
-                        </Command.Root>
-                      </Popover.Content>
-                    </Popover.Root>
-                    {#if $listofValidatedApplicants[i]?.nationality !== true &&
-                      $listofValidatedApplicants[i]?.nationality !== null}
-                      <span style="color: darkred">select a country</span>
-                    {/if}
-                  </Table.Cell>
-                  <Table.Cell class="min-w-40 flex items-center gap-2">
-                    <Input
-                      value={applicant.phonePrefix}
-                      readonly
-                      class="w-16 bg-gray-100 text-gray-700"
-                    />
-                    <Input
-                      value={applicant.phone}
-                      on:input={(event) =>
-                        UpdateApplicantField('phone', getInputValue(event), i)}
-                    />
-                    {#if $listofValidatedApplicants[i]?.phone !== true &&
-                      $listofValidatedApplicants[i]?.phone !== null}
-                      <span style="color: red">enter phone number</span>
-                    {/if}
-                  </Table.Cell>
-                  <Table.Cell class="min-w-40">
-                    <Input
-                      value={applicant.email}
-                      on:input={(event) =>
-                        UpdateApplicantField('email', getInputValue(event), i)}
-                    />
-                    {#if $listofValidatedApplicants[i]?.email !== true &&
-                      $listofValidatedApplicants[i]?.email !== null}
-                      <span style="color: red">enter email address</span>
-                    {/if}
-                  </Table.Cell>
-                  <Table.Cell class="min-w-40">
-                    <Input
-                      value={applicant.state}
-                      on:input={(event) =>
-                        UpdateApplicantField('state', getInputValue(event), i)}
-                    />
-                    {#if $listofValidatedApplicants[i]?.state !== true &&
-                      $listofValidatedApplicants[i]?.state !== null}
-                      <span style="color: red">enter state</span>
-                    {/if}
-                  </Table.Cell>
-                  <Table.Cell class="min-w-40">
-                    <Input
-                      value={applicant.address}
-                      on:input={(event) =>
-                        UpdateApplicantField('address', getInputValue(event), i)}
-                    />
-                    {#if $listofValidatedApplicants[i]?.address !== true &&
-                      $listofValidatedApplicants[i]?.address !== null}
-                      <span style="color: red">enter address</span>
-                    {/if}
-                  </Table.Cell>
-                {:else}
-                  <Table.Cell class="w-1">{i + 1}</Table.Cell>
-                  <Table.Cell>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      style="color: darkred"
-                      on:click={() => removeApplicant(i)}
-                    >
-                      <Icon icon="ei:minus" class="h-7 w-7" />
-                    </Button>
-                  </Table.Cell>
-                  <Table.Cell class="min-w-52">{applicant.name}</Table.Cell>
-                  <Table.Cell>
-                    <span class="flex gap-2">
-                      <img
-                        src={GetCountryImageLink(applicant.nationality)}
-                        width="20"
-                        height="15"
-                        alt="@flag"
-                      />
-                      {applicant.nationality}
-                    </span>
-                  </Table.Cell>
-                  <Table.Cell>{applicant.phonePrefix}{applicant.phone}</Table.Cell>
-                  <Table.Cell>{applicant.email}</Table.Cell>
-                  <Table.Cell>{applicant.state}</Table.Cell>
-                  <Table.Cell class="min-w-60">{applicant.address}</Table.Cell>
-                {/if}
-              </Table.Row>
-            {/each}
-          </Table.Body>
-        {/if}
-      </Table.Root>
+      <div class="flex justify-between">
+        <button type="button" class="btn-black" on:click={handleBack}>Back</button>
+        <button
+          type="button"
+          class="px-4 py-2 bg-green-600 text-white rounded-lg"
+          on:click={handleNext}
+        >
+          Next
+        </button>
+      </div>
     </div>
   </div>
 </div>
+
+<style>
+  .input {
+    @apply p-3 border rounded-md w-full;
+  }
+  .btn-black {
+    @apply bg-black text-white px-6 py-2 rounded-md hover:opacity-90;
+  }
+  .error {
+    @apply text-red-600 text-sm mt-1;
+  }
+</style>
