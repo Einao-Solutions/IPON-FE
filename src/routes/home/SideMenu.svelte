@@ -40,12 +40,13 @@
     { icon: "mdi:help-circle-outline", location: "Support" },
     // { icon: 'cil:search', location: 'Opposition' },
     { icon: "mdi:chart-line", location: "Finance" },
+    { icon: "mdi:chart-bar", location: "Statistics" },
     { icon: "mdi:chart-box-outline", location: "Performance" },
     { icon: "mdi:account-group-outline", location: "Users" },
-    {
-      icon: "mdi:cog-outline",
-      location: "Admin",
-    },
+    // {
+    //   icon: "mdi:cog-outline",
+    //   location: "Admin",
+    // },
     {
       icon: "mdi:account-circle-outline",
       name: "Profile",
@@ -84,6 +85,23 @@
         !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)
       ) {
         menus = menus.filter((x) => x.location !== "Finance");
+      }
+
+      // Show Statistics only for specific high-level roles
+      if (
+        !$loggedInUser.userRoles.some((role) =>
+          [
+            UserRoles.Finance,
+            UserRoles.PermSec,
+            UserRoles.Minister,
+            UserRoles.Tech,
+            UserRoles.SuperAdmin,
+            UserRoles.TrademarkRegistrar,
+            UserRoles.PatentDesignRegistrar,
+          ].includes(role),
+        )
+      ) {
+        menus = menus.filter((x) => x.location !== "Statistics");
       }
 
       if (
@@ -172,7 +190,12 @@
     } else if (!menu.submenus) {
       activeMenu = menu.location;
       activeSubmenu = null;
-      goto(`/home/${menu.location.trim().toLowerCase()}`);
+      // Route Statistics to /statistics instead of /home/statistics
+      if (menu.location === "Statistics") {
+        goto(`/statistics`);
+      } else {
+        goto(`/home/${menu.location.trim().toLowerCase()}`);
+      }
     }
   }
 

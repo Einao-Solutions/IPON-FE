@@ -382,15 +382,15 @@ export const patentServices: IPService[] = [
   },
 
   // PRE-REGISTRATION CATEGORY
-  {
-    id: "clerical-update",
-    name: "CLERICAL UPDATE",
-    description: "Edit/Update existing patent application",
-    icon: "mdi:file-edit-outline",
-    route: "/home/clerical-update",
-    category: "agent",
-    price: "₦4,100",
-  },
+  // {
+  //   id: "clerical-update",
+  //   name: "CLERICAL UPDATE",
+  //   description: "Edit/Update existing patent application",
+  //   icon: "mdi:file-edit-outline",
+  //   route: "/home/clerical-update",
+  //   category: "agent",
+  //   price: "₦4,100",
+  // },
   {
     id: "update-attachments",
     name: "UPDATE FILE ATTACHMENTS",
@@ -453,16 +453,16 @@ export const patentServices: IPService[] = [
     category: "agent",
   },
 
-  // PATENT POST-REGISTRATION SERVICES
-  // {
-  //   id: 'patent-amendment',
-  //   name: 'PATENT AMENDMENT',
-  //   description: 'Amend existing patent applications',
-  //   icon: 'mdi:file-edit-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
+  //PATENT POST-REGISTRATION SERVICES
+  {
+    id: 'patent-amendment',
+    name: 'PATENT AMENDMENT',
+    description: 'Amend existing patent applications',
+    icon: 'mdi:file-edit-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
   {
     id: 'patent-assignment',
     name: 'PATENT ASSIGNMENT',
@@ -472,15 +472,15 @@ export const patentServices: IPService[] = [
     category: 'filing',
     price: ''
   },
-  // {
-  //   id: 'patent-ctc',
-  //   name: 'PATENT CTC (CERTIFIED TRUE COPY)',
-  //   description: 'Request certified true copies of patent documents',
-  //   icon: 'mdi:certificate-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'patent-ctc',
+    name: 'PATENT CTC (CERTIFIED TRUE COPY)',
+    description: 'Request certified true copies of patent documents',
+    icon: 'mdi:certificate-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
   {
     id: 'patent-license',
     name: 'PATENT LICENSE',
@@ -560,17 +560,16 @@ export const designServices: IPService[] = [
     category: "agent",
   },
 
-
   // PRE-REGISTRATION CATEGORY
-  {
-    id: "clerical-update",
-    name: "CLERICAL UPDATE",
-    description: "Edit/Update existing patent application",
-    icon: "mdi:file-edit-outline",
-    route: "/home/clerical-update",
-    category: "agent",
-    price: "₦4,100",
-  },
+  // {
+  //   id: "clerical-update",
+  //   name: "CLERICAL UPDATE",
+  //   description: "Edit/Update existing patent application",
+  //   icon: "mdi:file-edit-outline",
+  //   route: "/home/clerical-update",
+  //   category: "agent",
+  //   price: "₦4,100",
+  // },
   {
     id: "update-attachments",
     name: "UPDATE FILE ATTACHMENTS",

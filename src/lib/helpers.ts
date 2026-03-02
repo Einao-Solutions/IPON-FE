@@ -646,6 +646,12 @@ export type UsersType = {
   email: string;
   userRoles: UserRoles[];
   accountType: AccountType;
+  name: string;
+  phoneNumber: string;
+  address: string;
+  state: string;
+  nationality: string;
+  lastUpdatedAt: Date | null;
 };
 
 export enum AccountType {
@@ -801,7 +807,7 @@ export function setDefaultCorr(data) {
   document.cookie = defaultCorrCookie.trimStart();
 }
 
-export function mapRoleToString(type: number) {
+export function mapRoleToString(type: UserRoles) {
   switch (type) {
     case UserRoles.TrademarkSearch:
       return "Trademark Search";
@@ -829,17 +835,31 @@ export function mapRoleToString(type: number) {
       return "Design Certification";
     case UserRoles.PatentDesignRegistrar:
       return "Patent/Design Registrar";
-    case UserRoles.Ministry:
-      return "Ministry Admin";
+    case UserRoles.Minister:
+      return "Minister";
     case UserRoles.Tech:
       return "Tech/Support";
     case UserRoles.SuperAdmin:
       return "Super Admin";
     default:
-      return "Unknown";
+      return "User";
   }
 }
 
+export function mapAccountTypeToString(type: AccountType) {
+  switch (type) {
+    case AccountType.Individual:
+      return "Individual";
+    case AccountType.Corporate:
+      return "Corporate";
+    case AccountType.Officer:
+      return "Back Office";
+    case AccountType.Tech:
+      return "Tech/Support";  
+    default:
+      return "Unknown";
+  }
+}
 export function getPatentTypeLabel(value: number): string {
   switch (value) {
     case PatentTypes.Conventional:

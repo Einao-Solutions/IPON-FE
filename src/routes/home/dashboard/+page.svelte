@@ -92,7 +92,7 @@
   }
 
   let isStaff: boolean = false;
-  
+
   function canCreateApplication() {
     return (
       $loggedInUser?.userRoles.includes(UserRoles.User) ||
@@ -100,7 +100,12 @@
       $loggedInUser?.userRoles.includes(UserRoles.SuperAdmin)
     );
   }
+
   onMount(async () => {
+      const currentUser = sessionStorage.getItem("User")
+    ? JSON.parse(sessionStorage.getItem("User") || "{}")
+    : null;
+
     isLoading = true;
     let cookieUser = document.cookie
       .split(";")
@@ -138,7 +143,7 @@
           UserRoles.Finance,
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only
-        ].includes(e)
+        ].includes(e),
       );
     }
     if (isStaff) {
@@ -148,6 +153,9 @@
       {
         typecomponent = (await import("../components/UserDashboard.svelte"))
           .default;
+      }
+      if (currentUser.lastUpdatedAt == null) {
+        showNoticeModal = true;
       }
     }
     data = {
@@ -173,7 +181,7 @@
     payCertLoading = true;
 
     const response = await fetch(
-      `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`
+      `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`,
     );
     if (response.ok) {
       payCertResults = await response.json();
@@ -182,7 +190,7 @@
     }
 
     filteredResults = payCertResults?.filter(
-      (result) => result.fileStatus == 20
+      (result) => result.fileStatus == 20,
     );
 
     showPayCertModal = false;
@@ -194,7 +202,7 @@
     const fileNumber = result?.fileId;
 
     let response = await fetch(
-      `${baseURL}/api/files/CertificatePayment?id=${fileNumber}&userId=${$loggedInUser?.id}`
+      `${baseURL}/api/files/CertificatePayment?id=${fileNumber}&userId=${$loggedInUser?.id}`,
     );
     if (response.ok) {
       let res = await response.json();
@@ -202,7 +210,7 @@
       localStorage.setItem("name", res.name);
       localStorage.setItem("rrr", res.rrr);
       goto(
-        `/payment?type=tradecertificate&amount=${res.total}&paymentId=${res.rrr}&fileId=${res.fileId}&name=${res.name}`
+        `/payment?type=tradecertificate&amount=${res.total}&paymentId=${res.rrr}&fileId=${res.fileId}&name=${res.name}`,
       );
     }
   }
@@ -230,7 +238,7 @@
   }
   async function checkPayment(
     application: ApplicationHistoryType,
-    id: string | null
+    id: string | null,
   ) {
     if (!id) {
       showToast("error", "No Remita ID available");
@@ -296,7 +304,7 @@
     verifyPaymentLoading = true;
     try {
       const response = await fetch(
-        `${baseURL}/api/payments/check?id=${verifyRRR.trim()}`
+        `${baseURL}/api/payments/check?id=${verifyRRR.trim()}`,
       );
       if (!response.ok) throw new Error("Verification failed");
       const result = await response.json();
@@ -331,7 +339,7 @@
     getDocLoading = true;
     try {
       const response = await fetch(
-        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`
+        `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`,
       );
       if (!response.ok) {
         const errorData = await response.json();
@@ -354,10 +362,10 @@
   function generateLetter(
     fileId: string,
     letterType: ApplicationLetters,
-    applicationId: string
+    applicationId: string,
   ) {
     window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`
+      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`,
     );
   }
   async function searchChangeOfAgent() {
@@ -370,7 +378,7 @@
     changeAgentLoading = true;
     try {
       const response = await fetch(
-        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(changeAgentFileNumber.trim())}`
+        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(changeAgentFileNumber.trim())}`,
       );
       if (!response.ok) {
         const errorData = await response.json();
@@ -441,7 +449,7 @@
 
     try {
       const response = await fetch(
-        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(appealsFileNumber.trim())}`
+        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(appealsFileNumber.trim())}`,
       );
 
       if (!response.ok) {
@@ -613,10 +621,6 @@
 {#if showOwnership && ownershipForm}
   <svelte:component this={ownershipForm} {...ownershipData} />
 {/if}
-
-
-
-
 
 <!-- Pre-Registration Dialog -->
 <Dialog.Root
@@ -1446,7 +1450,7 @@
               class="text-xs text-gray-700 overflow-auto max-h-32">{JSON.stringify(
                 getDocResult,
                 null,
-                2
+                2,
               )}</pre>
           </div>
         {/if}
@@ -1495,24 +1499,20 @@
 
     <!-- Modal -->
     <div
-      class="relative w-full max-w-[900px] bg-white rounded-xl shadow-2xl overflow-hidden"
+      class="relative w-full max-w-[700px] bg-white rounded-xl shadow-2xl overflow-hidden"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="maintenance-notice-title"
+      aria-labelledby="profile-update-title"
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
         <div class="flex items-center gap-2">
-          <Icon
-            icon="mdi:bell"
-            class="w-6 h-6 text-gray-700"
-            aria-hidden="true"
-          />
+          <Icon icon="mdi:account-edit" class="w-6 h-6 text-gray-700" />
           <h2
-            id="maintenance-notice-title"
+            id="profile-update-title"
             class="text-xl md:text-2xl font-semibold"
           >
-            Notice of System Restoration and Updates
+            Profile Update Required
           </h2>
         </div>
 
@@ -1526,60 +1526,52 @@
       </div>
 
       <!-- Content -->
-      <div class="px-6 py-4 max-h-[80vh] overflow-y-auto">
-        <!-- <div class="mb-4 rounded-lg bg-amber-50 border border-amber-200 p-3 text-amber-800 flex items-start gap-2">
-          
-          <span class="text-sm md:text-base">
-            Scheduled maintenance will not affect access to the registration portal.
-          </span>
+      <div class="px-6 py-5 space-y-4 text-gray-700">
+        <p class="text-sm md:text-base">Dear Esteemed Customer,</p>
+
+        <p class="text-sm md:text-base">
+          To improve service delivery and ensure uninterrupted access to all
+          platform features, we kindly request that you review and update your
+          profile information.
+        </p>
+
+        <p class="text-sm md:text-base">
+          Keeping your details accurate helps us process filings, payments,
+          notifications, and official communications more efficiently.
+        </p>
+
+        <!-- <div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
+          <p class="text-sm md:text-base font-medium text-blue-900">
+            Please confirm or update the following:
+          </p>
+          <ul class="mt-2 list-disc pl-6 text-sm md:text-base text-blue-800 space-y-1">
+            <li>Contact information</li>
+            <li>Organization / Applicant details</li>
+            <li>Address and communication preferences</li>
+          </ul>
         </div> -->
 
-        <p class="text-sm md:text-base text-gray-700">
-          Dear Esteemed Customer,
-        </p>
-        <p class="mt-3 text-sm md:text-base text-gray-700">
-          We are pleased to inform you that online services on the official
-          website of the Commercial Law Department, Federal Ministry of
-          Industry, Trade and Investment — www.iponigeria.com — have now been
-          fully restored.
-        </p>
-
-        <p class="mt-4 font-semibold text-gray-900">
-          We have also introduced important updates to improve your experience.
-          Here’s what has changed:
-        </p>
-        <ul
-          class="mt-2 list-disc pl-6 space-y-2 text-sm md:text-base text-gray-700"
-        >
-          <li>
-            We have deployed an improved user dashboard for easier access to the
-            modules you use daily.
-          </li>
-          <li>
-            Processing speed for payments has been significantly optimized.
-          </li>
-          <li>
-            Key modules have been enhanced and reorganized for your filing
-            convenience.
-          </li>
-        </ul>
-
-        <p class="mt-4 text-sm md:text-base text-gray-700">
-          We understand that you may need time to familiarize yourself with the
-          new layout. Our support team is available 24/7 to assist with any
-          requests, enquiries, or issues through the support link on your user
-          dashboard.
-        </p>
-        <p class="mt-3 text-sm md:text-base text-gray-700">
-          Thank you for choosing the Commercial Law Department, Federal Ministry
-          of Industry, Trade and Investment — proudly supported by Einao
-          Solutions, your trusted IP technology support partner.
+        <p class="text-sm md:text-base">
+          This process only takes a few minutes and helps us serve you better.
         </p>
       </div>
 
       <!-- Footer -->
-      <div class="px-6 py-4 border-t flex justify-end">
-        <Button variant="outline" on:click={closeNotice}>Close</Button>
+      <div
+        class="px-6 py-4 border-t flex flex-col sm:flex-row gap-3 sm:justify-end"
+      >
+        <Button variant="outline" on:click={closeNotice}>
+          Remind Me Later
+        </Button>
+
+        <Button
+          on:click={() => {
+            closeNotice();
+            window.location.href = "/home/profile";
+          }}
+        >
+          Update Profile
+        </Button>
       </div>
     </div>
   </div>
@@ -1594,43 +1586,44 @@
         class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
         <div class="absolute whitespace-nowrap animate-marquee top-1.5">
-        You can now file Withdrawals for all application types using the
-        'Withdrawal' Module on the dashboard.
-        <b>◆</b>
-        You can now file Clerical Updates (Add/Remove Applicant, Edit/Add/Remove
-        Inventor Information) for Patent applications.
-        <b>◆</b>
-        Claim your files not yet on the portal and move them into your platform using
-        the 'Claim File' Module.
-        <b>◆</b>
-        You can now file Recordals (Merger, Registered User, and Assignment) for
-        Trademark applications with status 'Publication', 'Awaiting Certification,
-        and Awaiting Certificate Confirmation'.
-        <b>◆</b>
-        You can now file Clerical Updates (Change of Name, Address, Representation,
-        Correspondence, and Attachment, ) for trademark applications with status
-        'Publication' and 'AwaitingCertification'.
-        <b>◆</b>
-        You can now get your Trademark Recordal Certificates (Merger, Registered
-        User, Assignment, Change of Applicant Name, and Change of Applicant Address)
-        using the 'Print Documents' Module.
-        <b>◆</b>
-        You can now file clerical updates (change of name, address, or title of invention)
-        for patent applications using the Clerical Update module on the dashboard.
-        <b>◆</b>
-        Patent Renewal can now be filed using the "Post-Registration" module on the
-        dashboard.
-        <b>◆</b>
-        Use the Attachment Module to upload your patent application attachments.
-        <b>◆</b>
-        Files with status "Rejected" can file for appeal using the "APPEAL" module
-        on the dashboard.
-        <b>◆</b>
-        All Patent application filed prior to Monday, 25th August, 2025 are required
-        to be updated via the "Update Patent File" Module on the dashboard to ensure
-        the completeness of all fields within the documents.
+          You can now file Withdrawals for all application types using the
+          'Withdrawal' Module on the dashboard.
+          <b>◆</b>
+          You can now file Clerical Updates (Add/Remove Applicant, Edit/Add/Remove
+          Inventor Information) for Patent applications.
+          <b>◆</b>
+          Claim your files not yet on the portal and move them into your platform
+          using the 'Claim File' Module.
+          <b>◆</b>
+          You can now file Recordals (Merger, Registered User, and Assignment) for
+          Trademark applications with status 'Publication', 'Awaiting Certification,
+          and Awaiting Certificate Confirmation'.
+          <b>◆</b>
+          You can now file Clerical Updates (Change of Name, Address, Representation,
+          Correspondence, and Attachment, ) for trademark applications with status
+          'Publication' and 'AwaitingCertification'.
+          <b>◆</b>
+          You can now get your Trademark Recordal Certificates (Merger, Registered
+          User, Assignment, Change of Applicant Name, and Change of Applicant Address)
+          using the 'Print Documents' Module.
+          <b>◆</b>
+          You can now file clerical updates (change of name, address, or title of
+          invention) for patent applications using the Clerical Update module on
+          the dashboard.
+          <b>◆</b>
+          Patent Renewal can now be filed using the "Post-Registration" module on
+          the dashboard.
+          <b>◆</b>
+          Use the Attachment Module to upload your patent application attachments.
+          <b>◆</b>
+          Files with status "Rejected" can file for appeal using the "APPEAL" module
+          on the dashboard.
+          <b>◆</b>
+          All Patent application filed prior to Monday, 25th August, 2025 are required
+          to be updated via the "Update Patent File" Module on the dashboard to ensure
+          the completeness of all fields within the documents.
+        </div>
       </div>
-    </div>
     </div>
   {/if}
 {/if}
@@ -1961,5 +1954,4 @@
   .animate-marquee {
     animation: marquee 25s linear infinite;
   }
-  
 </style>
