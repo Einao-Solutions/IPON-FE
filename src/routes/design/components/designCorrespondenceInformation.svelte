@@ -1,0 +1,121 @@
+<script lang="ts">
+	import { designForm, currentStep } from '$lib/utils/design';
+	import { get } from 'svelte/store';
+
+	const initial = get(designForm).correspondence as any;
+
+	let name: string = initial?.name ?? '';
+	let email: string = initial?.email ?? '';
+	let phone: string = initial?.phone ?? '';
+	let nationality: string = initial?.nationality ?? '';
+	let state: string = initial?.state ?? '';
+	let address: string = initial?.address ?? '';
+
+	function updateStore() {
+		designForm.update((form: any) => {
+			form.correspondence = { name, email, phone, nationality, state, address };
+			return form;
+		});
+	}
+
+	function handleNext() {
+		updateStore();
+		currentStep.update((n) => n + 1);
+	}
+
+	function handleBack() {
+		updateStore();
+		currentStep.update((n) => (n > 0 ? n - 1 : 0));
+	}
+</script>
+
+<div class="space-y-6">
+	<h2 class="text-2xl font-semibold">Correspondence Information</h2>
+
+	<div class="border p-4 rounded-md space-y-4">
+		<div class="grid grid-cols-2 gap-4">
+			<div>
+				<label class="block text-sm font-medium mb-1">Name</label>
+				<input
+					class="input"
+					placeholder="Name"
+					bind:value={name}
+					on:input={updateStore}
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium mb-1">Email</label>
+				<input
+					class="input"
+					placeholder="Email"
+					bind:value={email}
+					on:input={updateStore}
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium mb-1">Phone</label>
+				<input
+					class="input"
+					placeholder="Phone"
+					bind:value={phone}
+					on:input={updateStore}
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium mb-1">Nationality</label>
+				<input
+					class="input"
+					placeholder="Nationality"
+					bind:value={nationality}
+					on:input={updateStore}
+				/>
+			</div>
+
+			<div>
+				<label class="block text-sm font-medium mb-1">State</label>
+				<input
+					class="input"
+					placeholder="State"
+					bind:value={state}
+					on:input={updateStore}
+				/>
+			</div>
+
+			<div class="col-span-2">
+				<label class="block text-sm font-medium mb-1">Address</label>
+				<textarea
+					class="input h-24"
+					placeholder="Address"
+					bind:value={address}
+					on:input={updateStore}
+				/>
+			</div>
+		</div>
+	</div>
+
+	<div class="flex justify-between">
+		<button type="button" class="btn-black" on:click={handleBack}>
+			Back
+		</button>
+		<button
+			type="button"
+			class="px-4 py-2 bg-green-600 text-white rounded-lg"
+			on:click={handleNext}
+		>
+			Next
+		</button>
+	</div>
+</div>
+
+<style>
+	.input {
+		@apply p-3 border rounded-md w-full;
+	}
+	.btn-black {
+		@apply bg-black text-white px-6 py-2 rounded-md hover:opacity-90;
+	}
+</style>
+

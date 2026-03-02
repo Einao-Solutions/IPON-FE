@@ -88,10 +88,10 @@ function submit() {
   </div>
   <div class="flex justify-between mt-8">
     <button
-      class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-6 py-2 rounded shadow"
+    class="bg-black hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
       on:click={goBack}
     >
-      Previous
+      Back
     </button>
     <button
       class="bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"

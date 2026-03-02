@@ -9,6 +9,36 @@ function updateField(field: string, value: string) {
   form.designInformation[field] = value;
   designForm.update(f => ({ ...f, designInformation: { ...f.designInformation, [field]: value } }));
 }
+
+function handleFileOriginChange(value: string) {
+  // Update the design information as before
+  updateField('fileOrigin', value);
+
+  // Also default the first applicant's nationality based on origin
+  designForm.update((f: any) => {
+    if (!Array.isArray(f.applicants) || f.applicants.length === 0) {
+      f.applicants = [
+        {
+          name: '',
+          email: '',
+          phone: '',
+          nationality: '',
+          state: '',
+          address: ''
+        }
+      ];
+    }
+
+    if (value === 'Local') {
+      f.applicants[0].nationality = 'Nigeria';
+    } else if (value === 'Foreign') {
+      // Clear so user can choose any nationality
+      f.applicants[0].nationality = '';
+    }
+
+    return f;
+  });
+}
 </script>
 
 <div class="max-w-3xl mx-auto">
@@ -17,7 +47,11 @@ function updateField(field: string, value: string) {
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <label class="block mb-1 font-medium"> File Origin</label>
-        <select class="w-full border rounded px-3 py-2" bind:value={form.designInformation.fileOrigin} on:change={e => updateField('fileOrigin', e.target.value)}>
+        <select
+          class="w-full border rounded px-3 py-2"
+          bind:value={form.designInformation.fileOrigin}
+          on:change={e => handleFileOriginChange(e.target.value)}
+        >
           <option value="">Select Origin</option>
           <option value="Local">Local</option>
           <option value="Foreign">Foreign</option>
@@ -32,9 +66,9 @@ function updateField(field: string, value: string) {
         </select>
         {#if form.designInformation.applicationType === 'Non-Textile'}
           <div class="mt-4">
-            <label class="block mb-1 font-medium"> Non-Textile Type</label>
+            <label class="block mb-1 font-medium"> Representation Type</label>
             <select class="w-full border rounded px-3 py-2" bind:value={form.designInformation.nonTextileType} on:change={e => updateField('nonTextileType', e.target.value)}>
-              <option value="">Select Non-Textile Type</option>
+              <option value="">Select Representation Type</option>
               <option value="Label">Label</option>
               <option value="Container">Container</option>
               <option value="Others">Others</option>
@@ -54,7 +88,7 @@ function updateField(field: string, value: string) {
     </div>
     <div class="flex justify-between mt-8">
       <button
-        class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold px-6 py-2 rounded shadow"
+        class="bg-black hover:bg-gray-400 text-white font-semibold px-6 py-2 rounded shadow"
         on:click={() => $currentStep--}
       >
         Back

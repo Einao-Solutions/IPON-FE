@@ -76,6 +76,16 @@
   onMount(() => {
     filteredCountries = getCountryNames();
 
+    // Default first applicant nationality based on Design Information's file origin
+    const snapshot: any = get(designForm);
+    const origin = snapshot?.designInformation?.fileOrigin;
+
+    if (origin === 'Local' && applicants[0]) {
+      if (!applicants[0].country) {
+        applicants[0].country = 'Nigeria';
+      }
+    }
+
     // if applicants already have countries, set prefixes and fetch their states
     applicants.forEach((a, i) => {
       if (a.country) {
@@ -84,6 +94,8 @@
         fetchStatesForApplicant(i, a.country);
       }
     });
+
+    updateStore();
   });
 
   function updateStore() {
