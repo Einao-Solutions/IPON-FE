@@ -9,6 +9,13 @@
 	let priorityDocument: File | null = initial?.priorityDocument ?? null;
 	let otherDocuments: File[] = initial?.otherDocuments ?? [];
 
+	let errors = {
+		powerOfAttorney: '',
+		designRepresentation: '',
+		priorityDocument: '',
+		otherDocuments: ''
+	};
+
 	function updateStore() {
 		designForm.update((form: any) => {
 			form.attachments = {
@@ -37,8 +44,46 @@
 		updateStore();
 	}
 
+	function validateAttachments() {
+		const newErrors = {
+			powerOfAttorney: '',
+			designRepresentation: '',
+			priorityDocument: '',
+			otherDocuments: ''
+		};
+
+		// Always required
+		newErrors.powerOfAttorney = powerOfAttorney ? '' : 'Power of Attorney is required';
+		newErrors.designRepresentation = designRepresentation
+			? ''
+			: 'Design Representation is required';
+
+		// Priority document required only if any priority information exists
+		const snapshot: any = get(designForm);
+		const priorities: any[] = Array.isArray(snapshot?.priorities) ? snapshot.priorities : [];
+		const hasPriority = priorities.some(
+			(p) => p?.applicationNumber || p?.country || p?.date
+		);
+		if (hasPriority && !priorityDocument) {
+			newErrors.priorityDocument =
+				'Priority Document is required when priority information is provided';
+		}
+
+		// Optional: enforce max 4 other documents
+		if (otherDocuments.length > 4) {
+			newErrors.otherDocuments = 'You can upload up to 4 other documents';
+		}
+
+		errors = newErrors;
+		return Object.values(newErrors).every((v) => !v);
+	}
+
 	function handleNext() {
+		const isValid = validateAttachments();
 		updateStore();
+		if (!isValid) {
+			return;
+		}
 		currentStep.update((n) => n + 1);
 	}
 
@@ -55,21 +100,33 @@
 		<div>
 			<label class="block text-sm font-medium mb-1">Power of Attorney (required)</label>
 			<input type="file" class="input" on:change={(event) => handleFileChange(event, 'powerOfAttorney')} />
+			{#if errors.powerOfAttorney}
+				<p class="error">{errors.powerOfAttorney}</p>
+			{/if}
 		</div>
 
 		<div>
 			<label class="block text-sm font-medium mb-1">Design Representation (required)</label>
 			<input type="file" class="input" on:change={(event) => handleFileChange(event, 'designRepresentation')} />
+			{#if errors.designRepresentation}
+				<p class="error">{errors.designRepresentation}</p>
+			{/if}
 		</div>
 
 		<div>
 			<label class="block text-sm font-medium mb-1">Priority Document (required if priority provided)</label>
 			<input type="file" class="input" on:change={(event) => handleFileChange(event, 'priorityDocument')} />
+			{#if errors.priorityDocument}
+				<p class="error">{errors.priorityDocument}</p>
+			{/if}
 		</div>
 
 		<div>
 			<label class="block text-sm font-medium mb-1">Other Documents (up to 4)</label>
 			<input type="file" multiple class="input" on:change={handleOtherFilesChange} />
+			{#if errors.otherDocuments}
+				<p class="error">{errors.otherDocuments}</p>
+			{/if}
 		</div>
 	</div>
 
@@ -93,6 +150,9 @@
 	}
 	.btn-black {
 		@apply bg-black text-white px-6 py-2 rounded-md hover:opacity-90;
+	}
+	.error {
+		@apply text-red-600 text-sm mt-1;
 	}
 </style>
 

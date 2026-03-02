@@ -25,12 +25,6 @@
 				}
 			];
 
-	let errors = localPriorityInfo.map(() => ({
-		applicationNumber: '',
-		country: '',
-		date: ''
-	}));
-
 	// Per-entry dropdown/search state
 	let perPriorityFilteredCountries: string[][] = localPriorityInfo.map(() => []);
 	let perPriorityCountrySearch: string[] = localPriorityInfo.map(() => '');
@@ -52,23 +46,8 @@
 		});
 	}
 
-	function validate() {
-		let valid = true;
-		errors = localPriorityInfo.map((entry) => {
-			const entryErrors = {
-				applicationNumber: entry.applicationNumber ? '' : 'Application Number is required.',
-				country: entry.country ? '' : 'Country is required.',
-				date: entry.date ? '' : 'Date is required.'
-			};
-			if (entryErrors.applicationNumber || entryErrors.country || entryErrors.date) valid = false;
-			return entryErrors;
-		});
-		return valid;
-	}
-
 	function handleNext() {
-		// Show validation errors but always move forward like other design steps
-		validate();
+		// Priority information is optional; just persist and move forward
 		updateStore();
 		currentStep.update((n) => n + 1);
 	}
@@ -87,7 +66,6 @@
 				date: ''
 			}
 		];
-		errors = [...errors, { applicationNumber: '', country: '', date: '' }];
 		perPriorityFilteredCountries = [...perPriorityFilteredCountries, []];
 		perPriorityCountrySearch = [...perPriorityCountrySearch, ''];
 		showPriorityCountryDropdowns = [...showPriorityCountryDropdowns, false];
@@ -96,7 +74,6 @@
 
 	function removePriorityInfo(index: number) {
 		localPriorityInfo = localPriorityInfo.filter((_, i) => i !== index);
-		errors = errors.filter((_, i) => i !== index);
 		perPriorityFilteredCountries = perPriorityFilteredCountries.filter((_, i) => i !== index);
 		perPriorityCountrySearch = perPriorityCountrySearch.filter((_, i) => i !== index);
 		showPriorityCountryDropdowns = showPriorityCountryDropdowns.filter((_, i) => i !== index);
@@ -149,9 +126,6 @@
 						bind:value={localPriorityInfo[index].applicationNumber}
 						on:input={updateStore}
 					/>
-					{#if errors[index].applicationNumber}
-						<div class="error">{errors[index].applicationNumber}</div>
-					{/if}
 				</div>
 
 				<div>
@@ -189,10 +163,6 @@
 							</ul>
 						{/if}
 					</div>
-
-					{#if errors[index].country}
-						<div class="error">{errors[index].country}</div>
-					{/if}
 				</div>
 			</div>
 
@@ -204,9 +174,6 @@
 					bind:value={localPriorityInfo[index].date}
 					on:input={updateStore}
 				/>
-				{#if errors[index]?.date}
-					<div class="error">{errors[index].date}</div>
-				{/if}
 			</div>
 
 			{#if localPriorityInfo.length > 1}

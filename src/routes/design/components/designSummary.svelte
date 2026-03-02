@@ -1,7 +1,5 @@
 <script lang="ts">
-import { designForm } from '$lib/utils/design';
-import { currentStep } from '$lib/utils/design';
-import { get } from 'svelte/store';
+import { designForm, currentStep } from '$lib/utils/design';
 
 let form = $designForm;
 
@@ -9,11 +7,156 @@ let form = $designForm;
 $:
   form = $designForm;
 
+let submitError = '';
+
 function goBack() {
   $currentStep--;
 }
 
+function countWords(text: string): number {
+  if (!text) return 0;
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+function validateBeforeSubmit() {
+  submitError = '';
+
+  const info = form.designInformation ?? {};
+
+  if (!info.fileOrigin || !info.applicationType || !info.title?.trim() || !info.statementOfNovelty?.trim()) {
+    submitError = 'Please complete all required Design Information fields.';
+    return false;
+  }
+
+  if (info.applicationType === 'Non-Textile' && !info.nonTextileType) {
+    submitError = 'Please select a Representation Type in Design Information.';
+    return false;
+  }
+
+  if (countWords(info.statementOfNovelty) > 250) {
+    submitError = 'Statement of Novelty must not exceed 250 words.';
+    return false;
+  }
+
+  const applicants: any[] = Array.isArray(form.applicants) ? form.applicants : [];
+  if (!applicants.length) {
+    submitError = 'Please provide at least one Applicant.';
+    return false;
+  }
+
+  const invalidApplicant = applicants.find((a) => {
+    if (!a) return true;
+    const nameValid = !!a.name?.trim();
+    const nationalityValid = !!a.nationality;
+    const stateValid = !!a.state?.trim();
+    const cityValid = !!a.city?.trim();
+    const addressValid = !!a.address?.trim();
+    const phoneValid = /^\+?\d{7,15}$/.test((a.phone ?? '').trim());
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((a.email ?? '').trim());
+    return !(
+      nameValid &&
+      nationalityValid &&
+      stateValid &&
+      cityValid &&
+      addressValid &&
+      phoneValid &&
+      emailValid
+    );
+  });
+
+  if (invalidApplicant) {
+    submitError = 'Please complete all required Applicant fields.';
+    return false;
+  }
+
+  const creators: any[] = Array.isArray(form.creators) ? form.creators : [];
+  if (!creators.length) {
+    submitError = 'Please provide at least one Creator.';
+    return false;
+  }
+
+  const invalidCreator = creators.find((c) => {
+    if (!c) return true;
+    const nameValid = !!c.name?.trim();
+    const nationalityValid = !!c.nationality;
+    const stateValid = !!c.state?.trim();
+    const cityValid = !!c.city?.trim();
+    const addressValid = !!c.address?.trim();
+    const phoneValid = /^\+?\d{7,15}$/.test((c.phone ?? '').trim());
+    const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((c.email ?? '').trim());
+    return !(
+      nameValid &&
+      nationalityValid &&
+      stateValid &&
+      cityValid &&
+      addressValid &&
+      phoneValid &&
+      emailValid
+    );
+  });
+
+  if (invalidCreator) {
+    submitError = 'Please complete all required Creator fields.';
+    return false;
+  }
+
+  const corr = form.correspondence ?? {};
+  const corrNameValid = !!corr.name?.trim();
+  const corrNationalityValid = !!corr.nationality?.trim();
+  const corrStateValid = !!corr.state?.trim();
+  const corrAddressValid = !!corr.address?.trim();
+  const corrPhoneValid = /^\+?\d{7,15}$/.test((corr.phone ?? '').trim());
+  const corrEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((corr.email ?? '').trim());
+
+  if (
+    !(
+      corrNameValid &&
+      corrNationalityValid &&
+      corrStateValid &&
+      corrAddressValid &&
+      corrPhoneValid &&
+      corrEmailValid
+    )
+  ) {
+    submitError = 'Please complete all required Correspondence Information fields.';
+    return false;
+  }
+
+  const attachments = form.attachments ?? {};
+  const powerOfAttorney = attachments.powerOfAttorney ?? null;
+  const designRepresentation = attachments.designRepresentation ?? null;
+  const priorityDocument = attachments.priorityDocument ?? null;
+  const otherDocuments: any[] = Array.isArray(attachments.otherDocuments)
+    ? attachments.otherDocuments
+    : [];
+
+  if (!powerOfAttorney || !designRepresentation) {
+    submitError = 'Please upload the required attachments (Power of Attorney and Design Representation).';
+    return false;
+  }
+
+  const priorities: any[] = Array.isArray(form.priorities) ? form.priorities : [];
+  const hasPriority = priorities.some((p) => p?.applicationNumber || p?.country || p?.date);
+  if (hasPriority && !priorityDocument) {
+    submitError = 'Priority Document is required because priority information was provided.';
+    return false;
+  }
+
+  if (otherDocuments.length > 4) {
+    submitError = 'You can upload up to 4 other documents.';
+    return false;
+  }
+
+  return true;
+}
+
 function submit() {
+  if (!validateBeforeSubmit()) {
+    return;
+  }
   // Implement submission logic here
   alert('Submitted!');
 }
@@ -86,6 +229,9 @@ function submit() {
       <div>No correspondence information provided.</div>
     {/if}
   </div>
+  {#if submitError}
+    <p class="text-red-600 text-sm mt-2">{submitError}</p>
+  {/if}
   <div class="flex justify-between mt-8">
     <button
     class="bg-black hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"

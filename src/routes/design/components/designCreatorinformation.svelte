@@ -229,9 +229,12 @@
 	}
 
 	function handleNext() {
-		// Run validation to show errors but always move forward
-		validateCreators();
+		// Run validation and only move forward if all creators are valid
+		const isValid = validateCreators();
 		updateStore();
+		if (!isValid) {
+			return;
+		}
 		currentStep.update((n) => n + 1);
 	}
 

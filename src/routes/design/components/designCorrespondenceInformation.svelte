@@ -11,6 +11,15 @@
 	let state: string = initial?.state ?? '';
 	let address: string = initial?.address ?? '';
 
+	let errors = {
+		name: '',
+		email: '',
+		phone: '',
+		nationality: '',
+		state: '',
+		address: ''
+	};
+
 	function updateStore() {
 		designForm.update((form: any) => {
 			form.correspondence = { name, email, phone, nationality, state, address };
@@ -18,8 +27,39 @@
 		});
 	}
 
+	function validateCorrespondence() {
+		const newErrors = {
+			name: '',
+			email: '',
+			phone: '',
+			nationality: '',
+			state: '',
+			address: ''
+		};
+
+		newErrors.name = name.trim() ? '' : 'Name is required';
+		newErrors.nationality = nationality.trim() ? '' : 'Nationality is required';
+		newErrors.state = state.trim() ? '' : 'State is required';
+		newErrors.address = address.trim() ? '' : 'Address is required';
+
+		newErrors.phone = /^\+?\d{7,15}$/.test(phone.trim())
+			? ''
+			: 'Valid phone number is required';
+
+		newErrors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+			? ''
+			: 'Valid email is required';
+
+		errors = newErrors;
+		return Object.values(newErrors).every((v) => !v);
+	}
+
 	function handleNext() {
+		const isValid = validateCorrespondence();
 		updateStore();
+		if (!isValid) {
+			return;
+		}
 		currentStep.update((n) => n + 1);
 	}
 
@@ -42,6 +82,9 @@
 					bind:value={name}
 					on:input={updateStore}
 				/>
+				{#if errors.name}
+					<p class="error">{errors.name}</p>
+				{/if}
 			</div>
 
 			<div>
@@ -52,6 +95,9 @@
 					bind:value={email}
 					on:input={updateStore}
 				/>
+				{#if errors.email}
+					<p class="error">{errors.email}</p>
+				{/if}
 			</div>
 
 			<div>
@@ -62,6 +108,9 @@
 					bind:value={phone}
 					on:input={updateStore}
 				/>
+				{#if errors.phone}
+					<p class="error">{errors.phone}</p>
+				{/if}
 			</div>
 
 			<div>
@@ -72,6 +121,9 @@
 					bind:value={nationality}
 					on:input={updateStore}
 				/>
+				{#if errors.nationality}
+					<p class="error">{errors.nationality}</p>
+				{/if}
 			</div>
 
 			<div>
@@ -82,6 +134,9 @@
 					bind:value={state}
 					on:input={updateStore}
 				/>
+				{#if errors.state}
+					<p class="error">{errors.state}</p>
+				{/if}
 			</div>
 
 			<div class="col-span-2">
@@ -92,6 +147,9 @@
 					bind:value={address}
 					on:input={updateStore}
 				/>
+				{#if errors.address}
+					<p class="error">{errors.address}</p>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -116,6 +174,9 @@
 	}
 	.btn-black {
 		@apply bg-black text-white px-6 py-2 rounded-md hover:opacity-90;
+	}
+	.error {
+		@apply text-red-600 text-sm mt-1;
 	}
 </style>
 

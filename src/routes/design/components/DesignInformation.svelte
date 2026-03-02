@@ -14,6 +14,14 @@
     statementOfNovelty: ''
   };
 
+  function countWords(text: string): number {
+    if (!text) return 0;
+    return text
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+  }
+
   function updateField(field: string, value: string) {
     form.designInformation[field] = value;
     designForm.update((f) => ({
@@ -82,6 +90,11 @@
 
     if (!form.designInformation.statementOfNovelty?.trim()) {
       newErrors.statementOfNovelty = 'Statement of novelty is required';
+    } else {
+      const words = countWords(form.designInformation.statementOfNovelty);
+      if (words > 250) {
+        newErrors.statementOfNovelty = 'Statement of novelty must not exceed 250 words';
+      }
     }
 
     errors = newErrors;
@@ -150,6 +163,7 @@
       </div>
       <div class="md:col-span-2">
         <label class="block mb-1 font-medium"> Statement of Novelty</label>
+        <p class="text-gray-500 text-xs mb-1">Must not exceed 250 words.</p>
         <textarea class="w-full border rounded px-3 py-2 min-h-[80px]" bind:value={form.designInformation.statementOfNovelty} on:input={e => updateField('statementOfNovelty', e.target.value)} placeholder="Enter statement of novelty"></textarea>
         {#if errors.statementOfNovelty}
           <p class="text-red-600 text-sm mt-1">{errors.statementOfNovelty}</p>
