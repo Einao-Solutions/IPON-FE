@@ -273,9 +273,12 @@
   }
 
   function handleNext() {
-    // Run validation to show any errors, but always move to the next step
-    validateApplicants();
+    // Run validation and only move to the next step if all applicants are valid
+    const isValid = validateApplicants();
     updateStore();
+    if (!isValid) {
+      return;
+    }
     currentStep.update((n) => n + 1);
   }
 
