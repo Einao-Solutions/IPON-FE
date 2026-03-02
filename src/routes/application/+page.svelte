@@ -109,48 +109,51 @@
 			// 		break;
 			// }
 		}
+		//if ($newApplicationType === 1) {
 		if ($newApplicationType === 1) {
-			switch (page) {
-				case 0:
-					if (!basicDesignComponent) {
-						basicDesignComponent = (await import('./components/design/BasicDesign.svelte')).default;
-					}
-					viewComponent = basicDesignComponent;
-					break;
-				case 1:
-					if (!inventorsComponent) {
-						inventorsComponent = (await import('./components/Inventors.svelte')).default;
-					}
-					viewComponent = inventorsComponent;
-					break;
-				case 2:
-					if (!applicantsComponent) {
-						applicantsComponent = (await import('./components/Applicants.svelte')).default;
-					}
-					viewComponent = applicantsComponent;
-					break;
-				case 3:
-					if (!correspondenceComponent) {
-						correspondenceComponent = (await import('./components/Correspondence.svelte')).default;
-					}
-					viewComponent = correspondenceComponent;
-					break;
-				case 4:
-					if (!attachmentComponent) {
-						attachmentComponent = (await import('./components/design/DesignAttachments.svelte')).default;
-					}
-					viewComponent = attachmentComponent;
-					break;
-				case 5:
-					if (!verificationComponent) {
-						verificationComponent = (await import('./components/Verification.svelte')).default;
-					}
-					viewComponent = verificationComponent;
-					break;
-				default:
-					viewComponent = null;
-					break;
-			}
+			goto('../design');
+			return;
+			// switch (page) {
+			// 	case 0:
+			// 		if (!basicDesignComponent) {
+			// 			basicDesignComponent = (await import('./components/design/BasicDesign.svelte')).default;
+			// 		}
+			// 		viewComponent = basicDesignComponent;
+			// 		break;
+			// 	case 1:
+			// 		if (!inventorsComponent) {
+			// 			inventorsComponent = (await import('./components/Inventors.svelte')).default;
+			// 		}
+			// 		viewComponent = inventorsComponent;
+			// 		break;
+			// 	case 2:
+			// 		if (!applicantsComponent) {
+			// 			applicantsComponent = (await import('./components/Applicants.svelte')).default;
+			// 		}
+			// 		viewComponent = applicantsComponent;
+			// 		break;
+			// 	case 3:
+			// 		if (!correspondenceComponent) {
+			// 			correspondenceComponent = (await import('./components/Correspondence.svelte')).default;
+			// 		}
+			// 		viewComponent = correspondenceComponent;
+			// 		break;
+			// 	case 4:
+			// 		if (!attachmentComponent) {
+			// 			attachmentComponent = (await import('./components/design/DesignAttachments.svelte')).default;
+			// 		}
+			// 		viewComponent = attachmentComponent;
+			// 		break;
+			// 	case 5:
+			// 		if (!verificationComponent) {
+			// 			verificationComponent = (await import('./components/Verification.svelte')).default;
+			// 		}
+			// 		viewComponent = verificationComponent;
+			// 		break;
+			// 	default:
+			// 		viewComponent = null;
+			// 		break;
+			// }
 		}
 
 		if ($newApplicationType===2){
