@@ -240,7 +240,8 @@
   }
 
   function handleNext() {
-    if (!validateApplicants()) return;
+    // Run validation to show any errors, but always move to the next step
+    validateApplicants();
     updateStore();
     currentStep.update((n) => n + 1);
   }
