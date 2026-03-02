@@ -57,6 +57,13 @@
     document.cookie = "user=; path=/; max-age=0";
     loggedInToken.set(null);
     loggedInUser.set(null);
+    sessionStorage.clear();
+    localStorage.clear();
+    document.cookie.split(";").forEach((c) => {
+      const eqPos = c.indexOf("=");
+      const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim();
+      document.cookie = `${name}=;path=/;max-age=0`;
+    });
     goto("/auth");
   }
 

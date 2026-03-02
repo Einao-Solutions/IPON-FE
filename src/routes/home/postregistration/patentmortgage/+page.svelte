@@ -8,6 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	interface PatentMortgageData {
 		mortgageDeeds: File[];
@@ -20,6 +21,7 @@
 		phone: string;
 		nationality: string;
 		address: string;
+		city: string;
 		state: string;
 	}
 
@@ -34,6 +36,7 @@
 		phone: '',
 		nationality: '',
 		address: '',
+		city: '',
 		state: ''
 	};
 
@@ -51,9 +54,11 @@
 	let applicantPhone: string = '';
 	let applicantAddress: string = '';
 	let applicantNationality: string = '';
+	let applicantCity: string = '';
 	let applicantState: string = '';
 	let isProcessing = false;
 	let isLoading = false;
+	let showExistingApplicationModal = false;
 
 	onMount(async () => {
 		// Check if user is authenticated
@@ -81,6 +86,13 @@
 
 			const response = await res.json();
 			const data = response.data || response; // Handle both nested and direct response formats
+			
+			// Check if there's already an existing application
+			if (data.hasExistingApplication) {
+				showExistingApplicationModal = true;
+				return;
+			}
+			
 			cost = data.amount;
 			paymentId = data.rrr;
 			applicantName = data.applicantName;
@@ -93,6 +105,7 @@
 			applicantPhone = data.applicantPhone;
 			applicantAddress = data.applicantAddress || '';
 			applicantNationality = data.applicantNationality || '';
+			applicantCity = data.applicantCity || '';
 			applicantState = data.applicantState || '';
 		} catch (err) {
 			error = 'Error fetching patent mortgage cost.';
@@ -152,6 +165,11 @@
 
 		if (!newMortgagorData.address.trim()) {
 			error = 'Please enter new mortgagor address.';
+			return false;
+		}
+
+		if (!newMortgagorData.city.trim()) {
+			error = 'Please enter new mortgagor city.';
 			return false;
 		}
 
@@ -221,6 +239,7 @@
 				oldMortgageePhone: applicantPhone,
 				oldMortgageeAddress: applicantAddress,
 				oldMortgageeNationality: applicantNationality,
+				oldMortgageeCity: applicantCity,
 				oldMortgageeState: applicantState,
 				// New mortgagor (from input fields)
 				newMortgagorName: newMortgagorData.name,
@@ -228,6 +247,7 @@
 				newMortgagorPhone: newMortgagorData.phone,
 				newMortgagorAddress: newMortgagorData.address,
 				newMortgagorNationality: newMortgagorData.nationality,
+				newMortgagorCity: newMortgagorData.city,
 				newMortgagorState: newMortgagorData.state
 			};
 
@@ -265,6 +285,10 @@
 
 	function goBack() {
 		window.history.back();
+	}
+
+	function goToDashboard() {
+		goto('/home/dashboard');
 	}
 </script>
 
@@ -415,6 +439,15 @@
 							/>
 						</div>
 						<div>
+							<label class="block text-sm font-medium text-gray-700 mb-1">City:</label>
+							<input
+								type="text"
+								value={applicantCity}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
+						<div>
 							<label class="block text-sm font-medium text-gray-700 mb-1">State:</label>
 							<input
 								type="text"
@@ -493,6 +526,19 @@
 								<option value={name}>{name}</option>
 							{/each}
 						</select>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-1">
+							City: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="text"
+							bind:value={newMortgagorData.city}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter new mortgagor city"
+							required
+						/>
 					</div>
 
 					<div>
@@ -727,4 +773,29 @@
 		</div>
 	</div>
 </div>
+
+<!-- Existing Application Modal -->
+<Dialog.Root bind:open={showExistingApplicationModal}>
+	<Dialog.Content class="w-11/12 max-w-md mx-auto">
+		<Dialog.Header>
+			<Dialog.Title class="text-xl font-bold text-red-600 flex items-center gap-2">
+				<Icon icon="mdi:alert-circle" width="1.5em" height="1.5em" />
+				Application Already Exists
+			</Dialog.Title>
+		</Dialog.Header>
+		<div class="py-4">
+			<p class="text-gray-700">
+				A patent mortgage application has already been submitted for this file. You cannot create multiple mortgage applications for the same patent.
+			</p>
+		</div>
+		<Dialog.Footer class="flex gap-3 justify-end">
+			<Button variant="outline" on:click={() => showExistingApplicationModal = false}>
+				Close
+			</Button>
+			<Button on:click={goToDashboard} class="bg-blue-600 hover:bg-blue-700">
+				Go to Dashboard
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
 </div>

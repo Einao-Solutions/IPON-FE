@@ -7,8 +7,8 @@ import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
 // export const baseURL = "http://localhost:5044";
-// export const baseURL = "https://backend.einaotest.com";
-export const baseURL = "https://integration.iponigeria.com";
+ export const baseURL = "https://backend.einaotest.com";
+// export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
 export const nonConventionalDescription =
@@ -339,6 +339,24 @@ export enum ApplicationLetters {
   WithdrawalRequestReceipt = 51,
   WithdrawalRequestApproval = 52,
   WithdrawalRequestRefusal = 53,
+  PatentAssignmentAcknowledgement = 54,
+  PatentLicenseAcknowledgement = 55,  
+  PatentMortgageAcknowledgement = 56,
+  PatentMergerAcknowledgement = 57,
+  PatentCtcAcknowledgement = 58,
+  PatentAmendmentAcknowledgement = 59,
+  PatentAssignmentRefusalLetter = 60,
+  PatentLicenseRefusalLetter = 61,
+  PatentMortgageRefusalLetter = 62,
+  PatentMergerRefusalLetter = 63,
+  PatentCtcRefusalLetter = 64,
+  PatentAmendmentRefusalLetter = 65,
+  PatentAssignmentReceipt = 66,
+  PatentLicenseReceipt = 67,
+  PatentMortgageReceipt = 68,
+  PatentMergerReceipt = 69,
+  PatentCtcReceipt = 70,
+  PatentAmendmentReceipt = 71,
 }
 
 export enum ApplicationStatuses {
@@ -628,6 +646,12 @@ export type UsersType = {
   email: string;
   userRoles: UserRoles[];
   accountType: AccountType;
+  name: string;
+  phoneNumber: string;
+  address: string;
+  state: string;
+  nationality: string;
+  lastUpdatedAt: Date | null;
 };
 
 export enum AccountType {
@@ -783,7 +807,7 @@ export function setDefaultCorr(data) {
   document.cookie = defaultCorrCookie.trimStart();
 }
 
-export function mapRoleToString(type: number) {
+export function mapRoleToString(type: UserRoles) {
   switch (type) {
     case UserRoles.TrademarkSearch:
       return "Trademark Search";
@@ -811,17 +835,31 @@ export function mapRoleToString(type: number) {
       return "Design Certification";
     case UserRoles.PatentDesignRegistrar:
       return "Patent/Design Registrar";
-    case UserRoles.Ministry:
-      return "Ministry Admin";
+    case UserRoles.Minister:
+      return "Minister";
     case UserRoles.Tech:
       return "Tech/Support";
     case UserRoles.SuperAdmin:
       return "Super Admin";
     default:
-      return "Unknown";
+      return "User";
   }
 }
 
+export function mapAccountTypeToString(type: AccountType) {
+  switch (type) {
+    case AccountType.Individual:
+      return "Individual";
+    case AccountType.Corporate:
+      return "Corporate";
+    case AccountType.Officer:
+      return "Back Office";
+    case AccountType.Tech:
+      return "Tech/Support";  
+    default:
+      return "Unknown";
+  }
+}
 export function getPatentTypeLabel(value: number): string {
   switch (value) {
     case PatentTypes.Conventional:

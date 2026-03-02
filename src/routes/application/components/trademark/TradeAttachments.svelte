@@ -453,7 +453,7 @@
 	<div>
 		<Label for="rep">Proposed trademark representation</Label>
 		<p class="text-xs text-gray-500 mb-2 font-medium">
-			Recommended: 300×300px minimum, square format preferred
+			Only image files (jpg, jpeg, png) with a minimum size of 300×300px are accepted for trademark representation. 
 		</p>
 		<div class="flex space-x-2">
 			<Input

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type PatentData, GetCountryImageLink, MapAttachmentToString } from '$lib/helpers';
+	import { type PatentData, FormApplicationTypes, GetCountryImageLink, MapAttachmentToString, ApplicationStatuses } from '$lib/helpers';
 	import * as Card from '$lib/components/ui/card'
 	import * as Table from '$lib/components/ui/table'
 	import * as Dialog from '$lib/components/ui/dialog'
@@ -14,6 +14,72 @@
 	let isImage:boolean=false;
 	let showPreview:boolean=false;
 	let previewUrl:string|null=null;
+
+	// Computed license information
+	$: licenseInfo = (() => {
+		// Check if there's an approved license in application history
+		const approvedLicense = data?.applicationHistory?.find(app => 
+			app.applicationType === FormApplicationTypes.License && app.currentStatus === ApplicationStatuses.Approved
+		);
+		
+		if (approvedLicense && data?.postRegApplications) {
+			// Find the corresponding license recordal in postregistration applications
+			const licenseRecordal = data.postRegApplications.find(postApp => 
+				postApp.recordalType === "Patent License Recordal"
+			);
+			
+			if (licenseRecordal) {
+				return {
+					licensee: {
+						name: licenseRecordal.name || '',
+						email: licenseRecordal.email || '',
+						phone: licenseRecordal.phone || '',
+						nationality: licenseRecordal.nationality || '',
+						city: licenseRecordal.city || '',
+						state: licenseRecordal.state || '',
+						address: licenseRecordal.address || ''
+					},
+					licenseDate: licenseRecordal.licenseDate || licenseRecordal.dateApproved || '',
+					licenseStatus: 'Approved'
+				};
+			}
+		}
+		
+		return null;
+	})();
+
+	// Computed mortgage information
+	$: mortgageInfo = (() => {
+		// Check if there's an approved mortgage in application history
+		const approvedMortgage = data?.applicationHistory?.find(app => 
+			app.applicationType === FormApplicationTypes.Mortgage && app.currentStatus === ApplicationStatuses.Approved
+		);
+		
+		if (approvedMortgage && data?.postRegApplications) {
+			// Find the corresponding mortgage recordal in postregistration applications
+			const mortgageRecordal = data.postRegApplications.find(postApp => 
+				postApp.recordalType === "Patent Mortgage Recordal"
+			);
+			
+			if (mortgageRecordal) {
+				return {
+					mortgagee: {
+						name: mortgageRecordal.name || '',
+						email: mortgageRecordal.email || '',
+						phone: mortgageRecordal.phone || '',
+						nationality: mortgageRecordal.nationality || '',
+						city: mortgageRecordal.city || '',
+						state: mortgageRecordal.state || '',
+						address: mortgageRecordal.address || ''
+					},
+					mortgageDate: mortgageRecordal.mortgageDate || mortgageRecordal.dateApproved || '',
+					mortgageStatus: 'Approved'
+				};
+			}
+		}
+		
+		return null;
+	})();
 
 	applicationData.subscribe((dt)=>{
 		data=dt;
@@ -174,6 +240,125 @@
 			</div>
 		</Card.Content>
 	</Card.Root>
+
+	<!-- License Information Card -->
+	{#if licenseInfo && (licenseInfo.licensee || licenseInfo.licenseDate)}
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>License Information</Card.Title>
+			</Card.Header>
+			<Card.Content>
+				{#if licenseInfo.licensee}
+					<div class="grid sm:grid-cols-2 gap-4 mb-4">
+						<div>
+							<Label class="font-bold">Licensee Name</Label>
+							<p>{licenseInfo.licensee.name || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">Email</Label>
+							<p>{licenseInfo.licensee.email || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">Phone</Label>
+							<p>{licenseInfo.licensee.phone || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">Nationality</Label>
+							<p>{licenseInfo.licensee.nationality || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">City</Label>
+							<p>{licenseInfo.licensee.city || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">State</Label>
+							<p>{licenseInfo.licensee.state || "N/A"}</p>
+						</div>
+						<div class="sm:col-span-2">
+							<Label class="font-bold">Address</Label>
+							<p>{licenseInfo.licensee.address || "N/A"}</p>
+						</div>
+					</div>
+				{/if}
+				{#if licenseInfo.licenseDate}
+					<div class="border-t pt-4">
+						<div class="grid sm:grid-cols-2 gap-4">
+							<div>
+								<Label class="font-bold">License Date</Label>
+								<p>{new Date(licenseInfo.licenseDate).toLocaleDateString()}</p>
+							</div>
+							{#if licenseInfo.licenseStatus}
+								<div>
+									<Label class="font-bold">License Status</Label>
+									<p>{licenseInfo.licenseStatus}</p>
+								</div>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</Card.Content>
+		</Card.Root>
+	{/if}
+
+	<!-- Mortgage Information Card -->
+	{#if mortgageInfo && (mortgageInfo.mortgagee || mortgageInfo.mortgageDate)}
+		<Card.Root>
+			<Card.Header>
+				<Card.Title>Mortgage Information</Card.Title>
+			</Card.Header>
+			<Card.Content>
+				{#if mortgageInfo.mortgagee}
+					<div class="grid sm:grid-cols-2 gap-4 mb-4">
+						<div>
+							<Label class="font-bold">Mortgagee Name</Label>
+							<p>{mortgageInfo.mortgagee.name || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">Email</Label>
+							<p>{mortgageInfo.mortgagee.email || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">Phone</Label>
+							<p>{mortgageInfo.mortgagee.phone || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">Nationality</Label>
+							<p>{mortgageInfo.mortgagee.nationality || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">City</Label>
+							<p>{mortgageInfo.mortgagee.city || "N/A"}</p>
+						</div>
+						<div>
+							<Label class="font-bold">State</Label>
+							<p>{mortgageInfo.mortgagee.state || "N/A"}</p>
+						</div>
+						<div class="sm:col-span-2">
+							<Label class="font-bold">Address</Label>
+							<p>{mortgageInfo.mortgagee.address || "N/A"}</p>
+						</div>
+					</div>
+				{/if}
+				{#if mortgageInfo.mortgageDate}
+					<div class="border-t pt-4">
+						<div class="grid sm:grid-cols-2 gap-4">
+							<div>
+								<Label class="font-bold">Mortgage Date</Label>
+								<p>{new Date(mortgageInfo.mortgageDate).toLocaleDateString()}</p>
+							</div>
+							{#if mortgageInfo.mortgageStatus}
+								<div>
+									<Label class="font-bold">Mortgage Status</Label>
+									<p>{mortgageInfo.mortgageStatus}</p>
+								</div>
+							{/if}
+						</div>
+					</div>
+				{/if}
+			</Card.Content>
+		</Card.Root>
+	{/if}
+
 	<Card.Root>
 		<!-- <Card.Header>
 			<Card.Title>

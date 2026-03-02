@@ -453,61 +453,62 @@ export const patentServices: IPService[] = [
     category: "agent",
   },
 
-  // PATENT POST-REGISTRATION SERVICES
-  // {
-  //   id: 'patent-amendment',
-  //   name: 'PATENT AMENDMENT',
-  //   description: 'Amend existing patent applications',
-  //   icon: 'mdi:file-edit-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'patent-assignment',
-  //   name: 'PATENT ASSIGNMENT',
-  //   description: 'Transfer patent ownership rights',
-  //   icon: 'mdi:account-switch-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'patent-ctc',
-  //   name: 'PATENT CTC (CERTIFIED TRUE COPY)',
-  //   description: 'Request certified true copies of patent documents',
-  //   icon: 'mdi:certificate-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'patent-license',
-  //   name: 'PATENT LICENSE',
-  //   description: 'License patent rights to third parties',
-  //   icon: 'mdi:handshake-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'patent-mortgage',
-  //   name: 'PATENT MORTGAGE',
-  //   description: 'Mortgage patent as security for loans',
-  //   icon: 'mdi:bank-outline',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'patent-merger',
-  //   name: 'PATENT MERGER',
-  //   description: 'Merge patent applications',
-  //   icon: 'mdi:merge',
-  //   route: 'modal', // Will open modal first
-  //   category: 'filing',
-  //   price:''
-  // },
+  //PATENT POST-REGISTRATION SERVICES
+  {
+    id: 'patent-amendment',
+    name: 'PATENT AMENDMENT',
+    description: 'Amend existing patent applications',
+    icon: 'mdi:file-edit-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'patent-assignment',
+    name: 'PATENT ASSIGNMENT',
+    description: 'Transfer patent ownership rights',
+    icon: 'mdi:account-switch-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'patent-ctc',
+    name: 'PATENT CTC (CERTIFIED TRUE COPY)',
+    description: 'Request certified true copies of patent documents',
+    icon: 'mdi:certificate-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'patent-license',
+    name: 'PATENT LICENSE',
+    description: 'License patent rights to third parties',
+    icon: 'mdi:handshake-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'patent-mortgage',
+    name: 'PATENT MORTGAGE',
+    description: 'Mortgage patent as security for loans',
+    icon: 'mdi:bank-outline',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'patent-merger',
+    name: 'PATENT MERGER',
+    description: 'Merge patent applications',
+    icon: 'mdi:merge',
+    route: 'modal', // Will open modal first
+    category: 'filing',
+    price:''
+  },
+
 ];
 
 // Design-specific services
@@ -548,14 +549,6 @@ export const designServices: IPService[] = [
     description: "Update agent information",
     icon: "mdi:account-switch",
     route: "/home/agent/change",
-    category: "agent",
-  },
-  {
-    id: "claim-files",
-    name: "CLAIM FILES",
-    description: "Claim files from previous system",
-    icon: "mdi:file-download",
-    route: "/home/claim-files",
     category: "agent",
   },
   {

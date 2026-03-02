@@ -103,6 +103,8 @@ const config = {
         "/home/postregistration/patentmerger/result",
         "/home/postregistration/patentmortgage",
         "/home/postregistration/patentmortgage/result",
+        "/home/postregistration/patentamendment/result",
+        "/home/postregistration/patentctc/result"
       ],
     },
   },

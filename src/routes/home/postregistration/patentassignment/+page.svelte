@@ -8,6 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog';
 
 	interface PatentAssignmentData {
 		assignmentDeeds: File[];
@@ -20,6 +21,7 @@
 		phone: string;
 		nationality: string;
 		address: string;
+		city: string;
 		state: string;
 	}
 
@@ -34,6 +36,7 @@
 		phone: '',
 		nationality: '',
 		address: '',
+		city: '',
 		state: ''
 	};
 
@@ -52,8 +55,10 @@
 	let applicantAddress: string = '';
 	let applicantNationality: string = '';
 	let applicantState: string = '';
+	let applicantCity: string = '';
 	let isProcessing = false;
 	let isLoading = false;
+	let showExistingApplicationModal = false;
 
 	onMount(async () => {
 		// Check if user is authenticated
@@ -81,6 +86,13 @@
 
 			const response = await res.json();
 			const data = response.data || response; // Handle both nested and direct response formats
+			
+			// Check if there's already an existing application
+			if (data.hasExistingApplication) {
+				showExistingApplicationModal = true;
+				return;
+			}
+			
 			cost = data.amount;
 			paymentId = data.rrr;
 			applicantName = data.applicantName;
@@ -94,6 +106,7 @@
 			applicantAddress = data.applicantAddress || '';
 			applicantNationality = data.applicantNationality || '';
 			applicantState = data.applicantState || '';
+			applicantCity = data.applicantCity || '';
 		} catch (err) {
 			error = 'Error fetching patent assignment cost.';
 			console.error(err);
@@ -152,6 +165,11 @@
 
 		if (!assigneeData.address.trim()) {
 			error = 'Please enter assignee address.';
+			return false;
+		}
+
+		if (!assigneeData.city.trim()) {
+			error = 'Please enter assignee city.';
 			return false;
 		}
 
@@ -222,11 +240,13 @@
 				oldAssignorAddress: applicantAddress,
 				oldAssignorNationality: applicantNationality,
 				oldAssignorState: applicantState,
+				oldAssignorCity: applicantCity,
 				// New assignee information (from input fields)
 				newAssigneeName: assigneeData.name,
 				newAssigneeEmail: assigneeData.email,
 				newAssigneePhone: assigneeData.phone,
 				newAssigneeAddress: assigneeData.address,
+				newAssigneeCity: assigneeData.city,
 				newAssigneeNationality: assigneeData.nationality,
 				newAssigneeState: assigneeData.state
 			};
@@ -261,6 +281,10 @@
 
 	function goBack() {
 		window.history.back();
+	}
+
+	function goToDashboard() {
+		goto('/home/dashboard');
 	}
 </script>
 
@@ -419,6 +443,15 @@
 								disabled
 							/>
 						</div>
+						<div>
+							<label for="applicantCity" class="block text-sm font-medium text-gray-700 mb-1">City:</label>
+							<input
+								type="text"
+								value={applicantCity}
+								class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+								disabled
+							/>
+						</div>
 						<div class="md:col-span-2">
 							<label for="applicantAddress" class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
 							<input
@@ -437,7 +470,7 @@
 				<div class="bg-gray-300 px-4 py-2 font-medium text-black">ASSIGNEE INFORMATION</div>
 				<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeName" class="block text-sm font-medium text-gray-700 mb-1">
 							Name: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -450,7 +483,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeEmail" class="block text-sm font-medium text-gray-700 mb-1">
 							Email: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -463,7 +496,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneePhone" class="block text-sm font-medium text-gray-700 mb-1">
 							Phone Number: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -476,7 +509,7 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeNationality" class="block text-sm font-medium text-gray-700 mb-1">
 							Nationality: <span class="text-red-500">*</span>
 						</label>
 						<select
@@ -492,7 +525,20 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeCity" class="block text-sm font-medium text-gray-700 mb-1">
+							City: <span class="text-red-500">*</span>
+						</label>
+						<input
+							type="text"
+							bind:value={assigneeData.city}
+							class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
+							placeholder="Enter assignee city"
+							required
+						/>
+					</div>
+
+					<div>
+						<label for="assigneeState" class="block text-sm font-medium text-gray-700 mb-1">
 							State: <span class="text-red-500">*</span>
 						</label>
 						<input
@@ -505,7 +551,7 @@
 					</div>
 
 					<div class="md:col-span-2">
-						<label class="block text-sm font-medium text-gray-700 mb-1">
+						<label for="assigneeAddress" class="block text-sm font-medium text-gray-700 mb-1">
 							Address: <span class="text-red-500">*</span>
 						</label>
 						<textarea
@@ -525,7 +571,7 @@
 				<div class="p-4 space-y-6">
 					<!-- Assignment Deeds -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<label for="assignmentDeeds" class="block text-sm font-medium text-gray-700 mb-2">
 							Deed of Assignment: <span class="text-red-500">*</span>
 						</label>
 						
@@ -603,7 +649,7 @@
 
 					<!-- Supporting Documents -->
 					<div>
-						<label class="block text-sm font-medium text-gray-700 mb-2">
+						<label for="supportingDocuments" class="block text-sm font-medium text-gray-700 mb-2">
 							Other Supporting Documents: <span class="text-red-500">*</span>
 						</label>
 						
@@ -723,4 +769,29 @@
 		</div>
 	</div>
 </div>
+
+<!-- Existing Application Modal -->
+<Dialog.Root bind:open={showExistingApplicationModal}>
+	<Dialog.Content class="w-11/12 max-w-md mx-auto">
+		<Dialog.Header>
+			<Dialog.Title class="text-xl font-bold text-red-600 flex items-center gap-2">
+				<Icon icon="mdi:alert-circle" width="1.5em" height="1.5em" />
+				Application Already Exists
+			</Dialog.Title>
+		</Dialog.Header>
+		<div class="py-4">
+			<p class="text-gray-700">
+				A patent assignment application has already been submitted for this file. You cannot create multiple assignment applications for the same patent.
+			</p>
+		</div>
+		<Dialog.Footer class="flex gap-3 justify-end">
+			<Button variant="outline" on:click={() => showExistingApplicationModal = false}>
+				Close
+			</Button>
+			<Button on:click={goToDashboard} class="bg-blue-600 hover:bg-blue-700">
+				Go to Dashboard
+			</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
 </div>

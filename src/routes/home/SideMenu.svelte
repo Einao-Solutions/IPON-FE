@@ -42,10 +42,10 @@
     { icon: "mdi:chart-line", location: "Finance" },
     { icon: "mdi:chart-box-outline", location: "Performance" },
     { icon: "mdi:account-group-outline", location: "Users" },
-    {
-      icon: "mdi:cog-outline",
-      location: "Admin",
-    },
+    // {
+    //   icon: "mdi:cog-outline",
+    //   location: "Admin",
+    // },
     {
       icon: "mdi:account-circle-outline",
       name: "Profile",

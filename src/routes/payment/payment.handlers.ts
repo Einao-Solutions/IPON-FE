@@ -85,6 +85,8 @@ export const paymentHandlers: Record<
   patentlicense,
   patentmortgage,
   patentmerger,
+  patentctc,
+  "patent-amendment": patentAmendment,
   trademarkRenewal,
 };
 
@@ -439,7 +441,7 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
 
@@ -461,7 +463,7 @@ async function patentlicense(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
 
@@ -483,7 +485,7 @@ async function patentmortgage(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
 
@@ -505,6 +507,59 @@ async function patentmerger(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}`,
+    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function patentctc(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Patent Certified True Copy (CTC) Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/patentctc/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function patentAmendment(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId")
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  // DEBUG: Log values being set
+  console.log('Patent Amendment Payment Handler - Setting values:', {
+    title: 'Patent Amendment Application',
+    cost,
+    paymentId: rrr,
+    fileApplicant: applicantName,
+    fileNumber: fileId
+  });
+
+  ctx.state.setTitle("Patent Amendment Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+   `https://${ctx.page.url.host}/home/postregistration/patentamendment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
