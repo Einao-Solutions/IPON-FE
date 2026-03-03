@@ -1,4 +1,5 @@
 <script lang="ts">
+import { goto } from '$app/navigation';
 import { designForm, currentStep } from '$lib/utils/design';
 import { applicationData, loggedInUser } from '$lib/store';
 import { ApplicationStatuses, baseURL, FilingType, FormApplicationTypes, arrayBufferToBase64, toByteArray } from '$lib/helpers';
@@ -283,7 +284,7 @@ async function submit() {
 
     if (res) {
       applicationData.set(res);
-      window.location.href = '/payment?type=newapplication';
+      await goto('/payment?type=newapplication');
     } else {
       submitError = 'Submission failed. Please try again.';
     }
