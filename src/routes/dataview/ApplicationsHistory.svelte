@@ -2617,13 +2617,13 @@
                         generateLetter(application, 0, 37);
                       }}>Receipt</DropdownMenu.Item
                     >
-                    <!-- {#if application.currentStatus === ApplicationStatuses.Active}
+                    {#if application.currentStatus === ApplicationStatuses.Active}
                       <DropdownMenu.Item
                         on:click={() => {
                           generateLetter(application, 0, 3);
                         }}>Certificate of Registration</DropdownMenu.Item
                       >
-                    {/if} -->
+                    {/if}
                   {/if}
                   <!-- Appeal Docs -->
                   {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
