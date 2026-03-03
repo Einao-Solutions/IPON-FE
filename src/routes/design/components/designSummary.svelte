@@ -1,5 +1,7 @@
 <script lang="ts">
 import { designForm, currentStep } from '$lib/utils/design';
+import { applicationData, loggedInUser } from '$lib/store';
+import { ApplicationStatuses, baseURL, FilingType, FormApplicationTypes, arrayBufferToBase64, toByteArray } from '$lib/helpers';
 
 let form = $designForm;
 
@@ -8,6 +10,7 @@ $:
   form = $designForm;
 
 let submitError = '';
+let isSubmitting = false;
 
 function goBack() {
   $currentStep--;
@@ -153,12 +156,143 @@ function validateBeforeSubmit() {
   return true;
 }
 
-function submit() {
+async function submit() {
   if (!validateBeforeSubmit()) {
     return;
   }
-  // Implement submission logic here
-  alert('Submitted!');
+
+  if (!$loggedInUser) {
+    submitError = 'You must be logged in to submit this application.';
+    return;
+  }
+
+  isSubmitting = true;
+  submitError = '';
+
+  try {
+    const info = form.designInformation ?? {};
+
+    const designTypeValue = info.applicationType === 'Textile' ? 0 : 1; // 0 = Textile, 1 = Non-Textile
+
+    const mappedApplicants = (form.applicants ?? []).map((a: any) => ({
+      name: a.name,
+      country: a.nationality,
+      address: a.address,
+      phone: a.phone,
+      email: a.email,
+    }));
+
+    const mappedCreators = (form.creators ?? []).map((c: any) => ({
+      name: c.name,
+      country: c.nationality,
+      address: c.address,
+      phone: c.phone,
+      email: c.email,
+    }));
+
+    const corr = form.correspondence ?? {};
+
+    const data: any = {
+      type: FilingType.Design,
+      fileStatus: ApplicationStatuses.AwaitingPayment,
+      formApplicationType: FormApplicationTypes.NewApplication,
+      designCreators: mappedCreators,
+      designType: designTypeValue,
+      statementOfNovelty: info.statementOfNovelty,
+      titleOfDesign: info.title,
+      correspondence: {
+        id: crypto.randomUUID(),
+        name: corr.name,
+        address: corr.address,
+        email: corr.email,
+        phone: corr.phone,
+        state: corr.state,
+      },
+      applicants: mappedApplicants,
+      attachments: [],
+      creatorAccount: $loggedInUser?.creatorId ?? null,
+    };
+
+    const attachmentsLists: any[] = [];
+    const atts = form.attachments ?? {};
+
+    if (atts.powerOfAttorney) {
+      const file = atts.powerOfAttorney as File;
+      const bytes = await toByteArray(file);
+      attachmentsLists.push({
+        fileName: file.name,
+        Name: 'form2',
+        contentType: file.type,
+        data: arrayBufferToBase64((bytes as Uint8Array).buffer),
+      });
+    }
+
+    if (atts.designRepresentation) {
+      const file = atts.designRepresentation as File;
+      const bytes = await toByteArray(file);
+      attachmentsLists.push({
+        fileName: file.name,
+        Name: 'design1',
+        contentType: file.type,
+        data: arrayBufferToBase64((bytes as Uint8Array).buffer),
+      });
+    }
+
+    if (atts.priorityDocument) {
+      const file = atts.priorityDocument as File;
+      const bytes = await toByteArray(file);
+      attachmentsLists.push({
+        fileName: file.name,
+        Name: 'pdoc',
+        contentType: file.type,
+        data: arrayBufferToBase64((bytes as Uint8Array).buffer),
+      });
+    }
+
+    if (Array.isArray(atts.otherDocuments)) {
+      for (const file of atts.otherDocuments as File[]) {
+        const bytes = await toByteArray(file);
+        attachmentsLists.push({
+          fileName: file.name,
+          Name: 'any',
+          contentType: file.type,
+          data: arrayBufferToBase64((bytes as Uint8Array).buffer),
+        });
+      }
+    }
+
+    const payload = {
+      file: JSON.stringify(data),
+      attachments: attachmentsLists,
+    };
+
+    const result = await fetch(`${baseURL}/api/files/createNew`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!result.ok) {
+      submitError = 'Submission failed. Please try again.';
+      return;
+    }
+
+    const res = await result.json();
+
+    if (res) {
+      applicationData.set(res);
+      window.location.href = '/payment?type=newapplication';
+    } else {
+      submitError = 'Submission failed. Please try again.';
+    }
+  } catch (err) {
+    console.error('Error submitting design application:', err);
+    submitError = 'An unexpected error occurred.';
+  } finally {
+    isSubmitting = false;
+  }
 }
 </script>
 
