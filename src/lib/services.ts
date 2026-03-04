@@ -208,7 +208,7 @@ export const trademarkServices: IPService[] = [
     icon: "mdi:newspaper-variant-outline",
     route: "/home/publications/publicationstatusupdate",
     category: "agent",
-    price: "₦5,000",
+    price: "₦3,500",
   },
 
   // SEARCH CATEGORY (reordered)
