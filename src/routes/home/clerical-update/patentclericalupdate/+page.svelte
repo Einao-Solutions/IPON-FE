@@ -15,7 +15,7 @@
   import { Button } from "$lib/components/ui/button/index";
   import { toast } from "svelte-sonner";
   import { countriesMap } from "$lib/constants";
-import { loggedInToken, loggedInUser } from "$lib/store";
+  import { loggedInToken, loggedInUser } from "$lib/store";
   interface ApplicantInfo {
     name: string;
     address?: string;
@@ -167,7 +167,7 @@ import { loggedInToken, loggedInUser } from "$lib/store";
         error = "Unable to retrieve cost info.";
         return;
       }
-      const data = await res.json()
+      const data = await res.json();
 
       fileInfo = {
         fileId: data.fileId ?? null,
@@ -481,7 +481,6 @@ import { loggedInToken, loggedInUser } from "$lib/store";
           formObj.PatentApplicationType = Number(newData.patentApplicationType);
         }
       }
-
       if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
         formObj.CorrespondenceName = correspondenceName;
         formObj.CorrespondenceAddress = correspondenceAddress;
@@ -507,7 +506,14 @@ import { loggedInToken, loggedInUser } from "$lib/store";
             formObj[key] !== undefined &&
             formObj[key] !== null
           ) {
-            formData.append(key, JSON.stringify(formObj[key]));
+            if (
+              Array.isArray(formObj[key]) ||
+              typeof formObj[key] === "object"
+            ) {
+              formData.append(key, JSON.stringify(formObj[key]));
+            } else {
+              formData.append(key, String(formObj[key]));
+            }
           }
         }
 
@@ -554,6 +560,58 @@ import { loggedInToken, loggedInUser } from "$lib/store";
         }, 5000);
         return;
       }
+
+      // For non-free updates, build FormData with files and submit
+      const formData = new FormData();
+      for (const key in formObj) {
+        if (
+          Object.prototype.hasOwnProperty.call(formObj, key) &&
+          formObj[key] !== undefined &&
+          formObj[key] !== null
+        ) {
+          if (Array.isArray(formObj[key]) || typeof formObj[key] === "object") {
+            formData.append(key, JSON.stringify(formObj[key]));
+          } else {
+            formData.append(key, String(formObj[key]));
+          }
+        }
+      }
+
+      if (showAddApplicantSection && Array.isArray(newApplicants)) {
+        newApplicants.forEach((apps, i) => {
+          formData.append(`NewApplicants[${i}].name`, apps.name ?? "");
+          formData.append(`NewApplicants[${i}].address`, apps.address ?? "");
+          formData.append(`NewApplicants[${i}].email`, apps.email ?? "");
+          formData.append(`NewApplicants[${i}].phone`, apps.phone ?? "");
+          formData.append(
+            `NewApplicants[${i}].nationality`,
+            apps.country ?? "",
+          );
+          formData.append(`NewApplicants[${i}].state`, apps.state ?? "");
+          formData.append(`NewApplicants[${i}].city`, apps.city ?? "");
+        });
+      }
+
+      const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!result.ok) {
+        const errorText = await result.text();
+        let errorMessage = result.statusText;
+        try {
+          const errorJson = JSON.parse(errorText);
+          errorMessage = errorJson.message || errorMessage;
+        } catch {
+          // Response wasn't JSON, use statusText
+        }
+        toast.error(`Error submitting clerical update: ${errorMessage}`);
+        return;
+      }
+
+      const data = await result.text();
+      localStorage.setItem("clericalId", data);
       await handlePayment();
     } catch (err) {
       error = "Form submission failed.";

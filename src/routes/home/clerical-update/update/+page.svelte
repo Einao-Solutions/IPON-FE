@@ -479,6 +479,7 @@
   let showSuccessToast = false;
 
   async function handleSubmit() {
+    console.log("Submit clicked");
     if (!validateForm()) return;
     isProcessing = true;
     const fileNumber = pageData.url.searchParams.get("fileId") ?? "";
@@ -492,15 +493,14 @@
 
       console.log(fileInfo.fileType, updateType, fileNumber);
 
-      // Create FormData instead of plain object
-      const formData = new FormData();
-
-      // Add basic fields
-      formData.append("FileId", fileNumber);
-      formData.append("UpdateType", updateType.toString());
-      formData.append("FileType", fileInfo.fileType?.toString() ?? "");
-      formData.append("PaymentRRR", fileInfo.paymentRRR ?? "");
-      formData.append("OldApplicantName", fileInfo.applicantName ?? "");
+      // Build formObj first (like patent clerical update)
+      const formObj: Record<string, any> = {
+        FileId: fileNumber,
+        UpdateType: updateType,
+        FileType: fileInfo.fileType ?? "",
+        PaymentRRR: fileInfo.paymentRRR ?? "",
+        OldApplicantName: fileInfo.applicantName ?? "",
+      };
 
       // Add specific fields based on update type
       if (updateType === ClericalUpdateTypes.CreatorInformation) {
@@ -512,86 +512,153 @@
             creator.address ||
             creator.country,
         );
-
-        // Serialize creators as JSON string
-        formData.append("DesignCreators", JSON.stringify(filteredCreators));
-
+        formObj.DesignCreators = filteredCreators;
         if (newData.noveltyStatement) {
-          formData.append("NoveltyStatement", newData.noveltyStatement);
+          formObj.NoveltyStatement = newData.noveltyStatement;
         }
       } else if (updateType === ClericalUpdateTypes.FileTitle) {
-        if (newData.Representation) {
-          formData.append("Representation", newData.Representation); // Append actual File object
-        }
         if (newData.trademarkLogo) {
-          formData.append("TrademarkLogo", newData.trademarkLogo.toString());
+          formObj.TrademarkLogo = newData.trademarkLogo.toString();
         }
         if (newData.fileTitle) {
-          formData.append("FileTitle", newData.fileTitle);
+          formObj.FileTitle = newData.fileTitle;
         }
       } else if (updateType === ClericalUpdateTypes.ApplicantName) {
-        formData.append("ApplicantName", newData.applicantName ?? "");
+        formObj.ApplicantName = newData.applicantName ?? "";
       } else if (updateType === ClericalUpdateTypes.DesignAttachments) {
-        // Append new design attachment files
-        if (newData.DesignAttachments && newData.DesignAttachments.length > 0) {
+        // Removed attachment URLs
+        if (removedDesignAttachments && removedDesignAttachments.length > 0) {
+          formObj.RemoveDesignAttachmentUrls = removedDesignAttachments;
+        }
+      } else if (updateType === ClericalUpdateTypes.ApplicantAddress) {
+        formObj.ApplicantAddress = newData.applicantAddress ?? "";
+        formObj.ApplicantPhone = newData.applicantPhone ?? "";
+        formObj.ApplicantEmail = newData.applicantEmail ?? "";
+      } else if (updateType === ClericalUpdateTypes.TrademarkType) {
+        formObj.TrademarkType =
+          newData.trademarkType != null ? newData.trademarkType.toString() : "";
+        formObj.ApplicantNationality = newData.applicantNationality ?? "";
+      } else if (updateType === ClericalUpdateTypes.FileClass) {
+        formObj.FileClass = String(newData.fileClass);
+        formObj.ClassDescription = newData.classDescription ?? "";
+        formObj.Disclaimer = newData.disclaimer ?? "";
+      } else if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
+        formObj.CorrespondenceName = newData.correspondenceName ?? "";
+        formObj.CorrespondencePhone = newData.correspondencePhone ?? "";
+        formObj.CorrespondenceEmail = newData.correspondenceEmail ?? "";
+        formObj.CorrespondenceAddress = newData.correspondenceAddress ?? "";
+      }
+
+      localStorage.setItem("formData", JSON.stringify(formObj));
+
+      // Handle AwaitingSearch status (free update) - similar to Withdrawn in patent
+      if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
+        const formData = new FormData();
+        for (const key in formObj) {
+          if (
+            Object.prototype.hasOwnProperty.call(formObj, key) &&
+            formObj[key] !== undefined &&
+            formObj[key] !== null
+          ) {
+            formData.append(key, JSON.stringify(formObj[key]));
+          }
+        }
+
+        // Add file attachments to FormData
+        if (
+          updateType === ClericalUpdateTypes.FileTitle &&
+          newData.Representation
+        ) {
+          formData.append("Representation", newData.Representation);
+        }
+        if (
+          updateType === ClericalUpdateTypes.DesignAttachments &&
+          newData.DesignAttachments &&
+          newData.DesignAttachments.length > 0
+        ) {
           newData.DesignAttachments.forEach((file) => {
             formData.append("DesignAttachments", file);
           });
         }
-        // Append removed attachment URLs
-        if (removedDesignAttachments && removedDesignAttachments.length > 0) {
-          removedDesignAttachments.forEach((url) => {
-            formData.append("RemoveDesignAttachmentUrls", url);
-          });
+        if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
+          if (newData.PowerOfAttorney) {
+            formData.append("PowerOfAttorney", newData.PowerOfAttorney);
+          }
+          if (newData.OtherAttachment) {
+            formData.append("OtherAttachment", newData.OtherAttachment);
+          }
         }
-      } else if (updateType === ClericalUpdateTypes.ApplicantAddress) {
-        formData.append("ApplicantAddress", newData.applicantAddress ?? "");
-        formData.append("ApplicantPhone", newData.applicantPhone ?? "");
-        formData.append("ApplicantEmail", newData.applicantEmail ?? "");
-      } else if (updateType === ClericalUpdateTypes.TrademarkType) {
-        formData.append(
-          "TrademarkType",
-          newData.trademarkType != null ? newData.trademarkType.toString() : "",
-        );
-        formData.append(
-          "ApplicantNationality",
-          newData.applicantNationality ?? "",
-        );
-      } else if (updateType === ClericalUpdateTypes.FileClass) {
-        formData.append("FileClass", String(newData.fileClass));
-        formData.append("ClassDescription", newData.classDescription ?? "");
-        formData.append("Disclaimer", newData.disclaimer ?? "");
-      } else if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
-        formData.append("CorrespondenceName", newData.correspondenceName ?? "");
-        formData.append(
-          "CorrespondencePhone",
-          newData.correspondencePhone ?? "",
-        );
-        formData.append(
-          "CorrespondenceEmail",
-          newData.correspondenceEmail ?? "",
-        );
-        formData.append(
-          "CorrespondenceAddress",
-          newData.correspondenceAddress ?? "",
-        );
 
-        if (newData.PowerOfAttorney) {
-          formData.append("PowerOfAttorney", newData.PowerOfAttorney); // Append actual File object
+        // Send FormData directly (no JSON.stringify, no Content-Type header)
+        const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!result.ok) {
+          const errorText = await result.text();
+          let errorMessage = result.statusText;
+          try {
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.message || errorMessage;
+          } catch {
+            // Response wasn't JSON, use statusText
+          }
+          toast.error(`Error submitting clerical update: ${errorMessage}`);
+          return;
         }
-        if (newData.OtherAttachment) {
-          formData.append("OtherAttachment", newData.OtherAttachment); // Append actual File object
+
+        const data = await result.text();
+        localStorage.setItem("clericalId", data);
+        await freeUpdate(formData);
+        showSuccessToast = true;
+        setTimeout(() => {
+          goto(`/home/dashboard`);
+        }, 5000);
+        return;
+      }
+
+      // For non-free updates, build FormData with files and submit
+      const formData = new FormData();
+      for (const key in formObj) {
+        if (
+          Object.prototype.hasOwnProperty.call(formObj, key) &&
+          formObj[key] !== undefined &&
+          formObj[key] !== null
+        ) {
+          if (Array.isArray(formObj[key]) || typeof formObj[key] === "object") {
+            formData.append(key, JSON.stringify(formObj[key]));
+          } else {
+            formData.append(key, String(formObj[key]));
+          }
         }
       }
 
-      // Store FormData entries as JSON for payment handling
-      const formObj: Record<string, any> = {};
-      formData.forEach((value, key) => {
-        formObj[key] = value instanceof File ? value.name : value;
-      });
-      localStorage.setItem("formData", JSON.stringify(formObj));
+      // Add file attachments to FormData
+      if (
+        updateType === ClericalUpdateTypes.FileTitle &&
+        newData.Representation
+      ) {
+        formData.append("Representation", newData.Representation);
+      }
+      if (
+        updateType === ClericalUpdateTypes.DesignAttachments &&
+        newData.DesignAttachments &&
+        newData.DesignAttachments.length > 0
+      ) {
+        newData.DesignAttachments.forEach((file) => {
+          formData.append("DesignAttachments", file);
+        });
+      }
+      if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
+        if (newData.PowerOfAttorney) {
+          formData.append("PowerOfAttorney", newData.PowerOfAttorney);
+        }
+        if (newData.OtherAttachment) {
+          formData.append("OtherAttachment", newData.OtherAttachment);
+        }
+      }
 
-      // Send FormData directly (no JSON.stringify, no Content-Type header)
       const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
         body: formData,
@@ -612,7 +679,6 @@
 
       const data = await result.text();
       localStorage.setItem("clericalId", data);
-
       await handlePayment();
     } catch (err) {
       error = "Form submission failed.";
