@@ -1589,39 +1589,7 @@
           You can now file Withdrawals for all application types using the
           'Withdrawal' Module on the dashboard.
           <b>◆</b>
-          You can now file Clerical Updates (Add/Remove Applicant, Edit/Add/Remove
-          Inventor Information) for Patent applications.
-          <b>◆</b>
-          Claim your files not yet on the portal and move them into your platform
-          using the 'Claim File' Module.
-          <b>◆</b>
-          You can now file Recordals (Merger, Registered User, and Assignment) for
-          Trademark applications with status 'Publication', 'Awaiting Certification,
-          and Awaiting Certificate Confirmation'.
-          <b>◆</b>
-          You can now file Clerical Updates (Change of Name, Address, Representation,
-          Correspondence, and Attachment, ) for trademark applications with status
-          'Publication' and 'AwaitingCertification'.
-          <b>◆</b>
-          You can now get your Trademark Recordal Certificates (Merger, Registered
-          User, Assignment, Change of Applicant Name, and Change of Applicant Address)
-          using the 'Print Documents' Module.
-          <b>◆</b>
-          You can now file clerical updates (change of name, address, or title of
-          invention) for patent applications using the Clerical Update module on
-          the dashboard.
-          <b>◆</b>
-          Patent Renewal can now be filed using the "Post-Registration" module on
-          the dashboard.
-          <b>◆</b>
-          Use the Attachment Module to upload your patent application attachments.
-          <b>◆</b>
-          Files with status "Rejected" can file for appeal using the "APPEAL" module
-          on the dashboard.
-          <b>◆</b>
-          All Patent application filed prior to Monday, 25th August, 2025 are required
-          to be updated via the "Update Patent File" Module on the dashboard to ensure
-          the completeness of all fields within the documents.
+          You can now file for Patent Assignment, Merger, Mortgage, License, CTC, and Amendment on the portal.
         </div>
       </div>
     </div>
