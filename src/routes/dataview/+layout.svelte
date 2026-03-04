@@ -1,4 +1,5 @@
 <script lang="ts">
+
   import { Button } from "$lib/components/ui/button/index";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index";
@@ -407,19 +408,6 @@
           }}
         >
           Awaiting Certificate Confirmation
-        </Button>
-      {:else if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingCertificateConfirmation}
-        <Button
-          class="bg-green-500 hover:bg-green-700 text-white"
-          on:click={() => {
-            examinePatentDesign(
-              fileData.fileId,
-              $loggedInUser?.id ?? "",
-              ApplicationStatuses.Active,
-            );
-          }}
-        >
-          Approve
         </Button>
       {/if}
     {/if}
