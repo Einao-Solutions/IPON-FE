@@ -110,8 +110,8 @@
 </script>
 
 <div class="max-w-3xl mx-auto">
+  <h2 class="text-2xl font-semibold mb-6">Design Information</h2>
   <div class="rounded-lg shadow bg-white p-6 mb-6">
-    <h2 class="text-2xl font-bold mb-6 text-green-700">Design Information</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
         <label class="block mb-1 font-medium"> File Origin</label>

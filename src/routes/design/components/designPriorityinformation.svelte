@@ -113,80 +113,79 @@
 	<h2 class="text-2xl font-semibold">Priority Information</h2>
 
 	{#each localPriorityInfo as info, index}
-		<div class="border p-4 rounded-md mb-4 space-y-4">
-			<h3 class="text-sm font-medium mb-2">Priority Information {index + 1}</h3>
+			<div class="border p-4 rounded-md mb-4 space-y-4">
+				<h3 class="text-sm font-medium mb-2">Priority Information {index + 1}</h3>
 
-			<div class="grid grid-cols-2 gap-4">
-				<div>
-					<label class="block text-sm font-medium mb-2">Application Number</label>
-					<input
-						type="text"
-						class="input"
-						placeholder="Application Number"
-						bind:value={localPriorityInfo[index].applicationNumber}
-						on:input={updateStore}
-					/>
-				</div>
-
-				<div>
-					<label class="block text-sm mb-2 font-medium">Country</label>
-
-					<div class="relative">
+				<div class="grid grid-cols-3 gap-4">
+					<div>
+						<label class="block text-sm font-medium mb-2">Application Number</label>
 						<input
 							type="text"
 							class="input"
-							placeholder="Search Country..."
-							bind:value={localPriorityInfo[index].country}
-							on:focus={() => onCountryFocus(index)}
-							on:input={(event) => handleCountryInputEvent(index, event)}
-							on:blur={() =>
-								setTimeout(() => {
-									perPriorityFilteredCountries[index] = [];
-									showPriorityCountryDropdowns[index] = false;
-								}, 200)}
+							placeholder="Application Number"
+							bind:value={localPriorityInfo[index].applicationNumber}
+							on:input={updateStore}
 						/>
-						<span
-							class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
-							>▼</span
-						>
+					</div>
 
-						{#if showPriorityCountryDropdowns[index] && perPriorityFilteredCountries[index]?.length}
-							<ul class="absolute left-0 right-0 bg-white border mt-1 max-h-60 overflow-y-auto z-50 rounded-md shadow">
-								{#each perPriorityFilteredCountries[index] as c}
-									<li
-										class="p-2 hover:bg-gray-100 cursor-pointer"
-										on:mousedown={() => selectCountryForEntry(index, c)}
-									>
-										{c}
-									</li>
-								{/each}
-							</ul>
-						{/if}
+					<div>
+						<label class="block text-sm mb-2 font-medium">Country</label>
+						<div class="relative">
+							<input
+								type="text"
+								class="input"
+								placeholder="Search Country..."
+								bind:value={localPriorityInfo[index].country}
+								on:focus={() => onCountryFocus(index)}
+								on:input={(event) => handleCountryInputEvent(index, event)}
+								on:blur={() =>
+									setTimeout(() => {
+										perPriorityFilteredCountries[index] = [];
+										showPriorityCountryDropdowns[index] = false;
+									}, 200)}
+							/>
+							<span
+								class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"
+								>▼</span
+							>
+
+							{#if showPriorityCountryDropdowns[index] && perPriorityFilteredCountries[index]?.length}
+								<ul class="absolute left-0 right-0 bg-white border mt-1 max-h-60 overflow-y-auto z-50 rounded-md shadow">
+									{#each perPriorityFilteredCountries[index] as c}
+										<li
+											class="p-2 hover:bg-gray-100 cursor-pointer"
+											on:mousedown={() => selectCountryForEntry(index, c)}
+										>
+											{c}
+										</li>
+									{/each}
+								</ul>
+							{/if}
+						</div>
+					</div>
+
+					<div>
+						<label class="block mb-2 text-sm font-medium">Date</label>
+						<input
+							type="date"
+							class="input"
+							bind:value={localPriorityInfo[index].date}
+							on:input={updateStore}
+						/>
 					</div>
 				</div>
-			</div>
 
-			<div>
-				<label class="block mb-2 text-sm font-medium">Date</label>
-				<input
-					type="date"
-					class="input"
-					bind:value={localPriorityInfo[index].date}
-					on:input={updateStore}
-				/>
+				{#if localPriorityInfo.length > 1}
+					<div class="text-right">
+						<button
+							class="rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-red-200 px-4 py-1 text-sm font-medium transition shadow-sm border border-red-200"
+							on:click={() => removePriorityInfo(index)}
+						>
+							Remove
+						</button>
+					</div>
+				{/if}
 			</div>
-
-			{#if localPriorityInfo.length > 1}
-				<div class="text-right">
-					<button
-						class="rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-red-200 px-4 py-1 text-sm font-medium transition shadow-sm border border-red-200"
-						on:click={() => removePriorityInfo(index)}
-					>
-						Remove
-					</button>
-				</div>
-			{/if}
-		</div>
 	{/each}
 
 	<button class="btn-black" on:click={addPriorityInfo}>

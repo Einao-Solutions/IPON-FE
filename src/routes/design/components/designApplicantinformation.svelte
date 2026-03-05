@@ -290,7 +290,7 @@
 
 <div class="max-w-4xl mx-auto">
   <div class="rounded-lg shadow bg-white p-6 mb-6">
-    <h2 class="text-2xl font-bold mb-6 text-green-700">
+    <h2 class="text-2xl font-semibold mb-6">
       Applicant Information
       <span class="ml-2 text-base font-normal text-gray-600">
         ({applicantDesignDescription})

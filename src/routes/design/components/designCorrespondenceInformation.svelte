@@ -9,6 +9,13 @@
 	let phone: string = initial?.phone ?? '';
 	let nationality: string = initial?.nationality ?? '';
 	let state: string = initial?.state ?? '';
+	const states = [
+		'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
+		'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'FCT', 'Gombe', 'Imo',
+		'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos', 'Nasarawa',
+		'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers', 'Sokoto', 'Taraba',
+		'Yobe', 'Zamfara'
+	];
 	let address: string = initial?.address ?? '';
 
 	let errors = {
@@ -128,15 +135,19 @@
 
 			<div>
 				<label class="block text-sm font-medium mb-1">State</label>
-				<input
-					class="input"
-					placeholder="State"
-					bind:value={state}
-					on:input={updateStore}
-				/>
-				{#if errors.state}
-					<p class="error">{errors.state}</p>
-				{/if}
+					<select
+						class="input"
+						bind:value={state}
+						on:change={updateStore}
+					>
+						<option value="">Select State</option>
+						{#each states as s}
+							<option value={s}>{s}</option>
+						{/each}
+					</select>
+					{#if errors.state}
+						<p class="error">{errors.state}</p>
+					{/if}
 			</div>
 
 			<div class="col-span-2">
