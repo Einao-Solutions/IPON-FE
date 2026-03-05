@@ -4,6 +4,7 @@ import Section from './Section.svelte';
 import { designForm, currentStep } from '$lib/utils/design';
 import { applicationData, loggedInUser } from '$lib/store';
 import { ApplicationStatuses, baseURL, FilingType, FormApplicationTypes, arrayBufferToBase64, toByteArray } from '$lib/helpers';
+    import PriorityInfo from '../../patent/components/PriorityInfo.svelte';
 
 let form = $designForm;
 
@@ -182,6 +183,8 @@ async function submit() {
       address: a.address,
       phone: a.phone,
       email: a.email,
+      state: a.state,
+      city: a.city,
     }));
 
     const mappedCreators = (form.creators ?? []).map((c: any) => ({
@@ -190,6 +193,8 @@ async function submit() {
       address: c.address,
       phone: c.phone,
       email: c.email,
+      state: c.state,
+      city: c.city,
     }));
 
     const corr = form.correspondence ?? {};
@@ -198,6 +203,7 @@ async function submit() {
       type: FilingType.Design,
       fileStatus: ApplicationStatuses.AwaitingPayment,
       formApplicationType: FormApplicationTypes.NewApplication,
+      fileOrigin: info.fileOrigin,
       designCreators: mappedCreators,
       designType: designTypeValue,
       statementOfNovelty: info.statementOfNovelty,
@@ -209,10 +215,16 @@ async function submit() {
         email: corr.email,
         phone: corr.phone,
         state: corr.state,
+        nationality: corr.nationality, 
       },
       applicants: mappedApplicants,
       attachments: [],
       creatorAccount: $loggedInUser?.creatorId ?? null,
+      PriorityInfo: (form.priorities ?? []).map((p: any) => ({
+        number: p.applicationNumber,
+        country: p.country,
+        date: p.date,
+      }))
     };
 
     const attachmentsLists: any[] = [];
