@@ -1,5 +1,6 @@
 <script lang="ts">
 import { goto } from '$app/navigation';
+import Section from './Section.svelte';
 import { designForm, currentStep } from '$lib/utils/design';
 import { applicationData, loggedInUser } from '$lib/store';
 import { ApplicationStatuses, baseURL, FilingType, FormApplicationTypes, arrayBufferToBase64, toByteArray } from '$lib/helpers';
@@ -297,79 +298,121 @@ async function submit() {
 }
 </script>
 
-<div class="space-y-6">
-  <h2 class="text-xl font-semibold mb-4">Review & Submit</h2>
-  <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-    <h3 class="font-bold mb-2">Design Information</h3>
-    <div class="mb-2">Title: {form.designInformation.title}</div>
-    <div class="mb-2">Type: {form.designInformation.applicationType}</div>
-    <div class="mb-2">Origin: {form.designInformation.fileOrigin}</div>
-    <div class="mb-2">Statement of Novelty: {form.designInformation.statementOfNovelty}</div>
-  </div>
-  <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-    <h3 class="font-bold mb-2">Applicants</h3>
+
+
+<div class="max-w-4xl mx-auto px-4">
+  <h2 class="text-2xl font-bold text-gray-900 mb-6">Review & Submit</h2>
+  <Section title="Design Information" step={0}>
+    <p><strong>Title:</strong> {form.designInformation.title}</p>
+    <p><strong>Type:</strong> {form.designInformation.applicationType}</p>
+    <p><strong>Origin:</strong> {form.designInformation.fileOrigin}</p>
+    <p><strong>Statement of Novelty:</strong> {form.designInformation.statementOfNovelty}</p>
+  </Section>
+  <Section title="Applicants" step={1}>
     {#each form.applicants as applicant, i}
       <div class="mb-2">
-        <div class="font-semibold">Applicant {i + 1}</div>
-        <div>Name: {applicant.name}</div>
-        <div>Email: {applicant.email}</div>
-        <div>Phone: {applicant.phone}</div>
-        <div>Nationality: {applicant.nationality}</div>
-        <div>State: {applicant.state}</div>
-        <!-- <div>City: {applicant.city}</div> -->
-        <div>Address: {applicant.address}</div>
+        <p class="font-semibold">Applicant {i + 1}</p>
+        <p><strong>Name:</strong> {applicant.name}</p>
+        <p><strong>Email:</strong> {applicant.email}</p>
+        <p><strong>Phone:</strong> {applicant.phone}</p>
+        <p><strong>Nationality:</strong> {applicant.nationality}</p>
+        <p><strong>State:</strong> {applicant.state}</p>
+        <p><strong>City:</strong> {applicant.city}</p>
+        <p><strong>Address:</strong> {applicant.address}</p>
       </div>
     {/each}
-  </div>
-  <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-    <h3 class="font-bold mb-2">Creators</h3>
+  </Section>
+  <Section title="Creators" step={2}>
     {#each form.creators as creator, i}
       <div class="mb-2">
-        <div class="font-semibold">Creator {i + 1}</div>
-        <div>Name: {creator.name}</div>
-        <div>Email: {creator.email}</div>
-        <div>Phone: {creator.phone}</div>
-        <div>Nationality: {creator.nationality}</div>
-        <div>State: {creator.state}</div>
-        <!-- <div>City: {creator.city}</div> -->
-        <div>Address: {creator.address}</div>
+        <p class="font-semibold">Creator {i + 1}</p>
+        <p><strong>Name:</strong> {creator.name}</p>
+        <p><strong>Email:</strong> {creator.email}</p>
+        <p><strong>Phone:</strong> {creator.phone}</p>
+        <p><strong>Nationality:</strong> {creator.nationality}</p>
+        <p><strong>State:</strong> {creator.state}</p>
+        <p><strong>City:</strong> {creator.city}</p>
+        <p><strong>Address:</strong> {creator.address}</p>
       </div>
     {/each}
-  </div>
-  <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-    <h3 class="font-bold mb-2">Priority Information</h3>
+  </Section>
+  <Section title="Priority Information" step={3}>
     {#if form.priorities && form.priorities.length}
       {#each form.priorities as priority, i}
         <div class="mb-2">
-          <div class="font-semibold">Priority {i + 1}</div>
-          <div>Country: {priority.country}</div>
-          <div>Number: {priority.applicationNumber}</div>
-          <div>Date: {priority.date}</div>
+          <p class="font-semibold">Priority {i + 1}</p>
+          <p><strong>Country:</strong> {priority.country}</p>
+          <p><strong>Number:</strong> {priority.applicationNumber}</p>
+          <p><strong>Date:</strong> {priority.date}</p>
         </div>
       {/each}
     {:else}
-      <div>No priority information provided.</div>
+      <p>No priority information provided.</p>
     {/if}
-  </div>
-  <div class="border rounded-lg p-4 mb-4 bg-gray-50">
-    <h3 class="font-bold mb-2">Correspondence Information</h3>
+  </Section>
+  <Section title="Correspondence Information" step={4}>
     {#if form.correspondence}
-      <div>Name: {form.correspondence.name}</div>
-      <div>Email: {form.correspondence.email}</div>
-      <div>Phone: {form.correspondence.phone}</div>
-      <div>Nationality: {form.correspondence.nationality}</div>
-      <div>State: {form.correspondence.state}</div>
-      <div>Address: {form.correspondence.address}</div>
+      <p><strong>Name:</strong> {form.correspondence.name}</p>
+      <p><strong>Email:</strong> {form.correspondence.email}</p>
+      <p><strong>Phone:</strong> {form.correspondence.phone}</p>
+      <p><strong>Nationality:</strong> {form.correspondence.nationality}</p>
+      <p><strong>State:</strong> {form.correspondence.state}</p>
+      <p><strong>Address:</strong> {form.correspondence.address}</p>
     {:else}
-      <div>No correspondence information provided.</div>
+      <p>No correspondence information provided.</p>
     {/if}
-  </div>
+  </Section>
+
+  <Section title="Attachments" step={5}>
+    <div class="mb-2">
+      <div class="font-bold">Power of Attorney</div>
+      <ul class="list-disc ml-5">
+        {#if form.attachments && form.attachments.powerOfAttorney}
+          <li>{form.attachments.powerOfAttorney.name}</li>
+        {:else}
+          <li class="text-gray-400">Not provided</li>
+        {/if}
+      </ul>
+    </div>
+    <div class="mb-2">
+      <div class="font-bold">Design Representation</div>
+      <ul class="list-disc ml-5">
+        {#if form.attachments && form.attachments.designRepresentation}
+          <li>{form.attachments.designRepresentation.name}</li>
+        {:else}
+          <li class="text-gray-400">Not provided</li>
+        {/if}
+      </ul>
+    </div>
+    <div class="mb-2">
+      <div class="font-bold">Priority Document</div>
+      <ul class="list-disc ml-5">
+        {#if form.attachments && form.attachments.priorityDocument}
+          <li>{form.attachments.priorityDocument.name}</li>
+        {:else}
+          <li class="text-gray-400">Not provided</li>
+        {/if}
+      </ul>
+    </div>
+    <div class="mb-2">
+      <div class="font-bold">Other Documents</div>
+      <ul class="list-disc ml-5">
+        {#if form.attachments && form.attachments.otherDocuments && form.attachments.otherDocuments.length}
+          {#each form.attachments.otherDocuments as file}
+            <li>{file.name}</li>
+          {/each}
+        {:else}
+          <li class="text-gray-400">Not provided</li>
+        {/if}
+      </ul>
+    </div>
+  </Section>
   {#if submitError}
     <p class="text-red-600 text-sm mt-2">{submitError}</p>
   {/if}
   <div class="flex justify-between mt-8">
     <button
-    class="bg-black hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
+      class="bg-black hover:bg-green-700 text-white font-semibold px-6 py-2 rounded shadow"
       on:click={goBack}
     >
       Back

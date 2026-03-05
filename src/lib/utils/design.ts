@@ -29,7 +29,8 @@ export const designForm = writable({
       phone: '',
       nationality: '',
       state: '',
-      address: ''
+      address: '',
+      city: ''
     }
   ],
   creators: [
@@ -39,7 +40,8 @@ export const designForm = writable({
       phone: '',
       nationality: '',
       state: '',
-      address: ''
+      address: '',
+      city: ''
     }
   ],
   priorities: [
