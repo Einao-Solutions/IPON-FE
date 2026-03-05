@@ -100,6 +100,12 @@
 		<div>
 			<label class="block text-sm font-medium mb-1">Power of Attorney (required)</label>
 			<input type="file" class="input" on:change={(event) => handleFileChange(event, 'powerOfAttorney')} />
+			{#if powerOfAttorney}
+				<div class="flex items-center mt-1 text-sm text-gray-700">
+					<span class="mr-2">{powerOfAttorney.name}</span>
+					<button type="button" class="text-red-500 hover:underline" on:click={() => { powerOfAttorney = null; updateStore(); }}>Remove</button>
+				</div>
+			{/if}
 			{#if errors.powerOfAttorney}
 				<p class="error">{errors.powerOfAttorney}</p>
 			{/if}
@@ -108,6 +114,12 @@
 		<div>
 			<label class="block text-sm font-medium mb-1">Design Representation (required)</label>
 			<input type="file" class="input" on:change={(event) => handleFileChange(event, 'designRepresentation')} />
+			{#if designRepresentation}
+				<div class="flex items-center mt-1 text-sm text-gray-700">
+					<span class="mr-2">{designRepresentation.name}</span>
+					<button type="button" class="text-red-500 hover:underline" on:click={() => { designRepresentation = null; updateStore(); }}>Remove</button>
+				</div>
+			{/if}
 			{#if errors.designRepresentation}
 				<p class="error">{errors.designRepresentation}</p>
 			{/if}
@@ -116,6 +128,12 @@
 		<div>
 			<label class="block text-sm font-medium mb-1">Priority Document (required if priority provided)</label>
 			<input type="file" class="input" on:change={(event) => handleFileChange(event, 'priorityDocument')} />
+			{#if priorityDocument}
+				<div class="flex items-center mt-1 text-sm text-gray-700">
+					<span class="mr-2">{priorityDocument.name}</span>
+					<button type="button" class="text-red-500 hover:underline" on:click={() => { priorityDocument = null; updateStore(); }}>Remove</button>
+				</div>
+			{/if}
 			{#if errors.priorityDocument}
 				<p class="error">{errors.priorityDocument}</p>
 			{/if}
@@ -124,6 +142,16 @@
 		<div>
 			<label class="block text-sm font-medium mb-1">Other Documents (up to 4)</label>
 			<input type="file" multiple class="input" on:change={handleOtherFilesChange} />
+			{#if otherDocuments.length}
+				<ul class="mt-1 text-sm text-gray-700">
+					{#each otherDocuments as doc, i}
+						<li class="flex items-center mb-1">
+							<span class="mr-2">{doc.name}</span>
+							<button type="button" class="text-red-500 hover:underline" on:click={() => { otherDocuments = otherDocuments.filter((_, idx) => idx !== i); updateStore(); }}>Remove</button>
+						</li>
+					{/each}
+				</ul>
+			{/if}
 			{#if errors.otherDocuments}
 				<p class="error">{errors.otherDocuments}</p>
 			{/if}
