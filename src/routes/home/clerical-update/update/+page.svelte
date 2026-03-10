@@ -560,7 +560,15 @@
             formObj[key] !== undefined &&
             formObj[key] !== null
           ) {
-            formData.append(key, JSON.stringify(formObj[key]));
+            // Only stringify arrays and objects, not primitives
+            if (
+              Array.isArray(formObj[key]) ||
+              typeof formObj[key] === "object"
+            ) {
+              formData.append(key, JSON.stringify(formObj[key]));
+            } else {
+              formData.append(key, String(formObj[key]));
+            }
           }
         }
 
@@ -610,7 +618,7 @@
 
         const data = await result.text();
         localStorage.setItem("clericalId", data);
-        await freeUpdate(formData);
+        // await freeUpdate(formData);
         showSuccessToast = true;
         setTimeout(() => {
           goto(`/home/dashboard`);
@@ -901,18 +909,20 @@
               </label>
               <p class="text-base text-gray-900">{fileInfo.fileTitle}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">
-                Trademark Type
-              </label>
-              <p class="text-base text-gray-900">
-                {fileInfo.trademarkType === 0
-                  ? "Local"
-                  : fileInfo.trademarkType === 1
-                    ? "Foreign"
-                    : "N/A"}
-              </p>
-            </div>
+            {#if isTrademark}
+              <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1">
+                  Trademark Type
+                </label>
+                <p class="text-base text-gray-900">
+                  {fileInfo.trademarkType === 0
+                    ? "Local"
+                    : fileInfo.trademarkType === 1
+                      ? "Foreign"
+                      : "N/A"}
+                </p>
+              </div>
+            {/if}
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">
                 Applicant Name

@@ -53,13 +53,13 @@
   }
 
   interface NewData {
-    applicantNames?: string[]; // For change of name
-    applicantAddresses?: string[]; // For change of address
-    applicantEmails?: string[];
-    applicantPhones?: string[];
-    applicantNationalities?: string[];
-    applicantStates?: string[];
-    applicantCities?: string[];
+    applicantNames: string[]; // For change of name
+    applicantAddresses: string[]; // For change of address
+    applicantEmails: string[];
+    applicantPhones: string[];
+    applicantNationalities: string[];
+    applicantStates: string[];
+    applicantCities: string[];
     fileTitle?: string | null;
     patentAbstract?: string | null;
     patentApplicationType?: number | null;
@@ -109,7 +109,15 @@
   // let editablePatentAbstract: string = '';
   // let editablePatentApplicationType: number | null = null;
 
-  let newData: NewData = {};
+  let newData: NewData = {
+    applicantNames: [],
+    applicantAddresses: [],
+    applicantEmails: [],
+    applicantPhones: [],
+    applicantNationalities: [],
+    applicantStates: [],
+    applicantCities: [],
+  };
 
   function removeApplicantForm(index: number) {
     newApplicants = newApplicants.filter((_, i) => i !== index);
@@ -401,8 +409,6 @@
 
   async function handleSubmit() {
     console.log("Submit clicked");
-    // if (showAddApplicantSection && !validateAddApplicantForm()) return;
-    // if (!validateForm()) return;
     isProcessing = true;
     const fileNumber = pageData.url.searchParams.get("fileId") ?? "";
 
@@ -424,7 +430,6 @@
         PaymentRRR: fileInfo.paymentRRR ?? "",
       };
 
-      // console.log('fileType', fileInfo.fileType);
       if (updateType === ClericalUpdateTypes.PriorityInfo) {
         if (isPCTorConventional()) {
           formObj.FirstPriorityInfo = [firstPriorityInfo];
@@ -433,7 +438,6 @@
       }
 
       if (updateType === ClericalUpdateTypes.EditInventors) {
-        // Remove inventors marked for deletion before sending
         const filteredInventors = inventors.filter(
           (_, i) => !inventorsMarkedForDeletion.includes(i),
         );
@@ -449,7 +453,7 @@
           formObj.UpdateType = "RemoveApplicant";
           formObj.RemoveApplicantIds = selectedRemoveIds;
         } else if (newApplicants.length > 0 && selectedRemoveIds.length > 0) {
-          formObj.UpdateType = "AddAndRemoveApplicant"; // or whatever your backend expects for both
+          formObj.UpdateType = "AddAndRemoveApplicant";
           formObj.NewApplicants = newApplicants;
           formObj.RemoveApplicantIds = selectedRemoveIds;
         }
@@ -473,13 +477,8 @@
       } else if (updateType === ClericalUpdateTypes.FileTitle) {
         formObj.FileTitle = newData.fileTitle ?? "";
         formObj.PatentAbstract = newData.patentAbstract ?? "";
-        if (
-          newData.patentApplicationType !== undefined &&
-          newData.patentApplicationType !== null &&
-          newData.patentApplicationType !== ""
-        ) {
-          formObj.PatentApplicationType = Number(newData.patentApplicationType);
-        }
+        formObj.PatentApplicationType =
+          Number(newData.patentApplicationType) ?? null;
       }
       if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
         formObj.CorrespondenceName = correspondenceName;
@@ -498,6 +497,7 @@
 
       localStorage.setItem("formData", JSON.stringify(formObj));
 
+      // Handle Withdrawn status (free update)
       if (fileInfo.fileStatus === ApplicationStatuses.Withdrawn) {
         const formData = new FormData();
         for (const key in formObj) {
@@ -532,7 +532,6 @@
           });
         }
 
-        // Send FormData directly (no JSON.stringify, no Content-Type header)
         const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
           method: "POST",
           body: formData,
@@ -577,18 +576,24 @@
         }
       }
 
-      if (showAddApplicantSection && Array.isArray(newApplicants)) {
-        newApplicants.forEach((apps, i) => {
-          formData.append(`NewApplicants[${i}].name`, apps.name ?? "");
-          formData.append(`NewApplicants[${i}].address`, apps.address ?? "");
-          formData.append(`NewApplicants[${i}].email`, apps.email ?? "");
-          formData.append(`NewApplicants[${i}].phone`, apps.phone ?? "");
-          formData.append(
-            `NewApplicants[${i}].nationality`,
-            apps.country ?? "",
-          );
-          formData.append(`NewApplicants[${i}].state`, apps.state ?? "");
-          formData.append(`NewApplicants[${i}].city`, apps.city ?? "");
+      // Add explicit handling for PriorityInfo arrays
+      if (updateType === ClericalUpdateTypes.PriorityInfo) {
+        // Remove the JSON-stringified versions
+        formData.delete("FirstPriorityInfo");
+        formData.delete("PriorityInfo");
+        
+        // Add FirstPriorityInfo if PCT or Conventional
+        if (isPCTorConventional() && firstPriorityInfo) {
+          formData.append(`FirstPriorityInfo[0].number`, firstPriorityInfo.number ?? "");
+          formData.append(`FirstPriorityInfo[0].country`, firstPriorityInfo.country ?? "");
+          formData.append(`FirstPriorityInfo[0].date`, firstPriorityInfo.date ?? "");
+        }
+        
+        // Add PriorityInfo list
+        priorityInfoList.forEach((info, i) => {
+          formData.append(`PriorityInfo[${i}].number`, info.number ?? "");
+          formData.append(`PriorityInfo[${i}].country`, info.country ?? "");
+          formData.append(`PriorityInfo[${i}].date`, info.date ?? "");
         });
       }
 
@@ -731,7 +736,7 @@
         return "Patent";
       case PatentApplicationTypes.Business_Method:
         return "Business Method";
-      case PatentApplicationTypes.Utility_Model:
+      case PatentApplicationTypes.Utility_MODEL:
         return "Utility Model";
       default:
         return "";
