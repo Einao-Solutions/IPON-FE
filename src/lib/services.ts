@@ -564,7 +564,7 @@ export const designServices: IPService[] = [
   {
     id: "clerical-update",
     name: "CLERICAL UPDATE",
-    description: "Edit/Update existing patent application",
+    description: "Edit/Update existing design application",
     icon: "mdi:file-edit-outline",
     route: "/home/clerical-update",
     category: "agent",

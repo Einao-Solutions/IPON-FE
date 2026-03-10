@@ -2467,12 +2467,14 @@
                     >
                   {/if}
                   <!-- verify payments -->
+                   {#if application.paymentId !== null && application.paymentId !== "Free"}
                   <DropdownMenu.Item
                     on:click={async () =>
                       await checkPayment(application, application.paymentId)}
                     >Verify Payment ({application.paymentId ??
                       "-"})</DropdownMenu.Item
                   >
+                  {/if}
                   <!-- View Recordal Data (Trademarks Only) -->
                   {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType))}
                     <DropdownMenu.Item
