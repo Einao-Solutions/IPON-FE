@@ -1575,6 +1575,7 @@
       </div>
     </div>
   </div>
+  
 {/if}
 {#if isLoading}
   <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
