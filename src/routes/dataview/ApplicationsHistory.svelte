@@ -2609,11 +2609,11 @@
                         generateLetter(application, 0, 1);
                       }}>Acknowledgement Letter</DropdownMenu.Item
                     >
-                     <DropdownMenu.Item
+                     <!-- <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 0, 2);
                       }}>Acceptance Letter</DropdownMenu.Item
-                    >
+                    > -->
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 0, 37);
