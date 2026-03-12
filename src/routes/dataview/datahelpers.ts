@@ -69,7 +69,9 @@ export function getStatuses(
   ) {
     const values = [
       // ApplicationStatuses.KivExaminer,
-      ApplicationStatuses.Active,
+      fileType !== FilingType.Trademark
+        ? ApplicationStatuses.AwaitingCertificateConfirmation
+        : ApplicationStatuses.Active,
       ApplicationStatuses.Re_conduct,
       ApplicationStatuses.Rejected,
     ];
@@ -115,6 +117,8 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "New Opposition";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter Statement";
+    case ApplicationStatuses.AwaitingCertificateConfirmation:
+      return "Awaiting Certificate Confirmation";
     default:
       return "-";
   }
@@ -133,7 +137,7 @@ export function getNewStatusColour(obj: ApplicationStatuses | null): string {
     case ApplicationStatuses.FormalityFail:
     case ApplicationStatuses.Re_conduct:
     case ApplicationStatuses.Rejected:
-      return "#FAA0A0";
+      return "#fe9797";
     case ApplicationStatuses.Active:
     case ApplicationStatuses.Approved:
       return "#468a46";
@@ -643,9 +647,9 @@ export function getLetterName(letter: number): string {
     case 66:
       return "Patent Assignment Receipt";
     case 67:
-      return "Patent License Receipt";  
+      return "Patent License Receipt";
     case 68:
-      return "Patent Mortgage Receipt"; 
+      return "Patent Mortgage Receipt";
     case 69:
       return "Patent Merger Receipt";
     case 70:

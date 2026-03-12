@@ -809,6 +809,8 @@ export function setDefaultCorr(data) {
 
 export function mapRoleToString(type: UserRoles) {
   switch (type) {
+    case UserRoles.Staff:
+      return "Staff";
     case UserRoles.TrademarkSearch:
       return "Trademark Search";
     case UserRoles.TrademarkExaminer:
