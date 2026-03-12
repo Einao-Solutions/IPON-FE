@@ -41,7 +41,7 @@
     // Get paymentType from URL
     paymentType = $page.url.searchParams.get("paymentType") ?? "";
     console.log("Payment Type:", paymentType);
-    const data = JSON.parse(localStorage.getItem("FileData") ?? "{}");
+    const data = JSON.parse(localStorage.getItem("AppData") ?? "{}");
     console.log("Form Data from localStorage:", data);
     
     let success = false;
