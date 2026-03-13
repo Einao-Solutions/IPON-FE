@@ -295,7 +295,7 @@
     remita_confirmation = "checking";
     try {
       const res = await fetch(
-        `${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
+        `${baseURL}/api/files/ManualUpdate?fileId=${fileData.fileId}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
         { method: "POST" },
       );
 
