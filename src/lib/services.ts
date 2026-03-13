@@ -561,15 +561,15 @@ export const designServices: IPService[] = [
   },
 
   // PRE-REGISTRATION CATEGORY
-  // {
-  //   id: "clerical-update",
-  //   name: "CLERICAL UPDATE",
-  //   description: "Edit/Update existing patent application",
-  //   icon: "mdi:file-edit-outline",
-  //   route: "/home/clerical-update",
-  //   category: "agent",
-  //   price: "₦4,100",
-  // },
+  {
+    id: "clerical-update",
+    name: "CLERICAL UPDATE",
+    description: "Edit/Update existing patent application",
+    icon: "mdi:file-edit-outline",
+    route: "/home/clerical-update",
+    category: "agent",
+    price: "₦4,100",
+  },
   {
     id: "update-attachments",
     name: "UPDATE FILE ATTACHMENTS",
