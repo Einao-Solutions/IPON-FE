@@ -106,6 +106,7 @@ const config = {
         "/home/postregistration/patentamendment/result",
         "/home/postregistration/patentctc/result",
         "/statistics",
+        "/design"
       ],
     },
   },

@@ -1,4 +1,5 @@
 <script lang="ts">
+
   import { Button } from "$lib/components/ui/button/index";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index";
@@ -95,6 +96,7 @@
       fieldToUpdate: selectedApplication?.fieldToChange,
       newValue: selectedApplication?.newValue,
       fileType: fileData?.type,
+      fileNumber: fileData?.fileId,
       dates: getDates(),
     };
     const res = await fetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
@@ -310,37 +312,37 @@
 
     window.open(`/availabilitysearch`, "_blank");
   }
-  async function examinePatentDesign(
-    FileId: string,
-    UserId: string,
-    status: ApplicationStatuses,
-  ) {
-    try {
-      const res = await fetch(
-        `${baseURL}/api/files/ExaminePatentDesign?fileId=${FileId}&userId=${UserId}&status=${status}`,
-        {
-          method: "POST",
-        },
-      );
+  // async function examinePatentDesign(
+  //   FileId: string,
+  //   UserId: string,
+  //   status: ApplicationStatuses,
+  // ) {
+  //   try {
+  //     const res = await fetch(
+  //       `${baseURL}/api/files/ExaminePatentDesign?fileId=${FileId}&userId=${UserId}&status=${status}`,
+  //       {
+  //         method: "POST",
+  //       },
+  //     );
 
-      if (res.ok) {
-        const result = await res.json();
-        console.log("Examination initiated", result);
-        toast.success("Successful", {
-          position: "top-right",
-        });
-        treatApplicationDialog = false;
-      } else {
-        toast.error("Failed to Examine.", {
-          position: "top-right",
-        });
-      }
-    } catch (error) {
-      toast.error("An error occurred during examination.", {
-        position: "top-right",
-      });
-    }
-  }
+  //     if (res.ok) {
+  //       const result = await res.json();
+  //       console.log("Examination initiated", result);
+  //       toast.success("Successful", {
+  //         position: "top-right",
+  //       });
+  //       treatApplicationDialog = false;
+  //     } else {
+  //       toast.error("Failed to Examine.", {
+  //         position: "top-right",
+  //       });
+  //     }
+  //   } catch (error) {
+  //     toast.error("An error occurred during examination.", {
+  //       position: "top-right",
+  //     });
+  //   }
+  // }
 </script>
 
 <Toaster />
@@ -393,35 +395,6 @@
       >
         Oppose
       </Button>
-    {/if}
-    {#if (fileData.type === FilingType.Patent || fileData.type === FilingType.Design) && $loggedInUser?.userRoles?.some( (x) => [UserRoles.DesignCertification, UserRoles.PatentDesignRegistrar, UserRoles.PatentCertification, UserRoles.SuperAdmin].includes(x), )}
-      {#if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingExaminer}
-        <Button
-          class="bg-purple-500 hover:bg-purple-700 text-white"
-          on:click={() => {
-            examinePatentDesign(
-              fileData.fileId,
-              $loggedInUser?.id ?? "",
-              ApplicationStatuses.AwaitingCertificateConfirmation,
-            );
-          }}
-        >
-          Awaiting Certificate Confirmation
-        </Button>
-      {:else if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingCertificateConfirmation}
-        <Button
-          class="bg-green-500 hover:bg-green-700 text-white"
-          on:click={() => {
-            examinePatentDesign(
-              fileData.fileId,
-              $loggedInUser?.id ?? "",
-              ApplicationStatuses.Active,
-            );
-          }}
-        >
-          Approve
-        </Button>
-      {/if}
     {/if}
     <div class="gap-2 flex">
       {#each getStatuses(currentStatus, $applicationData.type) as status}

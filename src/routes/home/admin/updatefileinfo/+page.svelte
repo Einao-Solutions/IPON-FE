@@ -2021,7 +2021,7 @@
               <!-- Existing Attachments -->
               <div class="space-y-4">
                 <h4 class="font-semibold text-sm">Existing Attachments</h4>
-                {#each filing.attachments as attachment, index (attachment.name)}
+                {#each filing.attachments as attachment, index (attachment.id || index)}
                   <div
                     class="border border-slate-200 p-4 rounded-lg space-y-3 bg-slate-50"
                   >
@@ -2050,7 +2050,7 @@
 
                     <!-- Existing URLs -->
                     <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-600"
+                      <label for="patent-attachment-{index}-url" class="text-xs font-medium text-gray-600"
                         >Existing Files:</label
                       >
                       {#each attachment.url as link, linkIndex}
@@ -2202,7 +2202,7 @@
               <!-- Existing Attachments -->
               <div class="space-y-4">
                 <h4 class="font-semibold text-sm">Existing Attachments</h4>
-                {#each filing.attachments as attachment, index (attachment.name)}
+                {#each filing.attachments as attachment, index (attachment.id || index)}
                   <div class="border p-3 rounded space-y-2 bg-blue-50">
                     <div class="flex justify-between items-center">
                       <label
@@ -2381,7 +2381,7 @@
               <!-- Existing Attachments -->
               <div class="space-y-4">
                 <h4 class="font-semibold text-sm">Existing Attachments</h4>
-                {#each filing.attachments as attachment, index (attachment.name)}
+                {#each filing.attachments as attachment, index (attachment.id || index)}
                   <div class="border p-3 rounded space-y-2 bg-blue-50">
                     <div class="flex justify-between items-center">
                       <label
