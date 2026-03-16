@@ -7,6 +7,7 @@
 	let powerOfAttorney: File | null = initial?.powerOfAttorney ?? null;
 	let designRepresentation: File | null = initial?.designRepresentation ?? null;
 	let priorityDocument: File | null = initial?.priorityDocument ?? null;
+	let noveltyStatement: File | null = initial?.noveltyStatement ?? null;
 	let otherDocuments: File[] = initial?.otherDocuments ?? [];
 
 	let errors = {
@@ -22,18 +23,20 @@
 				powerOfAttorney,
 				designRepresentation,
 				priorityDocument,
+				noveltyStatement,
 				otherDocuments
 			};
 			return form;
 		});
 	}
 
-	function handleFileChange(event: Event, field: 'powerOfAttorney' | 'designRepresentation' | 'priorityDocument') {
+	function handleFileChange(event: Event, field: 'powerOfAttorney' | 'designRepresentation' | 'priorityDocument' | 'noveltyStatement') {
 		const target = event.target as HTMLInputElement | null;
 		const file = target?.files?.[0] ?? null;
 		if (field === 'powerOfAttorney') powerOfAttorney = file;
 		if (field === 'designRepresentation') designRepresentation = file;
 		if (field === 'priorityDocument') priorityDocument = file;
+		if (field === 'noveltyStatement') noveltyStatement = file;
 		updateStore();
 	}
 
@@ -136,6 +139,17 @@
 			{/if}
 			{#if errors.priorityDocument}
 				<p class="error">{errors.priorityDocument}</p>
+			{/if}
+		</div>
+
+		<div>
+			<label class="block text-sm font-medium mb-1">Novelty Statement (optional)</label>
+			<input type="file" class="input" on:change={(event) => handleFileChange(event, 'noveltyStatement')} />
+			{#if noveltyStatement}
+				<div class="flex items-center mt-1 text-sm text-gray-700">
+					<span class="mr-2">{noveltyStatement.name}</span>
+					<button type="button" class="text-red-500 hover:underline" on:click={() => { noveltyStatement = null; updateStore(); }}>Remove</button>
+				</div>
 			{/if}
 		</div>
 

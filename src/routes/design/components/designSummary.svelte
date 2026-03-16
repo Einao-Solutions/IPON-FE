@@ -263,6 +263,17 @@ async function submit() {
       });
     }
 
+    if (atts.noveltyStatement) {
+      const file = atts.noveltyStatement as File;
+      const bytes = await toByteArray(file);
+      attachmentsLists.push({
+        fileName: file.name,
+        Name: 'novelty',
+        contentType: file.type,
+        data: arrayBufferToBase64((bytes as Uint8Array).buffer),
+      });
+    }
+
     if (Array.isArray(atts.otherDocuments)) {
       for (const file of atts.otherDocuments as File[]) {
         const bytes = await toByteArray(file);
@@ -405,6 +416,16 @@ async function submit() {
           <li class="text-gray-400">Not provided</li>
         {/if}
       </ul>
+      </div>
+      <div class="mb-2">
+        <div class="font-bold">Novelty Statement <span class="text-sm text-gray-500">(optional)</span></div>
+        <ul class="list-disc ml-5">
+          {#if form.attachments && form.attachments.noveltyStatement}
+            <li>{form.attachments.noveltyStatement.name}</li>
+          {:else}
+            <li class="text-gray-400">Not provided</li>
+          {/if}
+        </ul>
     </div>
     <div class="mb-2">
       <div class="font-bold">Other Documents</div>
