@@ -63,6 +63,7 @@ export const designForm = writable({
     powerOfAttorney: null, // required
     designRepresentation: null, // required
     priorityDocument: null, // required if priority info provided
+    noveltyStatement: null, // optional
     otherDocuments: [] // up to 4
   }
 });
