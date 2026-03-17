@@ -20,6 +20,19 @@
   import { boolean } from "zod";
   import type { DesignTypes } from "$lib/designutils";
   import { mapDesignTypeToString } from "$lib/designutils";
+  import { form } from "$app/server";
+
+  let error: string | null = null;
+  let isProcessing = false;
+  let isLoading = false;
+  let updateType: ClericalUpdateTypes | null = null;
+  let fileType: FileTypes | null = null;
+  let inventors: InventorInfo[] = [];
+  let openInventors: Record<number, boolean> = {};
+  let inventorsMarkedForDeletion: number[] = [];
+  let firstPriorityInfo: PriorityInfo = { number: "", country: "", date: "" };
+  let priorityInfoList: PriorityInfo[] = [];
+  let patentTypeValue: number | null = null;
 
   interface FileInfo {
     fileTitle: string;
@@ -50,6 +63,8 @@
     designCreators: DesignCreator[] | null;
     designAttachments: string[] | null;
     trademarkType?: number | null;
+    inventors?: InventorInfo[] | null;
+    patentType?: number | null;
   }
   interface NewData {
     fileTitle: string;
@@ -83,7 +98,21 @@
     titleOfDesign?: string | null;
     DesignAttachments: File[];
   }
-
+  interface InventorInfo {
+    id: string;
+    name: string;
+    address?: string;
+    email?: string;
+    phone?: string;
+    country?: string;
+    state?: string;
+    city?: string;
+  }
+  interface PriorityInfo {
+    number: string;
+    country: string;
+    date: string;
+  }
   let fileInfo: FileInfo = {
     fileTitle: "",
     representation: null,
@@ -113,12 +142,10 @@
     designType: null,
     designCreators: [],
     designAttachments: [],
+    inventors: [],
+    patentType: null,
   };
-  let error: string | null = null;
-  let isProcessing = false;
-  let isLoading = false;
-  let updateType: ClericalUpdateTypes | null = null;
-  let fileType: FileTypes | null = null;
+
   const pageData = get(page);
 
   onMount(async () => {
@@ -275,6 +302,32 @@
         designCreators: data.designCreators ?? [],
         designAttachments: data.existingDesignAttachments ?? [],
       };
+      if (updateType === ClericalUpdateTypes.EditInventors && data.inventors) {
+        inventors = data.inventors;
+        openInventors = {};
+        inventors.forEach((_, i) => (openInventors[i] = false));
+      }
+      if (updateType === ClericalUpdateTypes.PriorityInfo) {
+        patentTypeValue = data.patentType ?? null;
+
+        if (
+          isPCTorConventional() &&
+          Array.isArray(data.firstPriorityInfo) &&
+          data.firstPriorityInfo.length > 0
+        ) {
+          firstPriorityInfo = { ...data.firstPriorityInfo[0] };
+        } else {
+          firstPriorityInfo = { number: "", country: "", date: "" };
+        }
+
+        if (Array.isArray(data.priorityInfo) && data.priorityInfo.length > 0) {
+          priorityInfoList = data.priorityInfo.map((p: PriorityInfo) => ({
+            ...p,
+          }));
+        } else {
+          priorityInfoList = [{ number: "", country: "", date: "" }];
+        }
+      }
     } catch (err) {
       error = "Error fetching change of name cost.";
       console.error(err);
@@ -500,7 +553,7 @@
         FileType: fileInfo.fileType ?? "",
         PaymentRRR: fileInfo.paymentRRR ?? "",
         OldApplicantName: fileInfo.applicantName ?? "",
-        UserId: $loggedInUser?.id ?? "",
+        UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
       };
 
       // Add specific fields based on update type
@@ -549,6 +602,18 @@
         // formObj.DesignType =
         //   newData.designType != null ? newData.designType : null;
         formObj.NoveltyStatement = newData.noveltyStatement ?? "";
+      } else if (updateType === ClericalUpdateTypes.EditInventors) {
+        // const removeIds = inventorsMarkedForDeletion
+        //   .map((i) => inventors[i]?.id)
+        //   .filter((id) => id != null);
+        // if (removeIds.length > 0) {
+        //   formObj.RemoveInventorIds = removeIds;
+        // }
+      } else if (updateType === ClericalUpdateTypes.PriorityInfo) {
+        if (isPCTorConventional()) {
+          formObj.FirstPriorityInfo = [firstPriorityInfo];
+        }
+        formObj.PriorityInfo = priorityInfoList;
       }
 
       localStorage.setItem("formData", JSON.stringify(formObj));
@@ -592,6 +657,53 @@
           );
         });
       }
+      if (updateType === ClericalUpdateTypes.EditInventors) {
+        const filteredInventors = inventors.filter(
+          (_, i) => !inventorsMarkedForDeletion.includes(i),
+        );
+        filteredInventors.forEach((inventor, i) => {
+          formData.append(`NewInventors[${i}].id`, inventor.id ?? "");
+          formData.append(`NewInventors[${i}].name`, inventor.name ?? "");
+          formData.append(`NewInventors[${i}].address`, inventor.address ?? "");
+          formData.append(`NewInventors[${i}].email`, inventor.email ?? "");
+          formData.append(`NewInventors[${i}].phone`, inventor.phone ?? "");
+          formData.append(`NewInventors[${i}].country`, inventor.country ?? "");
+          formData.append(`NewInventors[${i}].state`, inventor.state ?? "");
+          formData.append(`NewInventors[${i}].city`, inventor.city ?? "");
+        });
+
+        inventorsMarkedForDeletion.forEach((i) => {
+          const id = inventors[i]?.id;
+          if (id) {
+            formData.append("RemoveInventorIds", id);
+          }
+        });
+      }
+      if (updateType === ClericalUpdateTypes.PriorityInfo) {
+        formData.delete("FirstPriorityInfo");
+        formData.delete("PriorityInfo");
+
+        if (isPCTorConventional()) {
+          formData.append(
+            `FirstPriorityInfo[0].number`,
+            firstPriorityInfo.number ?? "",
+          );
+          formData.append(
+            `FirstPriorityInfo[0].country`,
+            firstPriorityInfo.country ?? "",
+          );
+          formData.append(
+            `FirstPriorityInfo[0].date`,
+            firstPriorityInfo.date ?? "",
+          );
+        }
+
+        priorityInfoList.forEach((info, i) => {
+          formData.append(`PriorityInfo[${i}].number`, info.number ?? "");
+          formData.append(`PriorityInfo[${i}].country`, info.country ?? "");
+          formData.append(`PriorityInfo[${i}].date`, info.date ?? "");
+        });
+      }
       // Add file attachments to FormData
       if (
         updateType === ClericalUpdateTypes.FileTitle &&
@@ -616,6 +728,7 @@
           formData.append("OtherAttachment", newData.OtherAttachment);
         }
       }
+      // formData.append("UserId", $loggedInUser?.id ?? "");
 
       const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
@@ -689,7 +802,46 @@
       },
     ];
   }
+  function addInventorForm() {
+    inventors = [
+      ...inventors,
+      {
+        id: crypto.randomUUID(),
+        name: "",
+        address: "",
+        email: "",
+        phone: "",
+        country: "",
+        state: "",
+        city: "",
+      },
+    ];
+    openInventors[inventors.length - 1] = true;
+  }
 
+  function toggleInventorDeletion(index: number) {
+    if (inventorsMarkedForDeletion.includes(index)) {
+      inventorsMarkedForDeletion = inventorsMarkedForDeletion.filter(
+        (i) => i !== index,
+      );
+    } else {
+      inventorsMarkedForDeletion = [...inventorsMarkedForDeletion, index];
+    }
+  }
+  function isPCTorConventional(): boolean {
+    return patentTypeValue === 0 || patentTypeValue === 2;
+  }
+
+  function addPriorityInfo() {
+    priorityInfoList = [
+      ...priorityInfoList,
+      { number: "", country: "", date: "" },
+    ];
+  }
+
+  function removePriorityInfo(index: number) {
+    priorityInfoList = priorityInfoList.filter((_, i) => i !== index);
+  }
   function removeCreator(index: number) {
     newData.designCreators = newData.designCreators.filter(
       (_, i) => i !== index,
@@ -736,6 +888,21 @@
       }
       error = null;
       return true;
+    }
+    if (updateType === ClericalUpdateTypes.EditInventors) {
+      const activeInventors = inventors.filter(
+        (_, i) => !inventorsMarkedForDeletion.includes(i),
+      );
+      if (activeInventors.length === 0) {
+        error = "Please keep at least one inventor.";
+        return false;
+      }
+      for (let i = 0; i < activeInventors.length; i++) {
+        if (!activeInventors[i].name || activeInventors[i].name.trim() === "") {
+          error = `Inventor ${i + 1} must have a name.`;
+          return false;
+        }
+      }
     }
     error = null;
     return true;
@@ -1846,34 +2013,285 @@
           </div>
         </div>
       {/if}
-      <!-- <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-				<div class="bg-orange-100 px-4 py-2 font-medium text-orange-900">SUPPORTING DOCUMENTS</div>
-				<div class="p-4">
-					<div class="grid grid-cols-1 gap-4">
-						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">
-								Upload Supporting Document:
-							</label>
-							<input
-								type="file"
-								accept=".pdf"
-								on:change={handleFileChange}
-								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-							/>
-							<p class="text-xs text-gray-500 mt-1">
-								Please upload a PDF document supporting your request (max 10MB).
-							</p>
-							{#if newData.document}
-								<div class="mt-2 flex items-center gap-2 text-green-600">
-									<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
-									<span class="text-sm">File uploaded: {newData.document.name}</span>
-								</div>
-							{/if}
-						</div>
-					</div>
-				</div>
-			</div> -->
+      {#if updateType === ClericalUpdateTypes.EditInventors}
+        <div class="mb-6 border border-purple-300 rounded-md overflow-hidden">
+          <div class="bg-purple-100 px-4 py-2 font-medium text-purple-900">
+            EXISTING INVENTORS
+          </div>
+          <div class="p-4">
+            {#each inventors as inventor, i}
+              <details
+                class="mb-4 border border-gray-300 rounded-lg shadow-sm overflow-hidden relative"
+                bind:open={openInventors[i]}
+              >
+                <summary
+                  class="cursor-pointer font-semibold text-lg bg-gray-200 px-4 py-2 flex items-center justify-between"
+                >
+                  <span>Inventor {i + 1}</span>
+                  {#if inventorsMarkedForDeletion.includes(i)}
+                    <span
+                      class="ml-20 px-2 py-1 bg-red-100 text-red-700 rounded text-xs"
+                      >To be deleted</span
+                    >
+                  {/if}
+                </summary>
+                <!-- Delete button at top right, always visible -->
+                <button
+                  type="button"
+                  class="absolute top-2 right-2 px-2 py-1 rounded transition-colors z-10 mb-2
+                                        {inventorsMarkedForDeletion.includes(i)
+                    ? 'bg-red-800 text-white border border-red-700'
+                    : 'bg-red-600 text-white hover:bg-red-700'}"
+                  on:click={() => toggleInventorDeletion(i)}
+                  title={inventorsMarkedForDeletion.includes(i)
+                    ? "Undo Remove"
+                    : "Delete Inventor"}
+                >
+                  {inventorsMarkedForDeletion.includes(i)
+                    ? "Undo Remove"
+                    : "Delete"}
+                </button>
+                <div
+                  class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pb-4
+                                    {inventorsMarkedForDeletion.includes(i)
+                    ? 'bg-red-50 opacity-70'
+                    : ''}"
+                >
+                  <div>
+                    <label
+                      for={`inventor-${i}-name`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Name:</label
+                    >
+                    <input
+                      id={`inventor-${i}-name`}
+                      type="text"
+                      bind:value={inventor.name}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-address`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Address:</label
+                    >
+                    <input
+                      id={`inventor-${i}-address`}
+                      type="text"
+                      bind:value={inventor.address}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-email`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Email:</label
+                    >
+                    <input
+                      id={`inventor-${i}-email`}
+                      type="email"
+                      bind:value={inventor.email}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-phone`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Phone:</label
+                    >
+                    <input
+                      id={`inventor-${i}-phone`}
+                      type="tel"
+                      bind:value={inventor.phone}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-nationality`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Nationality:</label
+                    >
+                    <select
+                      id={`inventor-${i}-nationality`}
+                      bind:value={inventor.country}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    >
+                      <option value="" disabled selected
+                        >Select nationality</option
+                      >
+                      {#each Object.entries(countriesMap) as [code, name]}
+                        <option value={name}>{name}</option>
+                      {/each}
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-state`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >State:</label
+                    >
+                    <input
+                      id={`inventor-${i}-state`}
+                      type="text"
+                      bind:value={inventor.state}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-city`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >City:</label
+                    >
+                    <input
+                      id={`inventor-${i}-city`}
+                      type="text"
+                      bind:value={inventor.city}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                </div>
+              </details>
+            {/each}
 
+            <!-- Add Inventor Button -->
+            <button
+              type="button"
+              class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors mt-4"
+              on:click={addInventorForm}
+            >
+              Add Inventor
+            </button>
+          </div>
+        </div>
+      {/if}
+      {#if updateType === ClericalUpdateTypes.PriorityInfo && patentTypeValue !== null && fileInfo.patentType !== 1}
+        {#if isPCTorConventional()}
+          <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+            <div class="bg-blue-100 px-4 py-2 font-medium text-blue-900">
+              FIRST PRIORITY INFORMATION
+            </div>
+            <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label
+                  for={`first-priority-number`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Priority Number</label
+                >
+                <input
+                  id={`first-priority-number`}
+                  type="text"
+                  bind:value={firstPriorityInfo.number}
+                  class="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label
+                  for={`first-priority-country`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Country</label
+                >
+                <select
+                  id={`first-priority-country`}
+                  bind:value={firstPriorityInfo.country}
+                  class="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="" disabled selected>Select country</option>
+                  {#each Object.entries(countriesMap) as [code, name]}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+              </div>
+              <div>
+                <label
+                  for={`first-priority-date`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Date</label
+                >
+                <input
+                  id={`first-priority-date`}
+                  type="date"
+                  bind:value={firstPriorityInfo.date}
+                  class="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Priority Info Section -->
+        <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+          <div class="bg-green-100 px-4 py-2 font-medium text-green-900">
+            PRIORITY INFORMATION
+          </div>
+          <div class="p-4">
+            {#each priorityInfoList as info, i}
+              <div
+                class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2 items-center"
+              >
+                <input
+                  type="text"
+                  bind:value={info.number}
+                  placeholder="Priority Number"
+                  class="px-3 py-2 border rounded-md"
+                />
+                <select
+                  bind:value={info.country}
+                  class="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="" disabled selected>Select country</option>
+                  {#each Object.entries(countriesMap) as [code, name]}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+                <input
+                  type="date"
+                  bind:value={info.date}
+                  class="px-3 py-2 border rounded-md"
+                />
+                <div class="flex justify-end">
+                  <button
+                    type="button"
+                    class="bg-red-600 hover:bg-red-700 text-white px-1 py-1 rounded-md transition-colors"
+                    on:click={() => removePriorityInfo(i)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            {/each}
+            <button
+              type="button"
+              class="bg-blue-600 text-white px-4 py-2 rounded-md mt-2"
+              on:click={addPriorityInfo}
+            >
+              Add Priority Info
+            </button>
+          </div>
+        </div>
+      {/if}
+      {#if updateType === ClericalUpdateTypes.PriorityInfo && patentTypeValue !== null && fileInfo.patentType === 1}
+        <div class="mb-6 border border-red-300 rounded-md overflow-hidden">
+          <div class="bg-red-100 px-4 py-2 font-medium text-red-900">
+            NOT ALLOWED
+          </div>
+          <div class="p-4 text-red-700">
+            Clerical update for Priority Information is not allowed for
+            Non-Conventional patent files.
+          </div>
+        </div>
+      {/if}
       <!-- Submit Button -->
       <div class="flex justify-end">
         {#if isReadyForPayment}

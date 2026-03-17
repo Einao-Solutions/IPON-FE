@@ -36,6 +36,8 @@
       assignment: `/home/postregistration/assignment?fileId=${fileId}&fileType=${fileType}`,
       merger: `/home/postregistration/merger?fileId=${fileId}&fileType=${fileType}`,
       "registered-user": `/home/postregistration/registeredusers?fileId=${fileId}&fileType=${fileType}`,
+      reclassification: `/home/postregistration/changedata?fileId=${fileId}&fileType=${fileType}&changeType=Class`,
+
       // Patent post-registration services
       "patent-amendment": `/home/postregistration/patentamendment?fileId=${fileId}&fileType=${fileType}`,
       "patent-assignment": `/home/postregistration/patentassignment?fileId=${fileId}&fileType=${fileType}`,

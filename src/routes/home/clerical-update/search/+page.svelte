@@ -320,15 +320,15 @@
                       // Patent options
                       if (selectedValue === "update-name") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`,
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantName}`,
                         );
                       } else if (selectedValue === "update-address") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
                         );
                       } else if (selectedValue === "update-title") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`,
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`,
                         );
                       } else if (selectedValue === "addorremove-applicant") {
                         goto(
@@ -336,15 +336,15 @@
                         );
                       } else if (selectedValue === "edit-inventors") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.EditInventors}`,
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.EditInventors}`,
                         );
                       } else if (selectedValue === "priorityinfo") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.PriorityInfo}`,
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.PriorityInfo}`,
                         );
                       } else if (selectedValue === "correspondence") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
+                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
                         );
                       }
                     }

@@ -444,12 +444,22 @@
                     >
                       <option value="">--Select Amendment Type--</option>
                       <option value="update-name">Update Applicant Name</option>
-                      <option value="update-address">Update Applicant Address</option>
-                      <option value="update-title">Update Abstract/Application Type/Title Of Invention</option>
-                      <option value="addorremove-applicant">Add/Remove Applicant</option>
+                      <option value="update-address"
+                        >Update Applicant Address</option
+                      >
+                      <option value="update-title"
+                        >Update Abstract/Application Type/Title Of Invention</option
+                      >
+                      <option value="addorremove-applicant"
+                        >Add/Remove Applicant</option
+                      >
                       <option value="edit-inventors">Update Inventors</option>
-                      <option value="priorityinfo">Update Priority Information</option>
-                      <option value="correspondence">Update Correspondence</option>
+                      <option value="priorityinfo"
+                        >Update Priority Information</option
+                      >
+                      <option value="correspondence"
+                        >Update Correspondence</option
+                      >
                     </select>
                   {:else if searchParams?.serviceType}
                     <Button on:click={() => proceedToPatentService(result)}
@@ -464,7 +474,7 @@
                   <select
                     class="border rounded px-2 py-1"
                     on:change={(e) => {
-                     // const selectedValue = e.target.value;
+                      // const selectedValue = e.target.value;
                       const selectedValue = e.currentTarget.value;
                       if (selectedValue === "merger") {
                         goto(
@@ -478,6 +488,13 @@
                         goto(
                           `/home/postregistration/assignment?fileId=${result.fileId}&fileType=2`,
                         );
+                      } else if (
+                        selectedValue === "reclassification" &&
+                        result.fileTypes === FileTypes.Trademark
+                      ) {
+                        goto(
+                          `/home/postregistration/changedata?fileId=${result.fileId}&fileType=2&changeType=Class`,
+                        );    
                       } else if (
                         selectedValue === "name-change" &&
                         ![20, 21].includes(result.fileStatus)
@@ -502,8 +519,14 @@
                   >
                     <option value="">Select Recordal</option>
                     <option value="merger">Merger</option>
+
                     <option value="registered-users">Registered Users</option>
                     <option value="assignment">Assignment</option>
+                    {#if result.fileTypes === FileTypes.Trademark}
+                      <option value="reclassification"
+                        >Reclassification of Trademark</option
+                      >
+                    {/if}
                     {#if ![14, 20, 23].includes(result.fileStatus)}
                       <option value="name-change"
                         >Change of Applicant Name</option
