@@ -295,7 +295,7 @@
     remita_confirmation = "checking";
     try {
       const res = await fetch(
-        `${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
+        `${baseURL}/api/files/ManualUpdate?fileId=${fileData.fileId}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
         { method: "POST" },
       );
 
@@ -2607,11 +2607,11 @@
                         generateLetter(application, 0, 1);
                       }}>Acknowledgement Letter</DropdownMenu.Item
                     >
-                     <DropdownMenu.Item
+                     <!-- <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 0, 2);
                       }}>Acceptance Letter</DropdownMenu.Item
-                    >
+                    > -->
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 0, 37);
