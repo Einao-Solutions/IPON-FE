@@ -83,6 +83,23 @@
         }
       });
       window.dispatchEvent(event);
+    } else if (ipType === 'design' && [
+      'design-amendment',
+      'design-assignment',
+      'design-ctc',
+      'design-license',
+      'design-mortgage',
+      'design-merger'
+    ].includes(service.id)) {
+      // NEW STREAMLINED FLOW - Handle context-aware design post-registration services
+      const event = new CustomEvent('openStreamlinedPostRegModal', {
+        detail: {
+          serviceId: service.id,
+          serviceName: service.name,
+          ipType: ipType
+        }
+      });
+      window.dispatchEvent(event);
     } else {
       // OLD IMPLEMENTATION (commented for future deletion)
       // const route = resolveServiceRoute(service, ipType);

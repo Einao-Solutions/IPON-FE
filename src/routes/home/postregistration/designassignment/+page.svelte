@@ -1,0 +1,314 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { baseURL } from '$lib/helpers';
+	import { loggedInUser } from '$lib/store';
+	import { page } from '$app/stores';
+	import { countriesMap } from '$lib/constants';
+	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button/index';
+	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog';
+
+	interface DesignAssignmentData {
+		assignmentDeeds: File[];
+		supportingDocuments: File[];
+	}
+
+	interface AssigneeData {
+		name: string;
+		email: string;
+		phone: string;
+		nationality: string;
+		address: string;
+		city: string;
+		state: string;
+	}
+
+	let formData: DesignAssignmentData = {
+		assignmentDeeds: [],
+		supportingDocuments: []
+	};
+
+	let assigneeData: AssigneeData = {
+		name: '',
+		email: '',
+		phone: '',
+		nationality: '',
+		address: '',
+		city: '',
+		state: ''
+	};
+
+	let error: string | null = null;
+	let cost: number | null = null;
+	let paymentId: string | null = null;
+	let fileId: string | null = null;
+	let designTitle: string = '';
+	let fileOrigin: string = '';
+	let applicantName: string = '';
+	let applicantEmail: string = '';
+	let applicantPhone: string = '';
+	let applicantAddress: string = '';
+	let applicantNationality: string = '';
+	let applicantState: string = '';
+	let applicantCity: string = '';
+	let isProcessing = false;
+	let isLoading = false;
+	let showExistingApplicationModal = false;
+
+	onMount(async () => {
+		if (!$loggedInUser) {
+			await goto('/auth');
+			return;
+		}
+
+		const fileNumber = $page.url.searchParams.get('fileId') ?? '';
+		const fileType = $page.url.searchParams.get('fileType') ?? '';
+		await setData(fileNumber, fileType);
+	});
+
+	async function setData(fileNumber: string, fileType: string): Promise<void> {
+		isLoading = true;
+		try {
+			const res = await fetch(
+				`${baseURL}/api/files/GetDesignAssignmentCost?fileId=${fileNumber}&fileType=${fileType}`
+			);
+			if (!res.ok) {
+				error = 'Unable to retrieve cost info.';
+				return;
+			}
+
+			const response = await res.json();
+			const data = response.data || response;
+			
+			if (data.hasExistingApplication) {
+				showExistingApplicationModal = true;
+				return;
+			}
+			
+			cost = data.amount;
+			paymentId = data.rrr;
+			applicantName = data.applicantName;
+			designTitle = data.fileTitle || data.titleOfDesign || '';
+			fileOrigin = data.fileOrigin || '';
+			fileId = data.fileId;
+			applicantEmail = data.applicantEmail;
+			applicantPhone = data.applicantPhone;
+			applicantAddress = data.applicantAddress || '';
+			applicantNationality = data.applicantNationality || '';
+			applicantState = data.applicantState || '';
+			applicantCity = data.applicantCity || '';
+		} catch (err) {
+			error = 'Error fetching design assignment cost.';
+			console.error(err);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	function handleFileChange(event: Event, type: 'assignmentDeeds' | 'supportingDocuments') {
+		const target = event.target as HTMLInputElement;
+		const files = target.files;
+		if (files && files.length > 0) {
+			formData[type] = [...formData[type], ...Array.from(files)];
+		}
+		target.value = '';
+	}
+
+	function removeFile(type: 'assignmentDeeds' | 'supportingDocuments', index: number) {
+		formData[type] = formData[type].filter((_, i) => i !== index);
+	}
+
+	function validateForm(): boolean {
+		if (formData.assignmentDeeds.length === 0) { error = 'Please upload at least one deed of assignment document.'; return false; }
+		if (formData.supportingDocuments.length === 0) { error = 'Please upload at least one supporting document.'; return false; }
+		if (!assigneeData.name.trim()) { error = 'Please enter assignee name.'; return false; }
+		if (!assigneeData.email.trim()) { error = 'Please enter assignee email.'; return false; }
+		if (!assigneeData.phone.trim()) { error = 'Please enter assignee phone number.'; return false; }
+		if (!assigneeData.nationality.trim()) { error = 'Please select assignee nationality.'; return false; }
+		if (!assigneeData.address.trim()) { error = 'Please enter assignee address.'; return false; }
+		if (!assigneeData.city.trim()) { error = 'Please enter assignee city.'; return false; }
+		if (!assigneeData.state.trim()) { error = 'Please enter assignee state.'; return false; }
+		error = null;
+		return true;
+	}
+
+	async function convertToBase64(file: File): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => { const result = reader.result as string; resolve(result.split(',')[1]); };
+			reader.onerror = (error) => reject(error);
+		});
+	}
+
+	async function handleSubmit() {
+		if (!validateForm()) return;
+		isProcessing = true;
+		try {
+			const assignmentDeedData = [];
+			for (const file of formData.assignmentDeeds) {
+				const base64Data = await convertToBase64(file);
+				assignmentDeedData.push({ fileName: file.name, contentType: file.type, data: base64Data, name: 'AssignmentDeed' });
+			}
+			const supportingDocsData = [];
+			for (const file of formData.supportingDocuments) {
+				const base64Data = await convertToBase64(file);
+				supportingDocsData.push({ fileName: file.name, contentType: file.type, data: base64Data, name: 'DesignAssignmentSupportingDocuments' });
+			}
+
+			const now = new Date();
+			const payload = {
+				fileId, rrr: paymentId,
+				assignmentDate: now.toISOString(),
+				assignmentRequestDate: now.toISOString(),
+				assignmentDeed: assignmentDeedData,
+				DesignAssignmentSupportingDocuments: supportingDocsData,
+				oldAssignorName: applicantName, oldAssignorEmail: applicantEmail, oldAssignorPhone: applicantPhone,
+				oldAssignorAddress: applicantAddress, oldAssignorNationality: applicantNationality,
+				oldAssignorState: applicantState, oldAssignorCity: applicantCity,
+				newAssigneeName: assigneeData.name, newAssigneeEmail: assigneeData.email, newAssigneePhone: assigneeData.phone,
+				newAssigneeAddress: assigneeData.address, newAssigneeCity: assigneeData.city,
+				newAssigneeNationality: assigneeData.nationality, newAssigneeState: assigneeData.state
+			};
+
+			sessionStorage.setItem('designAssignmentPayload', JSON.stringify(payload));
+			sessionStorage.setItem('designAssignmentFormData', JSON.stringify({
+				assignmentDeeds: formData.assignmentDeeds.map(f => f.name),
+				supportingDocuments: formData.supportingDocuments.map(f => f.name),
+				designTitle, applicantName, applicantEmail
+			}));
+			await handlePayment();
+		} catch (err) {
+			error = 'Form processing failed. Please try again.';
+			console.error(err);
+		} finally { isProcessing = false; }
+	}
+
+	async function handlePayment() {
+		if (cost && paymentId) {
+			await goto(`/payment/?type=designassignment&rrr=${paymentId}&amount=${cost}&fileId=${fileId}`);
+		}
+	}
+
+	function goBack() { window.history.back(); }
+	function goToDashboard() { goto('/home/dashboard'); }
+</script>
+
+<div class="min-h-screen py-4 px-4">
+	<div class="w-full mx-auto">
+		<div class="flex items-center">
+			<Button variant="outline" on:click={goBack} class="flex items-center gap-2">
+				<Icon icon="lucide:arrow-left" width="1rem" height="1rem" /> Back
+			</Button>
+			<div class="flex-1 flex flex-col items-center justify-center">
+				<h1 class="text-xl font-bold">Design Assignment Application</h1>
+				<p class="font-light">Submit assignment documentation for design transfer</p>
+			</div>
+		</div>
+
+		<div class="px-6 py-6">
+			{#if error}
+				<div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded"><p class="text-sm text-red-700">{error}</p></div>
+			{/if}
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">ASSIGNMENT INFORMATION</div>
+				{#if isLoading}
+					<div class="flex items-center justify-center p-12"><div class="flex flex-col items-center gap-2"><Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" /><span class="text-sm text-gray-500">Loading Design Information...</span></div></div>
+				{:else}
+					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div><label for="fileNumber" class="block text-sm font-medium text-gray-700 mb-1">File Number:</label><input id="fileNumber" type="text" value={fileId || ''} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label for="fileOrigin" class="block text-sm font-medium text-gray-700 mb-1">File Origin:</label><input id="fileOrigin" type="text" value={fileOrigin} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div class="md:col-span-2"><label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title of Design:</label><input id="title" type="text" value={designTitle} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					</div>
+				{/if}
+			</div>
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">ASSIGNOR INFORMATION</div>
+				{#if isLoading}
+					<div class="flex items-center justify-center p-12"><div class="flex flex-col items-center gap-2"><Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" /><span class="text-sm text-gray-500">Loading Assignor Information...</span></div></div>
+				{:else}
+					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+						<div><label class="block text-sm font-medium text-gray-700 mb-1">Name:</label><input type="text" value={applicantName} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label class="block text-sm font-medium text-gray-700 mb-1">Email:</label><input type="email" value={applicantEmail} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label class="block text-sm font-medium text-gray-700 mb-1">Phone:</label><input type="text" value={applicantPhone} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label class="block text-sm font-medium text-gray-700 mb-1">Nationality:</label><input type="text" value={applicantNationality} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label class="block text-sm font-medium text-gray-700 mb-1">State:</label><input type="text" value={applicantState} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label class="block text-sm font-medium text-gray-700 mb-1">City:</label><input type="text" value={applicantCity} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Address:</label><input type="text" value={applicantAddress} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					</div>
+				{/if}
+			</div>
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">ASSIGNEE INFORMATION</div>
+				<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Name: <span class="text-red-500">*</span></label><input type="text" bind:value={assigneeData.name} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter assignee name" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Email: <span class="text-red-500">*</span></label><input type="email" bind:value={assigneeData.email} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter assignee email" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Phone Number: <span class="text-red-500">*</span></label><input type="tel" bind:value={assigneeData.phone} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter assignee phone number" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Nationality: <span class="text-red-500">*</span></label><select bind:value={assigneeData.nationality} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" required><option value="" disabled selected>Select nationality</option>{#each Object.entries(countriesMap) as [code, name]}<option value={name}>{name}</option>{/each}</select></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">City: <span class="text-red-500">*</span></label><input type="text" bind:value={assigneeData.city} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter assignee city" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">State: <span class="text-red-500">*</span></label><input type="text" bind:value={assigneeData.state} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter assignee state" required /></div>
+					<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Address: <span class="text-red-500">*</span></label><textarea bind:value={assigneeData.address} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter assignee full address" rows="3" required></textarea></div>
+				</div>
+			</div>
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">DOCUMENT UPLOADS</div>
+				<div class="p-4 space-y-6">
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">Deed of Assignment: <span class="text-red-500">*</span></label>
+						<div class="flex items-center mb-3"><input type="file" accept=".pdf,.doc,.docx" on:change={(e) => handleFileChange(e, 'assignmentDeeds')} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" multiple /></div>
+						{#if formData.assignmentDeeds.length > 0}
+							<div class="space-y-2"><p class="text-sm text-gray-600">Uploaded files:</p>
+								{#each formData.assignmentDeeds as file, index}
+									<div class="flex items-center gap-2">
+										<input class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100" value={file.name} readonly />
+										<button type="button" class="flex items-center justify-center w-8 h-8 bg-blue-100 hover:bg-blue-200 rounded-md transition-colors" on:click={() => { const url = URL.createObjectURL(file); window.open(url, '_blank'); }} title="View file"><svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
+										<button type="button" class="px-3 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors" on:click={() => removeFile('assignmentDeeds', index)}>Remove</button>
+									</div>
+								{/each}
+							</div>
+						{/if}
+						<p class="text-xs text-gray-500">Upload the signed deed of assignment documents (PDF, DOC, or DOCX format)</p>
+					</div>
+					<div>
+						<label class="block text-sm font-medium text-gray-700 mb-2">Other Supporting Documents: <span class="text-red-500">*</span></label>
+						<div class="flex items-center mb-3"><input type="file" accept=".pdf,.doc,.docx" on:change={(e) => handleFileChange(e, 'supportingDocuments')} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" multiple /></div>
+						{#if formData.supportingDocuments.length > 0}
+							<div class="space-y-2"><p class="text-sm text-gray-600">Uploaded files:</p>
+								{#each formData.supportingDocuments as file, index}
+									<div class="flex items-center gap-2">
+										<input class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100" value={file.name} readonly />
+										<button type="button" class="flex items-center justify-center w-8 h-8 bg-blue-100 hover:bg-blue-200 rounded-md transition-colors" on:click={() => { const url = URL.createObjectURL(file); window.open(url, '_blank'); }} title="View file"><svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></button>
+										<button type="button" class="px-3 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors" on:click={() => removeFile('supportingDocuments', index)}>Remove</button>
+									</div>
+								{/each}
+							</div>
+						{/if}
+						<p class="text-xs text-gray-500">Upload any additional supporting documents (authorization letters, corporate resolutions, etc.)</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="flex justify-end">
+				{#if cost !== null}
+					<button on:click={handleSubmit} class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center" disabled={isProcessing}>
+						{#if isProcessing}<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...{:else}Proceed To Pay{/if}
+					</button>
+				{:else}<button class="bg-gray-400 text-white px-6 py-2 rounded-md cursor-not-allowed" disabled>Loading...</button>{/if}
+			</div>
+		</div>
+	</div>
+
+	<Dialog.Root bind:open={showExistingApplicationModal}>
+		<Dialog.Content class="w-11/12 max-w-md mx-auto">
+			<Dialog.Header><Dialog.Title class="text-xl font-bold text-red-600 flex items-center gap-2"><Icon icon="mdi:alert-circle" width="1.5em" height="1.5em" />Application Already Exists</Dialog.Title></Dialog.Header>
+			<div class="py-4"><p class="text-gray-700">A design assignment application has already been submitted for this file. You cannot create multiple assignment applications for the same design.</p></div>
+			<Dialog.Footer class="flex gap-3 justify-end"><Button variant="outline" on:click={() => showExistingApplicationModal = false}>Close</Button><Button on:click={goToDashboard} class="bg-blue-600 hover:bg-blue-700">Go to Dashboard</Button></Dialog.Footer>
+		</Dialog.Content>
+	</Dialog.Root>
+</div>

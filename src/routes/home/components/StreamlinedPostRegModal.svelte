@@ -45,6 +45,14 @@
       "patent-license": `/home/postregistration/patentlicense?fileId=${fileId}&fileType=${fileType}`,
       "patent-mortgage": `/home/postregistration/patentmortgage?fileId=${fileId}&fileType=${fileType}`,
       "patent-merger": `/home/postregistration/patentmerger?fileId=${fileId}&fileType=${fileType}`,
+
+      // Design post-registration services
+      "design-amendment": `/home/postregistration/designamendment?fileId=${fileId}&fileType=${fileType}`,
+      "design-assignment": `/home/postregistration/designassignment?fileId=${fileId}&fileType=${fileType}`,
+      "design-ctc": `/home/postregistration/designctc?fileId=${fileId}&fileType=${fileType}`,
+      "design-license": `/home/postregistration/designlicense?fileId=${fileId}&fileType=${fileType}`,
+      "design-mortgage": `/home/postregistration/designmortgage?fileId=${fileId}&fileType=${fileType}`,
+      "design-merger": `/home/postregistration/designmerger?fileId=${fileId}&fileType=${fileType}`,
     };
     return routeMap[serviceId] || "";
   }
@@ -227,6 +235,26 @@
             JSON.stringify({
               query: searchQuery.trim(),
               fileType: "patent",
+              serviceType: serviceId,
+            }),
+          );
+          await goto("/home/postregistration/search");
+        } else if (
+          [
+            "design-amendment",
+            "design-assignment",
+            "design-ctc",
+            "design-license",
+            "design-mortgage",
+            "design-merger",
+          ].includes(serviceId)
+        ) {
+          // For design post-registration services, go to search page first with service type
+          sessionStorage.setItem(
+            "searchParams",
+            JSON.stringify({
+              query: searchQuery.trim(),
+              fileType: "design",
               serviceType: serviceId,
             }),
           );
