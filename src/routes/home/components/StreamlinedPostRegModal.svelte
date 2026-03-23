@@ -43,6 +43,13 @@
       "patent-license": `/home/postregistration/patentlicense?fileId=${fileId}&fileType=${fileType}`,
       "patent-mortgage": `/home/postregistration/patentmortgage?fileId=${fileId}&fileType=${fileType}`,
       "patent-merger": `/home/postregistration/patentmerger?fileId=${fileId}&fileType=${fileType}`,
+      // Design post-registration services
+      "design-amendment": `/home/postregistration/designamendment?fileId=${fileId}&fileType=${fileType}`,
+      "design-assignment": `/home/postregistration/designassignment?fileId=${fileId}&fileType=${fileType}`,
+      "design-ctc": `/home/postregistration/designctc?fileId=${fileId}&fileType=${fileType}`,
+      "design-license": `/home/postregistration/designlicense?fileId=${fileId}&fileType=${fileType}`,
+      "design-mortgage": `/home/postregistration/designmortgage?fileId=${fileId}&fileType=${fileType}`,
+      "design-merger": `/home/postregistration/designmerger?fileId=${fileId}&fileType=${fileType}`,
     };
     return routeMap[serviceId] || "";
   }
@@ -195,6 +202,37 @@
         }
       }
 
+      // Check file status for design post-registration services
+      if (
+        [
+          "design-amendment",
+          "design-assignment",
+          "design-ctc",
+          "design-license",
+          "design-mortgage",
+          "design-merger",
+        ].includes(serviceId)
+      ) {
+        const fileRes = await fetch(
+          `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`,
+        );
+        const fileData = await fileRes.json();
+
+        if (!fileRes.ok || !fileData || fileData.length === 0) {
+          error = "Unable to verify file status. Please try again.";
+          return;
+        }
+
+        const file = fileData[0];
+        const fileStatus = file?.fileStatus;
+
+        // Design post-registration services only allowed for Active files
+        if (fileStatus !== ApplicationStatuses.Active) {
+          error = `${serviceName} is only available for Active design files. Current file status: ${getStatusName(file?.fileStatus)}`;
+          return;
+        }
+      }
+
       // Route to appropriate destination based on service type
       const changeType = getChangeType(serviceId);
       const fileTypeNum =
@@ -225,6 +263,26 @@
             JSON.stringify({
               query: searchQuery.trim(),
               fileType: "patent",
+              serviceType: serviceId,
+            }),
+          );
+          await goto("/home/postregistration/search");
+        } else if (
+          [
+            "design-amendment",
+            "design-assignment",
+            "design-ctc",
+            "design-license",
+            "design-mortgage",
+            "design-merger",
+          ].includes(serviceId)
+        ) {
+          // For design post-registration services, go to search page first with service type
+          sessionStorage.setItem(
+            "searchParams",
+            JSON.stringify({
+              query: searchQuery.trim(),
+              fileType: "design",
               serviceType: serviceId,
             }),
           );

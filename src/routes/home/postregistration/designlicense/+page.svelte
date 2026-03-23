@@ -1,0 +1,189 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { goto } from '$app/navigation';
+	import { baseURL } from '$lib/helpers';
+	import { loggedInUser } from '$lib/store';
+	import { page } from '$app/stores';
+	import { countriesMap } from '$lib/constants';
+	import Icon from '@iconify/svelte';
+	import { Button } from '$lib/components/ui/button/index';
+	import { toast } from 'svelte-sonner';
+	import * as Dialog from '$lib/components/ui/dialog';
+	import { mapDesignTypeToString } from '$lib/designutils';
+
+	interface DesignLicenseData { licenseDeeds: File[]; supportingDocuments: File[]; }
+	interface LicenseeData { name: string; email: string; phone: string; nationality: string; address: string; city: string; state: string; }
+
+	let formData: DesignLicenseData = { licenseDeeds: [], supportingDocuments: [] };
+	let licenseeData: LicenseeData = { name: '', email: '', phone: '', nationality: '', address: '', city: '', state: '' };
+
+	let error: string | null = null;
+	let cost: number | null = null;
+	let paymentId: string | null = null;
+	let fileId: string | null = null;
+	let designTitle: string = '';
+	let designType: number | null = null;
+	let fileOrigin: string = '';
+	let applicantName: string = '';
+	let applicantEmail: string = '';
+	let applicantPhone: string = '';
+	let applicantAddress: string = '';
+	let applicantNationality: string = '';
+	let applicantCity: string = '';
+	let applicantState: string = '';
+	let isProcessing = false;
+	let isLoading = false;
+	let showExistingApplicationModal = false;
+
+	onMount(async () => {
+		if (!$loggedInUser) { await goto('/auth'); return; }
+		const fileNumber = $page.url.searchParams.get('fileId') ?? '';
+		const fileType = $page.url.searchParams.get('fileType') ?? '';
+		await setData(fileNumber, fileType);
+	});
+
+	async function setData(fileNumber: string, fileType: string): Promise<void> {
+		isLoading = true;
+		try {
+			const res = await fetch(`${baseURL}/api/files/GetDesignLicenseCost?fileId=${fileNumber}&fileType=${fileType}`);
+			if (!res.ok) { error = 'Unable to retrieve cost info.'; return; }
+			const response = await res.json();
+			const data = response.data || response;
+			if (data.hasExistingApplication) { showExistingApplicationModal = true; return; }
+			cost = data.amount; paymentId = data.rrr; applicantName = data.applicantName;
+			designTitle = data.fileTitle || data.titleOfDesign; designType = data.designType;
+			fileOrigin = data.fileOrigin || ''; fileId = data.fileId;
+			applicantEmail = data.applicantEmail; applicantPhone = data.applicantPhone;
+			applicantAddress = data.applicantAddress || ''; applicantNationality = data.applicantNationality || '';
+			applicantCity = data.applicantCity || ''; applicantState = data.applicantState || '';
+		} catch (err) { error = 'Error fetching design license cost.'; console.error(err); } finally { isLoading = false; }
+	}
+
+	function handleFileChange(event: Event, type: 'licenseDeeds' | 'supportingDocuments') {
+		const target = event.target as HTMLInputElement;
+		if (target.files && target.files.length > 0) { formData[type] = [...formData[type], ...Array.from(target.files)]; }
+		target.value = '';
+	}
+	function removeFile(type: 'licenseDeeds' | 'supportingDocuments', index: number) { formData[type] = formData[type].filter((_, i) => i !== index); }
+
+	function validateForm(): boolean {
+		if (formData.licenseDeeds.length === 0) { error = 'Please upload at least one deed of license document.'; return false; }
+		if (formData.supportingDocuments.length === 0) { error = 'Please upload at least one supporting document.'; return false; }
+		if (!licenseeData.name.trim()) { error = 'Please enter licensee name.'; return false; }
+		if (!licenseeData.email.trim()) { error = 'Please enter licensee email.'; return false; }
+		if (!licenseeData.phone.trim()) { error = 'Please enter licensee phone number.'; return false; }
+		if (!licenseeData.nationality.trim()) { error = 'Please select licensee nationality.'; return false; }
+		if (!licenseeData.address.trim()) { error = 'Please enter licensee address.'; return false; }
+		if (!licenseeData.state.trim()) { error = 'Please enter licensee state.'; return false; }
+		error = null; return true;
+	}
+
+	async function convertToBase64(file: File): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => { resolve((reader.result as string).split(',')[1]); };
+			reader.onerror = (error) => reject(error);
+		});
+	}
+
+	async function handleSubmit() {
+		if (!validateForm()) return;
+		isProcessing = true;
+		try {
+			const licenseDeedData = [];
+			for (const file of formData.licenseDeeds) { const b64 = await convertToBase64(file); licenseDeedData.push({ fileName: file.name, contentType: file.type, data: b64, name: 'DeedofLicense' }); }
+			const supportingDocsData = [];
+			for (const file of formData.supportingDocuments) { const b64 = await convertToBase64(file); supportingDocsData.push({ fileName: file.name, contentType: file.type, data: b64, name: 'DesignlicenseSupportingDocuments' }); }
+			const now = new Date();
+			const payload = {
+				fileId, rrr: paymentId, licenseDate: now.toISOString(), licenseRequestDate: now.toISOString(),
+				Deedoflicense: licenseDeedData, DesignLicenseSupportingDocuments: supportingDocsData,
+				oldLicensorName: applicantName, oldLicensorEmail: applicantEmail, oldLicensorPhone: applicantPhone,
+				oldLicensorAddress: applicantAddress, oldLicensorNationality: applicantNationality,
+				oldLicensorCity: applicantCity, oldLicensorState: applicantState,
+				newLicenseeName: licenseeData.name, newLicenseeEmail: licenseeData.email, newLicenseePhone: licenseeData.phone,
+				newLicenseeAddress: licenseeData.address, newLicenseeNationality: licenseeData.nationality,
+				newLicenseeCity: licenseeData.city, newLicenseeState: licenseeData.state
+			};
+			sessionStorage.setItem('designLicensePayload', JSON.stringify(payload));
+			sessionStorage.setItem('designLicenseFormData', JSON.stringify({
+				licenseDeeds: formData.licenseDeeds.map(f => f.name), supportingDocuments: formData.supportingDocuments.map(f => f.name),
+				designTitle, applicantName, applicantEmail
+			}));
+			await handlePayment();
+		} catch (err) { error = 'Form processing failed. Please try again.'; console.error(err); } finally { isProcessing = false; }
+	}
+
+	async function handlePayment() { if (cost && paymentId) { await goto(`/payment/?type=designlicense&rrr=${paymentId}&amount=${cost}&fileId=${fileId}`); } }
+	function goBack() { window.history.back(); }
+	function goToDashboard() { goto('/home/dashboard'); }
+</script>
+
+<div class="min-h-screen py-4 px-4">
+	<div class="w-full mx-auto">
+		<div class="flex items-center">
+			<Button variant="outline" on:click={goBack} class="flex items-center gap-2"><Icon icon="lucide:arrow-left" width="1rem" height="1rem" /> Back</Button>
+			<div class="flex-1 flex flex-col items-center justify-center"><h1 class="text-xl font-bold">Design License Application</h1><p class="font-light">Submit license documentation for design licensing</p></div>
+		</div>
+		<div class="px-6 py-6">
+			{#if error}<div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded"><p class="text-sm text-red-700">{error}</p></div>{/if}
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">LICENCE FORM</div>
+				{#if isLoading}<div class="flex items-center justify-center p-12"><div class="flex flex-col items-center gap-2"><Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" /><span class="text-sm text-gray-500">Loading Design Information...</span></div></div>
+				{:else}<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">File Number:</label><input type="text" value={fileId || ''} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Design Type:</label><input type="text" value={designType !== null ? mapDesignTypeToString(designType) : ''} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Title of Industrial Design:</label><input type="text" value={designTitle} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+				</div>{/if}
+			</div>
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">LICENSOR INFORMATION</div>
+				{#if isLoading}<div class="flex items-center justify-center p-12"><div class="flex flex-col items-center gap-2"><Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" /><span class="text-sm text-gray-500">Loading Licensor Information...</span></div></div>
+				{:else}<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Name:</label><input type="text" value={applicantName} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Email:</label><input type="email" value={applicantEmail} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Phone:</label><input type="text" value={applicantPhone} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Nationality:</label><input type="text" value={applicantNationality} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">City:</label><input type="text" value={applicantCity} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">State:</label><input type="text" value={applicantState} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+					<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Address:</label><input type="text" value={applicantAddress} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+				</div>{/if}
+			</div>
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">LICENSEE INFORMATION</div>
+				<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Name: <span class="text-red-500">*</span></label><input type="text" bind:value={licenseeData.name} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter licensee name" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Email: <span class="text-red-500">*</span></label><input type="email" bind:value={licenseeData.email} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter licensee email" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Phone Number: <span class="text-red-500">*</span></label><input type="tel" bind:value={licenseeData.phone} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter licensee phone number" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">Nationality: <span class="text-red-500">*</span></label><select bind:value={licenseeData.nationality} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" required><option value="" disabled selected>Select nationality</option>{#each Object.entries(countriesMap) as [code, name]}<option value={name}>{name}</option>{/each}</select></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">City: <span class="text-red-500">*</span></label><input type="text" bind:value={licenseeData.city} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter licensee city" required /></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">State: <span class="text-red-500">*</span></label><input type="text" bind:value={licenseeData.state} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter licensee state" required /></div>
+					<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Address: <span class="text-red-500">*</span></label><textarea bind:value={licenseeData.address} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter licensee full address" rows="3" required></textarea></div>
+				</div>
+			</div>
+
+			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">DOCUMENT UPLOADS</div>
+				<div class="p-4 space-y-6">
+					<div><label class="block text-sm font-medium text-gray-700 mb-2">Deed of License: <span class="text-red-500">*</span></label><div class="flex items-center mb-3"><input type="file" accept=".pdf,.doc,.docx" on:change={(e) => handleFileChange(e, 'licenseDeeds')} class="w-full px-3 py-2 border border-gray-300 rounded-md" multiple /></div>
+						{#if formData.licenseDeeds.length > 0}<div class="space-y-2"><p class="text-sm text-gray-600">Uploaded files:</p>{#each formData.licenseDeeds as file, index}<div class="flex items-center gap-2"><input class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100" value={file.name} readonly /><button type="button" class="px-3 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700" on:click={() => removeFile('licenseDeeds', index)}>Remove</button></div>{/each}</div>{/if}
+						<p class="text-xs text-gray-500">Upload the signed deed of license documents (PDF, DOC, or DOCX format)</p></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-2">Other Supporting Documents: <span class="text-red-500">*</span></label><div class="flex items-center mb-3"><input type="file" accept=".pdf,.doc,.docx" on:change={(e) => handleFileChange(e, 'supportingDocuments')} class="w-full px-3 py-2 border border-gray-300 rounded-md" multiple /></div>
+						{#if formData.supportingDocuments.length > 0}<div class="space-y-2"><p class="text-sm text-gray-600">Uploaded files:</p>{#each formData.supportingDocuments as file, index}<div class="flex items-center gap-2"><input class="flex-1 px-3 py-2 border border-gray-300 rounded-md bg-gray-100" value={file.name} readonly /><button type="button" class="px-3 py-1 text-xs bg-red-600 text-white rounded-md hover:bg-red-700" on:click={() => removeFile('supportingDocuments', index)}>Remove</button></div>{/each}</div>{/if}
+						<p class="text-xs text-gray-500">Upload any additional supporting documents</p></div>
+				</div>
+			</div>
+
+			<div class="flex justify-end">
+				{#if cost !== null}<button on:click={handleSubmit} class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center" disabled={isProcessing}>{#if isProcessing}<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Processing...{:else}Proceed To Pay{/if}</button>{:else}<button class="bg-gray-400 text-white px-6 py-2 rounded-md cursor-not-allowed" disabled>Loading...</button>{/if}
+			</div>
+		</div>
+	</div>
+	<Dialog.Root bind:open={showExistingApplicationModal}>
+		<Dialog.Content class="w-11/12 max-w-md mx-auto"><Dialog.Header><Dialog.Title class="text-xl font-bold text-red-600 flex items-center gap-2"><Icon icon="mdi:alert-circle" width="1.5em" height="1.5em" />Application Already Exists</Dialog.Title></Dialog.Header><div class="py-4"><p class="text-gray-700">A design license application has already been submitted for this file.</p></div><Dialog.Footer class="flex gap-3 justify-end"><Button variant="outline" on:click={() => showExistingApplicationModal = false}>Close</Button><Button on:click={goToDashboard} class="bg-blue-600 hover:bg-blue-700">Go to Dashboard</Button></Dialog.Footer></Dialog.Content>
+	</Dialog.Root>
+</div>

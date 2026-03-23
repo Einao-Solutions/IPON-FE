@@ -88,6 +88,12 @@ export const paymentHandlers: Record<
   patentctc,
   "patent-amendment": patentAmendment,
   trademarkRenewal,
+  designassignment,
+  designlicense,
+  designmortgage,
+  designmerger,
+  designctc,
+  "design-amendment": designAmendment,
 };
 
 /* ======================================================
@@ -561,5 +567,141 @@ async function patentAmendment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
    `https://${ctx.page.url.host}/home/postregistration/patentamendment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+/* ======================================================
+   DESIGN POST-REGISTRATION HANDLERS
+====================================================== */
+
+async function designassignment(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Design Assignment Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/designassignment/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function designlicense(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Design License Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/designlicense/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function designmortgage(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Design Mortgage Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/designmortgage/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function designmerger(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Design Merger Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/designmerger/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function designctc(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Design Certified True Copy (CTC) Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/designctc/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function designAmendment(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Design Amendment Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/designamendment/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }

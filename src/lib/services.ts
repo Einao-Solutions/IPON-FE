@@ -621,6 +621,62 @@ export const designServices: IPService[] = [
     category: "payment",
     isCommon: true,
   },
+
+  //DESIGN POST-REGISTRATION SERVICES
+  {
+    id: 'design-amendment',
+    name: 'DESIGN AMENDMENT',
+    description: 'Amend existing design applications',
+    icon: 'mdi:file-edit-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-assignment',
+    name: 'DESIGN ASSIGNMENT',
+    description: 'Transfer design ownership rights',
+    icon: 'mdi:account-switch-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-ctc',
+    name: 'DESIGN CTC (CERTIFIED TRUE COPY)',
+    description: 'Request certified true copies of design documents',
+    icon: 'mdi:certificate-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-license',
+    name: 'DESIGN LICENSE',
+    description: 'License design rights to third parties',
+    icon: 'mdi:handshake-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-mortgage',
+    name: 'DESIGN MORTGAGE',
+    description: 'Mortgage design as security for loans',
+    icon: 'mdi:bank-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-merger',
+    name: 'DESIGN MERGER',
+    description: 'Merge design applications',
+    icon: 'mdi:merge',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
 ];
 
 export function getServicesForIPType(
