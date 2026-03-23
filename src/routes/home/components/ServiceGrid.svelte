@@ -45,7 +45,8 @@
       'renewal',
       'assignment',
       'merger',
-      'registered-user'
+      'registered-user',
+      'reclassification'
     ].includes(service.id)) {
       // NEW STREAMLINED FLOW - Handle context-aware trademark services
       const event = new CustomEvent('openStreamlinedPostRegModal', {

@@ -7,16 +7,19 @@
   import Icon from "@iconify/svelte";
   import { Button } from "$lib/components/ui/button/index";
   import { tradeMarkClassesMap } from "$lib/constants";
+  import { loggedInUser } from "$lib/store";
 
   interface NewData {
     name: string;
     address: string;
+    class: number | null;
     document: File | null;
   }
 
   let newData: NewData = {
     name: "",
     address: "",
+    class: null,
     document: null,
   };
 
@@ -76,7 +79,7 @@
   }
 
   function validateForm(): boolean {
-    const required = [newData.name || newData.address];
+    const required = [newData.name || newData.address || newData.class];
     if (required.some((v) => !v)) {
       error = "Please fill in all required fields.";
       return false;
@@ -119,10 +122,15 @@
         form.append("NewName", newData.name);
       } else if (changeType === "Address") {
         form.append("NewAddress", newData.address);
+      } else if (changeType === "Class" && newData.class !== null) {
+        form.append("NewClass", String(newData.class));
       }
       form.append("document", newData.document as File);
       form.append("changeType", changeType);
-
+      form.append(
+        "userId",
+        $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
+      );
       const resp = await fetch(`${baseURL}/api/files/ChangeDataRecordal`, {
         method: "POST",
         body: form,
@@ -134,8 +142,11 @@
           // For files, just store the name (or you can skip storing files)
           formObj[key] = value instanceof File ? value.name : value;
         });
+        const data = await resp.text();
+        form.append("appId", data);
         localStorage.setItem("formData", JSON.stringify(formObj));
-        await handlePayment();
+        localStorage.setItem("appId", data);
+        await handlePayment(changeType);
       } else {
         console.error("Upload failed");
       }
@@ -147,11 +158,17 @@
     }
   }
 
-  async function handlePayment() {
+  async function handlePayment(type: string | null) {
     if (cost && paymentId) {
-      await goto(
-        `/payment/?type=changedatarecordal&rrr=${paymentId}&amount=${cost}`,
-      );
+      if (type == "Class") {
+        await goto(
+          `/payment/?type=reclassification&rrr=${paymentId}&amount=${cost}`,
+        );
+      } else {
+        await goto(
+          `/payment/?type=changedatarecordal&rrr=${paymentId}&amount=${cost}`,
+        );
+      }
     }
   }
   function goBack() {
@@ -368,7 +385,7 @@
                 New Trademark Class: <span class="text-red-500">*</span>
               </label>
               <select
-                bind:value={newClass}
+                bind:value={newData.class}
                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-gray-900 focus:border-gray-900"
               >
                 <option value={null} disabled>Select a class</option>
@@ -377,7 +394,7 @@
                 {/each}
               </select>
             </div>
-            {#if newClass !== null}
+            {#if newData.class !== null}
               <div class="md:col-span-2">
                 <p class="block text-sm font-medium text-gray-700 mb-1">
                   Class Description:
@@ -385,7 +402,7 @@
                 <p
                   class="px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-gray-700"
                 >
-                  {tradeMarkClassesMap.get(newClass) ?? ""}
+                  {tradeMarkClassesMap.get(newData.class) ?? ""}
                 </p>
               </div>
             {/if}
