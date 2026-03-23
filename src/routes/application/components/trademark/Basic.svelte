@@ -5,7 +5,7 @@
 	import * as Popover from '$lib/components/ui/popover/index';
 	import * as Command from '$lib/components/ui/command/index';
 	import { writable } from 'svelte/store';
-	import { tradeMarkClasses } from '$lib/constants';
+	import { tradeMarkClassesMap } from '$lib/constants';
 	import { cn } from '$lib/utils';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -295,7 +295,7 @@
 								value={cat.toString()}
 								onSelect={(currentValue) => {
 									$markclass = parseInt(currentValue);
-									$classDescription=tradeMarkClasses[parseInt($markclass) - 1]
+									$classDescription = tradeMarkClassesMap.get($markclass) ?? ''
 									isclassOpen = false;
 									document.getElementById(ids.trigger)?.focus();
 								}}
