@@ -350,3 +350,6 @@ export const tradeMarkClassesMap = new Map<number, string>([
 export function MapTradeMarkClass(classNumber: number): string {
     return tradeMarkClassesMap.get(classNumber) ?? "";
 }
+export function MapPatentType(type:number) {
+	return type===0?"Conventional":type==1?"Non-Conventional":"PCT";
+}
