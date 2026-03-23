@@ -27,9 +27,9 @@ stages:
         targetType: 'inline'
         script: |
           Write-Host "Removing old files..."
-          Remove-Item -Path 'C:\inetpub\wwwroot\IPO Nigeria Frontend\*' -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path 'C:\inetpub\vhosts\iponigeria.com\portal.iponigeria.com\*' -Recurse -Force -ErrorAction SilentlyContinue
 
           Write-Host "Copying new build..."
           Copy-Item -Path "$(System.DefaultWorkingDirectory)\build\*" `
-                    -Destination "C:\inetpub\wwwroot\IPO Nigeria Frontend" `
+                    -Destination "C:\inetpub\vhosts\iponigeria.com\portal.iponigeria.com" `
                     -Recurse -Force
