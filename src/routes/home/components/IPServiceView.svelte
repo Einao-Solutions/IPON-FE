@@ -176,9 +176,14 @@
       }
 
       // Store payment information
-      localStorage.setItem("fileId", res.fileId);
-      localStorage.setItem("name", res.name || "");
-      localStorage.setItem("rrr", res.rrr);
+      const paymentData = {
+        fileId: res.fileId,
+        name: res.applicant,
+        rrr: res.rrr,
+        appId: res.appId,
+        type: "tradecertificate",
+      };
+      localStorage.setItem("AppData", JSON.stringify(paymentData));
 
       await goto(
         `/payment/?type=tradecertificate&rrr=${res.rrr}&amount=${res.total}`,

@@ -344,8 +344,26 @@ async function changedatarecordal(ctx: PaymentContext) {
   return simplePaidHandler(ctx);
 }
 
-async function tradecertificate(ctx: PaymentContext) {
-  return simplePaidHandler(ctx);
+async function tradecertificate(ctx: PaymentContext): Promise<void> {
+   const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const data = localStorage.getItem("formData");
+  const parsed = data ? JSON.parse(data) : null;
+  const fileNumber = localStorage.getItem("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  ctx.state.setTitle("Payment");
+  ctx.state.setFileNumber(parsed?.FileId ?? fileNumber);
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(
+    `${get(ctx.loggedInUser)?.firstName} ${get(ctx.loggedInUser)?.lastName}`,
+  );
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/payment/paid?paymentType=tradecertificate`,
+  );
 }
 
 /* ======================================================
@@ -358,18 +376,19 @@ async function simplePaidHandler(ctx: PaymentContext): Promise<void> {
   const rrr = params.get("rrr");
   const data = localStorage.getItem("formData");
   const parsed = data ? JSON.parse(data) : null;
+  const fileNumber = localStorage.getItem("fileId");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
   ctx.state.setTitle("Payment");
-  ctx.state.setFileNumber(parsed?.FileId ?? null);
+  ctx.state.setFileNumber(parsed?.FileId ?? fileNumber);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(
     `${get(ctx.loggedInUser)?.firstName} ${get(ctx.loggedInUser)?.lastName}`,
   );
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid`,
+    `https://${ctx.page.url.host}/payment/paid?`,
   );
 }
 async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
