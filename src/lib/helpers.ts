@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
-export const baseURL = "https://backend.einaotest.com";
+ export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -465,6 +465,15 @@ export enum FilingType {
   Trademark = 2,
 }
 
+export enum ApplicationUnits {
+  Search = 1,
+  Examination = 2,
+  Publication = 3,
+  Opposition = 4,
+  Acceptance = 5,
+  Certificate = 6,
+}
+
 export function GetCountryImageLink(country: string) {
   const key = Object.keys(countriesMap).find(
     (key) => countriesMap[key as keyof typeof countriesMap] === country,
@@ -881,9 +890,55 @@ export function getPatentApplicationTypeLabel(value: number): string {
       return "Patent";
     case PatentApplicationTypes.Business_Method:
       return "Business Method";
-    case PatentApplicationTypes.Utility_Model:
+    case PatentApplicationTypes.Utility_MODEL:
       return "Utility Model";
     default:
       return value.toString();
   }
+}
+
+export function mapUnitToString(unit: ApplicationUnits): string {
+  switch (unit) {
+    case ApplicationUnits.Search:
+      return "Search Unit";
+    case ApplicationUnits.Examination:
+      return "Examination Unit";
+    case ApplicationUnits.Publication:
+      return "Publication Unit";
+    case ApplicationUnits.Opposition:
+      return "Opposition Unit";
+    case ApplicationUnits.Acceptance:
+      return "Acceptance Unit";
+    case ApplicationUnits.Certificate:
+      return "Certificate Unit";
+    default:
+      return "Unknown";
+  }
+}
+
+// Get units available for each file type
+export function getUnitsForFileType(fileType: FilingType): { unitId: number; unitName: string }[] {
+  // Trademark has all 6 units (1-6)
+  if (fileType === FilingType.Trademark) {
+    return [
+      { unitId: 1, unitName: "Search Unit" },
+      { unitId: 2, unitName: "Examination Unit" },
+      { unitId: 3, unitName: "Publication Unit" },
+      { unitId: 4, unitName: "Opposition Unit" },
+      { unitId: 5, unitName: "Acceptance Unit" },
+      { unitId: 6, unitName: "Certificate Unit" },
+    ];
+  }
+  
+  // Patent and Design only have 3 units (1, 2, 3)
+  // Certificate is unit 3 for Patent/Design
+  if (fileType === FilingType.Patent || fileType === FilingType.Design) {
+    return [
+      { unitId: 1, unitName: "Search Unit" },
+      { unitId: 2, unitName: "Examination Unit" },
+      { unitId: 3, unitName: "Certificate Unit" }, // Unit 3 for Patent/Design
+    ];
+  }
+
+  return [];
 }

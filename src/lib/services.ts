@@ -246,7 +246,7 @@ export const trademarkServices: IPService[] = [
     name: "CHANGE OF APPLICANT NAME",
     description: "Update applicant name",
     icon: "mdi:account-edit",
-    route: "/home/change-applicant-name",
+    route: " ",
     category: "filing",
     price: "₦11,500",
   },

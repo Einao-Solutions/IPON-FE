@@ -11,20 +11,23 @@
     if (userRoles.includes(UserRoles.PermSec) || userRoles.includes(UserRoles.Minister) || userRoles.includes(UserRoles.SuperAdmin)) {
       return [
         {
-          title: "Trademark Statistics",
-          description: "View comprehensive performance, operational, and financial statistics for the Trademark registry. Access unit performance metrics, file data by class and nationality, correspondence statistics, and revenue breakdown.",
+          title: "Trademark",
+         // description: "View comprehensive performance, operational, and financial statistics for the Trademark registry. Access unit performance metrics, file data by class and nationality, correspondence statistics, and revenue breakdown.",
+          description: " ",
           icon: "mdi:scale-balance",
           registry: "Trademark"
         },
         {
-          title: "Patent Statistics",
-          description: "View comprehensive performance, operational, and financial statistics for the Patent registry. Track search and examination unit performance, file data analysis, and revenue generation.",
+          title: "Patent",
+        //  description: "View comprehensive performance, operational, and financial statistics for the Patent registry. Track search and examination unit performance, file data analysis, and revenue generation.",
+          description: " ",
           icon: "mdi:file-document-outline",
           registry: "Patent"
         },
         {
-          title: "Design Statistics",
-          description: "View comprehensive performance, operational, and financial statistics for the Design registry. Monitor unit performance, application trends, and financial metrics.",
+          title: "Design",
+          //description: "View comprehensive performance, operational, and financial statistics for the Design registry. Monitor unit performance, application trends, and financial metrics.",
+          description: " ",
           icon: "mdi:palette-outline",
           registry: "Design"
         }
