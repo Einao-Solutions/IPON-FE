@@ -51,6 +51,7 @@
   import { useAnimation } from "svelte-motion";
   import PatentAssignmentDialog from "./Components/PatentAssignmentDialog.svelte";
   import PatentLicenseDialog from "./Components/PatentLicenseDialog.svelte";
+  import DesignLicenseDialog from "./Components/DesignLicenseDialog.svelte";
   import PatentMergerDialog from "./Components/PatentMergerDialog.svelte";
   import PatentMortgageDialog from "./Components/PatentMortgageDialog.svelte";
   import PatentCTCDialog from "./Components/PatentCTCDialog.svelte";
@@ -122,6 +123,11 @@
   let showPatentLicenseDialog = false;
   let patentLicenseFileId = "";
   let patentLicenseApplicationId = "";
+
+  // Design License Modal State
+  let showDesignLicenseDialog = false;
+  let designLicenseFileId = "";
+  let designLicenseApplicationId = "";
   
   // Patent Merger Modal State
   let showPatentMergerDialog = false;
@@ -146,6 +152,7 @@
   // Patent Dialog Statuses
   let patentAssignmentStatus: number | null = null;
   let patentLicenseStatus: number | null = null;
+  let designLicenseStatus: number | null = null;
   let patentMergerStatus: number | null = null;
   let patentMortgageStatus: number | null = null;
   let patentCTCStatus: number | null = null;
@@ -970,6 +977,14 @@
     patentLicenseApplicationId = applicationId;
     patentLicenseStatus = status;
     showPatentLicenseDialog = true;
+  }
+
+  // Open design license dialog
+  function openDesignLicenseDialog(fileId: string, applicationId: string, status: number) {
+    designLicenseFileId = fileId;
+    designLicenseApplicationId = applicationId;
+    designLicenseStatus = status;
+    showDesignLicenseDialog = true;
   }
 
   // Open patent merger dialog
@@ -2276,6 +2291,14 @@
   status={patentLicenseStatus}
 />
 
+<!-- Design License Dialog -->
+<DesignLicenseDialog 
+  bind:open={showDesignLicenseDialog}
+  fileId={designLicenseFileId}
+  applicationId={designLicenseApplicationId}
+  status={designLicenseStatus}
+/>
+
 <!-- Patent Merger Dialog -->
 <PatentMergerDialog 
   bind:open={showPatentMergerDialog}
@@ -2495,6 +2518,14 @@
                   {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openPatentLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Design License Application -->
+                  {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() => openDesignLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
