@@ -99,7 +99,7 @@
             (result.fileTypes === FileTypes.Patent &&
               [3, 4, 6, 7, 14].includes(result.fileStatus)) ||
             (result.fileTypes === FileTypes.Design &&
-              [3, 4, 6, 7, 14].includes(result.fileStatus)),
+              [3, 4, 6, 7].includes(result.fileStatus)),
         );
       } else {
         error = "Search parameters are missing";

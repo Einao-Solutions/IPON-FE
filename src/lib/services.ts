@@ -253,11 +253,11 @@ export const trademarkServices: IPService[] = [
   {
     id: "reclassification",
     name: "RECLASSIFICATION",
-    description: "Reclassify trademark goods/services",
+    description: "Reclassify trademark",
     icon: "mdi:format-list-bulleted-type",
     route: "modal",
     category: "filing",
-    price: "₦11,500",
+    price: "₦18,500",
 
   },
   {
