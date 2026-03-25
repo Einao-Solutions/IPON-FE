@@ -476,6 +476,8 @@ export function mapTypeToString(type: number) {
       return "Mortgage";
     case 21: 
       return "Certified True Copy (CTC)";
+      case 22:
+        return "Reclassification";
     default:
       return "";
   }

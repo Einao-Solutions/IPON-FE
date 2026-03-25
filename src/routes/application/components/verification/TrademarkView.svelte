@@ -3,7 +3,7 @@
 	import Icon from '@iconify/svelte';
 	import { applicationData, applicationMode, formsData } from '$lib/store';
 	import {Label} from "$lib/components/ui/label";
-	import { tradeMarkClasses } from '$lib/constants';
+	import { tradeMarkClassesMap } from '$lib/constants';
 	import * as Table from "$lib/components/ui/table/index"
 	import { type AttachmentType, type CorrespondenceType, GetCountryImageLink } from '$lib/helpers';
 	import { mapTrademarkAttToString, mapTradeStringToInt, mapTradeStringToString } from '$lib/designutils';

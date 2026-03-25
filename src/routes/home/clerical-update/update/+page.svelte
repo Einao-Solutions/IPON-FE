@@ -20,6 +20,19 @@
   import { boolean } from "zod";
   import type { DesignTypes } from "$lib/designutils";
   import { mapDesignTypeToString } from "$lib/designutils";
+  import { form } from "$app/server";
+
+  let error: string | null = null;
+  let isProcessing = false;
+  let isLoading = false;
+  let updateType: ClericalUpdateTypes | null = null;
+  let fileType: FileTypes | null = null;
+  let inventors: InventorInfo[] = [];
+  let openInventors: Record<number, boolean> = {};
+  let inventorsMarkedForDeletion: number[] = [];
+  let firstPriorityInfo: PriorityInfo = { number: "", country: "", date: "" };
+  let priorityInfoList: PriorityInfo[] = [];
+  let patentTypeValue: number | null = null;
 
   interface FileInfo {
     fileTitle: string;
@@ -50,6 +63,8 @@
     designCreators: DesignCreator[] | null;
     designAttachments: string[] | null;
     trademarkType?: number | null;
+    inventors?: InventorInfo[] | null;
+    patentType?: number | null;
   }
   interface NewData {
     fileTitle: string;
@@ -78,12 +93,26 @@
     wordMark: string | null;
     disclaimer: string | null;
     noveltyStatement?: string | null;
-    designType: number | null;
+    designType: DesignTypes | null;
     designCreators: DesignCreator[] | [];
     titleOfDesign?: string | null;
     DesignAttachments: File[];
   }
-
+  interface InventorInfo {
+    id: string;
+    name: string;
+    address?: string;
+    email?: string;
+    phone?: string;
+    country?: string;
+    state?: string;
+    city?: string;
+  }
+  interface PriorityInfo {
+    number: string;
+    country: string;
+    date: string;
+  }
   let fileInfo: FileInfo = {
     fileTitle: "",
     representation: null,
@@ -113,12 +142,10 @@
     designType: null,
     designCreators: [],
     designAttachments: [],
+    inventors: [],
+    patentType: null,
   };
-  let error: string | null = null;
-  let isProcessing = false;
-  let isLoading = false;
-  let updateType: ClericalUpdateTypes | null = null;
-  let fileType: FileTypes | null = null;
+
   const pageData = get(page);
 
   onMount(async () => {
@@ -275,6 +302,32 @@
         designCreators: data.designCreators ?? [],
         designAttachments: data.existingDesignAttachments ?? [],
       };
+      if (updateType === ClericalUpdateTypes.EditInventors && data.inventors) {
+        inventors = data.inventors;
+        openInventors = {};
+        inventors.forEach((_, i) => (openInventors[i] = false));
+      }
+      if (updateType === ClericalUpdateTypes.PriorityInfo) {
+        patentTypeValue = data.patentType ?? null;
+
+        if (
+          isPCTorConventional() &&
+          Array.isArray(data.firstPriorityInfo) &&
+          data.firstPriorityInfo.length > 0
+        ) {
+          firstPriorityInfo = { ...data.firstPriorityInfo[0] };
+        } else {
+          firstPriorityInfo = { number: "", country: "", date: "" };
+        }
+
+        if (Array.isArray(data.priorityInfo) && data.priorityInfo.length > 0) {
+          priorityInfoList = data.priorityInfo.map((p: PriorityInfo) => ({
+            ...p,
+          }));
+        } else {
+          priorityInfoList = [{ number: "", country: "", date: "" }];
+        }
+      }
     } catch (err) {
       error = "Error fetching change of name cost.";
       console.error(err);
@@ -376,6 +429,7 @@
   // Computed properties for section visibility
   $: isDesign = fileInfo.fileType === FileTypes.Design;
   $: isTrademark = fileInfo.fileType === FileTypes.Trademark;
+  $: isPatent = fileInfo.fileType === FileTypes.Patent;
 
   function getDesignTypeString(des: number | null): string {
     if (des === 0) {
@@ -478,6 +532,7 @@
   let showSuccessToast = false;
 
   async function handleSubmit() {
+    console.log("Submit clicked");
     if (!validateForm()) return;
     isProcessing = true;
     const fileNumber = pageData.url.searchParams.get("fileId") ?? "";
@@ -491,15 +546,15 @@
 
       console.log(fileInfo.fileType, updateType, fileNumber);
 
-      // Create FormData instead of plain object
-      const formData = new FormData();
-
-      // Add basic fields
-      formData.append("FileId", fileNumber);
-      formData.append("UpdateType", updateType.toString());
-      formData.append("FileType", fileInfo.fileType?.toString() ?? "");
-      formData.append("PaymentRRR", fileInfo.paymentRRR ?? "");
-      formData.append("OldApplicantName", fileInfo.applicantName ?? "");
+      // Build formObj first (like patent clerical update)
+      const formObj: Record<string, any> = {
+        FileId: fileNumber,
+        UpdateType: updateType,
+        FileType: fileInfo.fileType ?? "",
+        PaymentRRR: fileInfo.paymentRRR ?? "",
+        OldApplicantName: fileInfo.applicantName ?? "",
+        UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
+      };
 
       // Add specific fields based on update type
       if (updateType === ClericalUpdateTypes.CreatorInformation) {
@@ -511,86 +566,170 @@
             creator.address ||
             creator.country,
         );
-
-        // Serialize creators as JSON string
-        formData.append("DesignCreators", JSON.stringify(filteredCreators));
-
-        if (newData.noveltyStatement) {
-          formData.append("NoveltyStatement", newData.noveltyStatement);
-        }
       } else if (updateType === ClericalUpdateTypes.FileTitle) {
-        if (newData.Representation) {
-          formData.append("Representation", newData.Representation); // Append actual File object
-        }
         if (newData.trademarkLogo) {
-          formData.append("TrademarkLogo", newData.trademarkLogo.toString());
+          formObj.TrademarkLogo = newData.trademarkLogo.toString();
         }
         if (newData.fileTitle) {
-          formData.append("FileTitle", newData.fileTitle);
+          formObj.FileTitle = newData.fileTitle;
         }
       } else if (updateType === ClericalUpdateTypes.ApplicantName) {
-        formData.append("ApplicantName", newData.applicantName ?? "");
+        formObj.ApplicantName = newData.applicantName ?? "";
       } else if (updateType === ClericalUpdateTypes.DesignAttachments) {
-        // Append new design attachment files
-        if (newData.DesignAttachments && newData.DesignAttachments.length > 0) {
-          newData.DesignAttachments.forEach((file) => {
-            formData.append("DesignAttachments", file);
-          });
-        }
-        // Append removed attachment URLs
+        // Removed attachment URLs
         if (removedDesignAttachments && removedDesignAttachments.length > 0) {
-          removedDesignAttachments.forEach((url) => {
-            formData.append("RemoveDesignAttachmentUrls", url);
-          });
+          formObj.RemoveDesignAttachmentUrls = removedDesignAttachments;
         }
       } else if (updateType === ClericalUpdateTypes.ApplicantAddress) {
-        formData.append("ApplicantAddress", newData.applicantAddress ?? "");
-        formData.append("ApplicantPhone", newData.applicantPhone ?? "");
-        formData.append("ApplicantEmail", newData.applicantEmail ?? "");
+        formObj.ApplicantAddress = newData.applicantAddress ?? "";
+        formObj.ApplicantPhone = newData.applicantPhone ?? "";
+        formObj.ApplicantEmail = newData.applicantEmail ?? "";
       } else if (updateType === ClericalUpdateTypes.TrademarkType) {
-        formData.append(
-          "TrademarkType",
-          newData.trademarkType != null ? newData.trademarkType.toString() : "",
-        );
-        formData.append(
-          "ApplicantNationality",
-          newData.applicantNationality ?? "",
-        );
+        formObj.TrademarkType =
+          newData.trademarkType != null ? newData.trademarkType.toString() : "";
+        formObj.ApplicantNationality = newData.applicantNationality ?? "";
       } else if (updateType === ClericalUpdateTypes.FileClass) {
-        formData.append("FileClass", String(newData.fileClass));
-        formData.append("ClassDescription", newData.classDescription ?? "");
-        formData.append("Disclaimer", newData.disclaimer ?? "");
+        formObj.FileClass = String(newData.fileClass);
+        formObj.ClassDescription = newData.classDescription ?? "";
+        formObj.Disclaimer = newData.disclaimer ?? "";
       } else if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
-        formData.append("CorrespondenceName", newData.correspondenceName ?? "");
-        formData.append(
-          "CorrespondencePhone",
-          newData.correspondencePhone ?? "",
-        );
-        formData.append(
-          "CorrespondenceEmail",
-          newData.correspondenceEmail ?? "",
-        );
-        formData.append(
-          "CorrespondenceAddress",
-          newData.correspondenceAddress ?? "",
-        );
-
-        if (newData.PowerOfAttorney) {
-          formData.append("PowerOfAttorney", newData.PowerOfAttorney); // Append actual File object
+        formObj.CorrespondenceName = newData.correspondenceName ?? "";
+        formObj.CorrespondencePhone = newData.correspondencePhone ?? "";
+        formObj.CorrespondenceEmail = newData.correspondenceEmail ?? "";
+        formObj.CorrespondenceAddress = newData.correspondenceAddress ?? "";
+      } else if (updateType === ClericalUpdateTypes.DesignInformation) {
+        formObj.TitleOfDesign = newData.titleOfDesign ?? "";
+        // formObj.DesignType =
+        //   newData.designType != null ? newData.designType : null;
+        formObj.NoveltyStatement = newData.noveltyStatement ?? "";
+      } else if (updateType === ClericalUpdateTypes.EditInventors) {
+        // const removeIds = inventorsMarkedForDeletion
+        //   .map((i) => inventors[i]?.id)
+        //   .filter((id) => id != null);
+        // if (removeIds.length > 0) {
+        //   formObj.RemoveInventorIds = removeIds;
+        // }
+      } else if (updateType === ClericalUpdateTypes.PriorityInfo) {
+        if (isPCTorConventional()) {
+          formObj.FirstPriorityInfo = [firstPriorityInfo];
         }
-        if (newData.OtherAttachment) {
-          formData.append("OtherAttachment", newData.OtherAttachment); // Append actual File object
-        }
+        formObj.PriorityInfo = priorityInfoList;
       }
 
-      // Store FormData entries as JSON for payment handling
-      const formObj: Record<string, any> = {};
-      formData.forEach((value, key) => {
-        formObj[key] = value instanceof File ? value.name : value;
-      });
       localStorage.setItem("formData", JSON.stringify(formObj));
 
-      // Send FormData directly (no JSON.stringify, no Content-Type header)
+      // For non-free updates, build FormData with files and submit
+      const formData = new FormData();
+      for (const key in formObj) {
+        if (
+          Object.prototype.hasOwnProperty.call(formObj, key) &&
+          formObj[key] !== undefined &&
+          formObj[key] !== null
+        ) {
+          if (Array.isArray(formObj[key]) || typeof formObj[key] === "object") {
+            formData.append(key, JSON.stringify(formObj[key]));
+          } else {
+            formData.append(key, String(formObj[key]));
+          }
+        }
+      }
+      if (updateType === ClericalUpdateTypes.CreatorInformation) {
+        const filteredCreators = newData.designCreators.filter(
+          (creator) =>
+            creator.name ||
+            creator.email ||
+            creator.phone ||
+            creator.address ||
+            creator.country,
+        );
+        filteredCreators.forEach((creator, i) => {
+          formData.append(`DesignCreators[${i}].id`, creator.id ?? "");
+          formData.append(`DesignCreators[${i}].name`, creator.name ?? "");
+          formData.append(`DesignCreators[${i}].email`, creator.email ?? "");
+          formData.append(`DesignCreators[${i}].phone`, creator.phone ?? "");
+          formData.append(
+            `DesignCreators[${i}].address`,
+            creator.address ?? "",
+          );
+          formData.append(
+            `DesignCreators[${i}].country`,
+            creator.country ?? "",
+          );
+        });
+      }
+      if (updateType === ClericalUpdateTypes.EditInventors) {
+        const filteredInventors = inventors.filter(
+          (_, i) => !inventorsMarkedForDeletion.includes(i),
+        );
+        filteredInventors.forEach((inventor, i) => {
+          formData.append(`NewInventors[${i}].id`, inventor.id ?? "");
+          formData.append(`NewInventors[${i}].name`, inventor.name ?? "");
+          formData.append(`NewInventors[${i}].address`, inventor.address ?? "");
+          formData.append(`NewInventors[${i}].email`, inventor.email ?? "");
+          formData.append(`NewInventors[${i}].phone`, inventor.phone ?? "");
+          formData.append(`NewInventors[${i}].country`, inventor.country ?? "");
+          formData.append(`NewInventors[${i}].state`, inventor.state ?? "");
+          formData.append(`NewInventors[${i}].city`, inventor.city ?? "");
+        });
+
+        inventorsMarkedForDeletion.forEach((i) => {
+          const id = inventors[i]?.id;
+          if (id) {
+            formData.append("RemoveInventorIds", id);
+          }
+        });
+      }
+      if (updateType === ClericalUpdateTypes.PriorityInfo) {
+        formData.delete("FirstPriorityInfo");
+        formData.delete("PriorityInfo");
+
+        if (isPCTorConventional()) {
+          formData.append(
+            `FirstPriorityInfo[0].number`,
+            firstPriorityInfo.number ?? "",
+          );
+          formData.append(
+            `FirstPriorityInfo[0].country`,
+            firstPriorityInfo.country ?? "",
+          );
+          formData.append(
+            `FirstPriorityInfo[0].date`,
+            firstPriorityInfo.date ?? "",
+          );
+        }
+
+        priorityInfoList.forEach((info, i) => {
+          formData.append(`PriorityInfo[${i}].number`, info.number ?? "");
+          formData.append(`PriorityInfo[${i}].country`, info.country ?? "");
+          formData.append(`PriorityInfo[${i}].date`, info.date ?? "");
+        });
+      }
+      // Add file attachments to FormData
+      if (
+        updateType === ClericalUpdateTypes.FileTitle &&
+        newData.Representation
+      ) {
+        formData.append("Representation", newData.Representation);
+      }
+      if (
+        updateType === ClericalUpdateTypes.DesignAttachments &&
+        newData.DesignAttachments &&
+        newData.DesignAttachments.length > 0
+      ) {
+        newData.DesignAttachments.forEach((file) => {
+          formData.append("DesignAttachments", file);
+        });
+      }
+      if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
+        if (newData.PowerOfAttorney) {
+          formData.append("PowerOfAttorney", newData.PowerOfAttorney);
+        }
+        if (newData.OtherAttachment) {
+          formData.append("OtherAttachment", newData.OtherAttachment);
+        }
+      }
+      // formData.append("UserId", $loggedInUser?.id ?? "");
+
       const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
         body: formData,
@@ -611,7 +750,6 @@
 
       const data = await result.text();
       localStorage.setItem("clericalId", data);
-
       await handlePayment();
     } catch (err) {
       error = "Form submission failed.";
@@ -655,7 +793,7 @@
     newData.designCreators = [
       ...newData.designCreators,
       {
-        id: "", // Backend will generate if empty
+        id: crypto.randomUUID(), // Backend will generate if empty
         name: "",
         email: "",
         phone: "",
@@ -664,7 +802,46 @@
       },
     ];
   }
+  function addInventorForm() {
+    inventors = [
+      ...inventors,
+      {
+        id: crypto.randomUUID(),
+        name: "",
+        address: "",
+        email: "",
+        phone: "",
+        country: "",
+        state: "",
+        city: "",
+      },
+    ];
+    openInventors[inventors.length - 1] = true;
+  }
 
+  function toggleInventorDeletion(index: number) {
+    if (inventorsMarkedForDeletion.includes(index)) {
+      inventorsMarkedForDeletion = inventorsMarkedForDeletion.filter(
+        (i) => i !== index,
+      );
+    } else {
+      inventorsMarkedForDeletion = [...inventorsMarkedForDeletion, index];
+    }
+  }
+  function isPCTorConventional(): boolean {
+    return patentTypeValue === 0 || patentTypeValue === 2;
+  }
+
+  function addPriorityInfo() {
+    priorityInfoList = [
+      ...priorityInfoList,
+      { number: "", country: "", date: "" },
+    ];
+  }
+
+  function removePriorityInfo(index: number) {
+    priorityInfoList = priorityInfoList.filter((_, i) => i !== index);
+  }
   function removeCreator(index: number) {
     newData.designCreators = newData.designCreators.filter(
       (_, i) => i !== index,
@@ -711,6 +888,21 @@
       }
       error = null;
       return true;
+    }
+    if (updateType === ClericalUpdateTypes.EditInventors) {
+      const activeInventors = inventors.filter(
+        (_, i) => !inventorsMarkedForDeletion.includes(i),
+      );
+      if (activeInventors.length === 0) {
+        error = "Please keep at least one inventor.";
+        return false;
+      }
+      for (let i = 0; i < activeInventors.length; i++) {
+        if (!activeInventors[i].name || activeInventors[i].name.trim() === "") {
+          error = `Inventor ${i + 1} must have a name.`;
+          return false;
+        }
+      }
     }
     error = null;
     return true;
@@ -834,18 +1026,20 @@
               </label>
               <p class="text-base text-gray-900">{fileInfo.fileTitle}</p>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-500 mb-1">
-                Trademark Type
-              </label>
-              <p class="text-base text-gray-900">
-                {fileInfo.trademarkType === 0
-                  ? "Local"
-                  : fileInfo.trademarkType === 1
-                    ? "Foreign"
-                    : "N/A"}
-              </p>
-            </div>
+            {#if isTrademark}
+              <div>
+                <label class="block text-sm font-medium text-gray-500 mb-1">
+                  Trademark Type
+                </label>
+                <p class="text-base text-gray-900">
+                  {fileInfo.trademarkType === 0
+                    ? "Local"
+                    : fileInfo.trademarkType === 1
+                      ? "Foreign"
+                      : "N/A"}
+                </p>
+              </div>
+            {/if}
             <div>
               <label class="block text-sm font-medium text-gray-500 mb-1">
                 Applicant Name
@@ -1203,7 +1397,7 @@
             UPDATE DESIGN ATTACHMENTS
           </div>
 
-          <!-- Existing attachments (removable) -->z
+          <!-- Existing attachments (removable) -->
           <div class="p-4">
             <label class="block text-sm font-medium text-gray-500 mb-2">
               Current Attachments
@@ -1305,138 +1499,226 @@
 
       <!-- Creator Information Section -->
       {#if showCreatorInfoSection}
-        <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-          <div
-            class="bg-gray-300 px-4 py-2 font-medium text-black flex justify-between items-center"
-          >
-            <span>CREATOR(S) INFORMATION</span>
+        <div
+          class="mb-6 rounded-xl overflow-hidden shadow-sm border border-slate-200"
+        >
+          <!-- Header -->
+          <div class="bg-gray-400 px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+              <div class="w-1 h-5 bg-gray-400 rounded-full"></div>
+              <span
+                class="text-sm font-semibold tracking-widest text-black-500 uppercase"
+              >
+                Creator(s) Information
+              </span>
+            </div>
             <button
               on:click={addCreator}
-              class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm font-normal"
+              class="flex items-center gap-2 bg-blue-500 hover:bg-blue-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 shadow-sm hover:shadow-md"
             >
-              + Add Creator
+              <span class="text-lg leading-none">+</span>
+              Add Creator
             </button>
           </div>
-          <div class="p-4">
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th
-                      class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Name
-                    </th>
-                    <th
-                      class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Email
-                    </th>
-                    <th
-                      class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Phone
-                    </th>
-                    <th
-                      class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Address
-                    </th>
-                    <th
-                      class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Nationality
-                    </th>
-                    <th
-                      class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                  {#each newData.designCreators as creator, index}
-                    <tr>
-                      <td class="px-4 py-3 text-sm">
-                        <input
-                          type="text"
-                          bind:value={creator.name}
-                          class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Name"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm">
-                        <input
-                          type="email"
-                          bind:value={creator.email}
-                          class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Email"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm">
-                        <input
-                          type="text"
-                          bind:value={creator.phone}
-                          class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Phone"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm">
-                        <input
-                          type="text"
-                          bind:value={creator.address}
-                          class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="Address"
-                        />
-                      </td>
-                      <td class="px-4 py-3 text-sm">
-                        <select
-                          bind:value={creator.country}
-                          class="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Select Country</option>
-                          {#each Object.entries(countriesMap) as [code, name]}
-                            <option value={code}>{name}</option>
-                          {/each}
-                        </select>
-                      </td>
-                      <td class="px-4 py-3 text-sm">
-                        <button
-                          on:click={() => removeCreator(index)}
-                          class="text-red-600 hover:text-red-800 font-medium"
-                          title="Remove creator"
-                        >
-                          Remove
-                        </button>
-                      </td>
-                    </tr>
-                  {/each}
-                  {#if newData.designCreators.length === 0}
-                    <tr>
-                      <td
-                        colspan="6"
-                        class="px-4 py-8 text-center text-gray-500"
-                      >
-                        No creators added yet. Click "Add Creator" to add one.
-                      </td>
-                    </tr>
-                  {/if}
-                </tbody>
-              </table>
-            </div>
 
+          <!-- Cards -->
+          <div class="bg-slate-50 p-5 space-y-4">
+            {#each newData.designCreators as creator, index}
+              <div
+                class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden"
+              >
+                <!-- Card Header -->
+                <div
+                  class="flex items-center justify-between px-5 py-3 bg-slate-100 border-b border-slate-200"
+                >
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center"
+                    >
+                      {index + 1}
+                    </span>
+                    <span class="text-sm font-semibold text-slate-700">
+                      {creator.name || "New Creator"}
+                    </span>
+                  </div>
+                  <button
+                    on:click={() => removeCreator(index)}
+                    class="inline-flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-white bg-red-50 hover:bg-red-500 px-3 py-1.5 rounded-lg transition-all duration-150"
+                    title="Remove creator"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="w-3.5 h-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    >
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6l-1 14H6L5 6" />
+                      <path d="M10 11v6M14 11v6" />
+                      <path d="M9 6V4h6v2" />
+                    </svg>
+                    Remove
+                  </button>
+                </div>
+
+                <!-- Fields Grid -->
+                <div
+                  class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+                >
+                  <!-- Name -->
+                  <div class="flex flex-col gap-1.5">
+                    <label
+                      class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                      >Full Name</label
+                    >
+                    <input
+                      type="text"
+                      bind:value={creator.name}
+                      class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                      placeholder="e.g. John Doe"
+                    />
+                  </div>
+
+                  <!-- Email -->
+                  <div class="flex flex-col gap-1.5">
+                    <label
+                      class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                      >Email Address</label
+                    >
+                    <input
+                      type="email"
+                      bind:value={creator.email}
+                      class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                      placeholder="e.g. john@example.com"
+                    />
+                  </div>
+
+                  <!-- Phone -->
+                  <div class="flex flex-col gap-1.5">
+                    <label
+                      class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                      >Phone Number</label
+                    >
+                    <input
+                      type="text"
+                      bind:value={creator.phone}
+                      class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                      placeholder="e.g. +1 202 555 0147"
+                    />
+                  </div>
+
+                  <!-- Address -->
+                  <div class="flex flex-col gap-1.5 sm:col-span-2">
+                    <label
+                      class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                      >Address</label
+                    >
+                    <input
+                      type="text"
+                      bind:value={creator.address}
+                      class="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all"
+                      placeholder="e.g. 123 Main St, New York, NY 10001"
+                    />
+                  </div>
+
+                  <!-- Nationality -->
+                  <div class="flex flex-col gap-1.5">
+                    <label
+                      class="text-xs font-semibold text-slate-500 uppercase tracking-wider"
+                      >Nationality</label
+                    >
+                    <div class="relative">
+                      <select
+                        bind:value={creator.country}
+                        class="w-full px-4 py-3 pr-9 bg-white border border-slate-300 rounded-lg text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="">Select country</option>
+                        {#each Object.entries(countriesMap) as [code, name]}
+                          <option value={code}>{name}</option>
+                        {/each}
+                      </select>
+                      <div
+                        class="pointer-events-none absolute inset-y-0 right-3 flex items-center"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          class="w-4 h-4 text-slate-400"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.5"
+                        >
+                          <polyline points="6 9 12 15 18 9" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            {/each}
+
+            <!-- Empty State -->
+            {#if newData.designCreators.length === 0}
+              <div
+                class="flex flex-col items-center gap-3 py-14 text-slate-400"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-12 h-12 text-slate-300"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0"
+                  />
+                </svg>
+                <p class="text-sm font-medium text-slate-500">
+                  No creators added yet
+                </p>
+                <p class="text-xs text-slate-400">
+                  Click <span class="font-semibold text-blue-500"
+                    >+ Add Creator</span
+                  > to get started
+                </p>
+              </div>
+            {/if}
+
+            <!-- Current Creators Reference -->
             {#if fileInfo.designCreators && fileInfo.designCreators.length > 0}
-              <div class="mt-6 pt-6 border-t border-gray-200">
-                <h4 class="text-sm font-medium text-gray-700 mb-3">
-                  Current Creators (for reference)
-                </h4>
-                <div class="bg-gray-50 rounded p-3">
+              <div class="mt-2 pt-5 border-t border-slate-200">
+                <p
+                  class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3"
+                >
+                  Current Creators (Reference)
+                </p>
+                <div class="grid gap-2">
                   {#each fileInfo.designCreators as creator, index}
-                    <div class="text-sm text-gray-600 mb-2">
-                      <strong>{index + 1}.</strong>
-                      {creator.name || "N/A"} - {creator.email || "N/A"} - {creator.phone ||
-                        "N/A"} - {creator.address || "N/A"} - {creator.country ||
-                        "N/A"}
+                    <div
+                      class="flex items-start gap-3 bg-white border border-slate-200 rounded-lg px-4 py-3 text-sm text-slate-600"
+                    >
+                      <span
+                        class="flex-shrink-0 w-5 h-5 bg-slate-200 text-slate-600 rounded-full text-xs flex items-center justify-center font-semibold"
+                        >{index + 1}</span
+                      >
+                      <span class="leading-relaxed">
+                        <span class="font-medium text-slate-800"
+                          >{creator.name || "N/A"}</span
+                        >
+                        <span class="text-slate-400 mx-1.5">·</span
+                        >{creator.email || "N/A"}
+                        <span class="text-slate-400 mx-1.5">·</span
+                        >{creator.phone || "N/A"}
+                        <span class="text-slate-400 mx-1.5">·</span
+                        >{creator.address || "N/A"}
+                        <span class="text-slate-400 mx-1.5">·</span
+                        >{creator.country || "N/A"}
+                      </span>
                     </div>
                   {/each}
                 </div>
@@ -1684,7 +1966,7 @@
           </div>
 
           <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div class="md:col-span-2">
               <label
                 for=""
                 class="block text-sm font-medium text-gray-700 mb-1"
@@ -1698,7 +1980,7 @@
                 class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
               />
             </div>
-            <div>
+            <!-- <div>
               <label
                 for=""
                 class="block text-sm font-medium text-gray-700 mb-1"
@@ -1713,7 +1995,7 @@
                 <option value={0}>Textile</option>
                 <option value={1}>Non-Textile</option>
               </select>
-            </div>
+            </div> -->
             <div class="md:col-span-2">
               <label
                 for=""
@@ -1731,34 +2013,285 @@
           </div>
         </div>
       {/if}
-      <!-- <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-				<div class="bg-orange-100 px-4 py-2 font-medium text-orange-900">SUPPORTING DOCUMENTS</div>
-				<div class="p-4">
-					<div class="grid grid-cols-1 gap-4">
-						<div>
-							<label class="block text-sm font-medium text-gray-700 mb-1">
-								Upload Supporting Document:
-							</label>
-							<input
-								type="file"
-								accept=".pdf"
-								on:change={handleFileChange}
-								class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-							/>
-							<p class="text-xs text-gray-500 mt-1">
-								Please upload a PDF document supporting your request (max 10MB).
-							</p>
-							{#if newData.document}
-								<div class="mt-2 flex items-center gap-2 text-green-600">
-									<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
-									<span class="text-sm">File uploaded: {newData.document.name}</span>
-								</div>
-							{/if}
-						</div>
-					</div>
-				</div>
-			</div> -->
+      {#if updateType === ClericalUpdateTypes.EditInventors}
+        <div class="mb-6 border border-purple-300 rounded-md overflow-hidden">
+          <div class="bg-purple-100 px-4 py-2 font-medium text-purple-900">
+            EXISTING INVENTORS
+          </div>
+          <div class="p-4">
+            {#each inventors as inventor, i}
+              <details
+                class="mb-4 border border-gray-300 rounded-lg shadow-sm overflow-hidden relative"
+                bind:open={openInventors[i]}
+              >
+                <summary
+                  class="cursor-pointer font-semibold text-lg bg-gray-200 px-4 py-2 flex items-center justify-between"
+                >
+                  <span>Inventor {i + 1}</span>
+                  {#if inventorsMarkedForDeletion.includes(i)}
+                    <span
+                      class="ml-20 px-2 py-1 bg-red-100 text-red-700 rounded text-xs"
+                      >To be deleted</span
+                    >
+                  {/if}
+                </summary>
+                <!-- Delete button at top right, always visible -->
+                <button
+                  type="button"
+                  class="absolute top-2 right-2 px-2 py-1 rounded transition-colors z-10 mb-2
+                                        {inventorsMarkedForDeletion.includes(i)
+                    ? 'bg-red-800 text-white border border-red-700'
+                    : 'bg-red-600 text-white hover:bg-red-700'}"
+                  on:click={() => toggleInventorDeletion(i)}
+                  title={inventorsMarkedForDeletion.includes(i)
+                    ? "Undo Remove"
+                    : "Delete Inventor"}
+                >
+                  {inventorsMarkedForDeletion.includes(i)
+                    ? "Undo Remove"
+                    : "Delete"}
+                </button>
+                <div
+                  class="mt-2 grid grid-cols-1 md:grid-cols-2 gap-4 px-4 pb-4
+                                    {inventorsMarkedForDeletion.includes(i)
+                    ? 'bg-red-50 opacity-70'
+                    : ''}"
+                >
+                  <div>
+                    <label
+                      for={`inventor-${i}-name`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Name:</label
+                    >
+                    <input
+                      id={`inventor-${i}-name`}
+                      type="text"
+                      bind:value={inventor.name}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-address`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Address:</label
+                    >
+                    <input
+                      id={`inventor-${i}-address`}
+                      type="text"
+                      bind:value={inventor.address}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-email`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Email:</label
+                    >
+                    <input
+                      id={`inventor-${i}-email`}
+                      type="email"
+                      bind:value={inventor.email}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-phone`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Phone:</label
+                    >
+                    <input
+                      id={`inventor-${i}-phone`}
+                      type="tel"
+                      bind:value={inventor.phone}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-nationality`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >Nationality:</label
+                    >
+                    <select
+                      id={`inventor-${i}-nationality`}
+                      bind:value={inventor.country}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    >
+                      <option value="" disabled selected
+                        >Select nationality</option
+                      >
+                      {#each Object.entries(countriesMap) as [code, name]}
+                        <option value={name}>{name}</option>
+                      {/each}
+                    </select>
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-state`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >State:</label
+                    >
+                    <input
+                      id={`inventor-${i}-state`}
+                      type="text"
+                      bind:value={inventor.state}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label
+                      for={`inventor-${i}-city`}
+                      class="block text-sm font-medium text-gray-700 mb-1"
+                      >City:</label
+                    >
+                    <input
+                      id={`inventor-${i}-city`}
+                      type="text"
+                      bind:value={inventor.city}
+                      class="w-full px-3 py-2 border rounded-md"
+                      required
+                    />
+                  </div>
+                </div>
+              </details>
+            {/each}
 
+            <!-- Add Inventor Button -->
+            <button
+              type="button"
+              class="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 transition-colors mt-4"
+              on:click={addInventorForm}
+            >
+              Add Inventor
+            </button>
+          </div>
+        </div>
+      {/if}
+      {#if updateType === ClericalUpdateTypes.PriorityInfo && patentTypeValue !== null && fileInfo.patentType !== 1}
+        {#if isPCTorConventional()}
+          <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+            <div class="bg-blue-100 px-4 py-2 font-medium text-blue-900">
+              FIRST PRIORITY INFORMATION
+            </div>
+            <div class="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label
+                  for={`first-priority-number`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Priority Number</label
+                >
+                <input
+                  id={`first-priority-number`}
+                  type="text"
+                  bind:value={firstPriorityInfo.number}
+                  class="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+              <div>
+                <label
+                  for={`first-priority-country`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Country</label
+                >
+                <select
+                  id={`first-priority-country`}
+                  bind:value={firstPriorityInfo.country}
+                  class="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="" disabled selected>Select country</option>
+                  {#each Object.entries(countriesMap) as [code, name]}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+              </div>
+              <div>
+                <label
+                  for={`first-priority-date`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >Date</label
+                >
+                <input
+                  id={`first-priority-date`}
+                  type="date"
+                  bind:value={firstPriorityInfo.date}
+                  class="w-full px-3 py-2 border rounded-md"
+                />
+              </div>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Priority Info Section -->
+        <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
+          <div class="bg-green-100 px-4 py-2 font-medium text-green-900">
+            PRIORITY INFORMATION
+          </div>
+          <div class="p-4">
+            {#each priorityInfoList as info, i}
+              <div
+                class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2 items-center"
+              >
+                <input
+                  type="text"
+                  bind:value={info.number}
+                  placeholder="Priority Number"
+                  class="px-3 py-2 border rounded-md"
+                />
+                <select
+                  bind:value={info.country}
+                  class="w-full px-3 py-2 border rounded-md"
+                >
+                  <option value="" disabled selected>Select country</option>
+                  {#each Object.entries(countriesMap) as [code, name]}
+                    <option value={name}>{name}</option>
+                  {/each}
+                </select>
+                <input
+                  type="date"
+                  bind:value={info.date}
+                  class="px-3 py-2 border rounded-md"
+                />
+                <div class="flex justify-end">
+                  <button
+                    type="button"
+                    class="bg-red-600 hover:bg-red-700 text-white px-1 py-1 rounded-md transition-colors"
+                    on:click={() => removePriorityInfo(i)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            {/each}
+            <button
+              type="button"
+              class="bg-blue-600 text-white px-4 py-2 rounded-md mt-2"
+              on:click={addPriorityInfo}
+            >
+              Add Priority Info
+            </button>
+          </div>
+        </div>
+      {/if}
+      {#if updateType === ClericalUpdateTypes.PriorityInfo && patentTypeValue !== null && fileInfo.patentType === 1}
+        <div class="mb-6 border border-red-300 rounded-md overflow-hidden">
+          <div class="bg-red-100 px-4 py-2 font-medium text-red-900">
+            NOT ALLOWED
+          </div>
+          <div class="p-4 text-red-700">
+            Clerical update for Priority Information is not allowed for
+            Non-Conventional patent files.
+          </div>
+        </div>
+      {/if}
       <!-- Submit Button -->
       <div class="flex justify-end">
         {#if isReadyForPayment}

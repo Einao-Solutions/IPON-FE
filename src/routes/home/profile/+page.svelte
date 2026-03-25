@@ -383,7 +383,7 @@
       ? !isValidPhoneNumber(profilePhone, "NG")
       : false;
     // showProfileStateError = !profileState || profileState.trim() === "";
-    showAccountTypeError = !accountType;
+    showAccountTypeError = accountType === undefined || accountType === null;
 
     return !(
       showProfileNameError ||
@@ -822,11 +822,9 @@
                         class="text-emerald-600"
                       />
                       <div class="flex flex-col">
-                        <span class="font-medium">Corporate / Organization</span
-                        >
+                        <span class="font-medium">Corporate / Organization</span>
                         <span class="text-xs text-muted-foreground"
-                          >Business or organizational account</span
-                        >
+                          >Business or organizational account</span>
                       </div>
                     </Command.Item>
                   </Command.Group>

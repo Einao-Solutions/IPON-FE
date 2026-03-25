@@ -12,7 +12,7 @@
   import { toast } from "svelte-sonner";
   import { packSiblings } from "d3";
   import { Toaster } from "$lib/components/ui/sonner";
-  
+
   let isLoading = true;
   let isSuccess = false;
   let errorMessage = "";
@@ -41,16 +41,26 @@
     // Get paymentType from URL
     paymentType = $page.url.searchParams.get("paymentType") ?? "";
     console.log("Payment Type:", paymentType);
-    const data = JSON.parse(localStorage.getItem("FileData") ?? "{}");
+    const data = JSON.parse(localStorage.getItem("AppData") ?? "{}");
     console.log("Form Data from localStorage:", data);
-    
+
     let success = false;
-    
+
     // Only call updateStatus if it's a tm certificate payment
     switch (paymentType) {
+      case "clerical":
+        console.log("Processing clerical payment");
+        success = await updateManual(data, false);
+        break;
       case "tradecertificate":
         console.log("Processing trade certificate payment");
         success = await updateManual(data, true);
+        break;
+      case "reclassification":
+        console.log("Processing reclassification payment");
+        const rrrReclassification = localStorage.getItem("rrr") ?? undefined;
+        paymentId = rrrReclassification ?? null;
+        success = await updateManual(data, false);
         break;
       case "opposition":
         console.log("Processing opposition payment");
@@ -61,10 +71,10 @@
       default:
         success = await updateManual(data, false);
     }
-    
+
     isLoading = false;
     isSuccess = success;
-    
+
     // Only show success animations if API call succeeded
     if (success) {
       setTimeout(() => {
@@ -79,7 +89,10 @@
     }
   });
 
-  async function updateManual(appData: any, isCertificate: boolean): Promise<boolean> {
+  async function updateManual(
+    appData: any,
+    isCertificate: boolean,
+  ): Promise<boolean> {
     try {
       const res = await fetch(
         `${baseURL}/api/files/ManualUpdate?fileId=${appData.fileId}&applicationId=${appData.appId}&userId=${appData.userId}&userName=${name}&isCertificate=${isCertificate}`,
@@ -143,7 +156,9 @@
     isStatusUpdating = false;
   }
 
-  async function updateOppositionPayment(paymentId: string | null): Promise<boolean> {
+  async function updateOppositionPayment(
+    paymentId: string | null,
+  ): Promise<boolean> {
     if (!paymentId) {
       errorMessage = "Payment ID is missing.";
       toast.error("Payment ID is missing.");
@@ -175,25 +190,43 @@
       return false;
     }
   }
-
 </script>
-<Toaster/>
+
+<Toaster />
 <main class="flex justify-center items-center min-h-screen bg-gray-50">
   <div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md text-center">
     {#if isLoading}
-      <div class="flex flex-col items-center justify-center py-8" in:fade={{ duration: 200 }}>
+      <div
+        class="flex flex-col items-center justify-center py-8"
+        in:fade={{ duration: 200 }}
+      >
         <div class="loader mb-4"></div>
         <p class="text-gray-600 font-medium">Processing your payment...</p>
       </div>
     {:else if !isSuccess}
-      <div class="flex flex-col items-center justify-center py-8" in:fade={{ duration: 200 }}>
-        <div class="h-32 w-32 mx-auto mb-6 bg-red-50 rounded-full flex justify-center items-center">
-          <svg class="w-16 h-16 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <div
+        class="flex flex-col items-center justify-center py-8"
+        in:fade={{ duration: 200 }}
+      >
+        <div
+          class="h-32 w-32 mx-auto mb-6 bg-red-50 rounded-full flex justify-center items-center"
+        >
+          <svg
+            class="w-16 h-16 text-red-500"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </div>
-        <h1 class="text-3xl font-bold text-gray-900 mt-2 mb-4">Something went wrong</h1>
+        <h1 class="text-3xl font-bold text-gray-900 mt-2 mb-4">
+          Something went wrong
+        </h1>
         <p class="text-base font-medium text-gray-600 mb-8 max-w-xs mx-auto">
           {"Something went wrong. Please try again."}
         </p>

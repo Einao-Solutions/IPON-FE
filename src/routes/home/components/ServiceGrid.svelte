@@ -45,7 +45,8 @@
       'renewal',
       'assignment',
       'merger',
-      'registered-user'
+      'registered-user',
+      'reclassification'
     ].includes(service.id)) {
       // NEW STREAMLINED FLOW - Handle context-aware trademark services
       const event = new CustomEvent('openStreamlinedPostRegModal', {
@@ -75,6 +76,23 @@
       'patent-merger'
     ].includes(service.id)) {
       // NEW STREAMLINED FLOW - Handle context-aware patent post-registration services
+      const event = new CustomEvent('openStreamlinedPostRegModal', {
+        detail: {
+          serviceId: service.id,
+          serviceName: service.name,
+          ipType: ipType
+        }
+      });
+      window.dispatchEvent(event);
+    } else if (ipType === 'design' && [
+      'design-amendment',
+      'design-assignment',
+      'design-ctc',
+      'design-license',
+      'design-mortgage',
+      'design-merger'
+    ].includes(service.id)) {
+      // NEW STREAMLINED FLOW - Handle context-aware design post-registration services
       const event = new CustomEvent('openStreamlinedPostRegModal', {
         detail: {
           serviceId: service.id,

@@ -108,7 +108,21 @@ const config = {
         "/statistics",
         "/statistics/performance/staff",
         "/statistics/performance/units",
-        "/design"
+        "/design",
+        "/auth/reset-password",
+        "/home/postregistration/designamendment",
+        "/home/postregistration/designamendment/result",
+        "/home/postregistration/designassignment",
+        "/home/postregistration/designassignment/result",
+        "/home/postregistration/designctc",
+        "/home/postregistration/designctc/result",
+        "/home/postregistration/designlicense",
+        "/home/postregistration/designlicense/result",
+        "/home/postregistration/designmerger",
+        "/home/postregistration/designmerger/result",
+        "/home/postregistration/designmortgage",
+        "/home/postregistration/designmortgage/result"
+
       ],
     },
   },

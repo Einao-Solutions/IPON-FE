@@ -63,6 +63,7 @@
   } | null = null;
 
   let isPatent = false;
+  let isDesign = false;
   let patentError: string | null = null;
   onMount(async () => {
     try {
@@ -93,17 +94,21 @@
         // Check if fileType is patent
         isPatent =
           results.length > 0 && results[0].fileTypes === FileTypes.Patent;
+        isDesign =
+          results.length > 0 && results[0].fileTypes === FileTypes.Design;
         //console.log('isPatent:', isPatent);
-        if (isPatent) {
+        if (isPatent || isDesign) {
           // Only allow Active (0) or Inactive (1) status
           filteredResults = results.filter(
             (result) =>
               [0, 1, 14, 20, 23].includes(result.fileStatus) &&
-              result.fileTypes === FileTypes.Patent,
+              (result.fileTypes === FileTypes.Patent || result.fileTypes === FileTypes.Design),
           );
           if (filteredResults.length === 0) {
             patentError =
-              "Patent file must be Active or Inactive. Please input a valid file.";
+              isPatent
+                ? "Patent file must be Active or Inactive. Please input a valid file."
+                : "Design file must be Active or Inactive. Please input a valid file.";
           }
         } else {
           // Trademark logic
@@ -231,14 +236,20 @@
       "patent-license": "Patent License",
       "patent-mortgage": "Patent Mortgage",
       "patent-merger": "Patent Merger",
+      "design-amendment": "Design Amendment",
+      "design-assignment": "Design Assignment",
+      "design-ctc": "Design CTC (Certified True Copy)",
+      "design-license": "Design License",
+      "design-mortgage": "Design Mortgage",
+      "design-merger": "Design Merger",
     };
     return (
       serviceNames[serviceType as keyof typeof serviceNames] || serviceType
     );
   }
 
-  // Handle proceed to specific patent service
-  function proceedToPatentService(result: SearchResult) {
+  // Handle proceed to specific patent/design service
+  function proceedToService(result: SearchResult) {
     if (!searchParams?.serviceType) return;
 
     const serviceRoutes = {
@@ -248,6 +259,12 @@
       "patent-license": `/home/postregistration/patentlicense?fileId=${result.fileId}&fileType=0`,
       "patent-mortgage": `/home/postregistration/patentmortgage?fileId=${result.fileId}&fileType=0`,
       "patent-merger": `/home/postregistration/patentmerger?fileId=${result.fileId}&fileType=0`,
+      "design-amendment": `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1`,
+      "design-assignment": `/home/postregistration/designassignment?fileId=${result.fileId}&fileType=1`,
+      "design-ctc": `/home/postregistration/designctc?fileId=${result.fileId}&fileType=1`,
+      "design-license": `/home/postregistration/designlicense?fileId=${result.fileId}&fileType=1`,
+      "design-mortgage": `/home/postregistration/designmortgage?fileId=${result.fileId}&fileType=1`,
+      "design-merger": `/home/postregistration/designmerger?fileId=${result.fileId}&fileType=1`,
     };
 
     const route =
@@ -265,7 +282,7 @@
       Back
     </Button>
     <h1 class="text-xl font-semibold">
-      {#if isPatent && searchParams?.serviceType}
+      {#if (isPatent || isDesign) && searchParams?.serviceType}
         {getServiceName(searchParams.serviceType)} - File Details
       {:else}
         Post Registration Search Results
@@ -364,6 +381,10 @@
               <Table.Head>File Origin</Table.Head>
               <Table.Head>Patent Type</Table.Head>
               <Table.Head>File Applicant</Table.Head>
+            {:else if isDesign}
+              <Table.Head>Title of Design</Table.Head>
+              <Table.Head>File Origin</Table.Head>
+              <Table.Head>File Applicant</Table.Head>
             {:else}
               <Table.Head>File Title</Table.Head>
               <Table.Head>File Applicant</Table.Head>
@@ -371,7 +392,7 @@
               <Table.Head>Representation</Table.Head>
             {/if}
             <Table.Head class="w-64">
-              {#if isPatent && searchParams?.serviceType}
+              {#if (isPatent || isDesign) && searchParams?.serviceType}
                 {getServiceName(searchParams.serviceType)}
               {:else}
                 Recordal
@@ -388,6 +409,10 @@
                 <Table.Cell>{result.titleOfInvention}</Table.Cell>
                 <Table.Cell>{result.fileOrigin}</Table.Cell>
                 <Table.Cell>{result.patentType}</Table.Cell>
+                <Table.Cell>{result.fileApplicant}</Table.Cell>
+              {:else if isDesign}
+                <Table.Cell>{result.titleOfInvention || result.titleOfTradeMark}</Table.Cell>
+                <Table.Cell>{result.fileOrigin}</Table.Cell>
                 <Table.Cell>{result.fileApplicant}</Table.Cell>
               {:else}
                 <Table.Cell>{result.titleOfTradeMark}</Table.Cell>
@@ -444,15 +469,71 @@
                     >
                       <option value="">--Select Amendment Type--</option>
                       <option value="update-name">Update Applicant Name</option>
-                      <option value="update-address">Update Applicant Address</option>
-                      <option value="update-title">Update Abstract/Application Type/Title Of Invention</option>
-                      <option value="addorremove-applicant">Add/Remove Applicant</option>
+                      <option value="update-address"
+                        >Update Applicant Address</option
+                      >
+                      <option value="update-title"
+                        >Update Abstract/Application Type/Title Of Invention</option
+                      >
+                      <option value="addorremove-applicant"
+                        >Add/Remove Applicant</option
+                      >
                       <option value="edit-inventors">Update Inventors</option>
-                      <option value="priorityinfo">Update Priority Information</option>
+                      <option value="priorityinfo"
+                        >Update Priority Information</option
+                      >
+                      <option value="correspondence"
+                        >Update Correspondence</option
+                      >
+                    </select>
+                  {:else if searchParams?.serviceType}
+                    <Button on:click={() => proceedToService(result)}
+                      >Proceed</Button
+                    >
+                  {:else}
+                    <Button on:click={() => renewApplication(result)}
+                      >Renewal</Button
+                    >
+                  {/if}
+                {:else if isDesign}
+                  {#if searchParams?.serviceType === "design-amendment"}
+                    <!-- Dropdown for Design Amendment -->
+                    <select
+                      class="border rounded px-2 py-1"
+                      on:change={(e) => {
+                        const selectedValue = e.currentTarget.value;
+                        if (selectedValue === "update-name") {
+                          goto(
+                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.ApplicantName}`,
+                          );
+                        } else if (selectedValue === "update-address") {
+                          goto(
+                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
+                          );
+                        } else if (selectedValue === "update-title") {
+                          goto(
+                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.FileTitle}`,
+                          );
+                        } else if (selectedValue === "addorremove-applicant") {
+                          goto(
+                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.AddAndRemoveApplicant}`,
+                          );
+                        } else if (selectedValue === "correspondence") {
+                          goto(
+                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
+                          );
+                        }
+                      }}
+                    >
+                      <option value="">--Select Amendment Type--</option>
+                      <option value="update-name">Update Applicant Name</option>
+                      <option value="update-address">Update Applicant Address</option>
+                      <option value="update-title">Update Title of Design</option>
+                      <option value="addorremove-applicant">Add/Remove Applicant</option>
                       <option value="correspondence">Update Correspondence</option>
                     </select>
                   {:else if searchParams?.serviceType}
-                    <Button on:click={() => proceedToPatentService(result)}
+                    <Button on:click={() => proceedToService(result)}
                       >Proceed</Button
                     >
                   {:else}
@@ -464,7 +545,7 @@
                   <select
                     class="border rounded px-2 py-1"
                     on:change={(e) => {
-                     // const selectedValue = e.target.value;
+                      // const selectedValue = e.target.value;
                       const selectedValue = e.currentTarget.value;
                       if (selectedValue === "merger") {
                         goto(
@@ -478,6 +559,13 @@
                         goto(
                           `/home/postregistration/assignment?fileId=${result.fileId}&fileType=2`,
                         );
+                      } else if (
+                        selectedValue === "reclassification" &&
+                        result.fileTypes === FileTypes.Trademark
+                      ) {
+                        goto(
+                          `/home/postregistration/changedata?fileId=${result.fileId}&fileType=2&changeType=Class`,
+                        );    
                       } else if (
                         selectedValue === "name-change" &&
                         ![20, 21].includes(result.fileStatus)
@@ -502,8 +590,14 @@
                   >
                     <option value="">Select Recordal</option>
                     <option value="merger">Merger</option>
+
                     <option value="registered-users">Registered Users</option>
                     <option value="assignment">Assignment</option>
+                    {#if result.fileTypes === FileTypes.Trademark}
+                      <option value="reclassification"
+                        >Reclassification of Trademark</option
+                      >
+                    {/if}
                     {#if ![14, 20, 23].includes(result.fileStatus)}
                       <option value="name-change"
                         >Change of Applicant Name</option

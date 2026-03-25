@@ -363,13 +363,8 @@
     isLoading = true;
 
     try {
-      const response = await fetch(`${baseURL}/api/auth/reset-password`, {
+      const response = await fetch(`${baseURL}/api/auth/ResetPasswordRequest?email=${encodeURIComponent(resetEmail)}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: resetEmail,
-          resetUrl: `${window.location.origin}/auth/reset-password`,
-        }),
       });
 
       if (response.ok) {

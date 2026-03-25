@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { currentStep, steps } from '$lib/utils/design';
+	import { currentStep, steps, resetDesignForm } from '$lib/utils/design';
 	import { goto } from '$app/navigation';
 	import Icon from '@iconify/svelte';
 
@@ -20,6 +20,7 @@
 	};
 
 	function goToDashboard() {
+		resetDesignForm();
 		goto('/home/dashboard');
 	}
 </script>

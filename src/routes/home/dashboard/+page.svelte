@@ -206,11 +206,16 @@
     );
     if (response.ok) {
       let res = await response.json();
-      localStorage.setItem("fileId", res.fileId);
-      localStorage.setItem("name", res.name);
-      localStorage.setItem("rrr", res.rrr);
+      const data = {
+        fileId: res.fileId,
+        name: res.applicant,
+        rrr: res.rrr,
+        appId: res.appId,
+      };
+      console.log("Certificate Payment Data:", data);
+      localStorage.setItem("AppData", JSON.stringify(data));
       goto(
-        `/payment?type=tradecertificate&amount=${res.total}&paymentId=${res.rrr}&fileId=${res.fileId}&name=${res.name}`,
+        `/payment?type=tradecertificate&amount=${res.total}&paymentId=${res.rrr}&fileId=${res.fileId}&name=${res.applicant}`,
       );
     }
   }
@@ -1575,6 +1580,7 @@
       </div>
     </div>
   </div>
+  
 {/if}
 {#if isLoading}
   <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />

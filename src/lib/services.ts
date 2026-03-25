@@ -251,6 +251,16 @@ export const trademarkServices: IPService[] = [
     price: "₦11,500",
   },
   {
+    id: "reclassification",
+    name: "RECLASSIFICATION",
+    description: "Reclassify trademark",
+    icon: "mdi:format-list-bulleted-type",
+    route: "modal",
+    category: "filing",
+    price: "₦18,500",
+
+  },
+  {
     id: "change-applicant-address",
     name: "CHANGE OF APPLICANT ADDRESS",
     description: "Update applicant address",
@@ -382,15 +392,15 @@ export const patentServices: IPService[] = [
   },
 
   // PRE-REGISTRATION CATEGORY
-  // {
-  //   id: "clerical-update",
-  //   name: "CLERICAL UPDATE",
-  //   description: "Edit/Update existing patent application",
-  //   icon: "mdi:file-edit-outline",
-  //   route: "/home/clerical-update",
-  //   category: "agent",
-  //   price: "₦4,100",
-  // },
+  {
+    id: "clerical-update",
+    name: "CLERICAL UPDATE",
+    description: "Edit/Update existing patent application",
+    icon: "mdi:file-edit-outline",
+    route: "/home/clerical-update",
+    category: "agent",
+    price: "₦4,100",
+  },
   {
     id: "update-attachments",
     name: "UPDATE FILE ATTACHMENTS",
@@ -564,7 +574,7 @@ export const designServices: IPService[] = [
   {
     id: "clerical-update",
     name: "CLERICAL UPDATE",
-    description: "Edit/Update existing patent application",
+    description: "Edit/Update existing design application",
     icon: "mdi:file-edit-outline",
     route: "/home/clerical-update",
     category: "agent",
@@ -610,6 +620,60 @@ export const designServices: IPService[] = [
   },
 
   // RECORDALS CATEGORY
+  {
+    id: 'design-amendment',
+    name: 'DESIGN AMENDMENT',
+    description: 'Amend existing design applications',
+    icon: 'mdi:file-edit-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-assignment',
+    name: 'DESIGN ASSIGNMENT',
+    description: 'Transfer design ownership rights',
+    icon: 'mdi:account-switch-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-ctc',
+    name: 'DESIGN CTC (CERTIFIED TRUE COPY)',
+    description: 'Request certified true copies of design documents',
+    icon: 'mdi:certificate-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-license',
+    name: 'DESIGN LICENSE',
+    description: 'License design rights to third parties',
+    icon: 'mdi:handshake-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-mortgage',
+    name: 'DESIGN MORTGAGE',
+    description: 'Mortgage design as security for loans',
+    icon: 'mdi:bank-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-merger',
+    name: 'DESIGN MERGER',
+    description: 'Merge design applications',
+    icon: 'mdi:merge',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
 
   // FINANCIAL CATEGORY
   {
