@@ -891,7 +891,7 @@ export function getPatentApplicationTypeLabel(value: number): string {
       return "Patent";
     case PatentApplicationTypes.Business_Method:
       return "Business Method";
-    case PatentApplicationTypes.Utility_MODEL:
+    case PatentApplicationTypes.Utility_Model:
       return "Utility Model";
     default:
       return value.toString();
