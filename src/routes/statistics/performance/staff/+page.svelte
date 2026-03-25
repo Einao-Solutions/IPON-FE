@@ -28,6 +28,9 @@
   // Search filter
   let searchQuery = "";
   
+  // View state for "See All" functionality
+  let showAllStaff = false;
+  
   // Data states
   let performanceData: StaffPerformanceData | null = null;
   let loading = false;
@@ -56,6 +59,12 @@
   $: filteredStaff = performanceData?.staffPerformance.filter(staff => 
     staff.staffName.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
+
+  // Display staff based on showAllStaff state
+  $: displayedStaff = showAllStaff ? filteredStaff : filteredStaff.slice(0, 10);
+  
+  // Check if we need to show "See All" button (more than 10 staff)
+  $: hasMoreStaff = filteredStaff.length > 10;
 
   // Get selected unit name
   $: selectedUnitName = units.find(u => u.unitId === selectedUnit)?.unitName || "";
@@ -150,29 +159,42 @@
     selectedUnit = null;
     searchQuery = "";
     performanceData = null;
+    showAllStaff = false; // Reset view state
   }
 
   function handleBack() {
+    // Navigate back to the statistics list view with the selected registry
     goto(`/statistics?registry=${registryType}`);
+  }
+
+  function toggleShowAll() {
+    showAllStaff = !showAllStaff;
+  }
+
+  // Reset showAllStaff when search query changes or unit changes
+  $: if (searchQuery || selectedUnit) {
+    showAllStaff = false;
   }
 </script>
 
 <div class="min-h-screen bg-gray-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     
-    <!-- Back Button -->
-    <button
-      on:click={handleBack}
-      class="flex items-center gap-2 text-green-600 hover:text-green-700 mb-6 transition-colors"
-    >
-      <Icon icon="lucide:arrow-left" class="w-4 h-4" />
-      <span class="text-sm font-medium">Back to Statistics</span>
-    </button>
-
-    <!-- Page Title -->
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">
-      Executive Dashboard
-    </h1>
+    <!-- Back Button & Page Title (Same Line) -->
+    <div class="flex items-center mb-6">
+      <button
+        on:click={handleBack}
+        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+      >
+        <Icon icon="lucide:arrow-left" class="w-4 h-4" />
+        <span class="text-sm font-medium">Back to Performance Statistics</span>
+      </button>
+      <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">
+        Executive Dashboard
+      </h1>
+      <!-- Spacer to balance the back button -->
+      <div class="w-[200px]"></div>
+    </div>
 
     <!-- Staff Performance Header & Filters Section -->
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
@@ -192,75 +214,76 @@
         </div>
       </div>
 
-      <!-- Filters Grid Layout -->
-      <div class="space-y-4">
+      <!-- Filters Layout - Responsive Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
         
-        <!-- Row 1: Year Selection (Primary) -->
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 min-w-[120px]">
-            <Icon icon="lucide:calendar-days" class="w-5 h-5 text-gray-500" />
-            <span class="text-sm font-semibold text-gray-700">Select Year:</span>
-          </div>
-          <div class="flex-1">
-            <div class="relative max-w-xs">
-              <select
-                bind:value={selectedYear}
-                on:change={(e) => handleYearChange(parseInt(e.currentTarget.value))}
-                class="appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
-              >
-                {#each years as year}
-                  <option value={year}>{year}</option>
-                {/each}
-              </select>
-              <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Row 2: Period Type Buttons (Secondary) -->
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2 min-w-[120px]">
-            <Icon icon="lucide:calendar" class="w-5 h-5 text-gray-500" />
-            <span class="text-sm font-semibold text-gray-700">Period Type:</span>
-          </div>
-          <div class="flex-1">
-            <div class="inline-flex gap-2 bg-gray-100 p-1 rounded-lg">
-              <button
-                on:click={() => handlePeriodTypeChange('month')}
-                class="px-5 py-2 rounded-md text-sm font-medium transition-all {selectedPeriodType === 'month' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}"
-              >
-                Month
-              </button>
-              <button
-                on:click={() => handlePeriodTypeChange('quarter')}
-                class="px-5 py-2 rounded-md text-sm font-medium transition-all {selectedPeriodType === 'quarter' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}"
-              >
-                Quarter
-              </button>
-              <button
-                on:click={() => handlePeriodTypeChange('year')}
-                class="px-5 py-2 rounded-md text-sm font-medium transition-all {selectedPeriodType === 'year' ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}"
-              >
+        <!-- LEFT SIDE: Filters -->
+        <div class="space-y-4">
+          
+          <!-- Row 1: Year & Clear Button -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <Icon icon="lucide:calendar-days" class="w-5 h-5 text-gray-500" />
                 Year
+              </label>
+              <div class="relative">
+                <select
+                  bind:value={selectedYear}
+                  on:change={(e) => handleYearChange(parseInt(e.currentTarget.value))}
+                  class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
+                >
+                  {#each years as year}
+                    <option value={year}>{year}</option>
+                  {/each}
+                </select>
+                <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+            
+            <div class="flex items-end">
+              <button
+                on:click={handleClearFilters}
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors"
+              >
+                <Icon icon="lucide:x" class="w-4 h-4" />
+                Clear Filters
               </button>
             </div>
           </div>
-        </div>
 
-        <!-- Row 3: Period Value Dropdown (Conditional - Only for Month/Quarter) -->
-        {#if selectedPeriodType !== 'year'}
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2 min-w-[120px]">
-              <span class="text-sm font-semibold text-gray-700">
-                {selectedPeriodType === 'month' ? 'Select Month:' : 'Select Quarter:'}
-              </span>
+          <!-- Row 2: Period Type & Period Value -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <Icon icon="lucide:calendar" class="w-5 h-5 text-gray-500" />
+                Period Type
+              </label>
+              <div class="inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg">
+                <button
+                  on:click={() => handlePeriodTypeChange('month')}
+                  class="flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all {selectedPeriodType === 'month' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}"
+                >
+                  Month
+                </button>
+                <button
+                  on:click={() => handlePeriodTypeChange('quarter')}
+                  class="flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all {selectedPeriodType === 'quarter' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}"
+                >
+                  Quarter
+                </button>
+              </div>
             </div>
-            <div class="flex-1">
-              <div class="relative max-w-xs">
+
+            <div>
+              <label class="text-sm font-semibold text-gray-700 mb-2 block">
+                {selectedPeriodType === 'month' ? 'Select Month' : 'Select Quarter'}
+              </label>
+              <div class="relative">
                 <select
                   bind:value={selectedPeriodValue}
                   on:change={(e) => handlePeriodValueChange(e.currentTarget.value)}
-                  class="appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
+                  class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
                 >
                   {#each periodValues as value}
                     <option value={value}>{value}</option>
@@ -270,51 +293,35 @@
               </div>
             </div>
           </div>
-        {/if}
 
-        <!-- Row 4: Clear Button -->
-        <div class="flex items-center gap-4">
-          <div class="min-w-[120px]"></div>
-          <div class="flex-1">
-            <button
-              on:click={handleClearFilters}
-              class="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors"
-            >
-              <Icon icon="lucide:x" class="w-4 h-4" />
-              Clear Filters
-            </button>
+        </div>
+
+        <!-- RIGHT SIDE: Unit Selection -->
+        <div class="flex flex-col justify-center">
+          <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 h-full flex flex-col justify-center">
+            <div class="flex items-center gap-3 mb-3">
+              <Icon icon="lucide:building-2" class="w-5 h-5 text-gray-500" />
+              <span class="text-sm font-semibold text-gray-700">Select Unit</span>
+            </div>
+            <div class="relative">
+              <select
+                value={selectedUnit ?? ""}
+                on:change={handleUnitChange}
+                class="w-full appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-3 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
+              >
+                <option value="" disabled>Choose a unit...</option>
+                {#each units as unit (unit.unitId)}
+                  <option value={unit.unitId}>{unit.unitName}</option>
+                {/each}
+              </select>
+              <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              {units.length} unit{units.length !== 1 ? 's' : ''} available
+            </p>
           </div>
         </div>
 
-      </div>
-    </div>
-
-    <!-- Unit Selection Section (Between Filters and Results) -->
-    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 mb-6">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <Icon icon="lucide:building-2" class="w-5 h-5 text-gray-500" />
-          <span class="text-sm font-semibold text-gray-700">Select Unit:</span>
-        </div>
-        <div class="flex-1 max-w-md">
-          <div class="relative">
-            <select
-              value={selectedUnit ?? ""}
-              on:change={handleUnitChange}
-              class="w-full appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
-            >
-              <option value="" disabled>Select a unit to view performance</option>
-              {#each units as unit (unit.unitId)}
-                <option value={unit.unitId}>{unit.unitName}</option>
-              {/each}
-            </select>
-            <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-          </div>
-          
-          <p class="text-xs text-gray-500 mt-2">
-            {units.length} unit{units.length !== 1 ? 's' : ''} available for {registryType}
-          </p>
-        </div>
       </div>
     </div>
 
@@ -446,9 +453,16 @@
         </div>
 
         <!-- Sort Info -->
-        <p class="text-xs text-gray-500 mb-4">
-          Staff sorted by performance (highest to lowest)
-        </p>
+        <div class="flex items-center justify-between mb-4">
+          <p class="text-xs text-gray-500">
+            Staff sorted by performance (highest to lowest)
+          </p>
+          {#if filteredStaff.length > 0}
+            <p class="text-xs text-gray-600 font-medium">
+              Showing {showAllStaff ? filteredStaff.length : Math.min(10, filteredStaff.length)} of {filteredStaff.length} staff
+            </p>
+          {/if}
+        </div>
 
         <!-- Staff List -->
         {#if filteredStaff.length === 0}
@@ -459,9 +473,13 @@
             <p class="text-xs text-gray-500">Try adjusting your search</p>
           </div>
         {:else}
-          <div class="space-y-2">
+          <!-- Scrollable Container (max height for first 5 items, scrollable up to 10) -->
+          <div 
+            class="space-y-2 {!showAllStaff && filteredStaff.length > 5 ? 'max-h-[400px] overflow-y-auto pr-2' : ''}"
+            style="scrollbar-width: thin; scrollbar-color: #10b981 #f3f4f6;"
+          >
             
-            {#each filteredStaff as staff, index}
+            {#each displayedStaff as staff, index}
               <div class="border-b border-gray-100 last:border-b-0 py-3">
                 
                 <!-- Line 1: Name and Numbers -->
@@ -498,6 +516,24 @@
             {/each}
 
           </div>
+
+          <!-- See All / Show Less Button (only show if more than 10 staff) -->
+          {#if hasMoreStaff}
+            <div class="mt-6 flex justify-center">
+              <button
+                on:click={toggleShowAll}
+                class="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm hover:shadow-md"
+              >
+                {#if showAllStaff}
+                  <Icon icon="lucide:chevron-up" class="w-4 h-4" />
+                  <span>Show Less</span>
+                {:else}
+                  <Icon icon="lucide:chevron-down" class="w-4 h-4" />
+                  <span>See All ({filteredStaff.length} Staff)</span>
+                {/if}
+              </button>
+            </div>
+          {/if}
         {/if}
       </div>
     {/if}
@@ -517,3 +553,24 @@
 
   </div>
 </div>
+
+<style>
+  /* Custom scrollbar styling for webkit browsers */
+  :global(.space-y-2::-webkit-scrollbar) {
+    width: 8px;
+  }
+
+  :global(.space-y-2::-webkit-scrollbar-track) {
+    background: #f3f4f6;
+    border-radius: 4px;
+  }
+
+  :global(.space-y-2::-webkit-scrollbar-thumb) {
+    background: #10b981;
+    border-radius: 4px;
+  }
+
+  :global(.space-y-2::-webkit-scrollbar-thumb:hover) {
+    background: #059669;
+  }
+</style>

@@ -5,123 +5,117 @@
   export let userRoles: number[] = [];
   export let onCardClick: (registry: string) => void;
 
-  // Determine which cards to show based on user role
-  function getCardsForRole(): Array<{title: string, description: string, icon: string, registry: string}> {
-    // Permanent Secretary, Minister, or SuperAdmin - Show all 3 registries
-    if (userRoles.includes(UserRoles.PermSec) || userRoles.includes(UserRoles.Minister) || userRoles.includes(UserRoles.SuperAdmin)) {
-      return [
-        {
-          title: "Trademark",
-         // description: "View comprehensive performance, operational, and financial statistics for the Trademark registry. Access unit performance metrics, file data by class and nationality, correspondence statistics, and revenue breakdown.",
-          description: " ",
-          icon: "mdi:scale-balance",
-          registry: "Trademark"
-        },
-        {
-          title: "Patent",
-        //  description: "View comprehensive performance, operational, and financial statistics for the Patent registry. Track search and examination unit performance, file data analysis, and revenue generation.",
-          description: " ",
-          icon: "mdi:file-document-outline",
-          registry: "Patent"
-        },
-        {
-          title: "Design",
-          //description: "View comprehensive performance, operational, and financial statistics for the Design registry. Monitor unit performance, application trends, and financial metrics.",
-          description: " ",
-          icon: "mdi:palette-outline",
-          registry: "Design"
-        }
-      ];
-    }
-    
-    // Trademark Registrar - Only Trademark
-    if (userRoles.includes(UserRoles.TrademarkRegistrar)) {
-      return [
-        {
-          title: "Trademark Statistics",
-          description: "Access detailed performance and operational statistics for the Trademark registry. View unit-wise application processing, file data categorized by class and nationality, correspondence statistics from individuals and companies, and comprehensive application status tracking.",
-          icon: "mdi:scale-balance",
-          registry: "Trademark"
-        }
-      ];
-    }
-    
-    // Patent & Design Registrar - Combined
-    if (userRoles.includes(UserRoles.PatentDesignRegistrar)) {
-      return [
-        {
-          title: "Patent & Design Statistics",
-          description: "Access detailed performance and operational statistics for Patent and Design registries. Monitor search and examination unit performance, track file data by classification, analyze correspondence patterns, and view application status distribution across both registries.",
-          icon: "mdi:file-chart-outline",
-          registry: "PatentDesign"
-        }
-      ];
-    }
-    
-    // Finance Officer - Financial only across all registries
-    if (userRoles.includes(UserRoles.Finance)) {
-      return [
-        {
-          title: "Financial Statistics",
-          description: "View comprehensive financial statistics across all registries. Access revenue breakdown by application types (new applications, renewals, other services), revenue distribution by class, payment method analytics, and total revenue tracking with time-based filtering options.",
-          icon: "mdi:currency-usd",
-          registry: "Financial"
-        }
-      ];
-    }
-    
-    return [];
+  // Determine grid columns based on user role
+  let gridCols = "md:grid-cols-3";
+  
+  // If user is Finance role only, show only Trademark (1 column)
+  if (userRoles.includes(UserRoles.Finance) && !userRoles.includes(UserRoles.SuperAdmin)) {
+    gridCols = "md:grid-cols-1 max-w-md mx-auto";
   }
-
-  const cards = getCardsForRole();
-  const gridCols = cards.length === 3 ? "lg:grid-cols-3" : "lg:grid-cols-1 max-w-2xl mx-auto";
 </script>
 
 <div class="grid grid-cols-1 {gridCols} gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
-  {#each cards as card}
-    <button
-      class="text-left w-full group relative overflow-hidden"
-      on:click={() => onCardClick(card.registry)}
-    >
-      <div
-        class="relative bg-gradient-to-br from-green-50 via-white to-green-50 border border-green-200/40 rounded-2xl p-6 hover:shadow-2xl hover:shadow-green-500/25 transition-all duration-500 hover:scale-[1.03] hover:border-green-300/60 hover:-translate-y-1 h-full"
-      >
-        <!-- Subtle background pattern -->
-        <div
-          class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        ></div>
-
-        <div class="relative z-10 flex flex-col h-full">
-          <div class="mb-4">
-            <div
-              class="w-14 h-14 bg-gradient-to-br from-green-100 via-white to-green-100 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl border border-green-200/30"
-            >
-              <Icon
-                icon={card.icon}
-                class="text-2xl text-green-600 group-hover:text-green-700"
-              />
-            </div>
-            <h3
-              class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900"
-            >
-              {card.title}
-            </h3>
-            <p class="text-slate-600 text-sm leading-relaxed">
-              {card.description}
-            </p>
-          </div>
-          <div class="flex items-center justify-end mt-auto">
-            <div
-              class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300 shadow-md"
-            >
-              <Icon
-                icon="heroicons:arrow-right"
-                class="text-green-600 text-sm"
-              />
-            </div>
-          </div>
+  
+  <!-- Trademark Card -->
+  <button
+    on:click={() => onCardClick('Trademark')}
+    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
+  >
+    <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    
+    <div class="relative p-8">
+      <div class="flex items-center justify-between mb-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+          <Icon icon="mdi:trademark" class="text-white text-3xl" />
+        </div>
+        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-green-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
+      </div>
+      
+      <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
+        Trademark
+      </h3>
+      <p class="text-sm text-slate-500">
+        View performance, operational & financial statistics
+      </p>
+      
+      <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
+          Click to explore
+        </span>
+        <div class="flex items-center space-x-1">
+          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+          <span class="text-xs text-slate-400">Active</span>
         </div>
       </div>
-    </button>
-  {/each}
+    </div>
+  </button>
+
+  <!-- Patent Card -->
+  <button
+    on:click={() => onCardClick('Patent')}
+    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
+  >
+    <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    
+    <div class="relative p-8">
+      <div class="flex items-center justify-between mb-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+          <Icon icon="mdi:lightbulb-on" class="text-white text-3xl" />
+        </div>
+        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-green-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
+      </div>
+      
+      <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
+        Patent
+      </h3>
+      <p class="text-sm text-slate-500">
+        View performance, operational & financial statistics
+      </p>
+      
+      <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
+          Click to explore
+        </span>
+        <div class="flex items-center space-x-1">
+          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+          <span class="text-xs text-slate-400">Active</span>
+        </div>
+      </div>
+    </div>
+  </button>
+
+  <!-- Design Card -->
+  <button
+    on:click={() => onCardClick('Design')}
+    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
+  >
+    <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+    
+    <div class="relative p-8">
+      <div class="flex items-center justify-between mb-6">
+        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
+          <Icon icon="mdi:palette" class="text-white text-3xl" />
+        </div>
+        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-green-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
+      </div>
+      
+      <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
+        Design
+      </h3>
+      <p class="text-sm text-slate-500">
+        View performance, operational & financial statistics
+      </p>
+      
+      <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
+        <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
+          Click to explore
+        </span>
+        <div class="flex items-center space-x-1">
+          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+          <span class="text-xs text-slate-400">Active</span>
+        </div>
+      </div>
+    </div>
+  </button>
+
 </div>

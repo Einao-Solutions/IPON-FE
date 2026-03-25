@@ -3,22 +3,11 @@
   import * as Accordion from "$lib/components/ui/accordion";
   import * as Card from "$lib/components/ui/card";
   import { UserRoles } from "$lib/helpers";
-  import StatisticsFilters from "./components/StatisticsFilters.svelte";
-  import { slide } from "svelte/transition";
   import { goto } from "$app/navigation";
   
   export let userRoles: number[] = [];
   export let selectedRegistry: string = "";
   export let onBack: () => void;
-
-  let timePeriod = "Monthly";
-  let byClassOpen = false;
-  let byNationalityOpen = false;
-
-  function handlePeriodChange(period: string) {
-    timePeriod = period;
-    // TODO: Fetch new data based on period
-  }
 
   function navigateToStaffPerformance() {
     goto(`/statistics/performance/staff?registryType=${selectedRegistry}`);
@@ -46,8 +35,8 @@
         title: "Performance Statistics",
         description: "Track staff and unit productivity metrics",
         icon: "mdi:chart-timeline-variant",
-        iconColor: "text-pink-600",
-        iconBg: "bg-pink-100"
+        iconColor: "text-green-600",
+        iconBg: "bg-green-100"
       });
     }
     
@@ -58,8 +47,8 @@
         title: "Operational Statistics",
         description: "View application volumes and processing data",
         icon: "mdi:cog-outline",
-        iconColor: "text-blue-600",
-        iconBg: "bg-blue-100"
+        iconColor: "text-green-600",
+        iconBg: "bg-green-100"
       });
     }
     
@@ -84,28 +73,6 @@
   }
 
   const sections = getSectionsForRole();
-
-  // Performance data based on registry
-  function getPerformanceData() {
-    if (selectedRegistry === "Trademark") {
-      return {
-        units: [
-          { name: "Search Unit", total: 450, treated: 420, pending: 30 },
-          { name: "Examination Unit", total: 380, treated: 340, pending: 40 },
-          { name: "Publication Unit", total: 290, treated: 275, pending: 15 },
-        ]
-      };
-    } else {
-      return {
-        units: [
-          { name: "Search Unit", total: 120, treated: 110, pending: 10 },
-          { name: "Examination Unit", total: 95, treated: 85, pending: 10 },
-        ]
-      };
-    }
-  }
-
-  const performanceData = getPerformanceData();
 </script>
 
 <div class="space-y-6">
@@ -123,9 +90,6 @@
     <h2 class="text-2xl font-bold text-slate-800 mb-2">{selectedRegistry} Statistics</h2>
     <p class="text-slate-600">View comprehensive statistics for {selectedRegistry} applications</p>
   </div>
-
-  <!-- Time Period Filter -->
-  <StatisticsFilters selectedPeriod={timePeriod} onPeriodChange={handlePeriodChange} />
 
   <!-- Accordion Sections -->
   <Accordion.Root class="space-y-4">
@@ -157,13 +121,13 @@
                   <!-- Staff Performance Card -->
                   <button
                     on:click={navigateToStaffPerformance}
-                    class="group relative overflow-hidden bg-gradient-to-br from-pink-50 via-white to-pink-50 border-2 border-pink-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-pink-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-pink-300/60 text-left"
+                    class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left"
                   >
-                    <div class="absolute inset-0 bg-gradient-to-br from-transparent via-pink-50/40 to-pink-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
                     <div class="relative z-10">
-                      <div class="w-12 h-12 bg-gradient-to-br from-pink-100 to-pink-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                        <Icon icon="mdi:account-group" class="text-2xl text-pink-600" />
+                      <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Icon icon="mdi:account-group" class="text-2xl text-green-600" />
                       </div>
                       <h4 class="text-lg font-semibold text-slate-800 mb-2 group-hover:text-slate-900">
                         Staff Performance
@@ -171,7 +135,7 @@
                       <p class="text-sm text-gray-600 mb-4">
                         View individual staff productivity metrics, assigned vs treated applications, and contribution percentages within each unit
                       </p>
-                      <div class="flex items-center text-pink-600 text-sm font-medium">
+                      <div class="flex items-center text-green-600 text-sm font-medium">
                         <span>View Details</span>
                         <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
                       </div>
@@ -181,13 +145,13 @@
                   <!-- Unit Performance Card -->
                   <button
                     on:click={navigateToUnitPerformance}
-                    class="group relative overflow-hidden bg-gradient-to-br from-purple-50 via-white to-purple-50 border-2 border-purple-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-purple-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-purple-300/60 text-left"
+                    class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left"
                   >
-                    <div class="absolute inset-0 bg-gradient-to-br from-transparent via-purple-50/40 to-purple-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
                     <div class="relative z-10">
-                      <div class="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                        <Icon icon="mdi:office-building" class="text-2xl text-purple-600" />
+                      <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Icon icon="mdi:office-building" class="text-2xl text-green-600" />
                       </div>
                       <h4 class="text-lg font-semibold text-slate-800 mb-2 group-hover:text-slate-900">
                         Unit Performance
@@ -195,7 +159,7 @@
                       <p class="text-sm text-gray-600 mb-4">
                         Compare performance across all units, view treatment rates, staff counts, and averages with visual charts
                       </p>
-                      <div class="flex items-center text-purple-600 text-sm font-medium">
+                      <div class="flex items-center text-green-600 text-sm font-medium">
                         <span>View Details</span>
                         <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
                       </div>
