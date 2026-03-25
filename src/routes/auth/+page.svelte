@@ -13,7 +13,6 @@
   import { goto } from "$app/navigation";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
-
   // show a maintenance popup on page load
   let showMaintenance: boolean = false;
   let maintenanceMessage: string =
@@ -30,6 +29,8 @@
     firstName: string;
     lastName: string;
     phoneNumber: string;
+    accountType: number;
+    businessName: string | null; 
   }
 
   interface AuthResponse {
@@ -44,6 +45,8 @@
     firstName: "",
     lastName: "",
     phoneNumber: "",
+    accountType: 0,
+    businessName: "",
   };
 
   let currentScreen: number = 0;
@@ -240,6 +243,8 @@
           firstName: createUser.firstName,
           lastName: createUser.lastName,
           phone: createUser.phoneNumber,
+          accountType: createUser.accountType,
+          businessName: createUser.businessName
         }),
       });
 
@@ -263,6 +268,8 @@
           firstName: "",
           lastName: "",
           phoneNumber: "",
+          accountType: 0,
+          businessName: ""
         };
       } else {
         const error = await response.json();
@@ -699,7 +706,29 @@
                   />
                 </div>
               </div>
-
+              <div>
+                <Label class="text-slate-700">Account Type</Label>
+                <select
+                  bind:value={createUser.accountType}
+                  class="mt-1 w-full px-3 py-2 border border-slate-300 rounded-md bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-green-700"
+                  disabled={isLoading}
+                  placeholder="Select Account Type"
+                >
+                  <option value="0">Individual</option>
+                  <option value="1">Corporate</option>
+                </select>
+              </div>
+              {#if String(createUser.accountType) === "1"}
+  <div>
+    <Label class="text-slate-700">Company Name</Label>
+    <Input
+      bind:value={createUser.businessName}
+      placeholder="Enter company name"
+      class="mt-1"
+      disabled={isLoading}
+    />
+  </div>
+{/if}
               <div>
                 <Label class="text-slate-700">Email</Label>
                 <Input
