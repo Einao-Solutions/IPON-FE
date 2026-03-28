@@ -267,11 +267,11 @@
     try {
       const response = await fetch(`${baseURL}/api/opposition/count`);
       if (response.ok) {
-        const opps = await response.json();
-        oppsCount = opps;
+        const opps = await response.text();
+        oppsCount = Number(opps);
       }
     } catch (error) {
-      console.error("Error fetching claim requests count:", error);
+      console.error("Error fetching oppositions count:", error);
     }
   }
   function getNotificationColors(priority: string) {

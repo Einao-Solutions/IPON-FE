@@ -30,12 +30,11 @@
 	import { appattachmentsData, listOfIds, loggedInUser, queryBody } from '$lib/store';
 	import Icon from '@iconify/svelte';
 	import { Label } from '$lib/components/ui/label';
-	import { toast } from 'svelte-sonner';
+	import { Toaster, toast } from 'svelte-sonner';
 	import { TrademarkAttachments } from '$lib/designutils';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapDateToString } from '../components/dashboardutils';
 	import { Textarea } from '$lib/components/ui/textarea';
-	import { Toaster } from '$lib/components/ui/sonner';
 	export let dataList: [] | null = [];
 	let tableHeaderRows, tablePageRows, _tableAttrs, _tableBodyAttrs;
 	let _hasNextPage, _hasPreviousPage, _pageIndex;
@@ -440,7 +439,7 @@
 							<Icon icon="lucide:calendar" class="w-5 h-5 text-blue-600 dark:text-blue-400" />
 						</div>
 						<div>
-							<p class="text-sm font-medium text-slate-600 dark:text-slate-300">Date Created</p>
+							<p class="text-sm font-medium text-slate-600 dark:text-slate-300">Opposition Date </p>
 							<p class="text-lg font-semibold text-slate-900 dark:text-slate-100">
 								{mapDateToString(opposition.oppositionDate)}
 							</p>
