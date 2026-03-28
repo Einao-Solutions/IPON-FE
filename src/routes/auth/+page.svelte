@@ -238,13 +238,13 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: createUser.email,
-          password: createUser.password,
-          firstName: createUser.firstName,
-          lastName: createUser.lastName,
-          phone: createUser.phoneNumber,
-          accountType: createUser.accountType,
-          businessName: createUser.businessName
+          Email: createUser.email,
+          Password: createUser.password,
+          FirstName: createUser.firstName,
+          LastName: createUser.lastName,
+          Phone: createUser.phoneNumber,
+          AccountType: Number(createUser.accountType),
+          BusinessName: createUser.businessName,
         }),
       });
 
