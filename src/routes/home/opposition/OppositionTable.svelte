@@ -260,10 +260,10 @@
       return;
     }
 
-    const toastId = toast.loading("Fetching Opposition", {
-      description: "Please wait...",
-      duration: Infinity,
-    });
+    // const toastId = toast.loading("Fetching Opposition", {
+    //   description: "Please wait...",
+    //   duration: Infinity,
+    // });
 
     try {
       showRaiseOpposition = true;
@@ -298,8 +298,6 @@
 
       toast.error("Error", {
         description: err.message || "Failed to load opposition.",
-        id: toastId,
-        duration: 4000,
       });
     }
   }
