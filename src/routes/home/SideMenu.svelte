@@ -38,7 +38,7 @@
     { icon: "mdi:file-document-multiple-outline", location: "Publications" },
     { icon: "mdi:book-open-variant", location: "Resources" },
     { icon: "mdi:help-circle-outline", location: "Support" },
-    // { icon: 'cil:search', location: 'Opposition' },
+    { icon: "mdi:gavel", location: "Opposition" },
     { icon: "mdi:chart-line", location: "Finance" },
     // { icon: "mdi:chart-bar", location: "Statistics" },
     { icon: "mdi:chart-box-outline", location: "Performance" },

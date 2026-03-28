@@ -162,7 +162,7 @@
               new Date(e.expiryDate).getFullYear() -
                 (fileData.type == 0 ? 1 : fileData.type == 1 ? 5 : 7),
               new Date(e.expiryDate).getMonth(),
-              new Date(e.expiryDate).getDate()
+              new Date(e.expiryDate).getDate(),
             ).toLocaleString("default", {
               month: "short",
               year: "numeric",
@@ -224,7 +224,7 @@
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     if (response.ok) {
       toast.success("successfully updated the correspondence information", {
@@ -249,7 +249,7 @@
         headers: {
           "Content-Type": "application/json",
         },
-      }
+      },
     );
     if (response.ok) {
       toast.success("successfully updated the correspondence information", {
@@ -278,7 +278,7 @@
     }
     if (history0.certificatePaymentId !== null) {
       let response = await fetch(
-        `${baseURL}/api/files/CertificatePayment?id=${fileData?.fileId}`
+        `${baseURL}/api/files/CertificatePayment?id=${fileData?.fileId}`,
       );
       if (response.ok) {
         let result = await response.json();
@@ -286,7 +286,7 @@
         sessionStorage.setItem("name", result.name);
         sessionStorage.setItem("rrr", result.rrr);
         goto(
-          `/payment?type=tradecertificate&amount=${result.total}&paymentId=${result.rrr}&fileId=${result.fileId}&name=${result.name}`
+          `/payment?type=tradecertificate&amount=${result.total}&paymentId=${result.rrr}&fileId=${result.fileId}&name=${result.name}`,
         );
       }
     } else {
@@ -300,14 +300,14 @@
         }
       }
       goto(
-        `/payment?type=tradecertificate&amount=${amount}&paymentId=${rrr}&fileId=${fileData.id}&title=${fileData.titleOfTradeMark}`
+        `/payment?type=tradecertificate&amount=${amount}&paymentId=${rrr}&fileId=${fileData.id}&title=${fileData.titleOfTradeMark}`,
       );
     }
   }
 
   function showNewPayment() {
     const app = fileData?.applicationHistory?.find(
-      (x) => x.applicationType === 0
+      (x) => x.applicationType === 0,
     );
     return app?.currentStatus === 2;
   }
@@ -332,10 +332,10 @@
   function generateLetter(
     fileId: string,
     letterType: string,
-    applicationId: string
+    applicationId: string,
   ) {
     window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`
+      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`,
     );
   }
 
@@ -346,7 +346,7 @@
 
     try {
       const res = await fetch(
-        `${baseURL}/api/letters/GetDocuments?fileId=${getDocFileNumber}&paymentId=${getDocPaymentId}`
+        `${baseURL}/api/letters/GetDocuments?fileId=${getDocFileNumber}&paymentId=${getDocPaymentId}`,
       );
       if (!res.ok) throw new Error("Failed to fetch documents");
 
@@ -544,7 +544,6 @@
 </Dialog.Root>
 <Dialog.Root bind:open={showUpdateStatusForm}>
   <Dialog.Content class="max-w-lg p-6 rounded-lg bg-white shadow-lg">
-
     <Dialog.Title class="text-lg font-semibold">
       Change File Status
     </Dialog.Title>
@@ -558,10 +557,14 @@
         <label class="font-medium">New Status</label>
 
         <div class="grid grid-cols-2 gap-3">
-          {#each Object.keys(ApplicationStatuses).filter(x => isNaN(parseInt(x))) as status}
+          {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)), ) as status}
             <button
               type="button"
-              class="border p-2 rounded cursor-pointer {String(statusUpdate.newStatus) === status ? 'bg-green-200' : ''}"
+              class="border p-2 rounded cursor-pointer {String(
+                statusUpdate.newStatus,
+              ) === status
+                ? 'bg-green-200'
+                : ''}"
               aria-pressed={String(statusUpdate.newStatus) === status}
               on:click={() => (statusUpdate.newStatus = status)}
             >
@@ -580,7 +583,7 @@
 
       <div class="flex justify-end gap-2 mt-4">
         <Button variant="outline" on:click={resetDialog}>Cancel</Button>
-        <Button on:click={() => step = 1}>Next</Button>
+        <Button on:click={() => (step = 1)}>Next</Button>
       </div>
     {/if}
 
@@ -593,7 +596,11 @@
         </p>
 
         <div class="flex justify-end gap-2">
-          <Button variant="outline" disabled={isLoading} on:click={() => step = 0}>
+          <Button
+            variant="outline"
+            disabled={isLoading}
+            on:click={() => (step = 0)}
+          >
             Back
           </Button>
           <Button disabled={isLoading} on:click={confirmChange}>
@@ -616,7 +623,6 @@
         <Button on:click={resetDialog}>OK</Button>
       </div>
     {/if}
-
   </Dialog.Content>
 </Dialog.Root>
 
@@ -738,11 +744,13 @@
     </Card.Root>
   </div>
   <Tabs.Root value="data" class="w-full">
-    <Tabs.List class="grid w-full grid-cols-2">
+    <Tabs.List class="grid w-full grid-cols-[repeat(auto-fit,minmax(0,1fr))]">
       <Tabs.Trigger value="data">Data View</Tabs.Trigger>
       <Tabs.Trigger value="applications">Application History</Tabs.Trigger>
-      <!-- <Tabs.Trigger value="oppositions">Oppositions</Tabs.Trigger> -->
-      <!-- <Tabs.Trigger value="assignment">Assignment Applications</Tabs.Trigger> -->
+
+      {#if fileData.oppositions && fileData.oppositions.length > 0}
+        <Tabs.Trigger value="oppositions">Oppositions</Tabs.Trigger>
+      {/if}
     </Tabs.List>
     <Tabs.Content value="data">
       {#if fileData.type === 0}
@@ -759,13 +767,14 @@
         {fileData}
         showMissingDetailsForm={() => (showCorrespondenceRequest = true)}
         isAdmin={$loggedInUser?.userRoles?.includes(
-          UserRoles.Tech || UserRoles.SuperAdmin
+          UserRoles.Tech || UserRoles.SuperAdmin,
         )}
       />
     </Tabs.Content>
-    <!-- <Tabs.Content value="oppositions">
-			<OppositionHistory allOppositions={fileData.oppositions} {fileData} />
-		</Tabs.Content> -->
+
+    <Tabs.Content value="oppositions">
+      <OppositionHistory allOppositions={fileData.oppositions} {fileData} />
+    </Tabs.Content>
     <!-- <Tabs.Content value="assignment">
 			{#if fileData.applicationHistory.find(x=>x.applicationType===5)}
 				<AssignmentApplication allApplications="{fileData.applicationHistory.filter(x=>x.applicationType===5)}" {fileData}
@@ -781,4 +790,3 @@
 {:else}
   <p>loading....</p>
 {/if}
-

@@ -119,6 +119,8 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "Awaiting Counter Statement";
     case ApplicationStatuses.AwaitingCertificateConfirmation:
       return "Awaiting Certificate Confirmation";
+      case ApplicationStatuses.Opposition:
+        return "Opposition";
     default:
       return "-";
   }
