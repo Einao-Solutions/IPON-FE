@@ -578,13 +578,14 @@ export type OppositionHistoryType = {
   Nationality: string;
   Reason: string;
   SupportingDocs: [];
-  Status: ApplicationStatuses | null;
-  OppositionDate: string | null;
-  PaymentId: string | null;
+  Status: ApplicationStatuses;
+  OppositionDate: string;
+  PaymentId: string;
   IsCountered: boolean;
   IsTreated: boolean;
   Paid: boolean;
 };
+
 export type AffectedFiles = {
   fileID: string;
   title: string;
@@ -942,4 +943,5 @@ export function getUnitsForFileType(fileType: FilingType): { unitId: number; uni
   }
 
   return [];
+
 }

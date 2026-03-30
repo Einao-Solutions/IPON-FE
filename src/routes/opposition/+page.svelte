@@ -87,7 +87,7 @@
     }
     toast.loading("Fetching File Information", {
       description: "Please hold on, this might take a while",
-      duration: 10000,
+      duration: 1000,
     });
     try {
       const response = await fetch(

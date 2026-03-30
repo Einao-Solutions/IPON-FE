@@ -12,6 +12,7 @@
     type AffectedFiles,
     arrayBufferToBase64,
     baseURL,
+    type OppositionHistoryType,
     toByteArray,
     UserRoles,
     UserTypes,
@@ -246,7 +247,8 @@
   let currentView = 0;
   let selectedTitle: string = "";
   let selectedID: string = "";
-  let opposition, oppositionHistory;
+  let opposition : OppositionHistoryType;
+  let oppositionHistory = null;
   async function raiseOppositionView(row = []) {
     currentView = -1;
 
@@ -285,11 +287,11 @@
       opposition = data;
       currentView = 11;
 
-    //   toast.success("Opposition Loaded", {
-    //     description: "Details retrieved successfully.",
-    //     id: toastId,
-    //     duration: 3000,
-    //   });
+      //   toast.success("Opposition Loaded", {
+      //     description: "Details retrieved successfully.",
+      //     id: toastId,
+      //     duration: 3000,
+      //   });
     } catch (err) {
       console.error("Error loading opposition:", err);
 
@@ -445,29 +447,89 @@
 <Dialog.Root bind:open={showRaiseOpposition}>
   <Dialog.Content class="overflow-y-auto max-h-[80vh]">
     {#if currentView === 10}
-      <!--load and show the response form-->
+      <!-- Response Form -->
       <Dialog.Header>
-        <Dialog.Title>Response Form</Dialog.Title>
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg">
+            <Icon
+              icon="lucide:file-edit"
+              class="w-4 h-4 text-blue-600 dark:text-blue-400"
+            />
+          </div>
+          Response Form
+        </Dialog.Title>
       </Dialog.Header>
-      <div class="p-2 space-y-4">
-        <div>
-          <Label for="name">Name</Label>
-          <Input id="name" placeholder="name" bind:value={name} />
+      <div class="p-6 space-y-5">
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm space-y-4"
+        >
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <Label
+                for="name"
+                class="text-sm font-medium text-slate-600 dark:text-slate-300"
+                >Full Name</Label
+              >
+              <Input
+                id="name"
+                placeholder="Enter your full name"
+                bind:value={name}
+              />
+            </div>
+            <div class="space-y-1.5">
+              <Label
+                for="email"
+                class="text-sm font-medium text-slate-600 dark:text-slate-300"
+                >Email Address</Label
+              >
+              <Input
+                id="email"
+                placeholder="Enter your email"
+                bind:value={email}
+              />
+            </div>
+            <div class="space-y-1.5">
+              <Label
+                for="number"
+                class="text-sm font-medium text-slate-600 dark:text-slate-300"
+                >Phone Number</Label
+              >
+              <Input
+                id="number"
+                placeholder="Enter phone number"
+                bind:value={number}
+              />
+            </div>
+            <div class="space-y-1.5 md:col-span-2">
+              <Label
+                for="address"
+                class="text-sm font-medium text-slate-600 dark:text-slate-300"
+                >Address</Label
+              >
+              <Input
+                id="address"
+                placeholder="Enter your address"
+                bind:value={address}
+              />
+            </div>
+          </div>
         </div>
-        <div>
-          <Label for="address">address</Label>
-          <Input id="address" placeholder="address" bind:value={address} />
-        </div>
-        <div>
-          <Label for="number">phone number</Label>
-          <Input id="number" placeholder="phone number" bind:value={number} />
-        </div>
-        <div>
-          <Label for="email">Email</Label>
-          <Input id="email" placeholder="Email" bind:value={email} />
-        </div>
-        <div>
-          <Label for="attachmentResponse">Attachment</Label>
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm"
+        >
+          <div class="flex items-center space-x-3 mb-3">
+            <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
+              <Icon
+                icon="lucide:paperclip"
+                class="w-4 h-4 text-green-600 dark:text-green-400"
+              />
+            </div>
+            <Label
+              for="attachmentResponse"
+              class="text-sm font-medium text-slate-600 dark:text-slate-300"
+              >Attachment (PDF only)</Label
+            >
+          </div>
           <Input
             id="attachmentResponse"
             type="file"
@@ -476,9 +538,9 @@
           />
         </div>
       </div>
-      <Dialog.Footer>
+      <Dialog.Footer class="gap-2 pt-2">
         <Button
-          variant="destructive"
+          variant="outline"
           on:click={() => {
             showRaiseOpposition = false;
           }}>Cancel</Button
@@ -486,201 +548,168 @@
         <Button
           on:click={async () => {
             await generateRRR("response");
-          }}>Ok</Button
+          }}>Submit Response</Button
         >
       </Dialog.Footer>
     {:else if currentView === -1}
-      <div class="items-center justify-center flex h-64">
-        <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+      <div class="items-center justify-center flex h-64 flex-col gap-3">
+        <Icon
+          icon="line-md:loading-loop"
+          width="2rem"
+          height="2rem"
+          class="text-blue-500"
+        />
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          Loading, please wait...
+        </p>
       </div>
     {:else if currentView === 11}
       <Dialog.Header>
-        <Dialog.Title>Opposition Details</Dialog.Title>
+        <Dialog.Title class="text-xl font-semibold">
+          Opposition Details
+        </Dialog.Title>
       </Dialog.Header>
-      <div class="p-6 space-y-6">
-        <!-- Header Section -->
-        <div
-          class="flex items-center justify-between bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-700"
-        >
-          <div class="flex items-center space-x-4">
-            <div class="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
-              <Icon
-                icon="lucide:calendar"
-                class="w-5 h-5 text-blue-600 dark:text-blue-400"
-              />
-            </div>
-            <div>
-              <p class="text-sm font-medium text-slate-600 dark:text-slate-300">
-                Opposition Date
-              </p>
-              <p
-                class="text-lg font-semibold text-slate-900 dark:text-slate-100"
-              >
-                {mapDateToString(opposition.oppositionDate)}
-              </p>
-            </div>
+
+      <div class="p-6 space-y-8">
+        <!-- Top Summary -->
+        <div class="flex justify-between items-center border-b pb-4">
+          <div>
+            <p class="text-sm text-gray-500">Opposition Date</p>
+            <p class="text-lg font-semibold">
+              {mapDateToString(opposition.OppositionDate)}
+            </p>
           </div>
-          <AppStatusTag value={opposition.status} />
+          <AppStatusTag value={opposition.Status} />
         </div>
 
-        <!-- Opposer Information Card -->
-        <div
-          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div class="flex items-center space-x-3 mb-4">
-            <div class="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-lg">
-              <Icon
-                icon="lucide:user"
-                class="w-5 h-5 text-purple-600 dark:text-purple-400"
-              />
-            </div>
-            <h3
-              class="text-lg font-semibold text-slate-900 dark:text-slate-100"
-            >
-              Opposer Details
-            </h3>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="space-y-1">
-              <Label
-                class="text-sm font-medium text-slate-500 dark:text-slate-400"
-                >Full Name</Label
-              >
-              <p class="text-slate-900 dark:text-slate-100 font-medium">
-                {opposition.name}
-              </p>
-            </div>
-            <div class="space-y-1">
-              <Label
-                class="text-sm font-medium text-slate-500 dark:text-slate-400"
-                >Email Address</Label
-              >
-              <p
-                class="text-slate-900 dark:text-slate-100 font-medium truncate"
-              >
-                {opposition.email}
-              </p>
-            </div>
-            <div class="space-y-1">
-              <Label
-                class="text-sm font-medium text-slate-500 dark:text-slate-400"
-                >Phone Number</Label
-              >
-              <p class="text-slate-900 dark:text-slate-100 font-medium">
-                {opposition.phone}
-              </p>
-            </div>
-            <div class="space-y-1 md:col-span-2">
-              <Label
-                class="text-sm font-medium text-slate-500 dark:text-slate-400"
-                >Address</Label
-              >
-              <p class="text-slate-900 dark:text-slate-100 font-medium">
-                {opposition.address}
-              </p>
-            </div>
+        <!-- Opposer Info Table -->
+        <div>
+          <h3 class="text-md font-semibold mb-3 text-gray-700">
+            Opposer Information
+          </h3>
+
+          <div class="border rounded-lg overflow-hidden">
+            <table class="w-full text-sm">
+              <tbody>
+                <tr class="border-b">
+                  <td class="bg-gray-50 font-medium p-3 w-1/3">Full Name</td>
+                  <td class="p-3">{opposition.Name}</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="bg-gray-50 font-medium p-3">Email</td>
+                  <td class="p-3 break-all">{opposition.Email}</td>
+                </tr>
+                <tr class="border-b">
+                  <td class="bg-gray-50 font-medium p-3">Phone</td>
+                  <td class="p-3">{opposition.Phone}</td>
+                </tr>
+                <tr>
+                  <td class="bg-gray-50 font-medium p-3">Address</td>
+                  <td class="p-3">{opposition.Address}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <!-- Attachments Section -->
-        <div
-          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-200"
-        >
-          <div class="flex items-center space-x-3 mb-4">
-            <div class="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
-              <Icon
-                icon="lucide:paperclip"
-                class="w-5 h-5 text-green-600 dark:text-green-400"
-              />
-            </div>
-            <h3
-              class="text-lg font-semibold text-slate-900 dark:text-slate-100"
-            >
-              Attachments
-            </h3>
-          </div>
-          <div class="space-y-3">
-            {#if opposition.supportingDocs}
-              {#each opposition.supportingDocs as doc}
-                <a
-                  href={doc}
-                  target="_blank"
-                  class="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors duration-200 group"
-                >
-                  <div class="flex items-center space-x-3">
-                    <div class="bg-red-100 dark:bg-red-900/30 p-2 rounded-md">
-                      <Icon
-                        icon="lucide:file-text"
-                        class="w-4 h-4 text-red-600 dark:text-red-400"
-                      />
-                    </div>
-                    <span class="font-medium text-slate-900 dark:text-slate-100"
-                      >Opposition Document</span
-                    >
-                  </div>
-                  <Icon
-                    icon="lucide:external-link"
-                    class="w-4 h-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors"
-                  />
-                </a>
-              {/each}
-            {/if}
+        <!-- Attachments Table -->
+        <div>
+          <h3 class="text-md font-semibold mb-3 text-gray-700">Attachments</h3>
+
+          <div class="border rounded-lg overflow-hidden">
+            <table class="w-full text-sm">
+              <thead class="bg-gray-50 text-left">
+                <tr>
+                  <th class="p-3 font-medium">Document</th>
+                  <th class="p-3 font-medium text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {#if opposition.SupportingDocs.length > 0}
+                  {#each opposition.SupportingDocs as doc}
+                    <tr class="border-t hover:bg-gray-50">
+                      <td class="p-3">
+                        <div class="flex items-center gap-2">
+                          <Icon
+                            icon="lucide:file-text"
+                            class="w-4 h-4 text-red-500"
+                          />
+                          Opposition Document
+                        </div>
+                      </td>
+                      <td class="p-3 text-right">
+                        <a
+                          href={doc}
+                          target="_blank"
+                          class="text-blue-600 hover:underline font-medium"
+                        >
+                          View
+                        </a>
+                      </td>
+                    </tr>
+                  {/each}
+                {/if}
+              </tbody>
+            </table>
           </div>
         </div>
-        {#if parseInt(opposition.status) === 30}
-          <button
-            type="submit"
-            disabled={isLoading}
-            on:click={() => notifyApplicant(opposition.id)}
-            class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {#if isLoading}
-              <div class="flex items-center justify-center">
-                <div
-                  class="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"
-                ></div>
-                Notify...
-              </div>
-            {:else}
-              Notify Applicant
-            {/if}
-          </button>
-        {/if}
       </div>
     {:else if currentView === 12}
       <Dialog.Header>
-        <Dialog.Title>Opposition History</Dialog.Title>
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-amber-100 dark:bg-amber-900/30 p-1.5 rounded-lg">
+            <Icon
+              icon="lucide:history"
+              class="w-4 h-4 text-amber-600 dark:text-amber-400"
+            />
+          </div>
+          Opposition History
+        </Dialog.Title>
       </Dialog.Header>
-      <div class="flex p-2">
-        <div class="gap-10 grid grid-cols-1 px-2 py-2 w-full">
-          {#each oppositionHistory as data}
-            <div class="flex justify-between gap-4 relative">
+      <div class="p-6">
+        <div class="relative space-y-6">
+          <!-- Timeline line -->
+          <div
+            class="absolute left-[15px] top-3 bottom-3 w-px bg-gradient-to-b from-blue-300 via-slate-300 to-transparent dark:from-blue-600 dark:via-slate-600"
+          ></div>
+          {#each oppositionHistory as data, i}
+            <div class="relative flex gap-4">
+              <!-- Timeline dot -->
+              <div class="relative z-10 flex-shrink-0 mt-1">
+                <div
+                  class="w-[31px] h-[31px] rounded-full border-2 border-white dark:border-slate-800 shadow-sm flex items-center justify-center {i ===
+                  0
+                    ? 'bg-blue-500'
+                    : 'bg-slate-300 dark:bg-slate-600'}"
+                >
+                  <div class="w-2 h-2 rounded-full bg-white"></div>
+                </div>
+              </div>
+              <!-- Content card -->
               <div
-                class="border-dotted border w-0 h-full absolute left-4"
-              ></div>
-              <div
-                class="bg-gray-500 w-3 h-3 rounded-full absolute left-2.5 mt-3"
-              ></div>
-              <div class="ml-8 flex-1">
-                <div class="flex justify-between items-center">
-                  <p class="font-light text-gray-400" style="font-size: 13px">
+                class="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+              >
+                <div class="flex justify-between items-center mb-2">
+                  <p
+                    class="text-xs font-medium text-slate-500 dark:text-slate-400"
+                  >
                     {mapDateToString(data.oppositionDate)}
                   </p>
-                  <Button variant="outline" class="gap-1">
-                    <Icon
-                      icon="radix-icons:avatar"
-                      width="1.2rem"
-                      height="1.2rem"
-                    />
+                  <div
+                    class="flex items-center gap-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full"
+                  >
+                    <Icon icon="lucide:user" width="0.85rem" height="0.85rem" />
                     {data.user}
-                  </Button>
+                  </div>
                 </div>
                 {#if data.status !== null}
-                  <div class="flex items-center py-1 gap-7">
+                  <div class="mb-2">
                     <AppStatusTag value={data.status} />
                   </div>
                 {/if}
-                <p>{data.message}</p>
+                <p class="text-sm text-slate-700 dark:text-slate-200">
+                  {data.message}
+                </p>
               </div>
             </div>
           {/each}
@@ -688,11 +717,33 @@
       </div>
     {:else if currentView === 13}
       <Dialog.Header>
-        <Dialog.Title>Resolution Attachment</Dialog.Title>
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
+            <Icon
+              icon="lucide:upload"
+              class="w-4 h-4 text-green-600 dark:text-green-400"
+            />
+          </div>
+          Resolution Attachment
+        </Dialog.Title>
       </Dialog.Header>
-      <div class="p-2">
-        <div>
-          <Label for="attachmentResolution">Attachment</Label>
+      <div class="p-6">
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm"
+        >
+          <div class="flex items-center space-x-3 mb-3">
+            <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
+              <Icon
+                icon="lucide:paperclip"
+                class="w-4 h-4 text-green-600 dark:text-green-400"
+              />
+            </div>
+            <Label
+              for="attachmentResolution"
+              class="text-sm font-medium text-slate-600 dark:text-slate-300"
+              >Upload Resolution (PDF only)</Label
+            >
+          </div>
           <Input
             id="attachmentResolution"
             type="file"
@@ -701,9 +752,9 @@
           />
         </div>
       </div>
-      <Dialog.Footer>
+      <Dialog.Footer class="gap-2 pt-2">
         <Button
-          variant="destructive"
+          variant="outline"
           on:click={() => {
             showRaiseOpposition = false;
           }}>Cancel</Button
@@ -711,26 +762,63 @@
         <Button
           on:click={async () => {
             await generateRRR("resolution");
-          }}>Ok</Button
+          }}>Submit Resolution</Button
         >
       </Dialog.Footer>
     {:else if currentView === 1}
       <Dialog.Header>
-        <Dialog.Title>Payment Details</Dialog.Title>
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-emerald-100 dark:bg-emerald-900/30 p-1.5 rounded-lg">
+            <Icon
+              icon="lucide:credit-card"
+              class="w-4 h-4 text-emerald-600 dark:text-emerald-400"
+            />
+          </div>
+          Payment Details
+        </Dialog.Title>
       </Dialog.Header>
-      <div class="flex flex-col space-y-3 p-2">
-        <div>
-          <Label for="amount">Amount</Label>
-          <p id="amount">{amount}</p>
-        </div>
-        <div>
-          <Label for="RRR">payment ID</Label>
-          <p id="RRR">{rrr}</p>
+      <div class="p-6">
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm space-y-4"
+        >
+          <div
+            class="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
+          >
+            <div class="space-y-1">
+              <p class="text-sm font-medium text-slate-500 dark:text-slate-400">
+                Amount Due
+              </p>
+              <p
+                id="amount"
+                class="text-2xl font-bold text-slate-900 dark:text-slate-100"
+              >
+                {amount}
+              </p>
+            </div>
+            <div class="bg-emerald-100 dark:bg-emerald-900/30 p-3 rounded-full">
+              <Icon
+                icon="lucide:banknote"
+                class="w-6 h-6 text-emerald-600 dark:text-emerald-400"
+              />
+            </div>
+          </div>
+          <div class="space-y-1 px-1">
+            <Label
+              class="text-sm font-medium text-slate-500 dark:text-slate-400"
+              >Payment ID</Label
+            >
+            <p
+              id="RRR"
+              class="text-slate-900 dark:text-slate-100 font-mono font-medium text-lg"
+            >
+              {rrr}
+            </p>
+          </div>
         </div>
       </div>
-      <Dialog.Footer>
+      <Dialog.Footer class="gap-2 pt-2">
         <Button
-          variant="destructive"
+          variant="outline"
           on:click={() => {
             showRaiseOpposition = false;
           }}>Cancel</Button
@@ -750,28 +838,51 @@
                 `&fileUrl=${fileURL}&rrr=${rrr}&cost=${amount}`;
             }
             goto(go_url);
-          }}>Ok</Button
+          }}>Proceed to Payment</Button
         >
       </Dialog.Footer>
     {:else if currentView === 19}
       <Dialog.Header>
-        <Dialog.Title>Resolve Opposition</Dialog.Title>
-      </Dialog.Header>
-      <div class="p-2 space-y-4">
-        <Textarea
-          placeholder="enter text"
-          bind:value={resolvedText}
-          class="min-h-24"
-        />
-        <Button on:click={() => resolveOpposition()} class="w-full">
-          <div
-            class="items-center justify-center flex {isResolving
-              ? ''
-              : 'hidden'}"
-          >
-            <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-lg">
+            <Icon
+              icon="lucide:check-circle"
+              class="w-4 h-4 text-orange-600 dark:text-orange-400"
+            />
           </div>
-          {isResolving ? "Processing..." : "Ok"}
+          Resolve Opposition
+        </Dialog.Title>
+      </Dialog.Header>
+      <div class="p-6 space-y-4">
+        <div
+          class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm space-y-3"
+        >
+          <Label class="text-sm font-medium text-slate-600 dark:text-slate-300"
+            >Resolution Statement</Label
+          >
+          <Textarea
+            placeholder="Enter your resolution statement..."
+            bind:value={resolvedText}
+            class="min-h-28"
+          />
+        </div>
+        <Button
+          on:click={() => resolveOpposition()}
+          disabled={isResolving}
+          class="w-full"
+        >
+          {#if isResolving}
+            <div class="flex items-center justify-center gap-2">
+              <Icon
+                icon="line-md:loading-loop"
+                width="1.2rem"
+                height="1.2rem"
+              />
+              Processing...
+            </div>
+          {:else}
+            Submit Resolution
+          {/if}
         </Button>
       </div>
     {/if}
@@ -898,11 +1009,11 @@
                               on:click={() => raiseOppositionView(row.cells)}
                               >View opposition</DropdownMenu.Item
                             >
-                            {#if yetToNotify(row.cells)}
+                            <!-- {#if yetToNotify(row.cells)}
                               <DropdownMenu.Item
                                 >Notify Applicant</DropdownMenu.Item
                               >
-                            {/if}
+                            {/if} -->
                             <!-- {#if canUploadResponse(row.cells)}
 															<DropdownMenu.Item on:click={() => UploadState('response', row.cells)}
 																>Upload Counter statement</DropdownMenu.Item
