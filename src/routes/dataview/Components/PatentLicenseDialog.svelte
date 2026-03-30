@@ -6,6 +6,8 @@
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
   import { baseURL } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
+  import { get } from "svelte/store";
 
   // Props
   export let open = false;
@@ -62,6 +64,10 @@
   async function handleLicenseDecision(approve: boolean) {
     submitting = true;
     try {
+      // Get logged-in user ID
+      const user = get(loggedInUser);
+      const appUserId = user?.id || null;
+
       const response = await fetch(
         `${baseURL}/api/files/license-decision`, 
         {
@@ -74,6 +80,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
+            appUserId: appUserId,
             newLicensee: approve && licenseDetails?.newLicensee ? {
               Name: licenseDetails.newLicensee.name,
               Address: licenseDetails.newLicensee.address,
@@ -94,7 +101,6 @@
       toast.success(successMessage);
       open = false;
       
-      // Reload page after 3 seconds like the assignment dialog
       setTimeout(() => {
         location.reload();
       }, 3000);

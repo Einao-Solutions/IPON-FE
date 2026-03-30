@@ -6,6 +6,8 @@
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
   import { baseURL } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
+  import { get } from "svelte/store";
 
   // Props
   export let open = false;
@@ -60,6 +62,10 @@
   async function handleAmendmentDecision(approve: boolean) {
     submitting = true;
     try {
+      // Get logged-in user ID
+      const user = get(loggedInUser);
+      const appUserId = user?.id || null;
+
       const response = await fetch(
         `${baseURL}/api/files/amendment-decision`, 
         {
@@ -72,6 +78,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
+            appUserId: appUserId,
           }),
         }
       );

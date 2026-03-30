@@ -6,6 +6,8 @@
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
   import { baseURL } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
+  import { get } from "svelte/store";
 
   // Props
   export let open = false;
@@ -62,6 +64,10 @@
   async function handleMortgageDecision(approve: boolean) {
     submitting = true;
     try {
+      // Get logged-in user ID
+      const user = get(loggedInUser);
+      const appUserId = user?.id || null;
+
       const response = await fetch(
         `${baseURL}/api/files/mortgage-decision`, 
         {
@@ -74,6 +80,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
+            appUserId: appUserId,
             newMortgagee: approve && mortgageDetails?.newMortgagee ? {
               Name: mortgageDetails.newMortgagee.name,
               Address: mortgageDetails.newMortgagee.address,
@@ -94,7 +101,6 @@
       toast.success(successMessage);
       open = false;
       
-      // Reload page after 3 seconds like other dialogs
       setTimeout(() => {
         location.reload();
       }, 3000);
