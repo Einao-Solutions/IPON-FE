@@ -81,6 +81,12 @@
 
   // Get active units
   $: activeUnits = performanceData?.units.filter(u => u.totalAssigned > 0 || u.totalTreated > 0) || [];
+  
+  // Get max value for chart scaling
+  $: maxValue = Math.max(
+    ...activeUnits.map(u => Math.max(u.totalAssigned, u.totalTreated)),
+    1 // Ensure at least 1 to avoid division by zero
+  );
 </script>
 
 <div class="min-h-screen bg-gray-50">
@@ -336,6 +342,90 @@
           </div>
         {/each}
       </div>
+
+      <!-- Performance Comparison Chart -->
+      <!-- <div class="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden mb-6">
+        <div class="p-6 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+              <Icon icon="lucide:bar-chart-3" class="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <h3 class="text-lg font-semibold text-slate-800">Unit Performance Comparison</h3>
+              <p class="text-sm text-gray-600">Visual comparison of assigned vs treated applications</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-6">
+          <div class="space-y-6">
+            {#each activeUnits as unit, index}
+              <div class="space-y-2">
+                
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center" style="background-color: {COLORS[index % COLORS.length]}20">
+                      <Icon icon="lucide:building" class="h-4 w-4" style="color: {COLORS[index % COLORS.length]}" />
+                    </div>
+                    <span class="font-semibold text-slate-800">{unit.unitName}</span>
+                  </div>
+                  <div class="text-sm text-gray-600">
+                    <span class="font-semibold text-green-600">{unit.treatmentRate}%</span> completion
+                  </div>
+                </div>
+              
+                <div class="space-y-2">
+        
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-600 w-20">Assigned</span>
+                    <div class="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
+                      <div 
+                        class="h-full rounded-full bg-blue-500 transition-all duration-500 flex items-center justify-end pr-2"
+                        style="width: {(unit.totalAssigned / maxValue) * 100}%"
+                      >
+                        <span class="text-xs font-semibold text-white">{unit.totalAssigned}</span>
+                      </div>
+                    </div>
+                  </div>
+                
+                  <div class="flex items-center gap-3">
+                    <span class="text-xs text-gray-600 w-20">Treated</span>
+                    <div class="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
+                      <div 
+                        class="h-full rounded-full bg-green-500 transition-all duration-500 flex items-center justify-end pr-2"
+                        style="width: {(unit.totalTreated / maxValue) * 100}%"
+                      >
+                        <span class="text-xs font-semibold text-white">{unit.totalTreated}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+             
+                <div class="flex items-center gap-3 text-xs text-gray-600 mt-2">
+                  <Icon icon="lucide:users" class="h-4 w-4" />
+                  <span>{unit.staffCount} staff • Avg {unit.avgPerStaff} per staff</span>
+                </div>
+              </div>
+              
+              {#if index < activeUnits.length - 1}
+                <div class="border-b border-gray-200"></div>
+              {/if}
+            {/each}
+          </div>
+          
+          <div class="flex items-center justify-center gap-6 mt-6 pt-6 border-t border-gray-200">
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded bg-blue-500"></div>
+              <span class="text-sm text-gray-700">Assigned</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="w-4 h-4 rounded bg-green-500"></div>
+              <span class="text-sm text-gray-700">Treated</span>
+            </div>
+          </div>
+        </div>
+      </div> -->
     {/if}
 
     <!-- No Data Selected State -->
