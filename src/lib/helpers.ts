@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
- export const baseURL = "https://backend.einaotest.com";
+//export const baseURL = "http://localhost:5044";
+export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -358,6 +358,24 @@ export enum ApplicationLetters {
   PatentMergerReceipt = 69,
   PatentCtcReceipt = 70,
   PatentAmendmentReceipt = 71,
+  DesignAssignmentAcknowledgement = 72,
+  DesignLicenseAcknowledgement = 73,
+  DesignMortgageAcknowledgement = 74,
+  DesignMergerAcknowledgement = 75,
+  DesignCtcAcknowledgement = 76,
+  DesignAmendmentAcknowledgement = 77,
+  DesignAssignmentRefusalLetter = 78,
+  DesignLicenseRefusalLetter = 79,
+  DesignMortgageRefusalLetter = 80,
+  DesignMergerRefusalLetter = 81,
+  DesignCtcRefusalLetter = 82,
+  DesignAmendmentRefusalLetter = 83,
+  DesignAssignmentReceipt = 84,
+  DesignLicenseReceipt = 85,
+  DesignMortgageReceipt = 86,
+  DesignMergerReceipt = 87,
+  DesignCtcReceipt = 88,
+  DesignAmendmentReceipt = 89,
 }
 
 export enum ApplicationStatuses {

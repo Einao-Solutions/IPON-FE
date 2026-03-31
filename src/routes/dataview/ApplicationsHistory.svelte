@@ -57,6 +57,8 @@
   import PatentCTCDialog from "./Components/PatentCTCDialog.svelte";
   import PatentAmendmentDialog from "./Components/PatentAmendmentDialog.svelte";
   import DesignMortgageDialog from "./Components/DesignMortgageDialog.svelte";
+  import DesignAssignmentDialog from "./Components/DesignAssignmentDialog.svelte";
+  import DesignMergerDialog from "./Components/DesignMergerDialog.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -155,6 +157,16 @@
   let designMortgageFileId = "";
   let designMortgageApplicationId = "";
 
+  // Design Assignment Modal State
+  let showDesignAssignmentDialog = false;
+  let designAssignmentFileId = "";
+  let designAssignmentApplicationId = "";
+
+  // Design Merger Modal State
+  let showDesignMergerDialog = false;
+  let designMergerFileId = "";
+  let designMergerApplicationId = "";
+
   // Patent Dialog Statuses
   let patentAssignmentStatus: number | null = null;
   let patentLicenseStatus: number | null = null;
@@ -164,6 +176,8 @@
   let patentCTCStatus: number | null = null;
   let patentAmendmentStatus: number | null = null;
   let designMortgageStatus: number | null = null;
+  let designAssignmentStatus: number | null = null;
+  let designMergerStatus: number | null = null;
   //let patentCTCStatus: number | null = null;
 
   // Appeal Requests
@@ -1016,6 +1030,18 @@
     showPatentMergerDialog = true;
   }
 
+  // Open design merger dialog
+  function openDesignMergerDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+  ) {
+    designMergerFileId = fileId;
+    designMergerApplicationId = applicationId;
+    designMergerStatus = status;
+    showDesignMergerDialog = true;
+  }
+
   // Open patent mortgage dialog
   function openPatentMortgageDialog(
     fileId: string,
@@ -1026,6 +1052,18 @@
     patentMortgageApplicationId = applicationId;
     patentMortgageStatus = status;
     showPatentMortgageDialog = true;
+  }
+
+  // Open design assignment dialog
+  function openDesignAssignmentDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+  ) {
+    designAssignmentFileId = fileId;
+    designAssignmentApplicationId = applicationId;
+    designAssignmentStatus = status;
+    showDesignAssignmentDialog = true;
   }
 
   // Open design mortgage dialog
@@ -2329,6 +2367,14 @@
   status={patentAssignmentStatus}
 />
 
+<!-- Design Assignment Dialog -->
+<DesignAssignmentDialog
+  bind:open={showDesignAssignmentDialog}
+  fileId={designAssignmentFileId}
+  applicationId={designAssignmentApplicationId}
+  status={designAssignmentStatus}
+/>
+
 <!-- Patent License Dialog -->
 <PatentLicenseDialog
   bind:open={showPatentLicenseDialog}
@@ -2351,6 +2397,14 @@
   fileId={patentMergerFileId}
   applicationId={patentMergerApplicationId}
   status={patentMergerStatus}
+/>
+
+<!-- Design Merger Dialog -->
+<DesignMergerDialog
+  bind:open={showDesignMergerDialog}
+  fileId={designMergerFileId}
+  applicationId={designMergerApplicationId}
+  status={designMergerStatus}
 />
 
 <!-- Patent Mortgage Dialog -->
@@ -2560,6 +2614,19 @@
                       }}>View Application</DropdownMenu.Item
                     >
                   {/if}
+                  <!-- Design Assignment Application -->
+                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() =>
+                        openDesignAssignmentDialog(
+                          fileData.fileId,
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
                   <!-- Patent Assignment Application -->
                   {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
@@ -2585,6 +2652,19 @@
                   {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() => openDesignLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Design Merger Application -->
+                  {#if application.applicationType === FormApplicationTypes.Merger && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() =>
+                        openDesignMergerDialog(
+                          fileData.fileId,
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
                     >
                       View Application
                     </DropdownMenu.Item>
