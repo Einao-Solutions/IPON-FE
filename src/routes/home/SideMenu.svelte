@@ -38,7 +38,7 @@
     { icon: "mdi:file-document-multiple-outline", location: "Publications" },
     { icon: "mdi:book-open-variant", location: "Resources" },
     { icon: "mdi:help-circle-outline", location: "Support" },
-    // { icon: 'cil:search', location: 'Opposition' },
+    { icon: "mdi:gavel", location: "Opposition" },
     { icon: "mdi:chart-line", location: "Finance" },
     // { icon: "mdi:chart-bar", location: "Statistics" },
     { icon: "mdi:chart-box-outline", location: "Performance" },
@@ -267,11 +267,11 @@
     try {
       const response = await fetch(`${baseURL}/api/opposition/count`);
       if (response.ok) {
-        const opps = await response.json();
-        oppsCount = opps;
+        const opps = await response.text();
+        oppsCount = Number(opps);
       }
     } catch (error) {
-      console.error("Error fetching claim requests count:", error);
+      console.error("Error fetching oppositions count:", error);
     }
   }
   function getNotificationColors(priority: string) {

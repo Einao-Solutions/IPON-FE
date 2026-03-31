@@ -629,15 +629,15 @@ export const designServices: IPService[] = [
   //   category: 'filing',
   //   price: ''
   // },
-  // {
-  //   id: 'design-assignment',
-  //   name: 'DESIGN ASSIGNMENT',
-  //   description: 'Transfer design ownership rights',
-  //   icon: 'mdi:account-switch-outline',
-  //   route: 'modal',
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'design-assignment',
+    name: 'DESIGN ASSIGNMENT',
+    description: 'Transfer design ownership rights',
+    icon: 'mdi:account-switch-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
   // {
   //   id: 'design-ctc',
   //   name: 'DESIGN CTC (CERTIFIED TRUE COPY)',
@@ -647,24 +647,24 @@ export const designServices: IPService[] = [
   //   category: 'filing',
   //   price: ''
   // },
-  // {
-  //   id: 'design-license',
-  //   name: 'DESIGN LICENSE',
-  //   description: 'License design rights to third parties',
-  //   icon: 'mdi:handshake-outline',
-  //   route: 'modal',
-  //   category: 'filing',
-  //   price: ''
-  // },
-  // {
-  //   id: 'design-mortgage',
-  //   name: 'DESIGN MORTGAGE',
-  //   description: 'Mortgage design as security for loans',
-  //   icon: 'mdi:bank-outline',
-  //   route: 'modal',
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'design-license',
+    name: 'DESIGN LICENSE',
+    description: 'License design rights to third parties',
+    icon: 'mdi:handshake-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
+  {
+    id: 'design-mortgage',
+    name: 'DESIGN MORTGAGE',
+    description: 'Mortgage design as security for loans',
+    icon: 'mdi:bank-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
   // {
   //   id: 'design-merger',
   //   name: 'DESIGN MERGER',

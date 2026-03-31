@@ -45,6 +45,7 @@ const config = {
         "/home/trademarkpubs",
         "/PaymentView",
         "/payment/status",
+        "/publications",
         "/logout",
         "/updatesmade",
         "/metadata",
@@ -122,7 +123,6 @@ const config = {
         "/home/postregistration/designmerger/result",
         "/home/postregistration/designmortgage",
         "/home/postregistration/designmortgage/result"
-
       ],
     },
   },

@@ -358,6 +358,24 @@ export enum ApplicationLetters {
   PatentMergerReceipt = 69,
   PatentCtcReceipt = 70,
   PatentAmendmentReceipt = 71,
+  DesignAssignmentAcknowledgement = 72,
+  DesignLicenseAcknowledgement = 73,
+  DesignMortgageAcknowledgement = 74,
+  DesignMergerAcknowledgement = 75,
+  DesignCtcAcknowledgement = 76,
+  DesignAmendmentAcknowledgement = 77,
+  DesignAssignmentRefusalLetter = 78,
+  DesignLicenseRefusalLetter = 79,
+  DesignMortgageRefusalLetter = 80,
+  DesignMergerRefusalLetter = 81,
+  DesignCtcRefusalLetter = 82,
+  DesignAmendmentRefusalLetter = 83,
+  DesignAssignmentReceipt = 84,
+  DesignLicenseReceipt = 85,
+  DesignMortgageReceipt = 86,
+  DesignMergerReceipt = 87,
+  DesignCtcReceipt = 88,
+  DesignAmendmentReceipt = 89,
 }
 
 export enum ApplicationStatuses {
@@ -580,13 +598,14 @@ export type OppositionHistoryType = {
   Nationality: string;
   Reason: string;
   SupportingDocs: [];
-  Status: ApplicationStatuses | null;
-  OppositionDate: string | null;
-  PaymentId: string | null;
+  Status: ApplicationStatuses;
+  OppositionDate: string;
+  PaymentId: string;
   IsCountered: boolean;
   IsTreated: boolean;
   Paid: boolean;
 };
+
 export type AffectedFiles = {
   fileID: string;
   title: string;
@@ -944,4 +963,5 @@ export function getUnitsForFileType(fileType: FilingType): { unitId: number; uni
   }
 
   return [];
+
 }
