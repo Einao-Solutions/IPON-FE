@@ -24,19 +24,6 @@
 
   $: isReadOnly = status === 10 || status === 11;
 
-  function parseFilingDate(dateStr: string): string {
-    if (!dateStr) return "N/A";
-    try {
-      const [datePart, timePart] = dateStr.split(' ');
-      const [day, month, year] = datePart.split('/');
-      const isoDate = `${year}-${month}-${day}${timePart ? 'T' + timePart : ''}`;
-      const date = new Date(isoDate);
-      return date.toLocaleDateString();
-    } catch (e) {
-      return dateStr;
-    }
-  }
-
   $: if (open && fileId && !ctcDetails) {
     fetchCTCDetails();
   }
@@ -171,7 +158,9 @@
             <div>
               <Label class="font-semibold">Filing Date:</Label>
               <p class="mt-1 p-2 bg-gray-50 rounded border">
-                {parseFilingDate(ctcDetails.filingDate)}
+                {ctcDetails.filingDate
+                  ? (() => { const [d, m, y] = ctcDetails.filingDate.split(/[/ :]/); return new Date(+y, +m - 1, +d).toLocaleDateString(); })()
+                  : "N/A"}
               </p>
             </div>
           </div>

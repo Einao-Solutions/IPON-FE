@@ -174,7 +174,7 @@
               <Label class="font-semibold">Filing Date:</Label>
               <p class="mt-1 p-2 bg-gray-50 rounded border">
                 {assignmentDetails.filingdate
-                  ? new Date(assignmentDetails.filingdate).toLocaleDateString()
+                  ? (() => { const [d, m, y] = assignmentDetails.filingdate.split(/[\/ :]/); return new Date(+y, +m - 1, +d).toLocaleDateString(); })()
                   : "N/A"}
               </p>
             </div>

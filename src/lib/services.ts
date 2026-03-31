@@ -638,15 +638,15 @@ export const designServices: IPService[] = [
     category: 'filing',
     price: ''
   },
-  // {
-  //   id: 'design-ctc',
-  //   name: 'DESIGN CTC (CERTIFIED TRUE COPY)',
-  //   description: 'Request certified true copies of design documents',
-  //   icon: 'mdi:certificate-outline',
-  //   route: 'modal',
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'design-ctc',
+    name: 'DESIGN CTC (CERTIFIED TRUE COPY)',
+    description: 'Request certified true copies of design documents',
+    icon: 'mdi:certificate-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
   {
     id: 'design-license',
     name: 'DESIGN LICENSE',
@@ -665,15 +665,15 @@ export const designServices: IPService[] = [
     category: 'filing',
     price: ''
   },
-  // {
-  //   id: 'design-merger',
-  //   name: 'DESIGN MERGER',
-  //   description: 'Merge design applications',
-  //   icon: 'mdi:merge',
-  //   route: 'modal',
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'design-merger',
+    name: 'DESIGN MERGER',
+    description: 'Merge design applications',
+    icon: 'mdi:merge',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
 
   // FINANCIAL CATEGORY
   {
