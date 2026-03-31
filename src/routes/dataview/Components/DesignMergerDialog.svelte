@@ -79,7 +79,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
-            appUserId: appUserId,
+            UserId: appUserId,
             newMergedParty: approve && mergerDetails?.newMergedParty ? {
               Name: mergerDetails.newMergedParty.name,
               Address: mergerDetails.newMergedParty.address,
