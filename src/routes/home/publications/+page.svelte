@@ -22,7 +22,7 @@
 		if (!selectedQuarter || !selectedYear || !selectedType) { return }
 
 		const startDate = dayjs(selectedYear.toString()).set('date', 1).quarter(selectedQuarter).format().split("T")[0]
-		const endDate = dayjs(selectedYear.toString()).set('date', 1).quarter(selectedQuarter + 1).subtract(1, 'day').format().split("T")[0]
+		const endDate = dayjs(selectedYear.toString()).set('date', 1).quarter(selectedQuarter + 1).format().split("T")[0]
 		const fileType = selectedType == "Patent" ? 0 : selectedType == "Design" ? 1 : selectedType == "Trademark" ? 2 : undefined;
 		if (fileType === undefined) { return; }
 
