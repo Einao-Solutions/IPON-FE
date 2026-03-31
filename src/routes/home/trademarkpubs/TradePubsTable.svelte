@@ -1,6 +1,9 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
+  import { UserRoles } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
+  import { User } from "lucide-svelte";
   import { createEventDispatcher } from "svelte";
 
   const dispatch = createEventDispatcher();
@@ -22,7 +25,9 @@
     currentPage = page;
     dispatch("pageChange", { page, index: (page - 1) * itemsPerPage });
   };
-
+  $: oppStaff = $loggedInUser?.userRoles?.some((r: UserRoles) =>
+    [UserRoles.TrademarkOpposition, UserRoles.SuperAdmin, UserRoles.Tech].includes(r),
+  );
   function sortData(data: any[], column: string, direction: "asc" | "desc") {
     return [...data].sort((a, b) => {
       const aVal = a[column];
@@ -170,18 +175,20 @@
                     <div
                       class="absolute right-0 mt-1 w-40 bg-white border border-gray-300 shadow-lg z-10"
                     >
-                      <button
-                        on:click={() =>
-                          goto(`/dataview?id=${encodeURIComponent(row.id)}`)}
-                        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-200 flex items-center gap-2"
-                      >
-                        <Icon
-                          icon="mdi:file-document"
-                          width="1rem"
-                          height="1rem"
-                        />
-                        View File Details
-                      </button>
+                      {#if oppStaff}
+                        <button
+                          on:click={() =>
+                            goto(`/dataview?id=${encodeURIComponent(row.id)}`)}
+                          class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 border-b border-gray-200 flex items-center gap-2"
+                        >
+                          <Icon
+                            icon="mdi:file-document"
+                            width="1rem"
+                            height="1rem"
+                          />
+                          View File Details
+                        </button>
+                      {/if}
                       <button
                         on:click={() => raiseOpposition(row)}
                         class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
