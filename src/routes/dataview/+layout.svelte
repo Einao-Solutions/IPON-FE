@@ -42,13 +42,13 @@
   } from "$lib/store";
   import { type DateValue, parseDate } from "@internationalized/date";
   import Icon from "@iconify/svelte";
-  import { Toaster } from "$lib/components/ui/sonner";
-  import { toast } from "svelte-sonner";
+  import { Toaster, toast } from "svelte-sonner";
   import { mapTypeToString } from "../home/components/dashboardutils";
   import { redirect } from "@sveltejs/kit";
   import { onMount } from "svelte";
   import dayjs from "dayjs";
   import ApplicationsHistory from "./ApplicationsHistory.svelte";
+  import { comment } from "postcss";
   //   import { aw } from "vitest/dist/chunks/reporters.nr4dxCkA.js";
   let canUpdate: boolean = false;
   let canTreat: boolean = false;
@@ -312,37 +312,58 @@
 
     window.open(`/availabilitysearch`, "_blank");
   }
-  // async function examinePatentDesign(
-  //   FileId: string,
-  //   UserId: string,
-  //   status: ApplicationStatuses,
-  // ) {
-  //   try {
-  //     const res = await fetch(
-  //       `${baseURL}/api/files/ExaminePatentDesign?fileId=${FileId}&userId=${UserId}&status=${status}`,
-  //       {
-  //         method: "POST",
-  //       },
-  //     );
-
-  //     if (res.ok) {
-  //       const result = await res.json();
-  //       console.log("Examination initiated", result);
-  //       toast.success("Successful", {
-  //         position: "top-right",
-  //       });
-  //       treatApplicationDialog = false;
-  //     } else {
-  //       toast.error("Failed to Examine.", {
-  //         position: "top-right",
-  //       });
-  //     }
-  //   } catch (error) {
-  //     toast.error("An error occurred during examination.", {
-  //       position: "top-right",
-  //     });
-  //   }
-  // }
+  async function opposeFile(fileNumber:string, reason:string) {
+    console.log("opposing file", fileNumber, reason);
+    isSaving = true;
+    const response = await fetch(`${baseURL}/api/opposition/StaffOpposition`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileNumber: fileNumber,
+        staffOpposition: true,
+        staffId: $loggedInUser?.id,
+        reason: reason,
+      }),
+    });
+    isSaving = false;
+    if (response.ok) {
+      toast.success("Successfully filed opposition", {
+        position: "top-right",
+      });
+      treatApplicationDialog = false;
+      resetForm();
+    } else {
+      toast.error("Failed to file opposition", {
+        position: "top-right",
+      });
+    }
+  }
+  async function publishFile(fileNumber: string, reason: string) {
+    isSaving = true;
+    const response = await fetch(`${baseURL}/api/publication/SavePublication`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileNumber: fileNumber,
+        staffId: $loggedInUser?.id,
+        staffName: $loggedInUser?.firstName + " " + $loggedInUser?.lastName,
+        comment: reason,
+        isManualPublication: true,
+      }),
+    });
+    isSaving = false;
+    if (response.ok) {
+      toast.success("Successfully published file", {
+        position: "top-right",
+      });
+      treatApplicationDialog = false;
+      resetForm();
+    } else {
+      toast.error("Failed to publish file", {
+        position: "top-right",
+      });
+    }
+  }
 </script>
 
 <Toaster />
@@ -384,16 +405,24 @@
         {/if}</Button
       >
     {/if}
-    {#if selectedApplication?.currentStatus === ApplicationStatuses.Publication && $loggedInUser?.userRoles?.some( (x) => [UserRoles.Staff, UserRoles.Tech, UserRoles.TrademarkOpposition].includes(x), )}
+    {#if selectedApplication?.currentStatus === ApplicationStatuses.Publication && $loggedInUser?.userRoles?.some( (x) => [UserRoles.Tech, UserRoles.TrademarkOpposition, UserRoles.SuperAdmin].includes(x), )}
       <Button
         class="bg-red-600 hover:bg-red-700 text-white"
-        on:click={() => {
-          // handle oppose action
-          console.log("Oppose clicked", selectedApplication);
-          // e.g., open oppose dialog or call an API
+        disabled={!$newStatusReason || isSaving}
+        on:click={() => {opposeFile(fileData.fileId,$newStatusReason ?? "")
         }}
       >
         Oppose
+      </Button>
+    {/if}
+    {#if selectedApplication?.currentStatus === ApplicationStatuses.Publication && $loggedInUser?.userRoles?.some( (x) => [UserRoles.Tech, UserRoles.TrademarkExaminer, UserRoles.SuperAdmin].includes(x), )}
+      <Button
+        class="bg-green-600 hover:bg-green-700 text-white"
+        disabled={!$newStatusReason || isSaving}
+        on:click={() => {publishFile(fileData.fileId)
+        }}
+      >
+        Publish
       </Button>
     {/if}
     <div class="gap-2 flex">
@@ -426,12 +455,14 @@
           resetForm();
         }}>Cancel</Button
       >
-      <Button
-        disabled={!validateForm()}
-        on:click={() => (treatConfirmationDialog = true)}
-      >
-        Continue
-      </Button>
+      {#if selectedApplication?.currentStatus !== ApplicationStatuses.Publication}
+        <Button
+          disabled={!validateForm()}
+          on:click={() => (treatConfirmationDialog = true)}
+        >
+          Continue
+        </Button>
+      {/if}
     </Dialog.Footer>
   </Dialog.Content>
 </Dialog.Root>
