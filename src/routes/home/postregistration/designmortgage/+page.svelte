@@ -5,6 +5,7 @@
 	import { loggedInUser } from '$lib/store';
 	import { page } from '$app/stores';
 	import { countriesMap } from '$lib/constants';
+	import { mapDesignTypeToString } from '$lib/designutils';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
@@ -34,7 +35,7 @@
 	let paymentId: string | null = null;
 	let fileId: string | null = null;
 	let designTitle: string = '';
-	let fileOrigin: string = '';
+	let designType: string = '';
 	let applicantName: string = '';
 	let applicantEmail: string = '';
 	let applicantPhone: string = '';
@@ -62,7 +63,7 @@
 			const data = response.data || response;
 			if (data.hasExistingApplication) { showExistingApplicationModal = true; return; }
 			cost = data.amount; paymentId = data.rrr; applicantName = data.applicantName;
-			designTitle = data.fileTitle || data.titleOfDesign || ''; fileOrigin = data.fileOrigin || '';
+			designTitle = data.fileTitle || data.titleOfDesign || ''; designType = mapDesignTypeToString(data.designType) || '';
 			fileId = data.fileId; applicantEmail = data.applicantEmail; applicantPhone = data.applicantPhone;
 			applicantAddress = data.applicantAddress || ''; applicantNationality = data.applicantNationality || '';
 			applicantCity = data.applicantCity || ''; applicantState = data.applicantState || '';
@@ -158,13 +159,13 @@
 			{#if error}<div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded"><p class="text-sm text-red-700">{error}</p></div>{/if}
 
 			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-				<div class="bg-gray-300 px-4 py-2 font-medium text-black">MORTGAGE INFORMATION</div>
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">MORTGAGE FORM</div>
 				{#if isLoading}
 					<div class="flex items-center justify-center p-12"><div class="flex flex-col items-center gap-2"><Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-blue-600" /><span class="text-sm text-gray-500">Loading Design Information...</span></div></div>
 				{:else}
 					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div><label for="fileNumber" class="block text-sm font-medium text-gray-700 mb-1">File Number:</label><input id="fileNumber" type="text" value={fileId || ''} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
-						<div><label for="fileOrigin" class="block text-sm font-medium text-gray-700 mb-1">File Origin:</label><input id="fileOrigin" type="text" value={fileOrigin} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label for="designType" class="block text-sm font-medium text-gray-700 mb-1">Design Type:</label><input id="designType" type="text" value={designType} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
 						<div class="md:col-span-2"><label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title of Design:</label><input id="title" type="text" value={designTitle} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
 					</div>
 				{/if}

@@ -5,6 +5,7 @@
 	import { loggedInUser } from '$lib/store';
 	import { page } from '$app/stores';
 	import { countriesMap, nigeriaStates } from '$lib/constants';
+	import { mapDesignTypeToString } from '$lib/designutils';
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
@@ -45,7 +46,7 @@
 	let paymentId: string | null = null;
 	let fileId: string | null = null;
 	let designTitle: string = '';
-	let fileOrigin: string = '';
+	let designType: string = '';
 	let applicantName: string = '';
 	let applicantEmail: string = '';
 	let applicantPhone: string = '';
@@ -73,7 +74,7 @@
 			const data = response.data || response;
 			if (data.hasExistingApplication) { showExistingApplicationModal = true; return; }
 			cost = data.amount; paymentId = data.rrr; applicantName = data.applicantName;
-			designTitle = data.fileTitle || data.titleOfDesign || ''; fileOrigin = data.fileOrigin || '';
+			designTitle = data.fileTitle || data.titleOfDesign || ''; designType = mapDesignTypeToString(data.designType) || '';
 			fileId = data.fileId; applicantEmail = data.applicantEmail; applicantPhone = data.applicantPhone;
 			applicantAddress = data.applicantAddress || ''; applicantNationality = data.applicantNationality || '';
 			applicantCity = data.applicantCity || ''; applicantState = data.applicantState || '';
@@ -176,7 +177,7 @@
 				{:else}
 					<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 						<div><label for="fileNumber" class="block text-sm font-medium text-gray-700 mb-1">File Number:</label><input id="fileNumber" type="text" value={fileId || ''} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
-						<div><label for="fileOrigin" class="block text-sm font-medium text-gray-700 mb-1">File Origin:</label><input id="fileOrigin" type="text" value={fileOrigin} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
+						<div><label for="designType" class="block text-sm font-medium text-gray-700 mb-1">Design Type:</label><input id="designType" type="text" value={designType} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
 						<div class="md:col-span-2"><label for="title" class="block text-sm font-medium text-gray-700 mb-1">Title of Design:</label><input id="title" type="text" value={designTitle} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
 					</div>
 				{/if}
@@ -200,13 +201,13 @@
 			</div>
 
 			<div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
-				<div class="bg-gray-300 px-4 py-2 font-medium text-black">MERGER INFORMATION</div>
+				<div class="bg-gray-300 px-4 py-2 font-medium text-black">MERGER FORM</div>
 				<div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
 					<div><label class="block text-sm font-medium text-gray-700 mb-1">Name: <span class="text-red-500">*</span></label><input type="text" bind:value={newMergerData.name} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter new merged party name" required /></div>
 					<div><label class="block text-sm font-medium text-gray-700 mb-1">Email: <span class="text-red-500">*</span></label><input type="email" bind:value={newMergerData.email} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter new merged party email" required /></div>
 					<div><label class="block text-sm font-medium text-gray-700 mb-1">Phone Number: <span class="text-red-500">*</span></label><input type="tel" bind:value={newMergerData.phone} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter new merged party phone number" required /></div>
 					<div><label class="block text-sm font-medium text-gray-700 mb-1">Nationality: <span class="text-red-500">*</span></label><select bind:value={newMergerData.nationality} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" required><option value="" disabled selected>Select nationality</option>{#each Object.entries(countriesMap) as [code, name]}<option value={name}>{name}</option>{/each}</select></div>
-					<div><label class="block text-sm font-medium text-gray-700 mb-1">State: <span class="text-red-500">*</span></label><select bind:value={newMergerData.state} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" required><option value="" disabled selected>Select state</option>{#each nigeriaStates as state}<option value={state}>{state}</option>{/each}</select></div>
+					<div><label class="block text-sm font-medium text-gray-700 mb-1">State: <span class="text-red-500">*</span></label><input type="text" bind:value={newMergerData.state} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter state" required /></div>
 					<div><label class="block text-sm font-medium text-gray-700 mb-1">City: <span class="text-red-500">*</span></label><input type="text" bind:value={newMergerData.city} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter city" required /></div>
 					<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Address: <span class="text-red-500">*</span></label><textarea bind:value={newMergerData.address} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter new merged party full address" rows="3" required></textarea></div>
 				</div>

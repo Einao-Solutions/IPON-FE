@@ -658,6 +658,42 @@ export function getLetterName(letter: number): string {
       return "Patent CTC Receipt";
     case 71:
       return "Patent Amendment Receipt";
+    case 72:
+      return "Design Assignment Acknowledgement";
+    case 73:
+      return "Design License Acknowledgement";
+    case 74:
+      return "Design Mortgage Acknowledgement";
+    case 75:
+      return "Design Merger Acknowledgement";
+    case 76:
+      return "Design CTC Acknowledgement";
+    case 77:
+      return "Design Amendment Acknowledgement";
+    case 78:      return "Design Assignment Refusal Letter";
+    case 79:
+      return "Design License Refusal Letter";
+    case 80:
+      return "Design Mortgage Refusal Letter";
+    case 81:
+      return "Design Merger Refusal Letter";
+    case 82:
+      return "Design CTC Refusal Letter";
+    case 83:
+      return "Design Amendment Refusal Letter";
+    case 84:
+      return "Design Assignment Receipt";
+    case 85:
+      return "Design License Receipt";
+    case 86:
+      return "Design Mortgage Receipt";
+    case 87:
+      return "Design Merger Receipt";
+    case 88:
+      return "Design CTC Receipt";
+    case 89:
+      return "Design Amendment Receipt";
+
     default:
       return "Unknown Document";
   }
