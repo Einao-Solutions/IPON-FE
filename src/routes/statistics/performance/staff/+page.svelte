@@ -369,7 +369,7 @@
             </div>
           </div>
 
-          <!-- Card 2: Total Applications Treated -->
+          <!-- Card 2: Total Applications Processed -->
           <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
             <div class="flex items-center gap-3">
               <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
@@ -380,7 +380,7 @@
                   {totalApplicationsTreated.toLocaleString()}
                 </div>
                 <div class="text-xs font-medium text-gray-600">
-                  Total Applications Treated
+                  Total Applications Processed
                 </div>
               </div>
             </div>
@@ -437,7 +437,7 @@
             {selectedUnitName} - Staff Members
           </h2>
           <p class="text-sm text-gray-600 mt-1">
-            Total applications treated by unit: {totalApplicationsTreated}
+            Total applications processed by unit: {totalApplicationsTreated}
           </p>
         </div>
 

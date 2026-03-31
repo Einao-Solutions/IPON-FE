@@ -286,7 +286,7 @@
             <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
               <Icon icon="lucide:check-circle" class="h-5 w-5 text-green-600" />
             </div>
-            <p class="text-sm text-gray-600">Total Treated</p>
+            <p class="text-sm text-gray-600">Total Processed</p>
           </div>
           <p class="text-3xl font-bold text-slate-800">{performanceData.overview.totalTreated}</p>
         </div>
@@ -321,11 +321,11 @@
                 <span class="font-semibold text-slate-800">{unit.totalAssigned}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-sm text-gray-600">Treated</span>
+                <span class="text-sm text-gray-600">Processed</span>
                 <span class="font-semibold text-slate-800">{unit.totalTreated}</span>
               </div>
               <div class="flex justify-between items-center">
-                <span class="text-sm text-gray-600">Treatment Rate</span>
+                <span class="text-sm text-gray-600">Processing Rate</span>
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                   {unit.treatmentRate}%
                 </span>
@@ -352,7 +352,7 @@
             </div>
             <div>
               <h3 class="text-lg font-semibold text-slate-800">Unit Performance Comparison</h3>
-              <p class="text-sm text-gray-600">Visual comparison of assigned vs treated applications</p>
+              <p class="text-sm text-gray-600">Visual comparison of assigned vs Processed applications</p>
             </div>
           </div>
         </div>
@@ -389,11 +389,11 @@
                   </div>
                 
                   <div class="flex items-center gap-3">
-                    <span class="text-xs text-gray-600 w-20">Treated</span>
+                    <span class="text-xs text-gray-600 w-20">Processed</span>
                     <div class="flex-1 bg-gray-100 rounded-full h-6 relative overflow-hidden">
                       <div 
                         class="h-full rounded-full bg-green-500 transition-all duration-500 flex items-center justify-end pr-2"
-                        style="width: {(unit.totalTreated / maxValue) * 100}%"
+                        style="width: {(unit.totalProcessed / maxValue) * 100}%"
                       >
                         <span class="text-xs font-semibold text-white">{unit.totalTreated}</span>
                       </div>
@@ -421,7 +421,7 @@
             </div>
             <div class="flex items-center gap-2">
               <div class="w-4 h-4 rounded bg-green-500"></div>
-              <span class="text-sm text-gray-700">Treated</span>
+              <span class="text-sm text-gray-700">Processed</span>
             </div>
           </div>
         </div>
