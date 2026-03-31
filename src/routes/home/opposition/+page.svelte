@@ -13,28 +13,28 @@
 	let newOpposition = 0;
 	let isLoading: boolean = false;
 	onMount(async () => {
-		await loadCounter();
 		await loadOppositionStats();
 		await loadData(undefined, 10, 0);
 	});
-	async function loadCounter() {
-		let url = `${baseURL}/api/opposition/count`;
-		if (
-			$loggedInUser?.userRoles.some((role) =>
-				[
-					UserRoles.TrademarkCertification,
-					UserRoles.TrademarkSearch,
-					UserRoles.TrademarkOpposition,
-					UserRoles.TrademarkExaminer,
-					UserRoles.Tech
-				].includes(role)
-			) == false
-		) {
-			url = url + `?userId=${$loggedInUser.id}`;
-		}
-		const response = await fetch(url);
-		counter = await response.json();
-	}
+	// async function loadCounter() {
+	// 	let url = `${baseURL}/api/opposition/count`;
+	// 	if (
+	// 		$loggedInUser?.userRoles.some((role) =>
+	// 			[
+	// 				UserRoles.TrademarkCertification,
+	// 				UserRoles.TrademarkSearch,
+	// 				UserRoles.TrademarkOpposition,
+	// 				UserRoles.TrademarkExaminer,
+	// 				UserRoles.Tech,
+	// 				UserRoles.SuperAdmin
+	// 			].includes(role)
+	// 		) == false
+	// 	) {
+	// 		url = url + `?userId=${$loggedInUser.id}`;
+	// 	}
+	// 	const response = await fetch(url);
+	// 	counter = await response.json();
+	// }
 	async function loadOppositionStats() {
 		const response = await fetch(`${baseURL}/api/opposition/stats`);
 		const stats = await response.json();
@@ -88,7 +88,7 @@
 		<div class="flex flex-col space-y-3">
 			<div class="flex gap-3">
 				<Button
-					class="group relative overflow-hidden bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] px-6 py-3 rounded-xl"
+					class="group relative overflow-hidden bg-gray-500 hover:bg-gray-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] px-6 py-3 rounded-xl"
 					on:click={() => loadData(29, 10, 0)}
 				>
 					<div class="flex items-center space-x-3">
@@ -104,7 +104,7 @@
 				</Button>
 
 				<Button
-					class="group relative overflow-hidden bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] px-6 py-3 rounded-xl"
+					class="group relative overflow-hidden bg-yellow-500 hover:bg-yellow-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] px-6 py-3 rounded-xl"
 					on:click={() => loadData(30, 10, 0)}
 				>
 					<div class="flex items-center space-x-3">

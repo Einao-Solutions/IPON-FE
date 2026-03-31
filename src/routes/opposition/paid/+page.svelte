@@ -7,7 +7,9 @@
 	import { applicationData, DashStats, loggedInUser } from '$lib/store';
 	import { baseURL, decodeUser, type ApplicationHistoryType } from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
+	import ministry from '$lib/assets/ministry.png';
 	import { packSiblings } from 'd3';
+	import cldLogo from '$lib/assets/cld.png';
 	let checkVisible = false;
 	let messageVisible = false;
 	let subMessageVisible = false;
@@ -77,7 +79,7 @@
 <main class="flex justify-center items-center min-h-screen bg-gray-50">
 	<div class="bg-white rounded-xl shadow-lg p-8 w-full max-w-md text-center">
 		<div class="mb-8 text-center">
-			<img src={coatOfArms} alt="Nigerian Coat of Arms" class="mx-auto w-32 h-32" />
+			<img src={cldLogo} alt="Nigerian Coat of Arms" class="mx-auto w-32 h-32" />
 			<h2 class="text-lg font-bold">FEDERAL MINISTRY OF INDUSTRY, TRADE & INVESTMENT</h2>
 			<h3 class="text-md">Commercial Law Department</h3>
 		</div>
@@ -131,6 +133,11 @@
 				</a>
 			</div>
 		{/if}
+		<img
+      src={ministry}
+      alt="Nigerian Coat of Arms"
+      class="mx-auto object-contain w-40 h-auto py-10"
+    />
 	</div>
 </main>
 

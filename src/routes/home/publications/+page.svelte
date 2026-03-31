@@ -28,7 +28,7 @@
 
 		isFetching = true;
 		try {
-			const queryResult = await fetch(`${baseURL}/api/files/GetPublication?start=${startDate}&end=${endDate}&type=${fileType}`)
+			const queryResult = await fetch(`${baseURL}/api/publication/GetPublication?start=${startDate}&end=${endDate}&type=${fileType}`)
 			if (queryResult.ok) {
 				const dataBlob = await queryResult.blob()
 				const link = document.createElement('a');

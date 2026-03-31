@@ -914,6 +914,7 @@
             FileId: publicationFileId,
             Approve: approve,
             Comment: publicationComment,
+            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId
           }),
         },
       );

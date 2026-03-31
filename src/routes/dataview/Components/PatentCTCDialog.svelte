@@ -6,6 +6,8 @@
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
   import { baseURL } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
+  import { get } from "svelte/store";
 
   // Props
   export let open = false;
@@ -20,31 +22,25 @@
   let comment = "";
   let submitting = false;
 
-  // Check if application is already processed (read-only mode)
-  // ApplicationStatuses: Approved = 10, Rejected = 11
   $: isReadOnly = status === 10 || status === 11;
 
-  // Helper function to parse DD/MM/YYYY HH:mm:ss format
   function parseFilingDate(dateStr: string): string {
     if (!dateStr) return "N/A";
     try {
-      // Expected format: "18/02/2026 15:09:14"
       const [datePart, timePart] = dateStr.split(' ');
       const [day, month, year] = datePart.split('/');
       const isoDate = `${year}-${month}-${day}${timePart ? 'T' + timePart : ''}`;
       const date = new Date(isoDate);
       return date.toLocaleDateString();
     } catch (e) {
-      return dateStr; // Return original if parsing fails
+      return dateStr;
     }
   }
 
-  // Reactive statement to fetch data when dialog opens
   $: if (open && fileId && !ctcDetails) {
     fetchCTCDetails();
   }
 
-  // Reset state when dialog closes
   $: if (!open) {
     resetState();
   }
@@ -65,7 +61,7 @@
       }
       
       const data = await response.json();
-      ctcDetails = data.data; // Assuming ApiResponse<object> wrapper
+      ctcDetails = data.data;
     } catch (e) {
       const err = e as Error;
       error = err.message || "Error loading CTC details";
@@ -77,6 +73,10 @@
   async function handleCTCDecision(approve: boolean) {
     submitting = true;
     try {
+      // Get logged-in user ID
+      const user = get(loggedInUser);
+      const appUserId = user?.id || null;
+
       const response = await fetch(
         `${baseURL}/api/files/ctc-decision`, 
         {
@@ -89,6 +89,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
+            appUserId: appUserId,
           }),
         }
       );
@@ -102,7 +103,6 @@
       toast.success(successMessage);
       open = false;
       
-      // Reload page after 3 seconds like other dialogs
       setTimeout(() => {
         location.reload();
       }, 3000);

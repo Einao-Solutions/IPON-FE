@@ -6,6 +6,8 @@
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
   import { baseURL } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
+  import { get } from "svelte/store";
 
   // Props
   export let open = false;
@@ -62,7 +64,10 @@
   async function handleAssignmentDecision(approve: boolean) {
     submitting = true;
     try {
-      // You'll need to implement the assignment decision endpoint similar to withdrawal
+      // Get logged-in user ID
+      const user = get(loggedInUser);
+      const appUserId = user?.id || null;
+
       const response = await fetch(
         `${baseURL}/api/files/assignment-decision`, 
         {
@@ -75,6 +80,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
+            appUserId: appUserId,
             newAssignee: approve && assignmentDetails?.newAssignee ? {
               Name: assignmentDetails.newAssignee.name,
               Address: assignmentDetails.newAssignee.address,
@@ -95,7 +101,6 @@
       toast.success(successMessage);
       open = false;
       
-      // Reload page after 3 seconds like the withdrawal dialog
       setTimeout(() => {
         location.reload();
       }, 3000);
