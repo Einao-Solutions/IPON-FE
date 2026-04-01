@@ -221,6 +221,7 @@
 				rrr: paymentId,
 				licenseDate: now.toISOString(),
 				licenseRequestDate: now.toISOString(),
+				UserId: $loggedInUser?.id || null,
 				Deedoflicense: licenseDeedData,
 				DesignLicenseSupportingDocuments: supportingDocsData,
 				oldLicensorName: applicantName,
