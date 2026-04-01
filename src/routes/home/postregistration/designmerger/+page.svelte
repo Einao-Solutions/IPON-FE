@@ -131,6 +131,7 @@
 			const now = new Date();
 			const payload = {
 				fileId, rrr: paymentId, mergerDate: now.toISOString(), mergerRequestDate: now.toISOString(),
+				UserId: $loggedInUser?.id || null,
 				Deedofmerger: mergerDeedData, DesignMergerSupportingDocuments: supportingDocsData,
 				oldMergerName: applicantName, oldMergerEmail: applicantEmail, oldMergerPhone: applicantPhone,
 				oldMergerAddress: applicantAddress, oldMergerNationality: applicantNationality,

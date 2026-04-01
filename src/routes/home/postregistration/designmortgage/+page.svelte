@@ -120,6 +120,7 @@
 			const now = new Date();
 			const payload = {
 				fileId, rrr: paymentId, mortgageDate: now.toISOString(), mortgageRequestDate: now.toISOString(),
+				UserId: $loggedInUser?.id || null,
 				Deedofmortgage: mortgageDeedData, DesignMortgageSupportingDocuments: supportingDocsData,
 				oldMortgageeName: applicantName, oldMortgageeEmail: applicantEmail, oldMortgageePhone: applicantPhone,
 				oldMortgageeAddress: applicantAddress, oldMortgageeNationality: applicantNationality,

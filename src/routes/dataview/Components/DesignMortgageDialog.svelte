@@ -6,6 +6,8 @@
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
   import { baseURL } from "$lib/helpers";
+  import { loggedInUser } from "$lib/store";
+  import { get } from "svelte/store";
 
   // Props
   export let open = false;
@@ -62,6 +64,9 @@
   async function handleMortgageDecision(approve: boolean) {
     submitting = true;
     try {
+      const user = get(loggedInUser);
+      const appUserId = user?.id || null;
+
       const response = await fetch(
         `${baseURL}/api/files/DesignMortgageDecision`, 
         {
@@ -74,6 +79,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
+            UserId: appUserId,
             newMortgagee: approve && mortgageDetails?.newMortgagee ? {
               Name: mortgageDetails.newMortgagee.name,
               Address: mortgageDetails.newMortgagee.address,
@@ -161,7 +167,7 @@
               <Label class="font-semibold">Filing Date:</Label>
               <p class="mt-1 p-2 bg-gray-50 rounded border">
                 {mortgageDetails.filingdate
-                  ? new Date(mortgageDetails.filingdate).toLocaleDateString()
+                  ? (() => { const [d, m, y] = mortgageDetails.filingdate.split(/[\/ :]/); return new Date(+y, +m - 1, +d).toLocaleDateString(); })()
                   : "N/A"}
               </p>
             </div>
