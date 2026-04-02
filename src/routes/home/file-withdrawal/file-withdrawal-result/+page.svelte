@@ -3,6 +3,8 @@ import { onMount } from 'svelte';
 import { goto } from '$app/navigation';
 import { baseURL } from '$lib/helpers';
 import { fade, fly } from 'svelte/transition';
+import { loggedInUser } from '$lib/store';
+import { get } from 'svelte/store';
 
 let isLoading = true;
 let error: string | null = null;
@@ -12,6 +14,13 @@ let messageVisible = false;
 let subMessageVisible = false;
 
 onMount(async () => {
+    // Auth check
+    const user = get(loggedInUser);
+    if (!user || !user.id) {
+        goto('/auth');
+        return;
+    }
+
     try {
         const fileNumber = sessionStorage.getItem('withdrawal_fileNumber');
         const rrr = sessionStorage.getItem('withdrawal_rrr');
@@ -33,7 +42,8 @@ onMount(async () => {
             WithdrawalDate: new Date().toISOString(),
             WithdrawalRequestDate: new Date().toISOString(),
             WithdrawalLetter: withdrawalLetter,
-            WithdrawalSupportingDocuments: supportingDocs
+            WithdrawalSupportingDocuments: supportingDocs,
+            UserId: user?.id || null  
         };
 
         const response = await fetch(`${baseURL}/api/files/withdrawal-request`, {

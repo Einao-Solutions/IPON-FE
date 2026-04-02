@@ -75,13 +75,13 @@
     try {
       loading = true;
       error = null;
-      console.log("Fetching performance data for:", {
-        registryType,
-        unit: selectedUnit,
-        periodType: selectedPeriodType,
-        periodValue: selectedPeriodValue,
-        year: selectedYear
-      });
+        // console.log("Fetching performance data for:", {
+        //   registryType,
+        //   unit: selectedUnit,
+        //   periodType: selectedPeriodType,
+        //   periodValue: selectedPeriodValue,
+        //   year: selectedYear
+        // });
       
       performanceData = await statisticsApi.getStaffPerformance(
         registryType,
@@ -90,10 +90,10 @@
         selectedPeriodValue,
         selectedYear
       );
-      console.log("✅ Performance data loaded:", performanceData);
+      // console.log("✅ Performance data loaded:", performanceData);
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to load performance data";
-      console.error("❌ Error loading performance data:", err);
+      // console.error("❌ Error loading performance data:", err);
     } finally {
       loading = false;
     }
@@ -105,7 +105,7 @@
     
     if (value && value !== "") {
       selectedUnit = parseInt(value) as ApplicationUnits;
-      console.log("Unit selected:", selectedUnit, selectedUnitName);
+      // console.log("Unit selected:", selectedUnit, selectedUnitName);
       searchQuery = "";
       loadPerformanceData();
     }

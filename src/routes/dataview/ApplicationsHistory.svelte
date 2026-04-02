@@ -967,6 +967,7 @@
             FileId: withdrawalFileId,
             Approve: approve,
             Comment: withdrawalComment,
+            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId
           }),
         },
       );

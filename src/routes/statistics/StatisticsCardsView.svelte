@@ -5,18 +5,32 @@
   export let userRoles: number[] = [];
   export let onCardClick: (registry: string) => void;
 
-  // Determine grid columns based on user role
-  let gridCols = "md:grid-cols-3";
-  
-  // If user is Finance role only, show only Trademark (1 column)
-  if (userRoles.includes(UserRoles.Finance) && !userRoles.includes(UserRoles.SuperAdmin)) {
-    gridCols = "md:grid-cols-1 max-w-md mx-auto";
-  }
+  $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
+                    userRoles.includes(UserRoles.Minister) || 
+                    userRoles.includes(UserRoles.SuperAdmin);
+
+  $: showTrademark = isFullAccess || 
+                     userRoles.includes(UserRoles.TrademarkRegistrar) || 
+                     userRoles.includes(UserRoles.Finance);
+
+  $: showPatent = isFullAccess || 
+                  userRoles.includes(UserRoles.PatentDesignRegistrar) || 
+                  userRoles.includes(UserRoles.Finance);
+
+  $: showDesign = isFullAccess || 
+                  userRoles.includes(UserRoles.PatentDesignRegistrar) || 
+                  userRoles.includes(UserRoles.Finance);
+
+  $: visibleCount = [showTrademark, showPatent, showDesign].filter(Boolean).length;
+  $: gridCols = visibleCount === 1 ? "md:grid-cols-1 max-w-md mx-auto" 
+              : visibleCount === 2 ? "md:grid-cols-2 max-w-2xl mx-auto" 
+              : "md:grid-cols-3";
 </script>
 
 <div class="grid grid-cols-1 {gridCols} gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
   
   <!-- Trademark Card -->
+  {#if showTrademark}
   <button
     on:click={() => onCardClick('Trademark')}
     class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
@@ -49,8 +63,10 @@
       </div>
     </div>
   </button>
+  {/if}
 
   <!-- Patent Card -->
+  {#if showPatent}
   <button
     on:click={() => onCardClick('Patent')}
     class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
@@ -83,8 +99,10 @@
       </div>
     </div>
   </button>
+  {/if}
 
   <!-- Design Card -->
+  {#if showDesign}
   <button
     on:click={() => onCardClick('Design')}
     class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
@@ -117,5 +135,6 @@
       </div>
     </div>
   </button>
+  {/if}
 
 </div>
