@@ -3,6 +3,8 @@
     import { goto } from '$app/navigation';
     import { baseURL } from '$lib/helpers';
     import { fade, fly } from 'svelte/transition';
+    import { loggedInUser } from '$lib/store';
+    import { get } from 'svelte/store';
 
     let isLoading = true;
     let error: string | null = null;
@@ -12,6 +14,12 @@
     let subMessageVisible = false;
 
     onMount(async () => {
+        const user = get(loggedInUser);
+        if (!user || !user.id) {
+            goto('/auth');
+            return;
+        }
+
         try {
             const fileNumber = sessionStorage.getItem('publicationstatusupdate_fileNumber');
             const publicationDate = sessionStorage.getItem('publicationstatusupdate_publicationDate');
@@ -29,7 +37,8 @@
                 fileId: fileNumber,
                 PublicationDate: publicationDate,
                 AttachmentFiles: attachments,
-                PaymentRRR: rrr
+                PaymentRRR: rrr,
+                UserId: user?.id || null  // Added this line
             };
 
             const response = await fetch(`${baseURL}/api/files/PublicationStatusUpdate`, {
