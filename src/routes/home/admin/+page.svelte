@@ -11,6 +11,8 @@
   import UserSearch from "./components/UserSearch.svelte";
   import UserSearchResults from "./components/UserSearchResults.svelte";
   import { Toaster, toast } from "svelte-sonner";
+  import { he } from "@faker-js/faker";
+  import { loggedInToken, loggedInUser } from "$lib/store";
 
   let showSearchDialog = false;
   let showUserSearch = false;
@@ -72,6 +74,12 @@
     try {
       const response = await fetch(
         `${baseURL}/api/admin/GetUserByEmail?email=${encodeURIComponent(email)}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${$loggedInToken}`,
+          },
+        },
       );
 
       if (!response.ok) {
@@ -88,15 +96,21 @@
 
   async function resetUserPassword(email: string) {
     try {
-      const response = await fetch(`${baseURL}/api/admin/ResetPassword?email=${encodeURIComponent(email)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }
-      });
+      const response = await fetch(
+        `${baseURL}/api/admin/ResetPassword?email=${encodeURIComponent(email)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${$loggedInToken}`,
+          },
+        },
+      );
 
       if (!response.ok) {
         toast.error("Failed to reset password");
       }
-      toast.success("Password Reset Succesful")
+      toast.success("Password Reset Succesful");
       return true;
     } catch (error) {
       console.error("Error resetting password:", error);

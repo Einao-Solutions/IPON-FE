@@ -62,7 +62,7 @@
 				{#if resetSuccess}
 					<div class="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-md" transition:fade={{ duration: 200 }}>
 						<Icon icon="mdi:check-circle" width="1.2em" height="1.2em" class="text-green-600" />
-						<p class="text-sm text-green-700">Password reset email sent successfully.</p>
+						<p class="text-sm text-green-700">Password reset successfully.</p>
 					</div>
 				{/if}
 
