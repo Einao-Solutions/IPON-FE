@@ -36,17 +36,17 @@
     loading = true;
     error = null;
     ctcDetails = null;
-    
+
     try {
       const response = await fetch(
-        `${baseURL}/api/files/GetPatentCtcDetails?fileId=${encodeURIComponent(fileId)}`
+        `${baseURL}/api/files/GetDesignCtcDetails?fileId=${encodeURIComponent(fileId)}`
       );
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || "Failed to fetch CTC details");
       }
-      
+
       const data = await response.json();
       ctcDetails = data.data;
     } catch (e) {
@@ -60,12 +60,11 @@
   async function handleCTCDecision(approve: boolean) {
     submitting = true;
     try {
-      // Get logged-in user ID
       const user = get(loggedInUser);
       const appUserId = user?.id || null;
 
       const response = await fetch(
-        `${baseURL}/api/files/ctc-decision`, 
+        `${baseURL}/api/files/DesignCtcDecision`,
         {
           method: "POST",
           headers: {
@@ -76,20 +75,20 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
-            appUserId: appUserId,
+            UserId: appUserId,
           }),
         }
       );
-      
+
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || "Failed to submit decision");
-      
-      const successMessage = approve 
-        ? "Patent CTC application has been successfully approved." 
-        : "Patent CTC application has been successfully rejected.";
+
+      const successMessage = approve
+        ? "Design CTC application has been successfully approved."
+        : "Design CTC application has been successfully rejected.";
       toast.success(successMessage);
       open = false;
-      
+
       setTimeout(() => {
         location.reload();
       }, 3000);
@@ -121,17 +120,17 @@
   >
     <Dialog.Header class="flex-shrink-0">
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
-        <Icon icon="mdi:file-certificate" class="text-blue-600" />
-        Patent Certified True Copy (CTC) Details
+        <Icon icon="mdi:file-certificate" class="text-purple-600" />
+        Design Certified True Copy (CTC) Details
       </Dialog.Title>
       <Dialog.Description>
-        Review and process patent CTC application details.
+        Review and process design CTC application details.
       </Dialog.Description>
     </Dialog.Header>
 
     <div class="flex-1 overflow-auto p-4">
       {#if loading}
-        <div class="flex items-center gap-2 text-blue-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-purple-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
@@ -168,13 +167,13 @@
           <!-- Requested Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block">
-              <Icon icon="mdi:file-document-multiple" class="inline text-blue-600 mr-2" />
+              <Icon icon="mdi:file-document-multiple" class="inline text-purple-600 mr-2" />
               Requested Certified True Copy Attachments:
             </Label>
             {#if ctcDetails.requestedAttachments && Array.isArray(ctcDetails.requestedAttachments) && ctcDetails.requestedAttachments.length > 0}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {#each ctcDetails.requestedAttachments as attachment, attachmentIndex}
-                     {#if attachment && attachment.urls && Array.isArray(attachment.urls) && attachment.urls.length > 0}
+                  {#if attachment && attachment.urls && Array.isArray(attachment.urls) && attachment.urls.length > 0}
                     {#each attachment.urls as fileUrl, index}
                       {#if fileUrl}
                         <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -214,15 +213,15 @@
           </div>
 
           <!-- Summary Information -->
-          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <div class="flex items-start gap-3">
-              <Icon icon="mdi:information" width="1.5em" height="1.5em" class="text-blue-600 mt-0.5" />
+              <Icon icon="mdi:information" width="1.5em" height="1.5em" class="text-purple-600 mt-0.5" />
               <div>
-                <p class="font-semibold text-blue-900">CTC Application Summary</p>
-                <p class="text-sm text-blue-800 mt-1">
-                  This applicant has requested certified true copies of 
+                <p class="font-semibold text-purple-900">CTC Application Summary</p>
+                <p class="text-sm text-purple-800 mt-1">
+                  This applicant has requested certified true copies of
                   <strong>{ctcDetails.requestedAttachments?.length || 0}</strong>
-                  attachment{ctcDetails.requestedAttachments?.length !== 1 ? 's' : ''} for file 
+                  attachment{ctcDetails.requestedAttachments?.length !== 1 ? 's' : ''} for file
                   <strong>{ctcDetails.fileId}</strong>.
                 </p>
               </div>
@@ -238,7 +237,7 @@
               id="ctc-comment"
               bind:value={comment}
               rows={3}
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-200"
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-purple-200"
               placeholder="Enter your review comment and decision reason..."
               required
               disabled={isReadOnly}

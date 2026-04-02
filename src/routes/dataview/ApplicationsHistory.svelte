@@ -55,6 +55,7 @@
   import PatentMergerDialog from "./Components/PatentMergerDialog.svelte";
   import PatentMortgageDialog from "./Components/PatentMortgageDialog.svelte";
   import PatentCTCDialog from "./Components/PatentCTCDialog.svelte";
+  import DesignCTCDialog from "./Components/DesignCTCDialog.svelte";
   import PatentAmendmentDialog from "./Components/PatentAmendmentDialog.svelte";
   import DesignMortgageDialog from "./Components/DesignMortgageDialog.svelte";
   import DesignAssignmentDialog from "./Components/DesignAssignmentDialog.svelte";
@@ -167,6 +168,11 @@
   let designMergerFileId = "";
   let designMergerApplicationId = "";
 
+  // Design CTC Modal State
+  let showDesignCTCDialog = false;
+  let designCTCFileId = "";
+  let designCTCApplicationId = "";
+
   // Patent Dialog Statuses
   let patentAssignmentStatus: number | null = null;
   let patentLicenseStatus: number | null = null;
@@ -178,6 +184,7 @@
   let designMortgageStatus: number | null = null;
   let designAssignmentStatus: number | null = null;
   let designMergerStatus: number | null = null;
+  let designCTCStatus: number | null = null;
   //let patentCTCStatus: number | null = null;
 
   // Appeal Requests
@@ -1077,6 +1084,18 @@
     designMortgageApplicationId = applicationId;
     designMortgageStatus = status;
     showDesignMortgageDialog = true;
+  }
+
+  // Open design CTC dialog
+  function openDesignCTCDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+  ) {
+    designCTCFileId = fileId;
+    designCTCApplicationId = applicationId;
+    designCTCStatus = status;
+    showDesignCTCDialog = true;
   }
 
   // Open patent CTC dialog
@@ -2432,6 +2451,14 @@
   status={patentCTCStatus}
 />
 
+<!-- Design CTC Dialog -->
+<DesignCTCDialog
+  bind:open={showDesignCTCDialog}
+  fileId={designCTCFileId}
+  applicationId={designCTCApplicationId}
+  status={designCTCStatus}
+/>
+
 <!-- Patent Amendment Dialog -->
 <PatentAmendmentDialog
   bind:open={showPatentAmendmentDialog}
@@ -2701,6 +2728,19 @@
                     <DropdownMenu.Item
                       on:click={() =>
                         openPatentMortgageDialog(
+                          fileData.fileId,
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Design CTC Application -->
+                  {#if application.applicationType === FormApplicationTypes.CertifiedTrueCopy && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() =>
+                        openDesignCTCDialog(
                           fileData.fileId,
                           application.id,
                           application.currentStatus ?? 0,

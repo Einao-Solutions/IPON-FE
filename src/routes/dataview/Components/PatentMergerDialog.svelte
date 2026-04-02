@@ -168,7 +168,7 @@
               <Label class="font-semibold">Filing Date:</Label>
               <p class="mt-1 p-2 bg-gray-50 rounded border">
                 {mergerDetails.filingDate
-                  ? new Date(mergerDetails.filingDate).toLocaleDateString()
+                  ? (() => { const [d, m, y] = mergerDetails.filingDate.split(/[\/ :]/); return new Date(+y, +m - 1, +d).toLocaleDateString(); })()
                   : "N/A"}
               </p>
             </div>

@@ -164,6 +164,7 @@
 				fileId, rrr: paymentId,
 				assignmentDate: now.toISOString(),
 				assignmentRequestDate: now.toISOString(),
+				UserId: $loggedInUser?.id || null,
 				assignmentDeed: assignmentDeedData,
 				DesignAssignmentSupportingDocuments: supportingDocsData,
 				oldAssignorName: applicantName, oldAssignorEmail: applicantEmail, oldAssignorPhone: applicantPhone,

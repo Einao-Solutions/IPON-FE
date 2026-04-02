@@ -40,6 +40,7 @@
     fileTypes: FileTypes;
     titleOfInvention?: string;
     fileOrigin?: string;
+    titleOfDesign?: string;
   }
 
   let results: SearchResult[] = [];
@@ -411,7 +412,7 @@
                 <Table.Cell>{result.patentType}</Table.Cell>
                 <Table.Cell>{result.fileApplicant}</Table.Cell>
               {:else if isDesign}
-                <Table.Cell>{result.titleOfInvention || result.titleOfTradeMark}</Table.Cell>
+                <Table.Cell>{result.titleOfDesign}</Table.Cell>
                 <Table.Cell>{result.fileOrigin}</Table.Cell>
                 <Table.Cell>{result.fileApplicant}</Table.Cell>
               {:else}
