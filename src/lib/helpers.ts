@@ -473,6 +473,7 @@ export enum UserRoles {
   PatentDesignRegistrar,
   Finance,
   PermSec,
+  HeadOfUnit,
   Minister,
   Tech,
   SuperAdmin,

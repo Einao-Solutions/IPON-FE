@@ -17,6 +17,7 @@
   import * as Select from "$lib/components/ui/select/index.js";
   import dayjs from 'dayjs';
   import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+  import { User } from "lucide-svelte";
   dayjs.extend(quarterOfYear);
 
   let notifications = writable<NotificationsType | null>(null);
@@ -167,7 +168,21 @@
       ) {
         menus = menus.filter((x) => x.location !== "Statistics");
       }
-
+      if (
+        !$loggedInUser.userRoles.some((role) =>
+          [
+            UserRoles.HeadOfUnit,
+            UserRoles.Finance,
+            UserRoles.PermSec,
+            UserRoles.Minister,
+            UserRoles.Tech,
+            UserRoles.SuperAdmin,
+            UserRoles.TrademarkRegistrar,
+          ].includes(role),
+        )
+      ) {
+        menus = menus.filter((x) => x.location !== "journal");
+      }
       if (
         !$loggedInUser.userRoles.some((role) =>
           [
