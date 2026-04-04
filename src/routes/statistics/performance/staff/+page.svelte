@@ -75,13 +75,13 @@
     try {
       loading = true;
       error = null;
-      console.log("Fetching performance data for:", {
-        registryType,
-        unit: selectedUnit,
-        periodType: selectedPeriodType,
-        periodValue: selectedPeriodValue,
-        year: selectedYear
-      });
+        // console.log("Fetching performance data for:", {
+        //   registryType,
+        //   unit: selectedUnit,
+        //   periodType: selectedPeriodType,
+        //   periodValue: selectedPeriodValue,
+        //   year: selectedYear
+        // });
       
       performanceData = await statisticsApi.getStaffPerformance(
         registryType,
@@ -90,10 +90,10 @@
         selectedPeriodValue,
         selectedYear
       );
-      console.log("✅ Performance data loaded:", performanceData);
+      // console.log("✅ Performance data loaded:", performanceData);
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to load performance data";
-      console.error("❌ Error loading performance data:", err);
+      // console.error("❌ Error loading performance data:", err);
     } finally {
       loading = false;
     }
@@ -105,7 +105,7 @@
     
     if (value && value !== "") {
       selectedUnit = parseInt(value) as ApplicationUnits;
-      console.log("Unit selected:", selectedUnit, selectedUnitName);
+      // console.log("Unit selected:", selectedUnit, selectedUnitName);
       searchQuery = "";
       loadPerformanceData();
     }
@@ -369,7 +369,7 @@
             </div>
           </div>
 
-          <!-- Card 2: Total Applications Treated -->
+          <!-- Card 2: Total Applications Processed -->
           <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
             <div class="flex items-center gap-3">
               <div class="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
@@ -380,7 +380,7 @@
                   {totalApplicationsTreated.toLocaleString()}
                 </div>
                 <div class="text-xs font-medium text-gray-600">
-                  Total Applications Treated
+                  Total Applications Processed
                 </div>
               </div>
             </div>
@@ -437,7 +437,7 @@
             {selectedUnitName} - Staff Members
           </h2>
           <p class="text-sm text-gray-600 mt-1">
-            Total applications treated by unit: {totalApplicationsTreated}
+            Total applications processed by unit: {totalApplicationsTreated}
           </p>
         </div>
 

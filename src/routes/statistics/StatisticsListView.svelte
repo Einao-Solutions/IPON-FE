@@ -17,19 +17,23 @@
     goto(`/statistics/performance/units?registryType=${selectedRegistry}`);
   }
 
-  // Determine which sections to show based on user role
-  function getSectionsForRole(): Array<{
-    id: string,
-    title: string,
-    description: string,
-    icon: string,
-    iconColor: string,
-    iconBg: string
-  }> {
+  function navigateToFinancialStatistics() {
+    goto(`/statistics/financial?registryType=${selectedRegistry}`);
+  }
+
+  $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
+                    userRoles.includes(UserRoles.Minister) || 
+                    userRoles.includes(UserRoles.SuperAdmin);
+
+  $: isFinanceOnly = userRoles.includes(UserRoles.Finance) && !isFullAccess;
+
+  // ✅ Pass isFinanceOnly as parameter so $: can track it
+  $: sections = getSectionsForRole(isFinanceOnly);
+
+  function getSectionsForRole(financeOnly: boolean) {
     const sections = [];
     
-    // Performance section - Everyone except Finance (but SuperAdmin sees all)
-    if (!userRoles.includes(UserRoles.Finance) || userRoles.includes(UserRoles.SuperAdmin)) {
+    if (!financeOnly) {
       sections.push({
         id: "performance",
         title: "Performance Statistics",
@@ -40,8 +44,7 @@
       });
     }
     
-    // Operational section - Everyone except Finance (but SuperAdmin sees all)
-    if (!userRoles.includes(UserRoles.Finance) || userRoles.includes(UserRoles.SuperAdmin)) {
+    if (!financeOnly) {
       sections.push({
         id: "operational",
         title: "Operational Statistics",
@@ -52,7 +55,6 @@
       });
     }
     
-    // Financial section - PermSec, Minister, Finance, and SuperAdmin
     if (
       userRoles.includes(UserRoles.PermSec) ||
       userRoles.includes(UserRoles.Minister) ||
@@ -72,7 +74,7 @@
     return sections;
   }
 
-  const sections = getSectionsForRole();
+//  $: sections = getSectionsForRole(isFinanceOnly);
 </script>
 
 <div class="space-y-6">
@@ -105,6 +107,7 @@
               <p class="text-sm text-slate-600">{section.description}</p>
             </div>
           </div>
+          
         </Accordion.Trigger>
         <Accordion.Content class="px-6 py-6 border-t bg-white">
           <div class="space-y-6">
@@ -170,14 +173,42 @@
 
             {:else if section.id === "operational"}
               <!-- Operational Statistics Content -->
-              <div class="space-y-4">
-                <p class="text-sm text-gray-600">Operational statistics content will be displayed here.</p>
+              <div class="flex flex-col items-center justify-center py-8 text-center">
+                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
+                  <Icon icon="mdi:clock-outline" class="h-8 w-8 text-amber-500" />
+                </div>
+                <h3 class="text-lg font-semibold text-slate-800 mb-2">Coming Soon</h3>
+                <p class="text-sm text-gray-500">Operational statistics are currently under development</p>
+                <span class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                  🚧 In Development
+                </span>
               </div>
 
             {:else if section.id === "financial"}
               <!-- Financial Statistics Content -->
               <div class="space-y-4">
-                <p class="text-sm text-gray-600">Financial statistics content will be displayed here.</p>
+                <p class="text-sm text-gray-600 mb-4">
+                  Choose a financial view to analyze {selectedRegistry} registry data:
+                </p>
+                <button
+                  on:click={navigateToFinancialStatistics}
+                  class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left w-full"
+                >
+                  <div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div class="relative z-10">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <Icon icon="mdi:cash-multiple" class="text-2xl text-green-600" />
+                    </div>
+                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Revenue Comparison</h4>
+                    <p class="text-sm text-gray-600 mb-4">
+                      Compare government fees and payment volumes across custom periods — by month, quarter, year or date range
+                    </p>
+                    <div class="flex items-center text-green-600 text-sm font-medium">
+                      <span>View Details</span>
+                      <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
               </div>
 
             {/if}

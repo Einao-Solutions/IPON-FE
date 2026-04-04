@@ -477,6 +477,8 @@ export enum UserRoles {
   Minister,
   Tech,
   SuperAdmin,
+  EinaoFinance,
+  Pebec
 }
 
 export enum FilingType {
