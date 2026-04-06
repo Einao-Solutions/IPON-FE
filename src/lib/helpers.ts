@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
-export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -341,7 +341,7 @@ export enum ApplicationLetters {
   WithdrawalRequestApproval = 52,
   WithdrawalRequestRefusal = 53,
   PatentAssignmentAcknowledgement = 54,
-  PatentLicenseAcknowledgement = 55,  
+  PatentLicenseAcknowledgement = 55,
   PatentMortgageAcknowledgement = 56,
   PatentMergerAcknowledgement = 57,
   PatentCtcAcknowledgement = 58,
@@ -875,8 +875,24 @@ export function mapRoleToString(type: UserRoles) {
       return "Tech/Support";
     case UserRoles.SuperAdmin:
       return "Super Admin";
-    default:
+    case UserRoles.HeadOfUnit:
+      return "Head Of Unit";
+    case UserRoles.AppealExaminer:
+      return "Appeal Examiner";
+    case UserRoles.EinaoFinance:
+      return "Einao Finance";
+    case UserRoles.Finance:
+      return "Finance";
+    case UserRoles.Pebec:
+      return "PEBEC";
+    case UserRoles.PermSec:
+      return "Permanent Secretary";
+    case UserRoles.TrademarkPublication:
+      return "Trademark Publication";
+    case UserRoles.User:
       return "User";
+    default:
+      return "Unknown";
   }
 }
 
@@ -889,7 +905,7 @@ export function mapAccountTypeToString(type: AccountType) {
     case AccountType.Officer:
       return "Back Office";
     case AccountType.Tech:
-      return "Tech/Support";  
+      return "Tech/Support";
     default:
       return "Unknown";
   }
@@ -940,7 +956,9 @@ export function mapUnitToString(unit: ApplicationUnits): string {
 }
 
 // Get units available for each file type
-export function getUnitsForFileType(fileType: FilingType): { unitId: number; unitName: string }[] {
+export function getUnitsForFileType(
+  fileType: FilingType,
+): { unitId: number; unitName: string }[] {
   // Trademark has all 6 units (1-6)
   if (fileType === FilingType.Trademark) {
     return [
@@ -952,7 +970,7 @@ export function getUnitsForFileType(fileType: FilingType): { unitId: number; uni
       { unitId: 6, unitName: "Certificate Unit" },
     ];
   }
-  
+
   // Patent and Design only have 3 units (1, 2, 3)
   // Certificate is unit 3 for Patent/Design
   if (fileType === FilingType.Patent || fileType === FilingType.Design) {
@@ -964,5 +982,4 @@ export function getUnitsForFileType(fileType: FilingType): { unitId: number; uni
   }
 
   return [];
-
 }

@@ -1,35 +1,27 @@
 <script lang="ts">
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import PageData = App.PageData;
+	import type { PageData } from './$types';
 	import { onMount } from 'svelte';
 	import AddUser from './AddUser.svelte';
 	import Icon from '@iconify/svelte';
 	import UsersTable from './UsersTable.svelte';
-	import { baseURL, type UsersType } from '$lib/helpers';
+	import { baseURL } from '$lib/helpers';
 
 	export let data:PageData|null;
 	let showAddUser:boolean=false;
-	let addUser:AddUser
+	let addUser:any;
 	let isAdmin:boolean=false;
 	let isLoading=false;
-	let userCreationData={}
-	let usersTable:UsersTable|null=null;
-	let usersList= {  }
+	let userCreationData:any={}
+	let usersTable:any=null;
+	let usersList:any= {}
 	onMount(async()=>{
 			isLoading=true;
 			usersTable = (await import ("./UsersTable.svelte")).default;
 			await loadData()
-			// await getAllUsers()
-			// usersList= {
-			// 	usersList:data.usersList
-			// }
-		// setTimeout(()=>{
-		// 	isLoading=false;
-		// 	},
-		// 2000
-		// )
-		isAdmin = data?.isAdmin;
+			
+		isAdmin = data?.isAdmin ?? false;
 	})
 async function addNewUser()
 {
@@ -41,9 +33,9 @@ async function addNewUser()
 	showAddUser=true;
 }
 let skip=0; let take=10; let name="";
-let usersdata={}
+let usersdata:any={}
 async function loadData(){
-		const response=await fetch(`${baseURL}/api/users/LoadUsers`, {
+		const response=await fetch(`${baseURL}/api/users/GetAllUsers`, {
 			method: 'POST',
 			headers:{
 				'Content-Type':'application/json'
@@ -54,28 +46,31 @@ async function loadData(){
 			})
 		})
 	usersList =await response.json()
-	var dt=(usersList.result as UsersType[]).map((e)=> {
-		return {'sn':usersList.result.indexOf(e),
-		'name':e.firstName + ' ' + e.lastName,
-		'email':e.email,
-		'id':e.id}
+	var dt=usersList.users.map((e:any, i:number)=> {
+		return {'sn': i,
+		'name': e.name,
+		'email': e.email,
+		'id': e.id}
 	});
 	usersdata.usersList=dt;
-	usersdata.count=usersList.count;
+	usersdata.count=usersList.totalCount;
 		isLoading=false;
 }
 async function getAllUsers(){
-		const response=await fetch(`${baseURL}/api/users/GetAllUsers`)
+		const response=await fetch(`${baseURL}/api/users/GetAllUsers`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ skip: 0, take: 10 })
+		})
 		const data = await response.json();
-		usersList = data.result;
-		var dt=(usersList.result as UsersType[]).map((e)=> {
-		return {'sn':usersList.result.indexOf(e),
-		'name':e.firstName + ' ' + e.lastName,
-		'email':e.email,
-		'id':e.id}
-	});
-	usersdata.usersList=dt;
-	usersdata.count=usersList.count;
+		var dt=data.users.map((e:any, i:number)=> {
+			return {'sn': i,
+			'name': e.name,
+			'email': e.email,
+			'id': e.id}
+		});
+		usersdata.usersList=dt;
+		usersdata.count=data.totalCount;
 	}
 </script>
 
