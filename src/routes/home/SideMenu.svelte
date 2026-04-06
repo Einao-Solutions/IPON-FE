@@ -103,9 +103,9 @@
     },
     { icon: "mdi:book-open-variant", location: "Resources" },
     { icon: "mdi:help-circle-outline", location: "Support" },
-    // { icon: "mdi:gavel", location: "Opposition" },
+    { icon: "mdi:gavel", location: "Opposition" },
     { icon: "mdi:chart-line", location: "Finance" },
-    // { icon: "mdi:chart-bar", location: "Statistics" },
+    { icon: "mdi:chart-bar", location: "Statistics" },
     { icon: "mdi:chart-box-outline", location: "Performance" },
     { icon: "mdi:account-group-outline", location: "Users" },
     // {
