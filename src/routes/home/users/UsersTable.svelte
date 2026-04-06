@@ -19,6 +19,7 @@
   import { Label } from "$lib/components/ui/label";
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
+  import { loggedInUser } from "$lib/store";
 
   interface UserTableRow {
     sn: number;
@@ -229,49 +230,51 @@
           </div>
         </div>
       </div>
-      <div>
-        <Label class="text-sm font-medium">Update Roles</Label>
-        <p class="text-xs text-muted-foreground mt-1 mb-3">
-          Select all that apply
-        </p>
-        <div class="grid grid-cols-2 gap-2">
-          {#each getNumericRoles() as role}
-            <Button
-              variant="outline"
-              size="sm"
-              class="justify-start text-xs {$updatedRoles.includes(role)
-                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'hover:bg-accent'}"
-              on:click={() => {
-                if ($updatedRoles.includes(role)) {
-                  updatedRoles.update((x) => {
-                    x.splice(x.indexOf(role), 1);
-                    return [...x];
-                  });
-                } else {
-                  updatedRoles.update((t) => {
-                    t.push(role);
-                    return [...t];
-                  });
-                }
-              }}
-            >
-              {mapRoleToString(role)}
-            </Button>
-          {/each}
+      {#if $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin)}
+        <div>
+          <Label class="text-sm font-medium">Update Roles</Label>
+          <p class="text-xs text-muted-foreground mt-1 mb-3">
+            Select all that apply
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            {#each getNumericRoles() as role}
+              <Button
+                variant="outline"
+                size="sm"
+                class="justify-start text-xs {$updatedRoles.includes(role)
+                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  : 'hover:bg-accent'}"
+                on:click={() => {
+                  if ($updatedRoles.includes(role)) {
+                    updatedRoles.update((x) => {
+                      x.splice(x.indexOf(role), 1);
+                      return [...x];
+                    });
+                  } else {
+                    updatedRoles.update((t) => {
+                      t.push(role);
+                      return [...t];
+                    });
+                  }
+                }}
+              >
+                {mapRoleToString(role)}
+              </Button>
+            {/each}
+          </div>
+          <Button class="w-full mt-4" on:click={() => saveRoles()}>
+            {#if isUpdatingUser}
+              <Icon
+                icon="line-md:loading-loop"
+                width="1rem"
+                height="1rem"
+                class="mr-2"
+              />
+            {/if}
+            Update User
+          </Button>
         </div>
-        <Button class="w-full mt-4" on:click={() => saveRoles()}>
-          {#if isUpdatingUser}
-            <Icon
-              icon="line-md:loading-loop"
-              width="1rem"
-              height="1rem"
-              class="mr-2"
-            />
-          {/if}
-          Update User
-        </Button>
-      </div>
+      {/if}
     </div>
   </Sheet.Content>
 </Sheet.Root>
