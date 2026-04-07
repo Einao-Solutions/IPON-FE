@@ -21,6 +21,10 @@
     goto(`/statistics/financial?registryType=${selectedRegistry}`);
   }
 
+  function navigateToOperationalStatistics() {
+    goto(`/statistics/operational?registryType=${selectedRegistry}`);
+  }
+
   $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
                     userRoles.includes(UserRoles.Minister) || 
                     userRoles.includes(UserRoles.SuperAdmin);
@@ -173,15 +177,29 @@
 
             {:else if section.id === "operational"}
               <!-- Operational Statistics Content -->
-              <div class="flex flex-col items-center justify-center py-8 text-center">
-                <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mb-4">
-                  <Icon icon="mdi:clock-outline" class="h-8 w-8 text-amber-500" />
-                </div>
-                <h3 class="text-lg font-semibold text-slate-800 mb-2">Coming Soon</h3>
-                <p class="text-sm text-gray-500">Operational statistics are currently under development</p>
-                <span class="mt-3 inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                  🚧 In Development
-                </span>
+              <div class="space-y-4">
+                <p class="text-sm text-gray-600 mb-4">
+                  Choose an operational view to analyze {selectedRegistry} registry data:
+                </p>
+                <button
+                  on:click={navigateToOperationalStatistics}
+                  class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left w-full"
+                >
+                  <div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div class="relative z-10">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <Icon icon="mdi:cog-outline" class="text-2xl text-green-600" />
+                    </div>
+                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Filing Comparison</h4>
+                    <p class="text-sm text-gray-600 mb-4">
+                      Compare filing volumes and operational breakdowns across custom periods — by month, quarter, year or date range
+                    </p>
+                    <div class="flex items-center text-green-600 text-sm font-medium">
+                      <span>View Details</span>
+                      <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
               </div>
 
             {:else if section.id === "financial"}
