@@ -38,7 +38,13 @@
     paymentTypes: FinancePaymentTypeResultDto[];
   }
 
+  // interface FinanceComparisonRequestDto {
+  //   RegistryType: string;
+  //   Periods: FinancePeriodRequestDto[];
+  // }
+
   interface FinanceComparisonDataDto {
+    RegistryType: string;
     periods: FinancePeriodResultDto[];
   }
 
@@ -110,6 +116,7 @@
 
     try {
       const dto = {
+        RegistryType: registryType,
         Periods: periods.map(({ _id, ...p }) => ({
           ...p,
           Label: p.Label || undefined
