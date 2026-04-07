@@ -8,9 +8,17 @@
     decodeUser,
     type NotificationsType,
     UserRoles,
+    FileTypes,
   } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { writable } from "svelte/store";
+  import { Button } from "$lib/components/ui/button";
+  import * as Dialog from "$lib/components/ui/dialog";
+  import * as Select from "$lib/components/ui/select/index.js";
+  import dayjs from 'dayjs';
+  import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+  import { User } from "lucide-svelte";
+  dayjs.extend(quarterOfYear);
 
   let notifications = writable<NotificationsType | null>(null);
   let notificationsLoading = false;
@@ -19,6 +27,51 @@
   let claimRequestsCount = 0;
   let oppsCount = 0;
   let showSystemNotifications = false;
+  // Journal modal state
+  let showJournalModal: boolean = false;
+  let journalCurrentYear: number = dayjs().year();
+  let journalIsFetching: boolean = false;
+  let journalSelectedType: undefined | string;
+  let journalSelectedYear: number;
+  let journalSelectedQuarter: number;
+  let journalAllYears: number[] = Array(journalCurrentYear + 1 - 2020).fill(0).map((_, i) => 2020 + i);
+  let journalQuarters = [1, 2, 3, 4];
+
+  async function fetchJournalData() {
+    if (!journalSelectedQuarter || !journalSelectedYear || !journalSelectedType) { return; }
+    const startDate = dayjs(journalSelectedYear.toString()).set('date', 1).quarter(journalSelectedQuarter).format().split("T")[0];
+    const endDate = dayjs(journalSelectedYear.toString()).set('date', 1).quarter(journalSelectedQuarter + 1).format().split("T")[0];
+    const fileType = journalSelectedType == "Patent" ? 0 : journalSelectedType == "Design" ? 1 : journalSelectedType == "Trademark" ? 2 : undefined;
+    if (fileType === undefined) { return; }
+    journalIsFetching = true;
+    try {
+      const queryResult = await fetch(`${baseURL}/api/publication/GetPublication?start=${startDate}&end=${endDate}&type=${fileType}`);
+      if (queryResult.ok) {
+        const dataBlob = await queryResult.blob();
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = 'journal.pdf';
+        link.click();
+      } else {
+        console.error('Failed to fetch publication', queryResult.status, await queryResult.text());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      journalIsFetching = false;
+    }
+  }
+
+  function handleJournalYearChange(selectin: any) {
+    journalSelectedYear = Number(selectin?.value);
+  }
+  function handleJournalQuarterChange(selectin: any) {
+    journalSelectedQuarter = Number(selectin?.value);
+  }
+  function handleJournalTypeChange(selectin: any) {
+    journalSelectedType = selectin?.value as string;
+  }
+
   let systemNotification = {
     type: "info",
     title: "New Features",
@@ -35,7 +88,19 @@
 
   let menus = [
     { icon: "radix-icons:dashboard", location: "Dashboard" },
-    { icon: "mdi:file-document-multiple-outline", location: "Publications" },
+    {
+      icon: "mdi:file-document-multiple-outline",
+      location: "Publications",
+      name: "Publications",
+      submenus: [
+        // { icon: "mdi:book-open-page-variant", name: "Journal", location: "journal" },
+        {
+          icon: "mdi:file-document-multiple-outline",
+          name: "Publications",
+          location: "trademarkpubs",
+        },
+      ],
+    },
     { icon: "mdi:book-open-variant", location: "Resources" },
     { icon: "mdi:help-circle-outline", location: "Support" },
     { icon: "mdi:gavel", location: "Opposition" },
@@ -103,7 +168,21 @@
       ) {
         menus = menus.filter((x) => x.location !== "Statistics");
       }
-
+      if (
+        !$loggedInUser.userRoles.some((role) =>
+          [
+            UserRoles.HeadOfUnit,
+            UserRoles.Finance,
+            UserRoles.PermSec,
+            UserRoles.Minister,
+            UserRoles.Tech,
+            UserRoles.SuperAdmin,
+            UserRoles.TrademarkRegistrar,
+          ].includes(role),
+        )
+      ) {
+        menus = menus.filter((x) => x.location !== "journal");
+      }
       if (
         !$loggedInUser.userRoles.some((role) =>
           [
@@ -182,9 +261,14 @@
     activeMenu = activeMenu === menuLocation ? null : menuLocation;
   }
 
-  function handleMenuClick(menu, submenu = null) {
+  function handleMenuClick(menu: any, submenu: any = null) {
     currentMenuView.set(submenu?.name || menu.location);
     if (submenu) {
+      // Open journal modal instead of navigating
+      if (submenu.location === "journal") {
+        showJournalModal = true;
+        return;
+      }
       activeSubmenu = submenu.name;
       goto(`/home/${submenu.location.toLowerCase()}`);
     } else if (!menu.submenus) {
@@ -360,13 +444,16 @@
           <div class="ml-10 mt-1 space-y-1">
             {#each menu.submenus as submenu}
               <button
-                class="w-full text-left block py-2 px-3 rounded-md text-base {activeSubmenu ===
+                class="w-full text-left flex items-center space-x-2 py-2 px-3 rounded-md text-base {activeSubmenu ===
                 submenu.name
                   ? 'font-medium text-[#287F71] bg-gray-50'
                   : 'text-slate-600 hover:bg-gray-50'}"
                 on:click={() => handleMenuClick(menu, submenu)}
               >
-                {submenu.name}
+                {#if submenu.icon}
+                  <Icon icon={submenu.icon} class="text-lg text-slate-500" />
+                {/if}
+                <span>{submenu.name}</span>
               </button>
             {/each}
           </div>
@@ -429,3 +516,59 @@
     </div>
   </div>
 </div>
+
+<!-- Journal Modal -->
+<Dialog.Root bind:open={showJournalModal}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Select year and Quarter</Dialog.Title>
+    </Dialog.Header>
+    <div class="flex flex-col justify-between space-y-5 items-center">
+      <Select.Root portal={null} onSelectedChange={handleJournalYearChange}>
+        <Select.Trigger class="w-[180px]">
+          <Select.Value placeholder="Select the year" />
+        </Select.Trigger>
+        <Select.Content>
+          <Select.Group>
+            <Select.Label>Years</Select.Label>
+            {#each journalAllYears as year}
+              <Select.Item value={year} label={year.toString()}>{year}</Select.Item>
+            {/each}
+          </Select.Group>
+        </Select.Content>
+        <Select.Input name="journalSelectedYear" bind:value={journalSelectedYear} />
+      </Select.Root>
+      <Select.Root portal={null} onSelectedChange={handleJournalQuarterChange}>
+        <Select.Trigger class="w-[180px]">
+          <Select.Value placeholder="Select the Quarter" />
+        </Select.Trigger>
+        <Select.Content>
+          <Select.Group>
+            <Select.Label>Quarters</Select.Label>
+            {#each journalQuarters as quarter}
+              <Select.Item value={quarter} label={`Q${quarter}`}>{`Q${quarter}`}</Select.Item>
+            {/each}
+          </Select.Group>
+        </Select.Content>
+        <Select.Input name="journalSelectedQuarter" bind:value={journalSelectedQuarter} />
+      </Select.Root>
+      <Select.Root portal={null} onSelectedChange={handleJournalTypeChange}>
+        <Select.Trigger class="w-[180px]">
+          <Select.Value placeholder="Select the Type" />
+        </Select.Trigger>
+        <Select.Content>
+          <Select.Group>
+            <Select.Label>Type</Select.Label>
+            {#each Object.keys(FileTypes).filter(s => isNaN(Number(s))) as type}
+              <Select.Item value={type} label={type}>{type}</Select.Item>
+            {/each}
+          </Select.Group>
+        </Select.Content>
+        <Select.Input name="journalSelectedType" bind:value={journalSelectedType} />
+      </Select.Root>
+      <Button on:click={fetchJournalData} class="w-[180px]" disabled={journalIsFetching}>
+        <Icon class={journalIsFetching ? '' : 'hidden'} icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+        Fetch</Button>
+    </div>
+  </Dialog.Content>
+</Dialog.Root>

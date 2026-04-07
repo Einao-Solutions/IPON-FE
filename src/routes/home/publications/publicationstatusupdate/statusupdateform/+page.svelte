@@ -3,6 +3,8 @@
     import { onMount } from 'svelte';
     import { baseURL } from '$lib/helpers';
     import { filesToAttachment } from "$lib/utils/patent";
+    import { loggedInUser } from '$lib/store';
+    import { get } from 'svelte/store';
 
     let fileNumber = '';
     let publicationDate = '';
@@ -12,8 +14,14 @@
     let success: string | null = null;
 
     onMount(() => {
-        const url = new URL(window.location.href);
-        fileNumber = url.searchParams.get('fileNumber') ?? '';
+        const user = get(loggedInUser);
+            if (!user || !user.id) {
+                goto('/auth');
+                return;
+            }
+            
+            const url = new URL(window.location.href);
+            fileNumber = url.searchParams.get('fileNumber') ?? '';
     });
 
     function detectFileType(fileId: string): number {
@@ -22,8 +30,6 @@
         if (/DS/i.test(fileId) || /DES/i.test(fileId)) return 1; // Design (adjust as needed)
         return 2; // Default to TradeMark if unsure
     }
-
-    const fileType = detectFileType(fileNumber);
 
     function handleFileChange(event: Event) {
         const files = (event.target as HTMLInputElement).files;
@@ -46,6 +52,9 @@
         }
         isSubmitting = true;
         try {
+
+            const fileType = detectFileType(fileNumber);
+            
             // Only send GET request with query params, no body!
             const response = await fetch(
                 `${baseURL}/api/files/GetPublicationStatusUpdateCost?fileId=${encodeURIComponent(fileNumber)}&fileType=${fileType}`,
