@@ -56,6 +56,7 @@
   import PatentMortgageDialog from "./Components/PatentMortgageDialog.svelte";
   import PatentCTCDialog from "./Components/PatentCTCDialog.svelte";
   import DesignCTCDialog from "./Components/DesignCTCDialog.svelte";
+  import TrademarkCTCDialog from "./Components/TrademarkCTCDialog.svelte";
   import PatentAmendmentDialog from "./Components/PatentAmendmentDialog.svelte";
   import DesignAmendmentDialog from "./Components/DesignAmendmentDialog.svelte";
   import DesignMortgageDialog from "./Components/DesignMortgageDialog.svelte";
@@ -178,6 +179,12 @@
   let showDesignCTCDialog = false;
   let designCTCFileId = "";
   let designCTCApplicationId = "";
+
+  // Trademark CTC Modal State
+  let showTrademarkCTCDialog = false;
+  let trademarkCTCFileId = "";
+  let trademarkCTCApplicationId = "";
+  let trademarkCTCStatus: number | null = null;
 
   // Patent Dialog Statuses
   let patentAssignmentStatus: number | null = null;
@@ -1115,6 +1122,18 @@
     patentCTCApplicationId = applicationId;
     patentCTCStatus = status;
     showPatentCTCDialog = true;
+  }
+
+  // Open trademark CTC dialog
+  function openTrademarkCTCDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+  ) {
+    trademarkCTCFileId = fileId;
+    trademarkCTCApplicationId = applicationId;
+    trademarkCTCStatus = status;
+    showTrademarkCTCDialog = true;
   }
 
   // Open design amendment dialog
@@ -2478,6 +2497,14 @@
   status={designCTCStatus}
 />
 
+<!-- Trademark CTC Dialog -->
+<TrademarkCTCDialog
+  bind:open={showTrademarkCTCDialog}
+  fileId={trademarkCTCFileId}
+  applicationId={trademarkCTCApplicationId}
+  status={trademarkCTCStatus}
+/>
+
 <!-- Patent Amendment Dialog -->
 <PatentAmendmentDialog
   bind:open={showPatentAmendmentDialog}
@@ -2768,6 +2795,19 @@
                     <DropdownMenu.Item
                       on:click={() =>
                         openDesignCTCDialog(
+                          fileData.fileId,
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Trademark CTC Application -->
+                  {#if application.applicationType === FormApplicationTypes.CertifiedTrueCopy && fileData.type === FileTypes.Trademark && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() =>
+                        openTrademarkCTCDialog(
                           fileData.fileId,
                           application.id,
                           application.currentStatus ?? 0,

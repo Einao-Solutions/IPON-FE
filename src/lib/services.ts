@@ -287,6 +287,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦18,500",
   },
+  // {
+  //   id: "trademark-ctc",
+  //   name: "TRADEMARK CTC (CERTIFIED TRUE COPY)",
+  //   description: "Request certified true copies of trademark documents",
+  //   icon: "mdi:certificate-outline",
+  //   route: "modal",
+  //   category: "filing",
+  //   price: "",
+  // },
   {
     id: "registered-user",
     name: "REGISTERED USER",
