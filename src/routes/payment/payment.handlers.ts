@@ -86,6 +86,7 @@ export const paymentHandlers: Record<
   patentmortgage,
   patentmerger,
   patentctc,
+  trademarkctc,
   "patent-amendment": patentAmendment,
   reclassification,
   trademarkRenewal,
@@ -718,6 +719,28 @@ async function designctc(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/home/postregistration/designctc/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+  );
+}
+
+async function trademarkctc(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileId = params.get("fileId");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName =
+    `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
+
+  ctx.state.setTitle("Trademark Certified True Copy (CTC) Application");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setFileNumber(fileId);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/trademarkctc/result?rrr=${rrr}&fileType=2&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
   );
 }
 

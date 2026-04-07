@@ -20,7 +20,6 @@
   import { boolean } from "zod";
   import type { DesignTypes } from "$lib/designutils";
   import { mapDesignTypeToString } from "$lib/designutils";
-  import { form } from "$app/server";
 
   let error: string | null = null;
   let isProcessing = false;

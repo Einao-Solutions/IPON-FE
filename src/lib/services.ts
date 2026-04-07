@@ -286,6 +286,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦18,500",
   },
+  // {
+  //   id: "trademark-ctc",
+  //   name: "TRADEMARK CTC (CERTIFIED TRUE COPY)",
+  //   description: "Request certified true copies of trademark documents",
+  //   icon: "mdi:certificate-outline",
+  //   route: "modal",
+  //   category: "filing",
+  //   price: "",
+  // },
   {
     id: "registered-user",
     name: "REGISTERED USER",
@@ -626,15 +635,15 @@ export const designServices: IPService[] = [
   },
 
   // RECORDALS CATEGORY
-  // {
-  //   id: 'design-amendment',
-  //   name: 'DESIGN AMENDMENT',
-  //   description: 'Amend existing design applications',
-  //   icon: 'mdi:file-edit-outline',
-  //   route: 'modal',
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'design-amendment',
+    name: 'DESIGN AMENDMENT',
+    description: 'Amend existing design applications',
+    icon: 'mdi:file-edit-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
   {
     id: "design-assignment",
     name: "DESIGN ASSIGNMENT",

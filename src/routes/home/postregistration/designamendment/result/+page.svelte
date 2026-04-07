@@ -41,14 +41,16 @@
 			}
 
 			const payload = JSON.parse(payloadData);
+			let response: Response;
 
-			const response = await fetch(`${baseURL}/api/files/DesignAmendmentApplication`, {
+			response = await fetch(`${baseURL}/api/files/DesignAmendmentApplication`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload)
 			});
 
-			const result = await response.json();
+			const text = await response.text();
+			const result = text ? JSON.parse(text) : {};
 
 			if (!response.ok) {
 				submissionError = result.message || 'Submission failed.';
