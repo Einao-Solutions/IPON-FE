@@ -223,8 +223,8 @@ export const trademarkServices: IPService[] = [
   },
   {
     id: "trademark-journal",
-    name: "TRADEMARK JOURNAL",
-    description: "View trademark journal",
+    name: "TRADEMARK PUBLICATIONS",
+    description: "View trademark publications",
     icon: "mdi:book-open-variant",
     route: "/home/trademarkpubs",
     category: "agent",
@@ -258,7 +258,6 @@ export const trademarkServices: IPService[] = [
     route: "modal",
     category: "filing",
     price: "₦18,500",
-
   },
   {
     id: "change-applicant-address",
@@ -305,7 +304,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦18,500",
   },
-
+  {
+    id: "opposition",
+    name: "OPPOSITION",
+    description: "Oppose files in publication",
+    icon: "mdi:hand-back-left",
+    route: "/opposition",
+    category: "filing",
+    price: "₦11,500",
+  },
   // FINANCIAL CATEGORY
   {
     id: "pay-certificate",
@@ -474,60 +481,59 @@ export const patentServices: IPService[] = [
 
   //PATENT POST-REGISTRATION SERVICES
   {
-    id: 'patent-amendment',
-    name: 'PATENT AMENDMENT',
-    description: 'Amend existing patent applications',
-    icon: 'mdi:file-edit-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-amendment",
+    name: "PATENT AMENDMENT",
+    description: "Amend existing patent applications",
+    icon: "mdi:file-edit-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-assignment',
-    name: 'PATENT ASSIGNMENT',
-    description: 'Transfer patent ownership rights',
-    icon: 'mdi:account-switch-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-assignment",
+    name: "PATENT ASSIGNMENT",
+    description: "Transfer patent ownership rights",
+    icon: "mdi:account-switch-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-ctc',
-    name: 'PATENT CTC (CERTIFIED TRUE COPY)',
-    description: 'Request certified true copies of patent documents',
-    icon: 'mdi:certificate-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-ctc",
+    name: "PATENT CTC (CERTIFIED TRUE COPY)",
+    description: "Request certified true copies of patent documents",
+    icon: "mdi:certificate-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-license',
-    name: 'PATENT LICENSE',
-    description: 'License patent rights to third parties',
-    icon: 'mdi:handshake-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-license",
+    name: "PATENT LICENSE",
+    description: "License patent rights to third parties",
+    icon: "mdi:handshake-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-mortgage',
-    name: 'PATENT MORTGAGE',
-    description: 'Mortgage patent as security for loans',
-    icon: 'mdi:bank-outline',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price: ''
+    id: "patent-mortgage",
+    name: "PATENT MORTGAGE",
+    description: "Mortgage patent as security for loans",
+    icon: "mdi:bank-outline",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
   {
-    id: 'patent-merger',
-    name: 'PATENT MERGER',
-    description: 'Merge patent applications',
-    icon: 'mdi:merge',
-    route: 'modal', // Will open modal first
-    category: 'filing',
-    price:''
+    id: "patent-merger",
+    name: "PATENT MERGER",
+    description: "Merge patent applications",
+    icon: "mdi:merge",
+    route: "modal", // Will open modal first
+    category: "filing",
+    price: "",
   },
-
 ];
 
 // Design-specific services
@@ -639,49 +645,49 @@ export const designServices: IPService[] = [
     price: ''
   },
   {
-    id: 'design-assignment',
-    name: 'DESIGN ASSIGNMENT',
-    description: 'Transfer design ownership rights',
-    icon: 'mdi:account-switch-outline',
-    route: 'modal',
-    category: 'filing',
-    price: ''
+    id: "design-assignment",
+    name: "DESIGN ASSIGNMENT",
+    description: "Transfer design ownership rights",
+    icon: "mdi:account-switch-outline",
+    route: "modal",
+    category: "filing",
+    price: "",
   },
   {
-    id: 'design-ctc',
-    name: 'DESIGN CTC (CERTIFIED TRUE COPY)',
-    description: 'Request certified true copies of design documents',
-    icon: 'mdi:certificate-outline',
-    route: 'modal',
-    category: 'filing',
-    price: ''
+    id: "design-ctc",
+    name: "DESIGN CTC (CERTIFIED TRUE COPY)",
+    description: "Request certified true copies of design documents",
+    icon: "mdi:certificate-outline",
+    route: "modal",
+    category: "filing",
+    price: "",
   },
   {
-    id: 'design-license',
-    name: 'DESIGN LICENSE',
-    description: 'License design rights to third parties',
-    icon: 'mdi:handshake-outline',
-    route: 'modal',
-    category: 'filing',
-    price: ''
+    id: "design-license",
+    name: "DESIGN LICENSE",
+    description: "License design rights to third parties",
+    icon: "mdi:handshake-outline",
+    route: "modal",
+    category: "filing",
+    price: "",
   },
   {
-    id: 'design-mortgage',
-    name: 'DESIGN MORTGAGE',
-    description: 'Mortgage design as security for loans',
-    icon: 'mdi:bank-outline',
-    route: 'modal',
-    category: 'filing',
-    price: ''
+    id: "design-mortgage",
+    name: "DESIGN MORTGAGE",
+    description: "Mortgage design as security for loans",
+    icon: "mdi:bank-outline",
+    route: "modal",
+    category: "filing",
+    price: "",
   },
   {
-    id: 'design-merger',
-    name: 'DESIGN MERGER',
-    description: 'Merge design applications',
-    icon: 'mdi:merge',
-    route: 'modal',
-    category: 'filing',
-    price: ''
+    id: "design-merger",
+    name: "DESIGN MERGER",
+    description: "Merge design applications",
+    icon: "mdi:merge",
+    route: "modal",
+    category: "filing",
+    price: "",
   },
 
   // FINANCIAL CATEGORY

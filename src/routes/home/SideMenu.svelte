@@ -93,7 +93,7 @@
       location: "Publications",
       name: "Publications",
       submenus: [
-        // { icon: "mdi:book-open-page-variant", name: "Journal", location: "journal" },
+        { icon: "mdi:book-open-page-variant", name: "Journal", location: "journal" },
         {
           icon: "mdi:file-document-multiple-outline",
           name: "Publications",
