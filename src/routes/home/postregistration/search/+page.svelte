@@ -504,34 +504,27 @@
                       on:change={(e) => {
                         const selectedValue = e.currentTarget.value;
                         if (selectedValue === "update-name") {
-                          goto(
-                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.ApplicantName}`,
-                          );
+                          goto(`/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.ApplicantName}`);
                         } else if (selectedValue === "update-address") {
-                          goto(
-                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.ApplicantAddress}`,
-                          );
-                        } else if (selectedValue === "update-title") {
-                          goto(
-                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.FileTitle}`,
-                          );
-                        } else if (selectedValue === "addorremove-applicant") {
-                          goto(
-                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.AddAndRemoveApplicant}`,
-                          );
+                          goto(`/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.ApplicantAddress}`);
+                        } else if (selectedValue === "update-design-info") {
+                          goto(`/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.DesignInformation}`);
+                        } else if (selectedValue === "update-creators") {
+                          goto(`/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.CreatorInformation}`);
                         } else if (selectedValue === "correspondence") {
-                          goto(
-                            `/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`,
-                          );
+                          goto(`/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.CorrespondenceInformation}`);
+                        } else if (selectedValue === "update-attachments") {
+                          goto(`/home/postregistration/designamendment?fileId=${result.fileId}&fileType=1&updateType=${ClericalUpdateTypes.DesignAttachments}`);
                         }
                       }}
                     >
                       <option value="">--Select Amendment Type--</option>
                       <option value="update-name">Update Applicant Name</option>
                       <option value="update-address">Update Applicant Address</option>
-                      <option value="update-title">Update Title of Design</option>
-                      <option value="addorremove-applicant">Add/Remove Applicant</option>
-                      <option value="correspondence">Update Correspondence</option>
+                      <option value="update-design-info">Update Design Information</option>
+                      <option value="update-creators">Update Creator Information</option>
+                      <option value="correspondence">Update Correspondence Information</option>
+                      <option value="update-attachments">Update Design Attachments</option>
                     </select>
                   {:else if searchParams?.serviceType}
                     <Button on:click={() => proceedToService(result)}

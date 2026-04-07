@@ -123,7 +123,9 @@ const config = {
         "/home/postregistration/designmerger",
         "/home/postregistration/designmerger/result",
         "/home/postregistration/designmortgage",
-        "/home/postregistration/designmortgage/result"
+        "/home/postregistration/designmortgage/result",
+        "/home/postregistration/trademarkctc",
+        "/home/postregistration/trademarkctc/result"
       ],
     },
   },

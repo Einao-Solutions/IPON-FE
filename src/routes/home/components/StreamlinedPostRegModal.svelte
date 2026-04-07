@@ -54,6 +54,7 @@
       "design-license": `/home/postregistration/designlicense?fileId=${fileId}&fileType=${fileType}`,
       "design-mortgage": `/home/postregistration/designmortgage?fileId=${fileId}&fileType=${fileType}`,
       "design-merger": `/home/postregistration/designmerger?fileId=${fileId}&fileType=${fileType}`,
+      "trademark-ctc": `/home/postregistration/trademarkctc?fileId=${fileId}&fileType=${fileType}`,
     };
     return routeMap[serviceId] || "";
   }
