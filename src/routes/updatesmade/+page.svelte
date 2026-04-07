@@ -34,7 +34,7 @@
 	import { goto } from '$app/navigation';
 	import { mapFieldToString } from '../application/apphelper';
 
-	let requiredData = {};
+	let requiredData: any = {};
 	let revisions = writable<RevisionsType[]>([]);
 	let requiresPayment: { type: string; payment: boolean }[] = [];
 	let showUpdateConfirmation: boolean = false;
@@ -50,7 +50,7 @@
 	let selectedStatus: ApplicationStatuses | null = null;
 	let showStatusHistory: boolean = false;
 	let historyData = {};
-	let historyComponent: HistorySheet | null = null;
+	let historyComponent: any = null;
 	$: {
 		revisions.set(requiredData.data as RevisionsType[]);
 		requiresPayment = requiredData.requiresPayment;
@@ -114,11 +114,11 @@
 			beforeStatus: selectedRevision?.status,
 			afterStatus: selectedStatus,
 			message: $newStatusReason,
-			user: $loggedInUser.name,
-			userId: $loggedInUser.id.toString(),
+			user: $loggedInUser!.name,
+			userId: $loggedInUser!.id.toString(),
 			applicationType: 2,
-			fileId: $applicationData.id,
-			fileNumber: $applicationData.fileId,
+			fileId: $applicationData!.id,
+			fileNumber: $applicationData!.fileId,
 			applicationId: selectedRevision?.id,
 			fieldToUpdate: selectedRevision?.field,
 			newValue: JSON.stringify(selectedRevision?.newTitle)
@@ -130,13 +130,13 @@
 		});
 		if (res.ok) {
 			const latestData = await res.json();
-			const curr = (latestData.applicationHistory as []).find((x) => x.id === selectedRevision?.id);
-			const latestStatus = curr.currentStatus;
-			selectedRevision.status = latestStatus;
-			selectedRevision.statusHistory = curr.statusHistory;
+			const curr = (latestData.applicationHistory as any[]).find((x: any) => x.id === selectedRevision?.id);
+			const latestStatus = curr?.currentStatus;
+			selectedRevision!.status = latestStatus;
+			selectedRevision!.statusHistory = curr?.statusHistory;
 			revisions.update((rev) => {
 				const ind = rev.findIndex((x) => x.id == selectedRevision?.id);
-				rev[ind] = selectedRevision;
+				rev[ind] = selectedRevision!;
 				rev = [...rev];
 				return rev;
 			});
@@ -153,17 +153,17 @@
 	function dataType(): string {
 		if (
 			['inventors', 'priorityinfo', 'applicants', 'designcreators'].includes(
-				selectedRevision?.field.toLowerCase()
+				selectedRevision?.field?.toLowerCase() ?? ''
 			)
 		) {
 			return 'table';
 		}
-		return selectedRevision?.field.toLowerCase() ?? '';
+		return selectedRevision?.field?.toLowerCase() ?? '';
 	}
 
 	let isApplicationSaving: boolean = false;
 	function showAutoSave(){
-		return $loggedInUser.userRoles.includes(UserRoles.Tech)
+		return $loggedInUser?.userRoles.includes(UserRoles.Tech)
 	}
 	async function ProceedToNext() {
 		if (selectedRevision?.status === ApplicationStatuses.AwaitingConfirmation) {
@@ -222,10 +222,10 @@
 
 	async function saveApplication() {
 		const upperChar =
-			selectedRevision?.field.charAt(0).toUpperCase() +
-			(selectedRevision?.field.length > 1 ? selectedRevision?.field.slice(1) : '');
+			(selectedRevision?.field?.charAt(0).toUpperCase() ?? '') +
+			((selectedRevision?.field?.length ?? 0) > 1 ? selectedRevision?.field?.slice(1) : '');
 		if (upperChar==="PriorityInfo"){
-			let p=selectedRevision.newTitle as Priority[]
+			let p=selectedRevision!.newTitle as any[]
 			for (const pKey in p) {
 				let month=p[pKey].date.month;
 				if (month<10){
@@ -237,7 +237,7 @@
 				}
 				p[pKey].date= `${p[pKey].date.year}-${month}-${day}`
 			}
-			selectedRevision.newTitle=p;
+			selectedRevision!.newTitle=p;
 		}
 		const body = {
 			revisionId: selectedRevision?.id,
@@ -251,8 +251,8 @@
 			oldValue: JSON.stringify(selectedRevision?.oldTitle),
 			newValue: JSON.stringify(selectedRevision?.newTitle),
 			fieldToChange: upperChar,
-			user: $loggedInUser.name,
-			userId: $loggedInUser.id.toString()
+			user: $loggedInUser!.name,
+			userId: $loggedInUser!.id.toString()
 		};
 		const result = await fetch(`${baseURL}/api/files/SaveDataUpdate`, {
 			method: 'post',
@@ -262,17 +262,17 @@
 		if (result.ok) {
 			const latestData = await result.json();
 			applicationData.set(latestData);
-			const curr = (latestData.applicationHistory as []).find((x) => x.id === selectedRevision?.id);
-			const latestStatus = curr.currentStatus;
-			selectedRevision.status = latestStatus;
-			selectedRevision.statusHistory = curr.statusHistory;
+			const curr = (latestData.applicationHistory as any[]).find((x: any) => x.id === selectedRevision?.id);
+			const latestStatus = curr?.currentStatus;
+			selectedRevision!.status = latestStatus;
+			selectedRevision!.statusHistory = curr?.statusHistory;
 			let rvsstring = localStorage.getItem('revisions');
-			let rvs = JSON.parse(rvsstring);
+			let rvs = rvsstring ? JSON.parse(rvsstring) : null;
 			revisions.update((rev) => {
 				const ind = rev.findIndex((x) => x.id == selectedRevision?.id);
-				rvs.data[ind] = selectedRevision;
-				localStorage.setItem('revisions', JSON.stringify(rvs));
-				rev[ind] = selectedRevision;
+				if (rvs) rvs.data[ind] = selectedRevision;
+				if (rvs) localStorage.setItem('revisions', JSON.stringify(rvs));
+				rev[ind] = selectedRevision!;
 				rev = [...rev];
 				return rev;
 			});
@@ -285,10 +285,10 @@
 	async function updateField() {
 		const fileData: PatentData = requiredData.fileData;
 		const upperChar =
-			selectedRevision?.field.charAt(0).toUpperCase() +
-			(selectedRevision?.field.length > 1 ? selectedRevision?.field.slice(1) : '');
+			(selectedRevision?.field?.charAt(0).toUpperCase() ?? '') +
+			((selectedRevision?.field?.length ?? 0) > 1 ? selectedRevision?.field?.slice(1) : '');
 		if (upperChar==="PriorityInfo"){
-			let p=selectedRevision.newTitle as Priority[]
+			let p=selectedRevision!.newTitle as any[]
 			for (const pKey in p) {
 				let month=p[pKey].date.month;
 				if (month<10){
@@ -300,7 +300,7 @@
 				}
 				p[pKey].date= `${p[pKey].date.year}-${month}-${day}`
 			}
-			selectedRevision.newTitle=p;
+			selectedRevision!.newTitle=p;
 		}
 
 		let updateInfo = {
@@ -316,8 +316,8 @@
 			newValue: JSON.stringify(selectedRevision?.newTitle),
 
 			fieldToChange: upperChar,
-			user: $loggedInUser.name,
-			userId: $loggedInUser.id.toString()
+			user: $loggedInUser!.name,
+			userId: $loggedInUser!.id.toString()
 		};
 		const result = await fetch(`${baseURL}/api/files/freeupdates`, {
 			method: 'POST',
@@ -326,13 +326,13 @@
 		});
 		if (result.ok) {
 			const latestData = await result.json();
-			const curr = (latestData.applicationHistory as []).find((x) => x.id === selectedRevision?.id);
-			const latestStatus = curr.currentStatus;
-			selectedRevision.status = latestStatus;
-			selectedRevision.statusHistory = curr.statusHistory;
+			const curr = (latestData.applicationHistory as any[]).find((x: any) => x.id === selectedRevision?.id);
+			const latestStatus = curr?.currentStatus;
+			selectedRevision!.status = latestStatus;
+			selectedRevision!.statusHistory = curr?.statusHistory;
 			revisions.update((rev) => {
 				const ind = rev.findIndex((x) => x.id == selectedRevision?.id);
-				rev[ind] = selectedRevision;
+				rev[ind] = selectedRevision!;
 				rev = [...rev];
 				return rev;
 			});
@@ -342,7 +342,7 @@
 			});
 		}
 	}
-	function arrayBufferToBase64(buffer) {
+	function arrayBufferToBase64(buffer: ArrayBuffer) {
 		let binary = '';
 		const bytes = new Uint8Array(buffer);
 		const len = bytes.byteLength;
@@ -351,21 +351,21 @@
 		}
 		return window.btoa(binary);
 	}
-	function toByteArray(file) {
-		return new Promise((resolve, reject) => {
+	function toByteArray(file: Blob) {
+		return new Promise<ArrayBuffer>((resolve, reject) => {
 			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
 			reader.onerror = reject;
 			reader.readAsArrayBuffer(file);
 		}).then((arrayBuffer) => new Uint8Array(arrayBuffer));
 	}
 
-	async  function autoUpdate(revision){
+	async  function autoUpdate(revision: RevisionsType){
 		showConfirmUserDateUpdate=true;
 	}
 </script>
 
-{#if showStatusHistory === true}
+{#if showStatusHistory}
 	<svelte:component this={historyComponent} {...historyData} />
 {/if}
 <Toaster />
@@ -395,7 +395,7 @@
 				<ComparisonTable
 					oldData={selectedRevision?.oldTitle}
 					newData={selectedRevision?.newTitle}
-					type={selectedRevision?.field}
+					type={selectedRevision?.field ?? ''}
 				/>
 			{:else if dataType().toLowerCase() === 'attachments'}
 				<AttachmentsComparison
@@ -411,7 +411,7 @@
 				<OtherComparison
 					oldData={selectedRevision?.oldTitle}
 					newData={selectedRevision?.newTitle}
-					field={selectedRevision?.field}
+					field={selectedRevision?.field ?? ''}
 				/>
 			{/if}
 		</Dialog.Content>
@@ -425,8 +425,9 @@
 			</Dialog.Header>
 			<br />
 			<div class="gap-2 flex">
-				{#each getRevisionStatuses(selectedRevision?.status) as status}
-					<a
+				{#each getRevisionStatuses(selectedRevision?.status ?? 0) as status}
+					<button
+						type="button"
 						on:click={() => (selectedStatus = status)}
 						style="background-color: {selectedStatus === status
 							? getNewStatusColour(status)
@@ -437,7 +438,7 @@
 							: 'bg-none'}  "
 					>
 						<p>{mapStatusOptionToString(status)}</p>
-					</a>
+					</button>
 				{/each}
 			</div>
 			<br />
@@ -465,7 +466,7 @@
 							class="border w-fit p-1 rounded-md"
 							style="background-color: {getNewStatusColour(selectedStatus)}"
 						>
-							{mapStatusOptionToString(selectedStatus)}
+						{mapStatusOptionToString(selectedStatus ?? 0)}
 						</span> ?
 					</p>
 				</AlertDialog.Description>
@@ -501,7 +502,7 @@
 				{#each $revisions as revision, i (i)}
 					<Table.Row>
 						<Table.Cell class="w-1">{i + 1}</Table.Cell>
-						<Table.Cell>{mapFieldToString(revision.field)}</Table.Cell>
+						<Table.Cell>{mapFieldToString(revision.field ?? '')}</Table.Cell>
 						<Table.Cell>
 							<Button
 								on:click={() => {
@@ -513,10 +514,10 @@
 								<p>Compare</p>
 							</Button>
 						</Table.Cell>
-						<Table.Cell><AppStatusTag value={revision.status} /></Table.Cell>
+						<Table.Cell><AppStatusTag value={revision.status ?? undefined} /></Table.Cell>
 						<Table.Cell class={isUserOrAdmin ? '' : 'hidden'}>
-							{#if [ApplicationStatuses.AwaitingConfirmation, ApplicationStatuses.AutoApproved].includes(revision.status) === false}
-								{#await getRevisionAmount(revision.field)}
+							{#if [ApplicationStatuses.AwaitingConfirmation, ApplicationStatuses.AutoApproved].includes(revision.status ?? 0) === false}
+								{#await getRevisionAmount(revision.field ?? '')}
 									<Icon icon="line-md:loading-twotone-loop" width="1.2rem" height="1.2rem" />
 								{:then value}
 									<p>{value}</p>
@@ -544,13 +545,13 @@
 								{getActionButtonType(revision)}
 							</Button>
 						</Table.Cell>
-						{#if $loggedInUser.userRoles.includes(UserRoles.Tech)}
+						{#if $loggedInUser?.userRoles.includes(UserRoles.Tech)}
 						<Table.Cell>
 							<Button on:click={()=>{selectedRevision=revision;autoUpdate(revision)}} >Auto-update</Button>
 						</Table.Cell>
 							{/if}
 						<Table.Cell class={isStaffOrAdmin ? '' : 'hidden'}>
-							{#if showTreatUpdateAppButton(revision.status, $applicationData.type, $loggedInUser.userRoles)}
+							{#if showTreatUpdateAppButton(revision.status ?? 0, $applicationData?.type ?? 0, $loggedInUser?.userRoles ?? [])}
 								<Button
 									on:click={() => {
 										selectedRevision = revision;

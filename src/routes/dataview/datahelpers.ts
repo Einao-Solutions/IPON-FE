@@ -119,8 +119,8 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "Awaiting Counter Statement";
     case ApplicationStatuses.AwaitingCertificateConfirmation:
       return "Awaiting Certificate Confirmation";
-      case ApplicationStatuses.Opposition:
-        return "Opposition";
+    case ApplicationStatuses.Opposition:
+      return "Opposition";
     default:
       return "-";
   }
@@ -376,25 +376,51 @@ export function CanTreatApplication(
       ApplicationStatuses.KivSearch,
       ApplicationStatuses.Rejected,
       ApplicationStatuses.AwaitingSearch,
-      ApplicationStatuses.Publication,
     ].includes(applicationStatus)
   ) {
     if (type === FilingType.Design) {
-      hasRole = userRoles.includes(UserRoles.DesignSearch);
+      hasRole = userRoles.some((x) =>
+        [
+          UserRoles.DesignSearch,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.PatentDesignRegistrar,
+        ].includes(x),
+      );
     }
     if (type === FilingType.Patent) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.PatentSearch, UserRoles.Tech].includes(x),
+        [
+          UserRoles.PatentSearch,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.PatentDesignRegistrar,
+        ].includes(x),
       );
     }
 
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkSearch, UserRoles.Tech].includes(x),
+        [
+          UserRoles.TrademarkSearch,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.TrademarkRegistrar,
+        ].includes(x),
       );
     }
   }
-
+  if (applicationStatus === ApplicationStatuses.Publication) {
+    hasRole = userRoles.some((x) =>
+        [
+          UserRoles.TrademarkPublication,
+          UserRoles.TrademarkOpposition,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.TrademarkRegistrar,
+        ].includes(x),
+      );
+  }
   if (
     applicationStatus === ApplicationStatuses.KivExaminer ||
     applicationStatus === ApplicationStatuses.AwaitingExaminer ||
@@ -402,17 +428,34 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Patent) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.PatentExaminer, UserRoles.Tech].includes(x),
+        [
+          UserRoles.PatentExaminer,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.PatentDesignRegistrar,
+        ].includes(x),
       );
     }
 
     if (type == FilingType.Design) {
-      hasRole = userRoles.some((x) => [UserRoles.DesignExaminer].includes(x));
+      hasRole = userRoles.some((x) =>
+        [
+          UserRoles.DesignExaminer,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.PatentDesignRegistrar,
+        ].includes(x),
+      );
     }
 
     if (type == FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkExaminer, UserRoles.Tech].includes(x),
+        [
+          UserRoles.TrademarkExaminer,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.TrademarkRegistrar,
+        ].includes(x),
       );
     }
   }
@@ -423,13 +466,15 @@ export function CanTreatApplication(
           UserRoles.PatentExaminer,
           UserRoles.Tech,
           UserRoles.AppealExaminer,
+          UserRoles.SuperAdmin,
+          UserRoles.PatentDesignRegistrar,
         ].includes(x),
       );
     }
 
     if (type == FilingType.Design) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.DesignExaminer, UserRoles.AppealExaminer].includes(x),
+        [UserRoles.DesignExaminer, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.PatentDesignRegistrar].includes(x),
       );
     }
 
@@ -439,6 +484,8 @@ export function CanTreatApplication(
           UserRoles.TrademarkExaminer,
           UserRoles.Tech,
           UserRoles.AppealExaminer,
+          UserRoles.SuperAdmin,
+          UserRoles.TrademarkRegistrar,
         ].includes(x),
       );
     }
@@ -449,7 +496,7 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkCertification, UserRoles.Tech].includes(x),
+        [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkRegistrar].includes(x),
       );
     }
   }
@@ -463,6 +510,7 @@ export function CanTreatApplication(
           UserRoles.DesignCertification,
           UserRoles.SuperAdmin,
           UserRoles.Tech,
+          UserRoles.PatentDesignRegistrar,
         ].includes(x),
       );
     }
@@ -670,7 +718,8 @@ export function getLetterName(letter: number): string {
       return "Design CTC Acknowledgement";
     case 77:
       return "Design Amendment Acknowledgement";
-    case 78:      return "Design Assignment Refusal Letter";
+    case 78:
+      return "Design Assignment Refusal Letter";
     case 79:
       return "Design License Refusal Letter";
     case 80:
