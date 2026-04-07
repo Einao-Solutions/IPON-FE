@@ -315,7 +315,7 @@
 			</Popover.Content>
 		</Popover.Root>
 	</div>
-	<Textarea bind:value={$classDescription} placeholder='Description of selected class will appear here' />
+	<Textarea bind:value={$classDescription} placeholder='Description of selected class will appear here'  disabled/>
 	<div>
 		<Label for="class">Trademark Type</Label>
 		<Popover.Root open={ismarkTypeOpen} let:ids>
