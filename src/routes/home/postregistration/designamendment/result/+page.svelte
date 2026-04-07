@@ -43,37 +43,14 @@
 			const payload = JSON.parse(payloadData);
 			let response: Response;
 
-			// Design Attachments uses FormData because it includes file data
-			if (payload.UpdateType === 3) {
-				const formData = new FormData();
-				formData.append('FileId', payload.FileId ?? '');
-				formData.append('UpdateType', String(payload.UpdateType));
-				formData.append('FileType', String(payload.FileType ?? 1));
-				formData.append('PaymentRRR', payload.PaymentRRR ?? '');
-				if (payload.UserId) formData.append('UserId', payload.UserId);
+			response = await fetch(`${baseURL}/api/files/DesignAmendmentApplication`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload)
+			});
 
-				for (const url of payload.RemoveDesignAttachmentUrls ?? []) {
-					formData.append('RemoveDesignAttachmentUrls', url);
-				}
-				for (const fileObj of payload.NewDesignAttachments ?? []) {
-					const fetchRes = await fetch(fileObj.data);
-					const blob = await fetchRes.blob();
-					formData.append('DesignAttachments', new File([blob], fileObj.name, { type: fileObj.type }));
-				}
-
-				response = await fetch(`${baseURL}/api/files/DesignAmendmentApplication`, {
-					method: 'POST',
-					body: formData
-				});
-			} else {
-				response = await fetch(`${baseURL}/api/files/DesignAmendmentApplication`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(payload)
-				});
-			}
-
-			const result = await response.json();
+			const text = await response.text();
+			const result = text ? JSON.parse(text) : {};
 
 			if (!response.ok) {
 				submissionError = result.message || 'Submission failed.';

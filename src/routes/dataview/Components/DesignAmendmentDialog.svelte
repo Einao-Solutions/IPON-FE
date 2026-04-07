@@ -77,7 +77,7 @@
             appId: applicationId,
             approve: approve,
             reason: comment,
-            appUserId: appUserId,
+            UserId: appUserId,
           }),
         }
       );

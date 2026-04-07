@@ -33,6 +33,8 @@
 		phone: string;
 		address: string;
 		country: string;
+		state: string;
+		city: string;
 	}
 
 	interface DesignFileInfo {
@@ -53,6 +55,7 @@
 		fileType: number;
 		titleOfDesign: string;
 		statementOfNovelty: string;
+		designType: number | null;
 		designCreators: DesignCreatorInfo[];
 		attachments: string[];
 	}
@@ -63,7 +66,7 @@
 		fileTitle: '', applicants: [], correspondenceName: '', correspondenceAddress: '',
 		correspondencePhone: '', correspondenceEmail: '', correspondenceState: '',
 		correspondenceNationality: '', fileType: 0,
-		titleOfDesign: '', statementOfNovelty: '', designCreators: [], attachments: []
+		titleOfDesign: '', statementOfNovelty: '', designType: null, designCreators: [], attachments: []
 	};
 
 	let newApplicantNames: string[] = [];
@@ -84,6 +87,7 @@
 	// Design Information
 	let newTitleOfDesign = '';
 	let newNoveltyStatement = '';
+	let newDesignType: string | null = null;
 
 	// Creator Information
 	let designCreators: DesignCreatorInfo[] = [];
@@ -146,6 +150,7 @@
 					fileType: result.data.fileType || 0,
 					titleOfDesign: result.data.titleOfDesign || result.data.fileTitle || '',
 					statementOfNovelty: result.data.statementOfNovelty || '',
+					designType: result.data.designType ?? null,
 					designCreators: result.data.designCreators || [],
 					attachments: result.data.attachments || []
 				};
@@ -168,6 +173,7 @@
 				correspondenceNationality = fileInfo.correspondenceNationality;
 				newTitleOfDesign = fileInfo.titleOfDesign;
 				newNoveltyStatement = fileInfo.statementOfNovelty;
+				newDesignType = fileInfo.designType === 0 ? 'Textile' : fileInfo.designType === 1 ? 'NonTextile' : null;
 				designCreators = fileInfo.designCreators.map(c => ({ ...c }));
 				existingAttachments = (fileInfo.attachments || []).map((a: any) => {
 					if (typeof a === 'string') return { url: a, name: a.split('/').pop()?.split('?')[0] || 'Attachment' };
@@ -195,18 +201,20 @@
 	}
 
 	function addCreator() {
-		designCreators = [...designCreators, { id: '', name: '', email: '', phone: '', address: '', country: '' }];
+		designCreators = [...designCreators, { id: '', name: '', email: '', phone: '', address: '', country: '', state: '', city: '' }];
 	}
 
 	function removeCreator(index: number) {
 		designCreators = designCreators.filter((_, i) => i !== index);
 	}
 
+	const allowedAttachmentTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
 	function handleAddAttachments(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const files = Array.from(input.files ?? []);
-		const invalid = files.find(f => !f.type.startsWith('image/') || f.size > 10 * 1024 * 1024);
-		if (invalid) { error = 'Only image files up to 10MB are allowed.'; return; }
+		const invalid = files.find(f => !allowedAttachmentTypes.includes(f.type) || f.size > 10 * 1024 * 1024);
+		if (invalid) { error = 'Only image, PDF, or Word files up to 10MB are allowed.'; return; }
 		newAttachmentFiles = [...newAttachmentFiles, ...files];
 		input.value = '';
 	}
@@ -239,8 +247,11 @@
 		if (showNameSection && newApplicantNames.some(n => !n.trim())) { error = 'Please enter the new name for all applicants.'; return false; }
 		if (showAddressSection && (newApplicantAddresses.some(a => !a.trim()) || newApplicantEmails.some(e => !e.trim()) || newApplicantPhones.some(p => !p.trim()) || newApplicantNationalities.some(n => !n.trim()) || newApplicantStates.some(s => !s.trim()) || newApplicantCities.some(c => !c.trim()))) { error = 'Please fill all address fields for each applicant.'; return false; }
 		if (showDesignInfoSection && !newTitleOfDesign?.trim()) { error = 'Please enter the new Title of Design.'; return false; }
+		if (showDesignInfoSection && !newNoveltyStatement?.trim()) { error = 'Please enter the new Statement of Novelty.'; return false; }
+		if (showDesignInfoSection && !newDesignType) { error = 'Please select the new Design Type.'; return false; }
 		if (showCreatorInfoSection && designCreators.length === 0) { error = 'Please add at least one creator.'; return false; }
 		if (showCreatorInfoSection && designCreators.some(c => !c.name.trim())) { error = 'Each creator must have a name.'; return false; }
+		if (showCreatorInfoSection && designCreators.some(c => !c.email.trim())) { error = 'Each creator must have an email address.'; return false; }
 		if (showCorrespondenceSection && (!correspondenceName?.trim() || !correspondenceAddress?.trim() || !correspondencePhone?.trim() || !correspondenceEmail?.trim() || !correspondenceState?.trim() || !correspondenceNationality?.trim())) { error = 'Please fill all correspondence fields.'; return false; }
 			if (showAttachmentsSection && existingAttachments.length === 0 && removedAttachments.length > 0 && newAttachmentFiles.length === 0) { error = 'Please keep at least one attachment or add a new one.'; return false; }
 		error = null; return true;
@@ -263,18 +274,32 @@
 				formObj.ApplicantStates = newApplicantStates; formObj.ApplicantCities = newApplicantCities;
 			}
 			if (updateTypeNum === ClericalUpdateTypes.DesignInformation) {
-				formObj.TitleOfDesign = newTitleOfDesign;
-				formObj.NoveltyStatement = newNoveltyStatement;
+				formObj.UpdateType = 'DesignTitle';
+				formObj.DesignTitle = newTitleOfDesign;
+				formObj.StatementOfNovelty = newNoveltyStatement;
+				formObj.DesignType = newDesignType;
 			}
 			if (updateTypeNum === ClericalUpdateTypes.CreatorInformation) {
-				formObj.DesignCreators = designCreators;
+				formObj.UpdateType = 'CreatorInformation';
+				formObj.DesignCreators = designCreators.map(c => ({
+					id: c.id,
+					Name: c.name,
+					Email: c.email,
+					Phone: c.phone,
+					Address: c.address,
+					country: c.country,
+					State: c.state,
+					city: c.city
+				}));
 			}
 			if (updateTypeNum === ClericalUpdateTypes.CorrespondenceInformation) {
+				formObj.UpdateType = 'CorrespondenceInformation';
 				formObj.CorrespondenceName = correspondenceName; formObj.CorrespondenceAddress = correspondenceAddress;
 				formObj.CorrespondencePhone = correspondencePhone; formObj.CorrespondenceEmail = correspondenceEmail;
 				formObj.CorrespondenceState = correspondenceState; formObj.CorrespondenceNationality = correspondenceNationality;
 			}
 			if (updateTypeNum === ClericalUpdateTypes.DesignAttachments) {
+				formObj.UpdateType = 'DesignAttachments';
 				formObj.RemoveDesignAttachmentUrls = removedAttachments.map(a => a.url);
 				const base64Files = await Promise.all(
 					newAttachmentFiles.map(async f => ({ name: f.name, type: f.type, data: await fileToBase64(f) }))
@@ -316,8 +341,6 @@
 						<div><label class="block text-sm font-medium text-gray-700 mb-1">File Origin:</label><input type="text" value={fileInfo.fileOrigin} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
 						<div><label class="block text-sm font-medium text-gray-700 mb-1">Design Type:</label><input type="text" value={mapDesignTypeToString(fileInfo.fileType)} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
 						<div class="md:col-span-2"><label class="block text-sm font-medium text-gray-700 mb-1">Title of Design:</label><input type="text" value={fileInfo.fileTitle} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
-						<div><label class="block text-sm font-medium text-gray-700 mb-1">Cost:</label><input type="text" value="₦{fileInfo.cost.toLocaleString()}" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
-						<div><label class="block text-sm font-medium text-gray-700 mb-1">RRR:</label><input type="text" value={fileInfo.paymentRRR} class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100" disabled /></div>
 					</div>
 				</div>
 
@@ -373,7 +396,18 @@
 								<input type="text" bind:value={newTitleOfDesign} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500" placeholder="Enter new title of design" />
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-gray-700 mb-1">Current Statement of Novelty:</label>
+								<label class="block text-sm font-medium text-gray-700 mb-1">Current Design Type:</label>
+								<p class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700">{fileInfo.designType === 0 ? 'Textile' : fileInfo.designType === 1 ? 'Non-Textile' : 'N/A'}</p>
+							</div>
+							<div>
+								<label class="block text-sm font-medium text-gray-700 mb-1">New Design Type:</label>
+								<select bind:value={newDesignType} class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+									<option value={null} disabled>Select design type</option>
+								<option value="Textile">Textile</option>
+								<option value="NonTextile">Non-Textile</option>
+								</select>
+							</div>
+						<div>								<label class="block text-sm font-medium text-gray-700 mb-1">Current Statement of Novelty:</label>
 								<p class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-sm text-gray-700">{fileInfo.statementOfNovelty || 'N/A'}</p>
 							</div>
 							<div>
@@ -413,8 +447,8 @@
 										<div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Email Address</label><input type="email" bind:value={creator.email} class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. john@example.com" /></div>
 										<div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Phone Number</label><input type="text" bind:value={creator.phone} class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. +234 801 234 5678" /></div>
 										<div class="sm:col-span-2"><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Address</label><input type="text" bind:value={creator.address} class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. 12 Main Street, Lagos" /></div>
-										<div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Nationality</label><select bind:value={creator.country} class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"><option value="">Select country</option>{#each Object.entries(countriesMap) as [code, cname]}<option value={code}>{cname}</option>{/each}</select></div>
-									</div>
+										<div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Nationality</label><select bind:value={creator.country} class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"><option value="">Select country</option>{#each Object.entries(countriesMap) as [code, cname]}<option value={code}>{cname}</option>{/each}</select></div>									<div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">State</label><input type="text" bind:value={creator.state} class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Lagos" /></div>
+									<div><label class="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">City</label><input type="text" bind:value={creator.city} class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. Ikeja" /></div>									</div>
 								</div>
 							{/each}
 							{#if designCreators.length === 0}
@@ -433,7 +467,7 @@
 						<div class="bg-gray-300 px-4 py-2 font-medium text-black flex items-center justify-between">
 							<span>FILE ATTACHMENTS - SELECT DOCUMENTS TO KEEP OR REMOVE</span>
 							{#if existingAttachments.length + newAttachmentFiles.length > 0}
-								<span class="text-sm bg-blue-600 text-white px-3 py-1 rounded-full">{existingAttachments.length + newAttachmentFiles.length} file{(existingAttachments.length + newAttachmentFiles.length) !== 1 ? 's' : ''}</span>
+								<span class="text-sm bg-green-600 text-white px-3 py-1 rounded-full">{existingAttachments.length + newAttachmentFiles.length} file{(existingAttachments.length + newAttachmentFiles.length) !== 1 ? 's' : ''}</span>
 							{/if}
 						</div>
 						<div class="p-4">
@@ -453,7 +487,7 @@
 											</div>
 											<div class="flex-shrink-0 flex items-center gap-2">
 												<a href={attachment.url} target="_blank" rel="noopener noreferrer" on:click={(e) => e.stopPropagation()} class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"><Icon icon="mdi:file-eye" width="1.2em" height="1.2em" /><span>View</span></a>
-												<button on:click={() => removeExistingAttachment(index)} class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"><Icon icon="mdi:trash-can-outline" width="1.2em" height="1.2em" /><span>Remove</span></button>
+												<button on:click={() => removeExistingAttachment(index)} class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center shadow-sm"><Icon icon="mdi:trash-can-outline" width="1.2em" height="1.2em" /></button>
 											</div>
 										</div>
 									</div>
@@ -492,9 +526,9 @@
 									<Icon icon="mdi:cloud-upload-outline" width="1.5rem" height="1.5rem" class="text-gray-400" />
 									<div>
 										<p class="text-sm font-medium text-gray-600">Click to select files</p>
-										<p class="text-xs text-gray-400">PNG, JPG, JPEG &middot; Max 10MB per file &middot; Multiple files allowed</p>
+										<p class="text-xs text-gray-400">PNG, JPG, PDF, DOC, DOCX &middot; Max 10MB per file &middot; Multiple files allowed</p>
 									</div>
-									<input id="attachment-upload" type="file" accept="image/*" multiple on:change={handleAddAttachments} class="hidden" />
+									<input id="attachment-upload" type="file" accept="image/*,.pdf,.doc,.docx" multiple on:change={handleAddAttachments} class="hidden" />
 								</label>
 								{#if newAttachmentFiles.length > 0}
 									<div class="mt-3 grid grid-cols-1 gap-3">
@@ -506,7 +540,7 @@
 														<div class="text-xs text-gray-500 mt-1">{(file.size / 1024).toFixed(1)} KB &middot; <span class="text-blue-600 font-semibold">New</span></div>
 													</div>
 													<div class="flex-shrink-0">
-														<button on:click={() => removeNewAttachment(index)} class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"><Icon icon="mdi:close" width="1.2em" height="1.2em" /><span>Remove</span></button>
+														<button on:click={() => removeNewAttachment(index)} class="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center shadow-sm"><Icon icon="mdi:trash-can-outline" width="1.2em" height="1.2em" /></button>
 													</div>
 												</div>
 											</div>
