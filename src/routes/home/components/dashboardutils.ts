@@ -467,7 +467,7 @@ export function mapTypeToString(type: number) {
     case 16:
       return "New Opposition";
     case 17:
-      return "Clerical Update";
+      return "Amendment";
     case 18:
       return "Certification";
     case 19:  

@@ -620,15 +620,15 @@ export const designServices: IPService[] = [
   },
 
   // RECORDALS CATEGORY
-  // {
-  //   id: 'design-amendment',
-  //   name: 'DESIGN AMENDMENT',
-  //   description: 'Amend existing design applications',
-  //   icon: 'mdi:file-edit-outline',
-  //   route: 'modal',
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: 'design-amendment',
+    name: 'DESIGN AMENDMENT',
+    description: 'Amend existing design applications',
+    icon: 'mdi:file-edit-outline',
+    route: 'modal',
+    category: 'filing',
+    price: ''
+  },
   {
     id: 'design-assignment',
     name: 'DESIGN ASSIGNMENT',

@@ -57,6 +57,7 @@
   import PatentCTCDialog from "./Components/PatentCTCDialog.svelte";
   import DesignCTCDialog from "./Components/DesignCTCDialog.svelte";
   import PatentAmendmentDialog from "./Components/PatentAmendmentDialog.svelte";
+  import DesignAmendmentDialog from "./Components/DesignAmendmentDialog.svelte";
   import DesignMortgageDialog from "./Components/DesignMortgageDialog.svelte";
   import DesignAssignmentDialog from "./Components/DesignAssignmentDialog.svelte";
   import DesignMergerDialog from "./Components/DesignMergerDialog.svelte";
@@ -153,6 +154,11 @@
   let patentAmendmentFileId = "";
   let patentAmendmentApplicationId = "";
 
+  // Design Amendment Modal State
+  let showDesignAmendmentDialog = false;
+  let designAmendmentFileId = "";
+  let designAmendmentApplicationId = "";
+
   // Design Mortgage Modal State
   let showDesignMortgageDialog = false;
   let designMortgageFileId = "";
@@ -185,6 +191,7 @@
   let designAssignmentStatus: number | null = null;
   let designMergerStatus: number | null = null;
   let designCTCStatus: number | null = null;
+  let designAmendmentStatus: number | null = null;
   //let patentCTCStatus: number | null = null;
 
   // Appeal Requests
@@ -1107,6 +1114,18 @@
     patentCTCApplicationId = applicationId;
     patentCTCStatus = status;
     showPatentCTCDialog = true;
+  }
+
+  // Open design amendment dialog
+  function openDesignAmendmentDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+  ) {
+    designAmendmentFileId = fileId;
+    designAmendmentApplicationId = applicationId;
+    designAmendmentStatus = status;
+    showDesignAmendmentDialog = true;
   }
 
   // Open patent amendment dialog
@@ -2466,6 +2485,14 @@
   status={patentAmendmentStatus}
 />
 
+<!-- Design Amendment Dialog -->
+<DesignAmendmentDialog
+  bind:open={showDesignAmendmentDialog}
+  fileId={designAmendmentFileId}
+  applicationId={designAmendmentApplicationId}
+  status={designAmendmentStatus}
+/>
+
 {#if showStatusHistory}
   <svelte:component this={historyComponent} {...historyData} />
 {/if}
@@ -2822,6 +2849,19 @@
                         View Withdrawal Application
                       </DropdownMenu.Item>
                     {/if}
+                  {/if}
+                  <!-- Design Amendment Application -->
+                  {#if application.applicationType === FormApplicationTypes.Amendment && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() =>
+                        openDesignAmendmentDialog(
+                          fileData.fileId,
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
                   {/if}
                   <!-- Clerical Update / Amendment (Trademark & Patent) -->
                   {#if ((application.applicationType == FormApplicationTypes.ClericalUpdate || application.applicationType == FormApplicationTypes.Amendment || application.applicationType == FormApplicationTypes.Reclassification) && fileData.type === FileTypes.Trademark && application.currentStatus !== ApplicationStatuses.AwaitingPayment) || (application.applicationType === FormApplicationTypes.Amendment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus))}
