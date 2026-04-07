@@ -110,6 +110,7 @@ const config = {
         "/statistics/financial",
         "/statistics/performance/staff",
         "/statistics/performance/units",
+        "/statistics/operational",
         "/design",
         "/auth/reset-password",
         "/home/postregistration/designamendment",
