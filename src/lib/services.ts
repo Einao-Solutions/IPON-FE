@@ -7,6 +7,7 @@ export interface IPService {
   category: "filing" | "agent" | "payment";
   price?: string;
   isCommon?: boolean; // Services available across all IP types
+  maintenance?: boolean; // Service is temporarily under maintenance
 }
 
 // Common services available for all IP types
@@ -146,6 +147,7 @@ export const trademarkServices: IPService[] = [
     route: "/home/renewal",
     category: "filing",
     price: "₦15,500",
+    maintenance: true,
   },
   {
     id: "withdrawal",

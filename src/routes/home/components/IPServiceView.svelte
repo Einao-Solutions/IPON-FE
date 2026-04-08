@@ -10,6 +10,7 @@
   import { Button } from "$lib/components/ui/button";
   import AvailabilitySearchModal from "./AvailabilitySearchModal.svelte";
   import StreamlinedPostRegModal from "./StreamlinedPostRegModal.svelte";
+  import UnderMaintenanceModal from "./UnderMaintenanceModal.svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import { onMount, onDestroy } from "svelte";
   import { baseURL } from "$lib/helpers";
@@ -39,6 +40,10 @@
   let showChangeOfAgentDialog = false;
   let showGetDocumentsDialog = false;
   let showFileAppealsDialog: boolean = false;
+
+  // Under Maintenance modal
+  let showUnderMaintenanceModal: boolean = false;
+  let maintenanceServiceName: string = "";
 
   // NEW STREAMLINED MODAL - Context-aware post-registration
   let showStreamlinedPostRegModal: boolean = false;
@@ -565,6 +570,13 @@
     showStreamlinedPostRegModal = true;
   }
 
+  // Handle under maintenance modal
+  function handleOpenUnderMaintenanceModal(event: Event) {
+    const customEvent = event as CustomEvent;
+    maintenanceServiceName = customEvent.detail?.serviceName || "";
+    showUnderMaintenanceModal = true;
+  }
+
   // Event listeners for custom events from ServiceGrid - same pattern as dashboard
   onMount(() => {
     // Initialize mobile detection
@@ -593,6 +605,10 @@
     window.addEventListener(
       "openStreamlinedPostRegModal",
       handleOpenStreamlinedPostRegModal,
+    );
+    window.addEventListener(
+      "openUnderMaintenanceModal",
+      handleOpenUnderMaintenanceModal,
     );
   });
 
@@ -623,6 +639,10 @@
     window.removeEventListener(
       "openStreamlinedPostRegModal",
       handleOpenStreamlinedPostRegModal,
+    );
+    window.removeEventListener(
+      "openUnderMaintenanceModal",
+      handleOpenUnderMaintenanceModal,
     );
   });
 
@@ -1734,6 +1754,12 @@
     }}
   />
 {/if}
+
+<!-- UNDER MAINTENANCE MODAL -->
+<UnderMaintenanceModal
+  bind:open={showUnderMaintenanceModal}
+  serviceName={maintenanceServiceName}
+/>
 
 <!-- Change of Agent OwnershipForm -->
 {#if showOwnership}

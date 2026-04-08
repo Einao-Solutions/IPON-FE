@@ -338,7 +338,7 @@
       });
     }
   }
-  async function publishFile(fileNumber: string, reason: string) {
+  async function publishFile(fileNumber: string, reason: string | null) {
     isSaving = true;
     const response = await fetch(`${baseURL}/api/publication/SavePublication`, {
       method: "POST",
@@ -419,14 +419,14 @@
       <Button
         class="bg-green-600 hover:bg-green-700 text-white"
         disabled={!$newStatusReason || isSaving}
-        on:click={() => {publishFile(fileData.fileId)
+        on:click={() => {publishFile(fileData.fileId, $newStatusReason ?? null)
         }}
       >
         Publish
       </Button>
     {/if}
     <div class="gap-2 flex">
-      {#each getStatuses(currentStatus, $applicationData.type) as status}
+      {#each getStatuses(currentStatus, $applicationData?.type ?? 0) as status}
         <button
           on:click={() => (selectedStatus = status)}
           style="background-color: {selectedStatus === status
