@@ -65,17 +65,17 @@
   // Variables
   // ======================
   export let allApplications: ApplicationHistoryType[];
-  export let allOppositions: OppositionHistoryType[] | [];
-  export let isAdmin: boolean = false;
   export let fileData: any;
   export let showMissingDetailsForm: () => {};
   let selectedApplication: ApplicationHistoryType | null = null;
+  $: selectedOldValue = selectedApplication?.oldValue as any;
+  $: selectedNewValue = selectedApplication?.newValue as any;
   let showStatusHistory: boolean = false;
   let historyComponent: typeof HistorySheet | null = null;
   let isNewStatusLoading: boolean = false;
-  let historyData = {};
+  let historyData: any = {};
   let showDataComparison: boolean = false;
-  let newStatus: ApplicationStatuses | null = null;
+  let newStatus: string | null = null;
   let showAlertDialog: boolean = false;
   let newStatusContent: number | null = null;
   let showUpdateStatusForm: boolean = false;
@@ -240,6 +240,8 @@
     }
 
     historyData = {
+      title: "Status History",
+      description: "Application status changes",
       dataList: application.statusHistory,
       onclose: () => {
         showStatusHistory = false;
@@ -858,6 +860,7 @@
   let getDocResult: any = null;
   let getDocError: string | null = null;
   let documents: any[] = [];
+  let appId: string = "";
 
   async function getDocuments() {
     getDocError = null;
@@ -1228,25 +1231,25 @@
     <div class="h-[calc(100%-4rem)] overflow-auto">
       {#if dataType() === "table"}
         <ComparisonTable
-          oldData={selectedApplication?.oldValue}
-          newData={selectedApplication?.newValue}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
           type={selectedApplication?.fieldToChange ?? ""}
         />
       {:else if dataType() === "attachments"}
         <AttachmentsComparison
-          oldAttachments={selectedApplication?.oldValue}
-          newAttachments={selectedApplication?.newValue}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
         />
       {:else if dataType() === "correspondence"}
         <CorrespondenceComparison
-          oldDetails={selectedApplication?.oldValue}
-          newDetails={selectedApplication?.newValue}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
         />
       {:else}
         <OtherComparison
-          oldValue={selectedApplication?.oldValue}
-          newValue={selectedApplication?.newValue}
-          field={selectedApplication?.fieldToChange}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
+          field={selectedApplication?.fieldToChange ?? ""}
         />
       {/if}
     </div>
@@ -1763,7 +1766,7 @@
       {/if}
 
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-        {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected}
+        {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType ?? -1) && selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected}
           <div class="mt-4">
             <Label
               for="approval-reason"
@@ -1800,7 +1803,7 @@
 		{/if}		 -->
       <Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
         {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-          {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
+          {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
             <Button
               on:click={() => {
                 if (!reason || reason.trim().length < 10) {
@@ -1857,7 +1860,7 @@
                   );
                   return;
                 }
-                denyRecordal(selectedApplication);
+                if (selectedApplication) denyRecordal(selectedApplication);
               }}
               disabled={!reason || reason.trim().length < 10}
               class="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1959,7 +1962,7 @@
               Cancel
             </Button>
             <Button
-              on:click={handleDenyAppeal}
+              on:click={() => { if (selectedApplication) handleDenyAppeal(selectedApplication); }}
               variant="destructive"
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2"
@@ -1973,7 +1976,7 @@
               {/if}
             </Button>
             <Button
-              on:click={handleApproveAppeal}
+              on:click={() => { if (selectedApplication) handleApproveAppeal(selectedApplication); }}
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2 bg-green-600 hover:bg-green-700"
             >
@@ -2329,7 +2332,7 @@
           <Textarea
             id="withdrawal-comment"
             bind:value={withdrawalComment}
-            rows="3"
+            rows={3}
             class="w-full border rounded p-2 focus:ring-2 focus:ring-red-200"
             placeholder="Type your comment here..."
             required
@@ -2635,7 +2638,7 @@
                     >
                   {/if}
                   <!-- View Recordal Data (Trademarks Only) -->
-                  {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType))}
+                  {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType ?? -1))}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewRecordalData(application);
