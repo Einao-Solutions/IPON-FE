@@ -15,6 +15,13 @@
     : services;
 
   function handleServiceClick(service: IPService) {
+    if (service.maintenance) {
+      const event = new CustomEvent('openUnderMaintenanceModal', {
+        detail: { serviceName: service.name }
+      });
+      window.dispatchEvent(event);
+      return;
+    }
     if (service.id === 'availability-search') {
       // Handle modal opening for availability search
       const event = new CustomEvent('openAvailabilitySearch');
@@ -195,7 +202,9 @@
               class={getIconColor(service)} 
             />
           </div>
-          {#if service.price}
+          {#if service.maintenance}
+            <div class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Maintenance</div>
+          {:else if service.price}
             <div class="text-right">
               <div class="text-sm font-semibold text-green-600">{service.price}</div>
               <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
@@ -236,12 +245,16 @@
           </div>
           
           <div class="flex items-center space-x-4 flex-shrink-0">
-            {#if service.price}
-              <div class="text-right">
-                <div class="text-sm font-semibold text-green-600">{service.price}</div>
-              </div>
+            {#if service.maintenance}
+              <div class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Maintenance</div>
+            {:else}
+              {#if service.price}
+                <div class="text-right">
+                  <div class="text-sm font-semibold text-green-600">{service.price}</div>
+                </div>
+              {/if}
+              <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
             {/if}
-            <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
           </div>
         </div>
       </button>
