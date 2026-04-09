@@ -9,6 +9,7 @@ import {
   UserTypes,
 } from "$lib/helpers";
 import { faker } from "@faker-js/faker";
+import { User } from "lucide-svelte";
 
 export function getStatuses(
   currentStatus: ApplicationStatuses,
@@ -199,6 +200,7 @@ export function showTreatUpdateAppButton(
   let hasRequiredPatentSearchPatentRoles = [
     UserRoles.PatentSearch,
     UserRoles.Tech,
+    UserRoles.PatentDesignRegistrar
   ];
   let hasRequiredTrademarkSearchPatentRoles = [
     UserRoles.TrademarkSearch,
@@ -208,7 +210,7 @@ export function showTreatUpdateAppButton(
     UserRoles.DesignSearch,
     UserRoles.Tech,
   ];
-  let hasRequiredPatentExamRoles = [UserRoles.PatentExaminer, UserRoles.Tech];
+  let hasRequiredPatentExamRoles = [UserRoles.PatentExaminer, UserRoles.PatentDesignRegistrar, UserRoles.Tech];
   let hasRequiredTrademarkExamRoles = [
     UserRoles.TrademarkExaminer,
     UserRoles.Tech,
@@ -464,6 +466,7 @@ export function CanTreatApplication(
       hasRole = userRoles.some((x) =>
         [
           UserRoles.PatentExaminer,
+          UserRoles.PatentDesignRegistrar,
           UserRoles.Tech,
           UserRoles.AppealExaminer,
           UserRoles.SuperAdmin,
@@ -508,6 +511,7 @@ export function CanTreatApplication(
         [
           UserRoles.PatentCertification,
           UserRoles.DesignCertification,
+          UserRoles.PatentDesignRegistrar,
           UserRoles.SuperAdmin,
           UserRoles.Tech,
           UserRoles.PatentDesignRegistrar,
