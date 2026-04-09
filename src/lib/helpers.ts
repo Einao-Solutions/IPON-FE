@@ -102,10 +102,10 @@ export type PriorityValidator = {
 export type RevisionsType = {
   id: string | null;
   field: string | null;
-  oldTitle: unknown | null;
-  newTitle: unknown | null;
+  oldTitle: any | null;
+  newTitle: any | null;
   status: ApplicationStatuses | null;
-  statusHistory: [] | null;
+  statusHistory: any[] | null;
   dateTime: number | null;
 };
 export const PatentSections = [
