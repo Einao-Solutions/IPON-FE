@@ -21,10 +21,10 @@
   $: sortedData = sortData(dataList, sortColumn, sortDirection);
   $: totalPages = Math.ceil(count / itemsPerPage);
   $: paginatedData = sortedData;
-  $: wordMark = function goToPage(page: number) {
+  function goToPage(page: number) {
     currentPage = page;
     dispatch("pageChange", { page, index: (page - 1) * itemsPerPage });
-  };
+  }
   $: oppStaff = $loggedInUser?.userRoles?.some((r: UserRoles) =>
     [UserRoles.TrademarkOpposition, UserRoles.SuperAdmin, UserRoles.Tech].includes(r),
   );
