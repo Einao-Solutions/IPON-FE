@@ -3,14 +3,25 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import Icon from "@iconify/svelte";
-  import { Button } from "$lib/components/ui/button";
-  import * as Select from "$lib/components/ui/select";
   import { statisticsApi, type StaffPerformanceData } from "$lib/utils/statisticsApi";
   import { ApplicationUnits, getUnitsForFileType, FilingType } from "$lib/helpers";
+  import {
+    Chart,
+    BarController,
+    BarElement,
+    CategoryScale,
+    LinearScale,
+    Tooltip,
+    Legend,
+    DoughnutController,
+    ArcElement
+  } from "chart.js";
 
-  // Get registry type from URL params
-  let registryType = $page.url.searchParams.get("registryType") || "Trademark";
-  
+  Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, DoughnutController, ArcElement);
+
+  // Initialize with default, set properly in onMount
+  let registryType = "Trademark";
+
   // Map registry type to FilingType
   $: filingType = registryType === "Patent" ? FilingType.Patent : 
                   registryType === "Design" ? FilingType.Design : 
@@ -68,6 +79,143 @@
 
   // Get selected unit name
   $: selectedUnitName = units.find(u => u.unitId === selectedUnit)?.unitName || "";
+
+  const CHART_COLORS = [
+    "#10b981", "#3b82f6", "#a855f7", "#ec4899",
+    "#f59e0b", "#ef4444", "#06b6d4", "#84cc16",
+    "#f97316", "#6366f1"
+  ];
+
+  // Chart refs
+  let barCanvas: HTMLCanvasElement;
+  let doughnutCanvas: HTMLCanvasElement;
+  let barChart: Chart | null = null;
+  let doughnutChart: Chart | null = null;
+
+  // Top 10 staff for charts
+  $: top10Staff = performanceData
+    ? [...performanceData.staffPerformance]
+        .sort((a, b) => b.totalTreated - a.totalTreated)
+        .slice(0, 10)
+    : [];
+
+  function destroyCharts() {
+    if (barChart) { barChart.destroy(); barChart = null; }
+    if (doughnutChart) { doughnutChart.destroy(); doughnutChart = null; }
+  }
+
+  function renderCharts() {
+    if (!performanceData || !barCanvas || !doughnutCanvas || top10Staff.length === 0) return;
+
+    destroyCharts();
+
+    const labels = top10Staff.map(s => s.staffName);
+    const treated = top10Staff.map(s => s.totalTreated);
+
+    // Horizontal Bar Chart — Top performers
+    barChart = new Chart(barCanvas, {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Files Processed",
+            data: treated,
+            backgroundColor: CHART_COLORS,
+            borderRadius: 6,
+            barPercentage: 0.6,
+          }
+        ]
+      },
+      options: {
+        indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => ` ${ctx.parsed.x.toLocaleString()} files processed`
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            grid: { color: "#f1f5f9" },
+            ticks: { font: { size: 11 } }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { size: 11 } }
+          }
+        }
+      }
+    });
+
+    // Doughnut Chart — Share of total
+    doughnutChart = new Chart(doughnutCanvas, {
+      type: "doughnut",
+      data: {
+        labels,
+        datasets: [{
+          data: treated,
+          backgroundColor: CHART_COLORS,
+          borderWidth: 2,
+          borderColor: "#fff",
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "bottom",
+            labels: {
+              font: { size: 11 },
+              padding: 12,
+              boxWidth: 12
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const total = (ctx.dataset.data as number[]).reduce((a, b) => a + b, 0);
+                const val = ctx.parsed;
+                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
+                return ` ${ctx.label}: ${val.toLocaleString()} (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Re-render charts when data changes
+  $: if (top10Staff.length > 0 && barCanvas && doughnutCanvas) {
+    setTimeout(() => renderCharts(), 50);
+  }
+
+  // Destroy charts when unit changes or filters cleared
+  $: if (!performanceData) {
+    destroyCharts();
+  }
+
+  onMount(() => {
+    // ✅ Safely read search params here
+    registryType = $page.url.searchParams.get("registryType") ?? "Trademark";
+
+    // Re-derive filingType and units after registryType is set
+    filingType = registryType === "Patent" ? FilingType.Patent :
+                 registryType === "Design" ? FilingType.Design :
+                 FilingType.Trademark;
+
+    units = getUnitsForFileType(filingType);
+
+    return () => destroyCharts();
+  });
 
   async function loadPerformanceData() {
     if (selectedUnit === null) return;
@@ -223,7 +371,7 @@
           <!-- Row 1: Year & Clear Button -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <label for="" class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 <Icon icon="lucide:calendar-days" class="w-5 h-5 text-gray-500" />
                 Year
               </label>
@@ -255,7 +403,7 @@
           <!-- Row 2: Period Type & Period Value -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <label for="periodType" class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 <Icon icon="lucide:calendar" class="w-5 h-5 text-gray-500" />
                 Period Type
               </label>
@@ -276,7 +424,7 @@
             </div>
 
             <div>
-              <label class="text-sm font-semibold text-gray-700 mb-2 block">
+              <label for="periodValue" class="text-sm font-semibold text-gray-700 mb-2 block">
                 {selectedPeriodType === 'month' ? 'Select Month' : 'Select Quarter'}
               </label>
               <div class="relative">
@@ -536,6 +684,50 @@
           {/if}
         {/if}
       </div>
+
+      <!-- Charts Section — Below staff list -->
+      {#if top10Staff.length > 0}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+
+          <!-- Horizontal Bar Chart -->
+          <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Icon icon="lucide:bar-chart-horizontal" class="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-800">Top Performers</h3>
+                <p class="text-sm text-gray-500">
+                  Top {top10Staff.length} staff by files processed
+                </p>
+              </div>
+            </div>
+            <div class="relative" style="height: {Math.max(top10Staff.length * 44, 200)}px">
+              <canvas bind:this={barCanvas}></canvas>
+            </div>
+          </div>
+
+          <!-- Doughnut Chart -->
+          <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+            <div class="flex items-center gap-3 mb-6">
+              <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <Icon icon="lucide:pie-chart" class="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h3 class="font-semibold text-slate-800">Processing Share</h3>
+                <p class="text-sm text-gray-500">
+                  Each staff member's contribution to total
+                </p>
+              </div>
+            </div>
+            <div class="relative h-80">
+              <canvas bind:this={doughnutCanvas}></canvas>
+            </div>
+          </div>
+
+        </div>
+      {/if}
+
     {/if}
 
     <!-- No Unit Selected State -->
