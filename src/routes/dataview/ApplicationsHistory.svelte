@@ -67,17 +67,17 @@
   // Variables
   // ======================
   export let allApplications: ApplicationHistoryType[];
-  export let allOppositions: OppositionHistoryType[] | [];
-  export let isAdmin: boolean = false;
   export let fileData: any;
   export let showMissingDetailsForm: () => {};
   let selectedApplication: ApplicationHistoryType | null = null;
+  $: selectedOldValue = selectedApplication?.oldValue as any;
+  $: selectedNewValue = selectedApplication?.newValue as any;
   let showStatusHistory: boolean = false;
   let historyComponent: typeof HistorySheet | null = null;
   let isNewStatusLoading: boolean = false;
-  let historyData = {};
+  let historyData: any = {};
   let showDataComparison: boolean = false;
-  let newStatus: ApplicationStatuses | null = null;
+  let newStatus: string | null = null;
   let showAlertDialog: boolean = false;
   let newStatusContent: number | null = null;
   let showUpdateStatusForm: boolean = false;
@@ -243,6 +243,36 @@
   }
 
   // ======================
+  // Recordal Dialog Helpers
+  // ======================
+  const hiddenKeys = new Set([
+    "id", "isapproved", "documenturl", "authorizationletterurl",
+    "assignmentdeedurl", "appealdocs", "oldattachmenturl",
+    "newattachmenturl", "fileid",
+  ]);
+
+  function isHiddenKey(key: string): boolean {
+    return hiddenKeys.has(key.toLowerCase()) || key.toLowerCase().endsWith("url");
+  }
+
+  function formatFieldName(key: string, stripPrefix?: string): string {
+    let cleaned = key;
+    if (stripPrefix && cleaned.toLowerCase().startsWith(stripPrefix.toLowerCase())) {
+      cleaned = cleaned.slice(stripPrefix.length);
+    }
+    return cleaned
+      .replace(/([A-Z])/g, " $1")
+      .replace(/^./, (s) => s.toUpperCase())
+      .trim();
+  }
+
+  function getRecordalEntries(data: any, filter: (key: string) => boolean): [string, any][] {
+    return Object.entries(data).filter(
+      ([key, value]) => value != null && value !== "" && !isHiddenKey(key) && filter(key),
+    );
+  }
+
+  // ======================
   // History Functions
   // ======================
   async function ViewHistory(application: ApplicationHistoryType) {
@@ -254,6 +284,8 @@
     }
 
     historyData = {
+      title: "Status History",
+      description: "Application status changes",
       dataList: application.statusHistory,
       onclose: () => {
         showStatusHistory = false;
@@ -872,6 +904,7 @@
   let getDocResult: any = null;
   let getDocError: string | null = null;
   let documents: any[] = [];
+  let appId: string = "";
 
   async function getDocuments() {
     getDocError = null;
@@ -1266,25 +1299,25 @@
     <div class="h-[calc(100%-4rem)] overflow-auto">
       {#if dataType() === "table"}
         <ComparisonTable
-          oldData={selectedApplication?.oldValue}
-          newData={selectedApplication?.newValue}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
           type={selectedApplication?.fieldToChange ?? ""}
         />
       {:else if dataType() === "attachments"}
         <AttachmentsComparison
-          oldAttachments={selectedApplication?.oldValue}
-          newAttachments={selectedApplication?.newValue}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
         />
       {:else if dataType() === "correspondence"}
         <CorrespondenceComparison
-          oldDetails={selectedApplication?.oldValue}
-          newDetails={selectedApplication?.newValue}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
         />
       {:else}
         <OtherComparison
-          oldValue={selectedApplication?.oldValue}
-          newValue={selectedApplication?.newValue}
-          field={selectedApplication?.fieldToChange}
+          oldData={selectedOldValue}
+          newData={selectedNewValue}
+          field={selectedApplication?.fieldToChange ?? ""}
         />
       {/if}
     </div>
@@ -1293,636 +1326,353 @@
 
 <Dialog.Root bind:open={showRecordalDialog}>
   <Dialog.Content
-    class="w-11/12 max-w-4xl mx-auto my-4 max-h-[90vh] overflow-hidden flex flex-col"
+    class="w-11/12 max-w-6xl mx-auto my-4 max-h-[92vh] overflow-hidden flex flex-col border-0 shadow-lg rounded-xl bg-white"
   >
-    <Dialog.Header>
-      <Dialog.Title>
-        {selectedApplication?.applicationType === 8
-          ? "Merger Information"
-          : selectedApplication?.applicationType === 7
-            ? "Registered User Information"
-            : selectedApplication?.applicationType === 9
-              ? "Change of Name Information"
-              : selectedApplication?.applicationType === 10
-                ? "Change of Address Information"
-                : selectedApplication?.applicationType === 11
-                  ? "Clerical Update Information"
-                  : selectedApplication?.applicationType === 17
-                    ? "Amendment Information"
-                    : selectedApplication?.applicationType === 5
-                      ? "Assignment Information"
-                      : "Application Details"}
-      </Dialog.Title>
-      <Dialog.Description>
-        {mapTypeToString(selectedApplication?.applicationType || 0)} Details
-      </Dialog.Description>
-    </Dialog.Header>
-
-    <div class="flex-1 overflow-auto">
-      {#if recordalLoading}
-        <div class="flex justify-center items-center h-64">
+    <!-- Header -->
+    <div class="border-b border-slate-200 px-6 py-4">
+      <div class="flex items-start gap-3">
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900">
           <Icon
-            icon="line-md:loading-loop"
-            width="2.5rem"
-            height="2.5rem"
-            class="animate-spin"
+            icon={selectedApplication?.applicationType === FormApplicationTypes.Assignment ? "mdi:swap-horizontal" :
+                  selectedApplication?.applicationType === FormApplicationTypes.Merger ? "mdi:merge" :
+                  selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate ? "mdi:pencil-outline" :
+                  selectedApplication?.applicationType === FormApplicationTypes.Amendment ? "mdi:file-edit-outline" :
+                  "mdi:file-document-outline"}
+            width="1.3em" class="text-white"
           />
         </div>
+        <div class="flex-1 min-w-0">
+          <Dialog.Title class="text-lg font-semibold text-slate-900">
+            {selectedApplication?.applicationType === 8
+              ? "Merger Information"
+              : selectedApplication?.applicationType === 7
+                ? "Registered User Information"
+                : selectedApplication?.applicationType === 9
+                  ? "Change of Name Information"
+                  : selectedApplication?.applicationType === 10
+                    ? "Change of Address Information"
+                    : selectedApplication?.applicationType === 11
+                      ? "Clerical Update Information"
+                      : selectedApplication?.applicationType === 17
+                        ? "Amendment Information"
+                        : selectedApplication?.applicationType === 5
+                          ? "Assignment Information"
+                          : "Application Details"}
+          </Dialog.Title>
+          <Dialog.Description class="text-xs text-slate-600 mt-1">
+            {mapTypeToString(selectedApplication?.applicationType || 0)} • File ID: <span class="font-medium text-slate-900">{fileData?.fileId ?? "—"}</span>
+          </Dialog.Description>
+        </div>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto px-6 py-4">
+      {#if recordalLoading}
+        <div class="flex flex-col items-center justify-center h-40 gap-2">
+          <Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="animate-spin text-slate-300" />
+          <p class="text-xs text-slate-500">Loading application data</p>
+        </div>
       {:else if recordalData}
-        <div class="p-4 space-y-4">
+        <div class="space-y-0">
+
           {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
-            <!-- Assignment Details -->
-            <div class="border rounded-lg p-4 bg-gray-50">
-              <!-- Assignor Details Section -->
-              <div class="mb-6">
-                <h3 class="font-bold text-lg text-gray-900 mb-4">
-                  Assignee Details
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {#each Object.entries(recordalData) as [key, value]}
-                    {#if value != null && !key
-                        .toLowerCase()
-                        .startsWith("assignor") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
-                        .toLowerCase()
-                        .endsWith("url") && key.toLowerCase() !== "isapproved"}
-                      <div class="break-words">
-                        <Label
-                          class="font-semibold capitalize text-sm text-gray-700"
-                        >
-                          {key.replace(/([A-Z])/g, " $1").trim()}:
-                        </Label>
-                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
-                          {#if Array.isArray(value)}
-                            <ul class="list-disc pl-5 space-y-1">
-                              {#each value as item}
-                                <li class="break-words text-sm">{item}</li>
-                              {/each}
-                            </ul>
-                          {:else}
-                            <p class="text-sm text-gray-900">{value}</p>
-                          {/if}
-                        </div>
-                      </div>
-                    {/if}
-                  {/each}
-                </div>
-              </div>
-
-              <!-- Assignee Details Section -->
-              <div class="mb-6">
-                <h3 class="font-bold text-lg text-gray-900 mb-4">
-                  Assignor Details
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {#each Object.entries(recordalData) as [key, value]}
-                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "isapproved", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
-                        .toLowerCase()
-                        .endsWith("url") && key
-                        .toLowerCase()
-                        .startsWith("assignor")}
-                      <div class="break-words">
-                        <Label
-                          class="font-semibold capitalize text-sm text-gray-700"
-                        >
-                          {key.replace(/([A-Z])/g, " $1").trim()}:
-                        </Label>
-                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
-                          {#if Array.isArray(value)}
-                            <ul class="list-disc pl-5 space-y-1">
-                              {#each value as item}
-                                <li class="break-words text-sm">{item}</li>
-                              {/each}
-                            </ul>
-                          {:else}
-                            <p class="text-sm text-gray-900">{value}</p>
-                          {/if}
-                        </div>
-                      </div>
-                    {/if}
-                  {/each}
-                </div>
-              </div>
-
-              <!-- Handle attachment images -->
-              {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
-                <div class="mt-4">
-                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
-                    >Old Attachment:</Label
-                  >
-                  <div class="border rounded-lg p-3 bg-white">
-                    <img
-                      src={recordalData.oldAttachmentUrl ||
-                        recordalData.OldAttachmentUrl}
-                      alt="Old Attachment"
-                      class="max-w-full h-auto rounded border mx-auto"
-                      style="max-height: 400px; object-fit: contain;"
-                    />
-                  </div>
-                </div>
-              {/if}
-              {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
-                <div class="mt-4">
-                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
-                    >New Attachment:</Label
-                  >
-                  <div class="border rounded-lg p-3 bg-white">
-                    <img
-                      src={recordalData.newAttachmentUrl ||
-                        recordalData.NewAttachmentUrl}
-                      alt="New Attachment"
-                      class="max-w-full h-auto rounded border mx-auto"
-                      style="max-height: 400px; object-fit: contain;"
-                    />
-                  </div>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Document Buttons Section -->
-            <div class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
-              {#if recordalData.documentUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.documentUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-document-outline" width="1.2em" />
-                  View Document
-                </Button>
-              {/if}
-              {#if recordalData.assignmentDeedUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.assignmentDeedUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-sign" width="1.2em" />
-                  View Assignment Deed
-                </Button>
-              {/if}
-              {#if recordalData.authorizationLetterUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.authorizationLetterUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-document" width="1.2em" />
-                  View Authorization Letter
-                </Button>
-              {/if}
-            </div>
-          {:else if selectedApplication?.applicationType === FormApplicationTypes.Merger}
-            <!-- Assignment Details -->
-            <div class="border rounded-lg p-4 bg-gray-50">
-              <!-- Assignor Details Section -->
-              <div class="mb-6">
-                <h3 class="font-bold text-lg text-gray-900 mb-4">
-                  New Information
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {#each Object.entries(recordalData) as [key, value]}
-                    {#if value != null && !key
-                        .toLowerCase()
-                        .startsWith("old") && !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && !key
-                        .toLowerCase()
-                        .endsWith("url") && key.toLowerCase() !== "isapproved"}
-                      <div class="break-words">
-                        <Label
-                          class="font-semibold capitalize text-sm text-gray-700"
-                        >
-                          {key.replace(/([A-Z])/g, " $1").trim()}:
-                        </Label>
-                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
-                          {#if Array.isArray(value)}
-                            <ul class="list-disc pl-5 space-y-1">
-                              {#each value as item}
-                                <li class="break-words text-sm">{item}</li>
-                              {/each}
-                            </ul>
-                          {:else}
-                            <p class="text-sm text-gray-900">{value}</p>
-                          {/if}
-                        </div>
-                      </div>
-                    {/if}
-                  {/each}
-                </div>
-              </div>
-
-              <!-- Assignee Details Section -->
-              <div class="mb-6">
-                <h3 class="font-bold text-lg text-gray-900 mb-4">
-                  Existing Information
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {#each Object.entries(recordalData) as [key, value]}
-                    {#if !["id", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "fileid", "isapproved", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && !key
-                        .toLowerCase()
-                        .endsWith("url") && key.toLowerCase().startsWith("old")}
-                      <div class="break-words">
-                        <Label
-                          class="font-semibold capitalize text-sm text-gray-700"
-                        >
-                          {key.replace(/([A-Z])/g, " $1").trim()}:
-                        </Label>
-                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
-                          {#if Array.isArray(value)}
-                            <ul class="list-disc pl-5 space-y-1">
-                              {#each value as item}
-                                <li class="break-words text-sm">{item}</li>
-                              {/each}
-                            </ul>
-                          {:else}
-                            <p class="text-sm text-gray-900">{value}</p>
-                          {/if}
-                        </div>
-                      </div>
-                    {/if}
-                  {/each}
-                </div>
-              </div>
-
-              <!-- Handle attachment images -->
-              {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
-                <div class="mt-4">
-                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
-                    >Old Attachment:</Label
-                  >
-                  <div class="border rounded-lg p-3 bg-white">
-                    <img
-                      src={recordalData.oldAttachmentUrl ||
-                        recordalData.OldAttachmentUrl}
-                      alt="Old Attachment"
-                      class="max-w-full h-auto rounded border mx-auto"
-                      style="max-height: 400px; object-fit: contain;"
-                    />
-                  </div>
-                </div>
-              {/if}
-              {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
-                <div class="mt-4">
-                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
-                    >New Attachment:</Label
-                  >
-                  <div class="border rounded-lg p-3 bg-white">
-                    <img
-                      src={recordalData.newAttachmentUrl ||
-                        recordalData.NewAttachmentUrl}
-                      alt="New Attachment"
-                      class="max-w-full h-auto rounded border mx-auto"
-                      style="max-height: 400px; object-fit: contain;"
-                    />
-                  </div>
-                </div>
-              {/if}
-            </div>
-
-            <!-- Document Buttons Section -->
-            <div class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
-              {#if recordalData.documentUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.documentUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-document-outline" width="1.2em" />
-                  View Document
-                </Button>
-              {/if}
-              {#if recordalData.assignmentDeedUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.assignmentDeedUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-sign" width="1.2em" />
-                  View Assignment Deed
-                </Button>
-              {/if}
-              {#if recordalData.authorizationLetterUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.authorizationLetterUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-document" width="1.2em" />
-                  View Authorization Letter
-                </Button>
-              {/if}
-            </div>
-          {:else if [7, 9, 36, 10].includes(selectedApplication?.applicationType ?? -1)}
-            <div class="border rounded-lg p-4 bg-gray-50">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {#each Object.entries(recordalData) as [key, value]}
-                  {#if !["id", "isApproved", "documentUrl", "authorizationLetterUrl", "assignmentDeedUrl", "appealDocs", "oldAttachmentUrl", "newAttachmentUrl"].includes(key.toLowerCase()) && value != null && value != "" && !key
-                      .toLowerCase()
-                      .endsWith("url")}
-                    <div class="break-words">
-                      <Label
-                        class="font-semibold capitalize text-sm text-gray-700"
-                      >
-                        {key.replace(/([A-Z])/g, " $1").trim()}:
-                      </Label>
-                      <div class="mt-1 p-3 bg-white rounded border shadow-sm">
+            <!-- Assignment: Assignee -->
+            <section>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Assignee Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each getRecordalEntries(recordalData, (k) => !k.toLowerCase().startsWith("assignor")) as [key, value]}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <ul class="list-disc pl-5 space-y-1">
-                            {#each value as item}
-                              <li class="break-words text-sm">{item}</li>
-                            {/each}
-                          </ul>
-                        {:else}
-                          <p class="text-sm text-gray-900">{value}</p>
-                        {/if}
-                      </div>
-                    </div>
-                  {/if}
-                {/each}
-              </div>
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                        {:else}{value}{/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </section>
+            <section>
+              <table class="w-full text-sm mt-4">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Assignor Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each getRecordalEntries(recordalData, (k) => k.toLowerCase().startsWith("assignor")) as [key, value]}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key, "assignor")}</td>
+                      <td class="px-3 py-2 text-slate-800">
+                        {#if Array.isArray(value)}
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                        {:else}{value}{/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </section>
 
-              <!-- Handle attachment images -->
-              {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
-                <div class="mt-4">
-                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
-                    >Old Attachment:</Label
-                  >
-                  <div class="border rounded-lg p-3 bg-white">
-                    <img
-                      src={recordalData.oldAttachmentUrl ||
-                        recordalData.OldAttachmentUrl}
-                      alt="Old Attachment"
-                      class="max-w-full h-auto rounded border mx-auto"
-                      style="max-height: 400px; object-fit: contain;"
-                    />
-                  </div>
-                </div>
-              {/if}
-              {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
-                <div class="mt-4">
-                  <Label class="font-semibold text-sm text-gray-700 mb-2 block"
-                    >New Attachment:</Label
-                  >
-                  <div class="border rounded-lg p-3 bg-white">
-                    <img
-                      src={recordalData.newAttachmentUrl ||
-                        recordalData.NewAttachmentUrl}
-                      alt="New Attachment"
-                      class="max-w-full h-auto rounded border mx-auto"
-                      style="max-height: 400px; object-fit: contain;"
-                    />
-                  </div>
-                </div>
-              {/if}
-            </div>
+          {:else if selectedApplication?.applicationType === FormApplicationTypes.Merger}
+            <!-- Merger: New -->
+            <section>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">New Information</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each getRecordalEntries(recordalData, (k) => !k.toLowerCase().startsWith("old")) as [key, value]}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td class="px-3 py-2 text-slate-800">
+                        {#if Array.isArray(value)}
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                        {:else}{value}{/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </section>
+            <!-- Merger: Existing -->
+            <section>
+              <table class="w-full text-sm mt-4">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Existing Information</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each getRecordalEntries(recordalData, (k) => k.toLowerCase().startsWith("old")) as [key, value]}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key, "old")}</td>
+                      <td class="px-3 py-2 text-slate-800">
+                        {#if Array.isArray(value)}
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                        {:else}{value}{/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </section>
 
-            <!-- Document Buttons Section -->
-            <div class="flex flex-wrap gap-2 p-4 bg-gray-50 rounded-lg border">
-              {#if recordalData.documentUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.documentUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-document-outline" width="1.2em" />
-                  View Document
-                </Button>
-              {/if}
-              {#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
-                {#each recordalData.appealDocs as docUrl, index}
-                  <Button
-                    on:click={() => window.open(docUrl, "_blank")}
-                    variant="outline"
-                    size="sm"
-                    class="flex items-center gap-2"
-                  >
-                    <Icon icon="mdi:file-document-outline" width="1.2em" />
-                    View Appeal Document {index + 1}
-                  </Button>
-                {/each}
-              {/if}
+          {:else if [7, 9, 36, 10].includes(selectedApplication?.applicationType ?? -1)}
+            <!-- Change of Name / Address / Registered User / Reclassification -->
+            <section>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each getRecordalEntries(recordalData, () => true) as [key, value]}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td class="px-3 py-2 text-slate-800">
+                        {#if Array.isArray(value)}
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                        {:else}{value}{/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </section>
 
-              {#if recordalData.assignmentDeedUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.assignmentDeedUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-sign" width="1.2em" />
-                  View Assignment Deed
-                </Button>
-              {/if}
-              {#if recordalData.authorizationLetterUrl}
-                <Button
-                  on:click={() =>
-                    window.open(recordalData.authorizationLetterUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="flex items-center gap-2"
-                >
-                  <Icon icon="mdi:file-document" width="1.2em" />
-                  View Authorization Letter
-                </Button>
-              {/if}
-            </div>
           {:else if selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment}
-            <!-- Clerical Update / Amendment Details -->
-            <div class="border rounded-lg p-4 bg-gray-50">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {#each Object.entries(recordalData) as [key, value]}
-                  {#if value != null && !["id", "isApproved", "documentUrl"].includes(key)}
-                    <div class="break-words">
-                      <Label
-                        class="font-semibold capitalize text-sm text-gray-700"
-                      >
-                        {key
-                          .replace(/([A-Z])/g, " $1")
-                          .replace("Url", "")
-                          .trim()}:
-                      </Label>
-                      {#if typeof value === "string" && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
-                        <div class="mt-1 border rounded-lg p-3 bg-white">
-                          <img
-                            src={value}
-                            alt={key}
-                            class="max-w-full h-auto rounded border mx-auto"
-                            style="max-height: 400px; object-fit: contain;"
-                          />
-                        </div>
-                      {:else if key.endsWith("Url") && typeof value === "string" && value}
-                        <Button
-                          on:click={() => window.open(String(value), "_blank")}
-                          variant="outline"
-                          size="sm"
-                          class="flex items-center gap-2 mt-1"
-                        >
-                          <Icon
-                            icon="mdi:file-document-outline"
-                            width="1.2em"
-                          />
-                          View Document
-                        </Button>
-                      {:else}
-                        <div class="mt-1 p-3 bg-white rounded border shadow-sm">
-                          <p class="text-sm text-gray-900 break-all">{value}</p>
-                        </div>
-                      {/if}
-                    </div>
-                  {/if}
-                {/each}
+            <!-- Clerical Update / Amendment -->
+            <section>
+              <table class="w-full text-sm">
+                <thead>
+                  <tr class="border-b border-slate-200">
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each Object.entries(recordalData).filter(([key, value]) => value != null && !["id", "isApproved", "documentUrl"].includes(key)) as [key, value]}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td class="px-3 py-2 text-slate-800">
+                        {#if typeof value === "string" && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
+                          <img src={value} alt={key} class="max-w-xs h-auto rounded" style="max-height: 150px; object-fit: contain;" />
+                        {:else if key.endsWith("Url") && typeof value === "string" && value}
+                          <Button on:click={() => window.open(String(value), "_blank")} variant="outline" size="sm" class="flex items-center gap-1 text-xs">
+                            <Icon icon="mdi:open-in-new" width="0.9em" />
+                            Open
+                          </Button>
+                        {:else}
+                          {value}
+                        {/if}
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </section>
+          {/if}
+
+          <!-- Shared: Attachments -->
+          {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl || recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+            <section class="mt-3">
+              <h4 class="text-xs font-semibold text-slate-900 mb-2">Attachments</h4>
+              <div class="flex flex-wrap gap-4">
+                {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
+                  <div class="flex flex-col gap-1">
+                    <span class="text-xs font-medium text-slate-600">Previous</span>
+                    <img
+                      src={recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
+                      alt="Old Attachment"
+                      class="max-w-xs h-auto rounded border border-slate-200"
+                      style="max-height: 150px; object-fit: contain;"
+                    />
+                  </div>
+                {/if}
+                {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+                  <div class="flex flex-col gap-1">
+                    <span class="text-xs font-medium text-slate-600">Updated</span>
+                    <img
+                      src={recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+                      alt="New Attachment"
+                      class="max-w-xs h-auto rounded border border-slate-200"
+                      style="max-height: 150px; object-fit: contain;"
+                    />
+                  </div>
+                {/if}
               </div>
-            </div>
+            </section>
+          {/if}
+
+          <!-- Shared: Documents -->
+          {#if recordalData.documentUrl || recordalData.assignmentDeedUrl || recordalData.authorizationLetterUrl || (recordalData.appealDocs && recordalData.appealDocs.length > 0)}
+            <section class="mt-3">
+              <h4 class="text-xs font-semibold text-slate-900 mb-2">Supporting Documents</h4>
+              <div class="flex flex-wrap gap-2">
+                {#if recordalData.documentUrl}
+                  <Button on:click={() => window.open(recordalData.documentUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                    <Icon icon="mdi:file-document-outline" width="1em" />Document
+                  </Button>
+                {/if}
+                {#if recordalData.assignmentDeedUrl}
+                  <Button on:click={() => window.open(recordalData.assignmentDeedUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                    <Icon icon="mdi:file-sign" width="1em" />Assignment Deed
+                  </Button>
+                {/if}
+                {#if recordalData.authorizationLetterUrl}
+                  <Button on:click={() => window.open(recordalData.authorizationLetterUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                    <Icon icon="mdi:file-certificate-outline" width="1em" />Authorization
+                  </Button>
+                {/if}
+                {#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
+                  {#each recordalData.appealDocs as docUrl, index}
+                    <Button on:click={() => window.open(docUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                      <Icon icon="mdi:file-document-outline" width="1em" />Appeal {index + 1}
+                    </Button>
+                  {/each}
+                {/if}
+              </div>
+            </section>
           {/if}
         </div>
       {:else}
-        <div class="text-center py-8">
-          <Icon
-            icon="mdi:file-alert-outline"
-            class="text-gray-400 mx-auto"
-            width="3rem"
-            height="3rem"
-          />
-          <p class="text-gray-500 mt-2">No application data available</p>
+        <div class="flex flex-col items-center justify-center h-40 gap-2">
+          <Icon icon="mdi:file-alert-outline" class="text-slate-300" width="2.5rem" height="2.5rem" />
+          <p class="text-xs text-slate-400">No application data available</p>
         </div>
       {/if}
 
+      <!-- Decision Reason -->
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-        {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType) && selectedApplication?.currentStatus != ApplicationStatuses.Approved && selectedApplication?.currentStatus != ApplicationStatuses.Rejected}
-          <div class="mt-4">
-            <Label
-              for="approval-reason"
-              class="text-sm font-semibold text-gray-900"
-            >
+        {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
+          <div class="mt-4 pt-4 border-t border-slate-200">
+            <Label for="approval-reason" class="text-xs font-semibold text-slate-900 block mb-2">
               Decision Reason <span class="text-red-500">*</span>
             </Label>
             <Textarea
               id="approval-reason"
-              class="min-w-full min-h-32 mt-1"
-              placeholder="Enter detailed reason for approval or denial..."
+              class="w-full rounded border border-slate-200 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 text-slate-900 placeholder:text-slate-400 min-h-20 px-3 py-2 text-xs resize-none"
+              placeholder="Provide detailed reason..."
               bind:value={reason}
             />
             {#if reason && reason.trim().length > 0 && reason.trim().length < 10}
-              <p class="text-xs text-red-500 mt-1 flex items-center gap-1">
+              <p class="text-xs text-red-600 mt-1.5 flex items-center gap-1">
                 <Icon icon="mdi:alert-circle" width="14" />
-                Reason must be at least 10 characters
+                Minimum 10 characters required
               </p>
             {/if}
           </div>
         {/if}
       {/if}
-      <!-- {#if $loggedInUser?.roles?.includes(UserRoles.TrademarkCertification)}
-			{#if [5, 7, 8, 9, 10, 11, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.Approved || selectedApplication?.currentStatus == ApplicationStatuses.Rejected)}
-				<div class="mt-4">
-					<Label for="approval-reason">Decision Reason</Label>
-					<Textarea
-						id="approval-reason"
-						class="min-w-full min-h-32 mt-1"
-						placeholder={selectedApplication.reason}
-					/>
-				</div>
-			{/if}
-		{/if}		 -->
-      <Dialog.Footer class="mt-4 flex flex-wrap gap-2 justify-end">
-        {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-          {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
-            <Button
-              on:click={() => {
-                if (!reason || reason.trim().length < 10) {
-                  showToast(
-                    "error",
-                    "Please provide a detailed reason (at least 10 characters)",
-                  );
-                  return;
-                }
-                switch (selectedApplication?.applicationType) {
-                  case 5:
-                    approveAssignment(selectedApplication);
-                    break;
-                  case 7:
-                    approveRegUser(selectedApplication);
-                    break;
-                  case 8:
-                    approveMerger(selectedApplication);
-                    break;
-                  case 17:
-                    approveAmendment(selectedApplication);
-                    break;
-                  case 9:
-                  case 36:
-                  case 10:
-                    approveChangeDataRecordal(selectedApplication);
-                    break;
-                  case 11:
-                    approveRecordal(
-                      "/api/files/ApproveClericalUpdate",
-                      selectedApplication,
-                      "Clerical update approved successfully",
-                    );
-                    break;
-                }
-              }}
-              disabled={!reason || reason.trim().length < 10}
-              class="bg-green-600 hover:bg-green-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Icon
-                icon="mdi:check-circle-outline"
-                class="mr-1"
-                width="1.2em"
-              />
-              Approve Application
-            </Button>
+    </div>
 
-            <Button
-              on:click={() => {
-                if (!reason || reason.trim().length < 10) {
-                  showToast(
-                    "error",
-                    "Please provide a detailed reason (at least 10 characters)",
-                  );
-                  return;
-                }
-                denyRecordal(selectedApplication);
-              }}
-              disabled={!reason || reason.trim().length < 10}
-              class="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Icon
-                icon="mdi:close-circle-outline"
-                class="mr-1"
-                width="1.2em"
-              />
-              Deny Application
-            </Button>
-          {/if}
+    <!-- Footer -->
+    <div class="border-t border-slate-200 px-6 py-3 flex flex-wrap gap-2 justify-end">
+      {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
+        {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
+          <Button
+            on:click={() => {
+              if (!reason || reason.trim().length < 10) {
+                showToast("error", "Please provide a detailed reason (at least 10 characters)");
+                return;
+              }
+              switch (selectedApplication?.applicationType) {
+                case 5: approveAssignment(selectedApplication); break;
+                case 7: approveRegUser(selectedApplication); break;
+                case 8: approveMerger(selectedApplication); break;
+                case 17: approveAmendment(selectedApplication); break;
+                case 9: case 36: case 10: approveChangeDataRecordal(selectedApplication); break;
+                case 11: approveRecordal("/api/files/ApproveClericalUpdate", selectedApplication, "Clerical update approved successfully"); break;
+              }
+            }}
+            disabled={!reason || reason.trim().length < 10}
+            class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 rounded transition-colors"
+          >
+            <Icon icon="mdi:check" class="mr-1" width="1em" />
+            Approve
+          </Button>
+          <Button
+            on:click={() => {
+              if (!reason || reason.trim().length < 10) {
+                showToast("error", "Please provide a detailed reason (at least 10 characters)");
+                return;
+              }
+              if (selectedApplication) denyRecordal(selectedApplication);
+            }}
+            disabled={!reason || reason.trim().length < 10}
+            class="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 rounded transition-colors"
+          >
+            <Icon icon="mdi:close" class="mr-1" width="1em" />
+            Deny
+          </Button>
         {/if}
+      {/if}
 
-        <Button
-          on:click={() => {
-            showRecordalDialog = false;
-            reason = "";
-          }}
-          variant="outline"
-        >
-          <Icon icon="mdi:close" class="mr-1" width="1.2em" />
-          Close
-        </Button>
-      </Dialog.Footer>
-    </div></Dialog.Content
-  >
+      <Button
+        on:click={() => { showRecordalDialog = false; reason = ""; }}
+        variant="outline"
+        class="text-xs font-medium border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded transition-colors"
+      >
+        Close
+      </Button>
+    </div>
+  </Dialog.Content>
 </Dialog.Root>
 
 <Dialog.Root bind:open={showAppealRequest}>
@@ -1997,7 +1747,7 @@
               Cancel
             </Button>
             <Button
-              on:click={handleDenyAppeal}
+              on:click={() => { if (selectedApplication) handleDenyAppeal(selectedApplication); }}
               variant="destructive"
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2"
@@ -2011,7 +1761,7 @@
               {/if}
             </Button>
             <Button
-              on:click={handleApproveAppeal}
+              on:click={() => { if (selectedApplication) handleApproveAppeal(selectedApplication); }}
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2 bg-green-600 hover:bg-green-700"
             >
@@ -2367,7 +2117,7 @@
           <Textarea
             id="withdrawal-comment"
             bind:value={withdrawalComment}
-            rows="3"
+            rows={3}
             class="w-full border rounded p-2 focus:ring-2 focus:ring-red-200"
             placeholder="Type your comment here..."
             required
@@ -2689,7 +2439,7 @@
                     >
                   {/if}
                   <!-- View Recordal Data (Trademarks Only) -->
-                  {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType))}
+                  {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType ?? -1))}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewRecordalData(application);

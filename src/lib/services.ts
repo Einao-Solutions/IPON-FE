@@ -7,6 +7,7 @@ export interface IPService {
   category: "filing" | "agent" | "payment";
   price?: string;
   isCommon?: boolean; // Services available across all IP types
+  maintenance?: boolean; // Service is temporarily under maintenance
 }
 
 // Common services available for all IP types
@@ -146,6 +147,7 @@ export const trademarkServices: IPService[] = [
     route: "/home/renewal",
     category: "filing",
     price: "₦15,500",
+    maintenance: true,
   },
   {
     id: "withdrawal",
@@ -354,15 +356,6 @@ export const patentServices: IPService[] = [
     price: "",
     isCommon: true,
   },
-  // {
-  //   id: 'renewal-patent',
-  //   name: 'RENEWAL',
-  //   description: 'File Patent Recordal Applications',
-  //   icon: 'mdi:refresh',
-  //   route: '/home/postregistration',
-  //   category: 'filing',
-  //   price: ''
-  // },
   {
     id: "file-withdrawal",
     name: "WITHDRAWAL",
@@ -449,15 +442,16 @@ export const patentServices: IPService[] = [
   },
 
   // RECORDALS CATEGORY
-  // {
-  //   id: 'renewal-recordals-patent',
-  //   name: 'RENEWAL',
-  //   description: 'Patent renewal recordals',
-  //   icon: 'mdi:refresh',
-  //   route: '/home/postregistration',
-  //   category: 'filing',
-  //   price: ''
-  // },
+  {
+    id: "renewal-patent",
+    name: "RENEWAL",
+    description: "File Patent Recordal Applications",
+    icon: "mdi:refresh",
+    route: "/home/postregistration",
+    category: "filing",
+    price: "₦11,500",
+    maintenance: true,
+  },
 
   // FINANCIAL CATEGORY
   {
@@ -688,6 +682,16 @@ export const designServices: IPService[] = [
     route: "modal",
     category: "filing",
     price: "",
+  },
+  {
+    id: "renewal",
+    name: "RENEWAL",
+    description: "Renew your trademark",
+    icon: "mdi:refresh",
+    route: "/home/renewal",
+    category: "filing",
+    price: "₦15,500",
+    maintenance: true,
   },
 
   // FINANCIAL CATEGORY

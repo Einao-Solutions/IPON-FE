@@ -5,7 +5,7 @@
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
   import * as Dialog from "$lib/components/ui/dialog";
-
+  import { FileTypes } from "$lib/helpers";
   export let isOpen = false;
   export let serviceId: string;
   export let serviceName: string;
@@ -22,7 +22,7 @@
     const changeTypeMap: Record<string, string> = {
       "change-applicant-name": "Name",
       "change-applicant-address": "Address",
-      "reclassification": "Class",
+      reclassification: "Class",
     };
     return changeTypeMap[serviceId] || null;
   }
@@ -37,7 +37,7 @@
       assignment: `/home/postregistration/assignment?fileId=${fileId}&fileType=${fileType}`,
       merger: `/home/postregistration/merger?fileId=${fileId}&fileType=${fileType}`,
       "registered-user": `/home/postregistration/registeredusers?fileId=${fileId}&fileType=${fileType}`,
-      "reclassification": `/home/postregistration/changedata?fileId=${fileId}&fileType=${fileType}&changeType=Class`,
+      reclassification: `/home/postregistration/changedata?fileId=${fileId}&fileType=${fileType}&changeType=Class`,
 
       // Patent post-registration services
       "patent-amendment": `/home/postregistration/patentamendment?fileId=${fileId}&fileType=${fileType}`,
@@ -184,6 +184,7 @@
           "patent-ctc",
           "patent-license",
           "patent-mortgage",
+          "patent-merger",
         ].includes(serviceId)
       ) {
         // Get file details to check status
@@ -229,6 +230,7 @@
             "patent-ctc",
             "patent-license",
             "patent-mortgage",
+            "patent-merger",
           ].includes(serviceId)
         ) {
           // For patent post-registration services, go to search page first with service type
@@ -348,7 +350,7 @@
       } else {
         // Trademark renewal logic
         const renewalCost = await fetch(
-          `${baseURL}/api/files/GetRenewalCost?fileId=${fileNumber}&fileType=2&userId=${$loggedInUser?.id}`,
+          `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Trademark}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
         sessionStorage.setItem("renewalData", JSON.stringify(renewalData));
@@ -450,7 +452,7 @@
         <!-- Info Message -->
         <div class="text-xs text-gray-500 bg-blue-50 p-3 rounded-md">
           <Icon icon="mdi:information-outline" class="w-4 h-4 inline mr-1" />
-          {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage"].includes(serviceId)}
+          {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage", "patent-merger"].includes(serviceId)}
             This service is only available for Active patent files.
           {:else}
             This service is only available for accepted and registered {ipType} files
