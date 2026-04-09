@@ -499,7 +499,7 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkRegistrar].includes(x),
+        [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkRegistrar, UserRoles.PatentDesignRegistrar].includes(x),
       );
     }
   }
