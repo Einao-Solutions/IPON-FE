@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import { Input } from "$lib/components/ui/input";
   import { Button } from "$lib/components/ui/button";
   import { onMount } from "svelte";
@@ -86,6 +87,18 @@
         Search and browse trademark publications in Nigeria
       </p>
     </div> -->
+
+    <!-- Back Button -->
+    <div class="mb-6">
+      <Button
+        on:click={() => goto("/home/dashboard")}
+        variant="outline"
+        class="text-green-700 border-green-700 hover:bg-green-50 font-semibold py-2 px-4 rounded-none flex items-center gap-2 transition-colors"
+      >
+        <Icon icon="mdi:arrow-left" width="1.2rem" height="1.2rem" />
+        Back to Dashboard
+      </Button>
+    </div>
 
     <!-- Search Section -->
     <div class="flex flex-col sm:flex-row gap-4 items-end mb-8">
