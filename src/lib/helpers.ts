@@ -6,7 +6,7 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
+//export const baseURL = "http://localhost:5044";
 export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
@@ -526,25 +526,35 @@ export function getStatusColour(status: ApplicationStatuses) {
 }
 
 export function MapAttachmentToString(attachmentName: string) {
+  if (/^design\d*$/.test(attachmentName)) {
+    return "Design representations";
+  }
   switch (attachmentName) {
     case "pct":
       return "PCT Document";
     case "patentDrawing":
+    case "drawings":
       return "Patent Drawing";
     case "pdoc":
+    case "priorityDocument":
+    case "designPriorityDocument":
       return "Priority Document";
     case "cs":
       return "Claims and Specifications";
     case "form2":
-      return "Power of Attorney";
     case "poa":
       return "Power of Attorney";
     case "any":
+    case "others":
       return "Other Document";
-    case "designs":
-      return "Design representations";
     case "nov":
+    case "novelty":
+    case "noveltyStatement":
       return "Novelty Statement";
+    case "statementOfNovelty":
+      return "Statement of Novelty";
+    case "designDrawings":
+      return "Design Drawings";
     case "representation":
       return "Proposed trademark representation";
     case "other1":
