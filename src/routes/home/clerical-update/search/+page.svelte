@@ -92,13 +92,14 @@
 
         filteredResults = results.filter(
           (result) =>
-            // Existing logic for trademark and patent
             (result.fileTypes === FileTypes.Trademark &&
+              result.fileStatus !== null &&
               [3, 4, 6, 7, 14, 20].includes(result.fileStatus)) ||
-            // New logic for patent files with status 3
             (result.fileTypes === FileTypes.Patent &&
-              [3, 4, 6, 7, 14].includes(result.fileStatus)) ||
+              result.fileStatus !== null &&
+              [3, 4, 6, 7].includes(result.fileStatus)) ||
             (result.fileTypes === FileTypes.Design &&
+              result.fileStatus !== null &&
               [3, 4, 6, 7].includes(result.fileStatus)),
         );
       } else {
