@@ -131,12 +131,7 @@
   >
     <Dialog.Header class="flex-shrink-0">
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
-        <!-- <Icon
-          icon="mdi:license"
-          width="1.5em"
-          height="1.5em"
-          class="text-purple-600"
-        /> -->
+        <Icon icon="mdi:file-sign" width="1.5em" height="1.5em" class="text-green-600" />
         Patent License Details
       </Dialog.Title>
       <Dialog.Description>
@@ -146,7 +141,7 @@
 
     <div class="flex-1 overflow-auto p-4">
       {#if loading}
-        <div class="flex items-center gap-2 text-purple-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
@@ -163,20 +158,26 @@
       {:else if licenseDetails}
         <div class="space-y-6">
           <!-- File Information -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label class="font-semibold">File Number:</Label>
-              <p class="mt-1 p-2 bg-gray-50 rounded border">
-                {licenseDetails.fileId}
-              </p>
-            </div>
-            <div>
-              <Label class="font-semibold">Filing Date:</Label>
-              <p class="mt-1 p-2 bg-gray-50 rounded border">
-                {licenseDetails.filingdate
-                  ? (() => { const [d, m, y] = licenseDetails.filingdate.split(/[\/ :]/); return new Date(+y, +m - 1, +d).toLocaleDateString(); })()
-                  : "N/A"}
-              </p>
+          <div class="bg-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
+              <Icon icon="mdi:file-outline" class="text-green-600" />
+              File Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label class="font-semibold">File Number:</Label>
+                <p class="mt-1 p-2 bg-gray-50 rounded border">
+                  {licenseDetails.fileId}
+                </p>
+              </div>
+              <div>
+                <Label class="font-semibold">Filing Date:</Label>
+                <p class="mt-1 p-2 bg-gray-50 rounded border">
+                  {licenseDetails.filingdate
+                    ? (() => { const [d, m, y] = licenseDetails.filingdate.split(/[\/ :]/); return new Date(+y, +m - 1, +d).toLocaleDateString(); })()
+                    : "N/A"}
+                </p>
+              </div>
             </div>
           </div>
 
@@ -252,7 +253,7 @@
           <!-- License Agreement Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block flex items-center gap-2">
-              <Icon icon="mdi:file-document" class="text-gray-600" />
+              <Icon icon="mdi:file-document" class="text-green-600" />
               Deed of License Attachments:
             </Label>
             {#if licenseDetails.deedOfLicenseAttachments && Array.isArray(licenseDetails.deedOfLicenseAttachments) && licenseDetails.deedOfLicenseAttachments.length > 0}
@@ -298,7 +299,7 @@
           <!-- Supporting Document Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block flex items-center gap-2">
-              <Icon icon="mdi:file-multiple" class="text-gray-600" />
+              <Icon icon="mdi:file-multiple" class="text-green-600" />
               Supporting Document Attachments:
             </Label>
             {#if licenseDetails.supportingDocumentAttachments && Array.isArray(licenseDetails.supportingDocumentAttachments) && licenseDetails.supportingDocumentAttachments.length > 0}
@@ -343,14 +344,15 @@
 
           <!-- Comment Section -->
           <div class="mb-4">
-            <Label for="license-comment" class="block font-medium mb-1">
+            <Label for="license-comment" class="block font-medium mb-1 flex items-center gap-2">
+              <Icon icon="mdi:comment-text-outline" class="text-green-600" />
               Decision Comment: {#if !isReadOnly}<span class="text-red-500">*</span>{/if}
             </Label>
             <Textarea
               id="license-comment"
               bind:value={comment}
               rows={3}
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-purple-200"
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
               placeholder="Enter your review comment and decision reason..."
               required
               disabled={isReadOnly}

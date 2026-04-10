@@ -2342,8 +2342,7 @@
         <Button
           disabled={isNewStatusLoading === true}
           variant="outline"
-          on:click={() => (newStatusContent = null)}>Cancel</Button
-        >
+          on:click={() => (newStatusContent = null)}>Cancel</Button>
         <Button
           disabled={isNewStatusLoading === true}
           on:click={() => confirmChange()}
@@ -2367,9 +2366,8 @@
             newStatusContent = null;
             newStatus = null;
             newStatusReason = null;
-          }}>OK</Button
-        >
-      </div>
+          }}>OK</Button>
+        </div>
     {/if}
   </Sheet.Content>
 </Sheet.Root>
@@ -2607,7 +2605,7 @@
                     >
                   {/if}
                   <!-- Publication status update -->
-                  {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
+                  {#if ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin)) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
                     <DropdownMenu.Item
                       on:click={() =>
                         openPublicationDialog(fileData?.fileId, application.id)}
@@ -2632,7 +2630,7 @@
                       >
                         View Withdrawal Application
                       </DropdownMenu.Item>
-                    {:else if fileData.type === 2 && $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance)}
+                    {:else if fileData.type === 2 && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                       <DropdownMenu.Item
                         on:click={() =>
                           openWithdrawalDialog(fileData.fileId, application.id)}
