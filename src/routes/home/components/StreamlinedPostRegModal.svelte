@@ -184,6 +184,7 @@
           "patent-ctc",
           "patent-license",
           "patent-mortgage",
+          "patent-merger",
         ].includes(serviceId)
       ) {
         // Get file details to check status
@@ -229,6 +230,7 @@
             "patent-ctc",
             "patent-license",
             "patent-mortgage",
+            "patent-merger",
           ].includes(serviceId)
         ) {
           // For patent post-registration services, go to search page first with service type
@@ -454,7 +456,7 @@
         <!-- Info Message -->
         <div class="text-xs text-gray-500 bg-blue-50 p-3 rounded-md">
           <Icon icon="mdi:information-outline" class="w-4 h-4 inline mr-1" />
-          {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage"].includes(serviceId)}
+          {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage", "patent-merger"].includes(serviceId)}
             This service is only available for Active patent files.
           {:else}
             This service is only available for accepted and registered {ipType} files
