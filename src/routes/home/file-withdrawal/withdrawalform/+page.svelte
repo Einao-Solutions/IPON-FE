@@ -76,12 +76,14 @@ async function handleSubmit() {
             const supportingDocsAttachments = await filesToAttachment("supporting_documents", supportingDocsFiles);
 
             // Save to sessionStorage
-            sessionStorage.setItem('withdrawal_fileNumber', fileNumber);
-            sessionStorage.setItem('withdrawal_fileType', fileType);
-            sessionStorage.setItem('withdrawal_cost', cost);
-            sessionStorage.setItem('withdrawal_rrr', paymentId);
-            sessionStorage.setItem('withdrawal_withdrawalLetter', JSON.stringify(withdrawalLetterAttachments));
-            sessionStorage.setItem('withdrawal_supportingDocs', JSON.stringify(supportingDocsAttachments));
+            sessionStorage.setItem('withdrawalData', JSON.stringify(data));
+            // sessionStorage.setItem('withdrawal_fileNumber', fileNumber);
+            // sessionStorage.setItem('withdrawal_fileType', fileType);
+            // sessionStorage.setItem('withdrawal_cost', cost);
+            // sessionStorage.setItem('withdrawal_rrr', paymentId);
+            // sessionStorage.setItem('withdrawal_withdrawalLetter', JSON.stringify(withdrawalLetterAttachments));
+            // sessionStorage.setItem('withdrawal_supportingDocs', JSON.stringify(supportingDocsAttachments));
+            // sessionStorage.setItem('applicantName', data?.applicantName || '');
 
             await goto(`/payment?type=filewithdrawal&rrr=${paymentId}&amount=${cost}&fileNumber=${encodeURIComponent(fileNumber)}`);
         } else {

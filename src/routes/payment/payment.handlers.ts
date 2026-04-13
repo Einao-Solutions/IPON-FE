@@ -322,9 +322,24 @@ async function publicationstatusupdate(ctx: PaymentContext) {
 }
 
 async function filewithdrawal(ctx: PaymentContext) {
-  return simpleRedirectHandler(
-    ctx,
-    "/home/file-withdrawal/file-withdrawal-result",
+  const raw = sessionStorage.getItem("withdrawalData");
+  const parsed = raw ? JSON.parse(raw) : null;
+  if (!parsed) throw new Error("Missing withdrawal data");
+
+  const cost = parsed.amount;
+  const rrr = parsed.rrr;
+
+  if (!cost || !rrr) throw new Error("Missing payment details");
+
+  const applicantName = parsed.applicantName || "";
+
+  ctx.state.setTitle("Payment for File Withdrawal");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(parsed.fileId);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/file-withdrawal/file-withdrawal-result?rrr=${rrr}`,
   );
 }
 
@@ -347,7 +362,7 @@ async function changedatarecordal(ctx: PaymentContext) {
 }
 
 async function tradecertificate(ctx: PaymentContext): Promise<void> {
-   const params = ctx.page.url.searchParams;
+  const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
   const data = localStorage.getItem("formData");
@@ -389,9 +404,7 @@ async function simplePaidHandler(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(
     `${get(ctx.loggedInUser)?.firstName} ${get(ctx.loggedInUser)?.lastName}`,
   );
-  ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/paid?`,
-  );
+  ctx.state.setResponseUrl(`https://${ctx.page.url.host}/payment/paid?`);
 }
 async function reclassification(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
@@ -489,7 +502,7 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/patentassignment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -511,7 +524,7 @@ async function patentlicense(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/patentlicense/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -533,7 +546,7 @@ async function patentmortgage(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/patentmortgage/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -555,7 +568,7 @@ async function patentmerger(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/patentmerger/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -577,7 +590,7 @@ async function patentctc(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/patentctc/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/patentctc/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -585,7 +598,7 @@ async function patentAmendment(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
-  const fileId = params.get("fileId")
+  const fileId = params.get("fileId");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
@@ -594,12 +607,12 @@ async function patentAmendment(ctx: PaymentContext): Promise<void> {
     `${user?.firstName || ""} ${user?.lastName || ""}`.trim();
 
   // DEBUG: Log values being set
-  console.log('Patent Amendment Payment Handler - Setting values:', {
-    title: 'Patent Amendment Application',
+  console.log("Patent Amendment Payment Handler - Setting values:", {
+    title: "Patent Amendment Application",
     cost,
     paymentId: rrr,
     fileApplicant: applicantName,
-    fileNumber: fileId
+    fileNumber: fileId,
   });
 
   ctx.state.setTitle("Patent Amendment Application");
@@ -608,7 +621,7 @@ async function patentAmendment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-   `https://${ctx.page.url.host}/home/postregistration/patentamendment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/patentamendment/result?rrr=${rrr}&fileType=0&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -630,7 +643,7 @@ async function designlicense(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/designlicense/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/designlicense/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -652,7 +665,7 @@ async function designassignment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/designassignment/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/designassignment/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -674,7 +687,7 @@ async function designmerger(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/designmerger/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/designmerger/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -696,7 +709,7 @@ async function designmortgage(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/designmortgage/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/designmortgage/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -718,7 +731,7 @@ async function designctc(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/designctc/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/designctc/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -740,7 +753,7 @@ async function trademarkctc(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/trademarkctc/result?rrr=${rrr}&fileType=2&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/trademarkctc/result?rrr=${rrr}&fileType=2&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
 
@@ -762,6 +775,6 @@ async function designamendment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/designamendment/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ''}&applicant=${encodeURIComponent(applicantName)}`
+    `https://${ctx.page.url.host}/home/postregistration/designamendment/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
   );
 }
