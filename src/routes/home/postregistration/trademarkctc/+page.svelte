@@ -93,8 +93,10 @@
 			const rrrData = await rrrResponse.json();
 			const finalRRR = rrrData.data?.rrr || rrrData.rrr;
 			sessionStorage.setItem('trademarkCTCPayload', JSON.stringify({
-				fileId, rrr: finalRRR, attachmentIds, ctcRequestDate: new Date().toISOString(),
-				userId: $loggedInUser?.email || null
+				fileId, 
+				rrr: finalRRR, 
+				attachmentIds, 
+				ctcRequestDate: new Date().toISOString()
 			}));
 			await goto(`/payment/?type=trademarkctc&rrr=${finalRRR}&amount=${finalCost}&fileId=${fileId}`);
 		} catch (err) { error = 'CTC request processing failed. Please try again.'; console.error(err); toast.error('An error occurred while processing your request'); } finally { isProcessing = false; }

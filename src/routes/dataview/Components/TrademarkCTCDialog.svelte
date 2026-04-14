@@ -93,7 +93,7 @@
 
       setTimeout(() => {
         location.reload();
-      }, 2000);
+      }, 3000);
     } catch (e) {
       const err = e as Error;
       error = err.message || "Error submitting decision";
@@ -111,11 +111,7 @@
     submitting = false;
   }
 
-  function downloadLetter(letterType: string) {
-    const appIdToUse = ctcDetails?.appId || applicationId;
-    const url = `${baseURL}/api/Letters/GetLetter?fileId=${encodeURIComponent(fileId)}&letterType=${letterType}&applicationId=${encodeURIComponent(appIdToUse)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
+
 
   function closeDialog() {
     open = false;
@@ -174,7 +170,11 @@
             </div>
             <div>
               <Label class="font-semibold">Request Date:</Label>
-              <p class="mt-1 p-2 bg-gray-50 rounded border">{ctcDetails.filingDate ? new Date(ctcDetails.filingDate).toLocaleString() : 'N/A'}</p>
+              <p class="mt-1 p-2 bg-gray-50 rounded border">
+                {ctcDetails.filingDate
+                  ? (() => { const [d, m, y] = ctcDetails.filingDate.split(/[/ :]/); return new Date(+y, +m - 1, +d).toLocaleDateString(); })()
+                  : "N/A"}
+              </p>
             </div>
             <div>
               <Label class="font-semibold">Status:</Label>
@@ -249,45 +249,7 @@
             {/if}
           </div>
 
-          <!-- Letter Downloads (read-only states) -->
-          {#if isReadOnly}
-            <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
-              <p class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                <Icon icon="mdi:download" width="1.2em" height="1.2em" class="text-gray-600" />
-                Download Letters
-              </p>
-              <div class="flex flex-wrap gap-3">
-                {#if isApproved}
-                  <Button
-                    variant="outline"
-                    class="flex items-center gap-2 border-green-500 text-green-700 hover:bg-green-50"
-                    on:click={() => downloadLetter('TrademarkCtcAcknowledgement')}
-                  >
-                    <Icon icon="mdi:file-check-outline" width="1.2em" height="1.2em" />
-                    Acknowledgement Letter
-                  </Button>
-                  <Button
-                    variant="outline"
-                    class="flex items-center gap-2 border-blue-500 text-blue-700 hover:bg-blue-50"
-                    on:click={() => downloadLetter('TrademarkCtcReceipt')}
-                  >
-                    <Icon icon="mdi:receipt" width="1.2em" height="1.2em" />
-                    Payment Receipt
-                  </Button>
-                {/if}
-                {#if isRejected}
-                  <Button
-                    variant="outline"
-                    class="flex items-center gap-2 border-red-500 text-red-700 hover:bg-red-50"
-                    on:click={() => downloadLetter('TrademarkCtcRefusalLetter')}
-                  >
-                    <Icon icon="mdi:file-cancel-outline" width="1.2em" height="1.2em" />
-                    Refusal Letter
-                  </Button>
-                {/if}
-              </div>
-            </div>
-          {/if}
+
 
           <!-- Summary Information -->
           <div class="bg-green-50 border border-green-200 rounded-lg p-4">

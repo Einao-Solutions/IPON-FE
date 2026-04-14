@@ -746,6 +746,44 @@ export function getLetterName(letter: number): string {
       return "Design CTC Receipt";
     case 89:
       return "Design Amendment Receipt";
+    
+    // Trademark CTC documents
+    case 90:
+      return "Trademark CTC Acknowledgement";
+    case 91:
+      return "Trademark CTC Receipt";
+    case 92:
+      return "Trademark Mortgage Acknowledgement";
+    case 93:
+      return "Trademark Merger Acknowledgement";
+    case 94:
+      return "Trademark CTC Acknowledgement";
+    case 95:
+      return "Trademark Amendment Acknowledgement";
+    case 96:
+      return "Trademark Assignment Refusal Letter";
+    case 97:
+      return "Trademark License Refusal Letter";
+    case 98:
+      return "Trademark Mortgage Refusal Letter";
+    case 99:
+      return "Trademark Merger Refusal Letter";
+    case 100:
+      return "Trademark CTC Refusal Letter";
+    case 101:
+      return "Trademark Amendment Refusal Letter";
+    case 102:
+      return "Trademark Assignment Receipt";
+    case 103:
+      return "Trademark License Receipt";
+    case 104:
+      return "Trademark Mortgage Receipt";
+    case 105:
+      return "Trademark Merger Receipt";
+    case 106:
+      return "Trademark CTC Receipt";
+    case 107:
+      return "Trademark Amendment Receipt";
 
     default:
       return "Unknown Document";
