@@ -43,13 +43,13 @@
     paymentType = pageData.url.searchParams.get("paymentType") ?? "";
     const data = JSON.parse(localStorage.getItem("formData") ?? "{}");
     console.log("Form Data from localStorage:", data);
-	const appId = localStorage.getItem("appId");
-	applicationId = appId;
+    const appId = localStorage.getItem("appId");
+    applicationId = appId;
     let success = false;
     // Only call updateStatus if it's a renewal
     switch (paymentType) {
       case "renewal":
-        await renewApp();
+        success = await updateManual(data, false);
         break;
       case "reclassification":
         console.log("Processing reclassification payment");

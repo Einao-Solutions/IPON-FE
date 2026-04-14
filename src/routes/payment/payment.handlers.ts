@@ -445,7 +445,7 @@ async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid`,
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
   );
 }
 async function designRenewal(ctx: PaymentContext): Promise<void> {
@@ -465,7 +465,7 @@ async function designRenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid`,
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
   );
 }
 async function simpleRedirectHandler(
