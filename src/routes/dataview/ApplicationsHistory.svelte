@@ -1793,175 +1793,167 @@
 <!-- Publication Dialog -->
 <Dialog.Root bind:open={showPublicationDialog}>
   <Dialog.Content
-    class="w-full max-w-lg mx-auto my-8 rounded-xl shadow-lg bg-white border border-gray-200"
+    class="w-11/12 max-w-4xl mx-auto my-8 max-h-[90vh] rounded-xl shadow-lg bg-white border border-gray-200 flex flex-col"
   >
-    <Dialog.Header>
+    <Dialog.Header class="flex-shrink-0">
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
         <Icon
           icon="mdi:certificate-outline"
           width="1.5em"
           height="1.5em"
-          class="text-blue-600"
+          class="text-green-600"
         />
         Publication Details
       </Dialog.Title>
+      <Dialog.Description>
+        Review and process publication application details.
+      </Dialog.Description>
     </Dialog.Header>
-    <div class="px-4 py-2">
+
+    <div class="flex-1 overflow-auto p-4">
       {#if publicationLoading}
-        <div class="flex items-center gap-2 text-blue-600 py-8">
+        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
             height="2em"
             class="animate-spin"
           />
-          <span>Loading...</span>
+          <span>Loading publication details...</span>
         </div>
       {:else if publicationError}
-        <div class="text-red-500 py-8 flex items-center gap-2">
+        <div class="text-red-500 py-8 flex items-center gap-2 justify-center">
           <Icon icon="mdi:alert-circle-outline" width="1.5em" height="1.5em" />
           {publicationError}
         </div>
       {:else if publicationDetails}
-        <div class="space-y-4">
-          <div class="flex items-center gap-2">
-            <Icon
-              icon="mdi:file-document-outline"
-              width="1.2em"
-              height="1.2em"
-              class="text-gray-500"
-            />
-            <span class="font-semibold">File Number:</span>
-            <span class="text-gray-700">{publicationDetails.fileId}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <Icon
-              icon="mdi:calendar"
-              width="1.2em"
-              height="1.2em"
-              class="text-gray-500"
-            />
-            <span class="font-semibold">Publication Date:</span>
-            <span class="text-gray-700">
-              {publicationDetails.publicationDate
-                ? new Date(
-                    publicationDetails.publicationDate,
-                  ).toLocaleDateString()
-                : "N/A"}
-            </span>
-          </div>
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <Icon
-                icon="mdi:attachment"
-                width="1.2em"
-                height="1.2em"
-                class="text-gray-500"
-              />
-              <span class="font-semibold">Attachments:</span>
+        <div class="space-y-6">
+
+          <!-- File Information -->
+          <div class="bg-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
+              <Icon icon="mdi:file-document-outline" class="text-green-600" />
+              File Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label class="font-semibold">File Number:</Label>
+                <p class="mt-1 p-2 bg-white rounded border">
+                  {publicationDetails.fileId ?? "N/A"}
+                </p>
+              </div>
+              <div>
+                <Label class="font-semibold">Publication Date:</Label>
+                <p class="mt-1 p-2 bg-white rounded border">
+                  {publicationDetails.publicationDate
+                    ? new Date(
+                      publicationDetails.publicationDate,
+                    ).toLocaleDateString()
+                    : "N/A"}
+                </p>
+              </div>
             </div>
+          </div>
+
+          <!-- Attachments -->
+          <div class="mb-6">
+            <Label for="publication-attachments" class="font-semibold mb-3 block flex items-center gap-2">
+              <Icon icon="mdi:attachment" class="text-green-600" />
+              Publication Attachments:
+            </Label>
             {#if publicationDetails.attachments && publicationDetails.attachments.length}
-              <ul class="space-y-2 ml-6">
-                {#each publicationDetails.attachments as att}
-                  <li class="flex items-center gap-2">
-                    <Icon
-                      icon="mdi:file-pdf-box"
-                      width="1.2em"
-                      height="1.2em"
-                      class="text-red-500"
-                    />
-                    <span>{att.name}</span>
-                    {#if Array.isArray(att.url)}
-                      {#each att.url as url}
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener"
-                          class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
-                          title="View"
-                        >
-                          <Icon
-                            icon="mdi:eye-outline"
-                            width="1em"
-                            height="1em"
-                          />
-                          <span>View</span>
-                        </a>
-                      {/each}
-                    {:else}
-                      <a
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener"
-                        class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
-                        title="View"
-                      >
-                        <Icon icon="mdi:eye-outline" width="1em" height="1em" />
-                        <span>View</span>
-                      </a>
-                    {/if}
-                  </li>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {#each publicationDetails.attachments as attachment, index}
+                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-800 truncate">
+                          {attachment.name || `Publication Document ${index + 1}`}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                          Document {index + 1} of {publicationDetails.attachments.length}
+                        </div>
+                      </div>
+                      <div class="flex-shrink-0">
+                        {#if Array.isArray(attachment.url)}
+                          {#each attachment.url as url, urlIndex}
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener"
+                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+                            >
+                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
+                            </a>
+                          {/each}
+                        {:else}
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener"
+                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+                          >
+                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                            <span>View</span>
+                          </a>
+                        {/if}
+                      </div>
+                    </div>
+                  </div>
                 {/each}
-              </ul>
+              </div>
             {:else}
-              <span class="text-gray-500 ml-6">No attachments</span>
+              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
+                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
+                <p>No attachments submitted</p>
+              </div>
             {/if}
           </div>
-          <div>
-            <label for="publication-comment" class="block font-medium mb-1"
-              >Comment:</label
-            >
-            <textarea
+
+          <!-- Comment Section -->
+          <div class="mb-4">
+            <Label for="publication-comment" class="block font-medium mb-1 flex items-center gap-2">
+              <Icon icon="mdi:comment-text-outline" class="text-green-600" />
+              Decision Comment: <span class="text-red-500">*</span>
+            </Label>
+            <Textarea
               id="publication-comment"
               bind:value={publicationComment}
-              rows="3"
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-200"
-              placeholder="Type your comment here..."
+              rows={3}
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
+              placeholder="Enter your review comment and decision reason..."
               required
-            ></textarea>
+            />
           </div>
-          <div class="flex gap-4 mt-4">
-            <button
+
+          <!-- Action Buttons -->
+          <div class="flex gap-4 mt-4 justify-end">
+            <Button
               class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
               on:click={() => handlePublicationDecision(true)}
               disabled={publicationSubmitting || !publicationComment.trim()}
             >
-              <Icon
-                icon="mdi:check-circle-outline"
-                width="1.2em"
-                height="1.2em"
-                class="inline mr-1"
-              />
+              <Icon icon="mdi:check-circle-outline" width="1.2em" height="1.2em" class="inline mr-1" />
               Approve
-            </button>
-            <button
+            </Button>
+            <Button
               class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
               on:click={() => handlePublicationDecision(false)}
               disabled={publicationSubmitting || !publicationComment.trim()}
             >
-              <Icon
-                icon="mdi:close-circle-outline"
-                width="1.2em"
-                height="1.2em"
-                class="inline mr-1"
-              />
+              <Icon icon="mdi:close-circle-outline" width="1.2em" height="1.2em" class="inline mr-1" />
               Reject
-            </button>
+            </Button>
           </div>
+
         </div>
       {/if}
     </div>
-    <Dialog.Footer class="mt-4 flex justify-end px-4 pb-4">
-      <Button
-        on:click={() => (showPublicationDialog = false)}
-        variant="outline"
-      >
-        <Icon
-          icon="mdi:close"
-          width="1.2em"
-          height="1.2em"
-          class="inline mr-1"
-        />
+
+    <Dialog.Footer class="flex-shrink-0 mt-4 flex justify-end px-4 pb-4 border-t bg-gray-50">
+      <Button on:click={() => (showPublicationDialog = false)} variant="outline">
+        <Icon icon="mdi:close" width="1.2em" height="1.2em" class="inline mr-1" />
         Close
       </Button>
     </Dialog.Footer>
@@ -1971,32 +1963,33 @@
 <!-- Withdrawal Dialog -->
 <Dialog.Root bind:open={showWithdrawalDialog}>
   <Dialog.Content
-    class="w-11/12 max-w-2xl mx-auto my-8 rounded-xl shadow-lg bg-white border border-gray-200"
+    class="w-11/12 max-w-4xl mx-auto my-8 max-h-[90vh] rounded-xl shadow-lg bg-white border border-gray-200 flex flex-col"
   >
-    <Dialog.Header>
+    <Dialog.Header class="flex-shrink-0">
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
         <Icon
           icon="mdi:file-remove-outline"
           width="1.5em"
           height="1.5em"
-          class="text-red-600"
+          class="text-green-600"
         />
         Withdrawal Request Details
       </Dialog.Title>
-      <Dialog.Description
-        >Review and process withdrawal application details.</Dialog.Description
-      >
+      <Dialog.Description>
+        Review and process withdrawal application details.
+      </Dialog.Description>
     </Dialog.Header>
-    <div class="p-4">
+
+    <div class="flex-1 overflow-auto p-4">
       {#if withdrawalLoading}
-        <div class="flex items-center gap-2 text-red-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
             height="2em"
             class="animate-spin"
           />
-          <span>Loading...</span>
+          <span>Loading withdrawal details...</span>
         </div>
       {:else if withdrawalError}
         <div class="text-red-500 py-8 flex items-center gap-2 justify-center">
@@ -2004,156 +1997,196 @@
           {withdrawalError}
         </div>
       {:else if withdrawalDetails}
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <Label class="font-semibold">File Number:</Label>
-            <p class="mt-1 p-2 bg-gray-50 rounded border">
-              {withdrawalDetails.fileId}
-            </p>
+        <div class="space-y-6">
+
+          <!-- File Information -->
+          <div class="bg-gray-100 rounded-lg p-4">
+            <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
+              <Icon icon="mdi:file-document-outline" class="text-green-600" />
+              File Information
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label class="font-semibold">File Number:</Label>
+                <p class="mt-1 p-2 bg-white rounded border">
+                  {withdrawalDetails.fileId}
+                </p>
+              </div>
+              <div>
+                <Label class="font-semibold">Withdrawal Request Date:</Label>
+                <p class="mt-1 p-2 bg-white rounded border">
+                  {withdrawalDetails.withdrawalRequestDate
+                    ? new Date(
+                      withdrawalDetails.withdrawalRequestDate,
+                    ).toLocaleString()
+                    : "N/A"}
+                </p>
+              </div>
+            </div>
           </div>
-          <div>
-            <Label class="font-semibold">Withdrawal Request Date:</Label>
-            <p class="mt-1 p-2 bg-gray-50 rounded border">
-              {withdrawalDetails.withdrawalRequestDate
-                ? new Date(
-                    withdrawalDetails.withdrawalRequestDate,
-                  ).toLocaleString()
-                : "N/A"}
-            </p>
+
+          <!-- Withdrawal Letter Attachments -->
+          <div class="mb-6">
+            <Label class="font-semibold mb-3 block flex items-center gap-2">
+              <Icon icon="mdi:file-document" class="text-green-600" />
+              Withdrawal Letter Attachments:
+            </Label>
+            {#if withdrawalDetails.withdrawalLetterAttachments && withdrawalDetails.withdrawalLetterAttachments.length}
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {#each withdrawalDetails.withdrawalLetterAttachments as attachment, index}
+                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-800 truncate">
+                          {attachment.name || `Withdrawal Letter ${index + 1}`}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                          Document {index + 1} of {withdrawalDetails.withdrawalLetterAttachments.length}
+                        </div>
+                      </div>
+                      <div class="flex-shrink-0">
+                        {#if Array.isArray(attachment.url)}
+                          {#each attachment.url as url, urlIndex}
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener"
+                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+                            >
+                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
+                            </a>
+                          {/each}
+                        {:else}
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener"
+                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+                          >
+                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                            <span>View</span>
+                          </a>
+                        {/if}
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
+                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
+                <p>No withdrawal letter attachments</p>
+              </div>
+            {/if}
           </div>
-          <!-- <div>
-                        <Label class="font-semibold">Withdrawal Date:</Label>
-                        <p class="mt-1 p-2 bg-gray-50 rounded border">
-                            {withdrawalDetails.withdrawalDate
-                                ? new Date(withdrawalDetails.withdrawalDate).toLocaleString()
-                                : 'N/A'}
-                        </p>
-                    </div> -->
-        </div>
-        <div class="mb-4">
-          <Label class="font-semibold mb-1"
-            >Withdrawal Letter Attachments:</Label
-          >
-          {#if withdrawalDetails.withdrawalLetterAttachments && withdrawalDetails.withdrawalLetterAttachments.length}
-            <ul class="list-disc pl-5 space-y-2">
-              {#each withdrawalDetails.withdrawalLetterAttachments as att}
-                <li>
-                  <span class="font-medium">{att.name}:</span>
-                  {#if Array.isArray(att.url)}
-                    {#each att.url as url}
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener"
-                        class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
-                      >
-                        <Icon icon="mdi:eye-outline" width="1em" height="1em" />
-                        <span>View</span>
-                      </a>
-                    {/each}
-                  {:else}
-                    <a
-                      href={att.url}
-                      target="_blank"
-                      rel="noopener"
-                      class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
-                    >
-                      <Icon icon="mdi:eye-outline" width="1em" height="1em" />
-                      <span>View</span>
-                    </a>
-                  {/if}
-                </li>
-              {/each}
-            </ul>
-          {:else}
-            <span class="text-gray-500 ml-6"
-              >No withdrawal letter attachments</span
+
+          <!-- Supporting Document Attachments -->
+          <div class="mb-6">
+            <Label class="font-semibold mb-3 block flex items-center gap-2">
+              <Icon icon="mdi:file-multiple" class="text-green-600" />
+              Supporting Document Attachments:
+            </Label>
+            {#if withdrawalDetails.supportingDocumentAttachments && withdrawalDetails.supportingDocumentAttachments.length}
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {#each withdrawalDetails.supportingDocumentAttachments as attachment, index}
+                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
+                    <div class="flex items-center justify-between gap-3">
+                      <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-800 truncate">
+                          {attachment.name || `Supporting Document ${index + 1}`}
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1">
+                          Document {index + 1} of {withdrawalDetails.supportingDocumentAttachments.length}
+                        </div>
+                      </div>
+                      <div class="flex-shrink-0">
+                        {#if Array.isArray(attachment.url)}
+                          {#each attachment.url as url, urlIndex}
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener"
+                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+                            >
+                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
+                            </a>
+                          {/each}
+                        {:else}
+                          <a
+                            href={attachment.url}
+                            target="_blank"
+                            rel="noopener"
+                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+                          >
+                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                            <span>View</span>
+                          </a>
+                        {/if}
+                      </div>
+                    </div>
+                  </div>
+                {/each}
+              </div>
+            {:else}
+              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
+                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
+                <p>No supporting documents</p>
+              </div>
+            {/if}
+          </div>
+
+          <!-- Comment Section -->
+          <div class="mb-4">
+            <Label for="withdrawal-comment" class="block font-medium mb-1"
+              >Comment:</Label
             >
-          {/if}
-        </div>
-        <div class="mb-4">
-          <Label class="font-semibold mb-1"
-            >Supporting Document Attachments:</Label
-          >
-          {#if withdrawalDetails.supportingDocumentAttachments && withdrawalDetails.supportingDocumentAttachments.length}
-            <ul class="list-disc pl-5 space-y-2">
-              {#each withdrawalDetails.supportingDocumentAttachments as att}
-                <li>
-                  <span class="font-medium">{att.name}:</span>
-                  {#if Array.isArray(att.url)}
-                    {#each att.url as url}
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener"
-                        class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
-                      >
-                        <Icon icon="mdi:eye-outline" width="1em" height="1em" />
-                        <span>View</span>
-                      </a>
-                    {/each}
-                  {:else}
-                    <a
-                      href={att.url}
-                      target="_blank"
-                      rel="noopener"
-                      class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
-                    >
-                      <Icon icon="mdi:eye-outline" width="1em" height="1em" />
-                      <span>View</span>
-                    </a>
-                  {/if}
-                </li>
-              {/each}
-            </ul>
-          {:else}
-            <span class="text-gray-500 ml-6">No supporting documents</span>
-          {/if}
-        </div>
-        <div class="mb-4">
-          <Label for="withdrawal-comment" class="block font-medium mb-1"
-            >Comment:</Label
-          >
-          <Textarea
-            id="withdrawal-comment"
-            bind:value={withdrawalComment}
-            rows={3}
-            class="w-full border rounded p-2 focus:ring-2 focus:ring-red-200"
-            placeholder="Type your comment here..."
-            required
-          />
-        </div>
-        <div class="flex gap-4 mt-4 justify-end">
-          <Button
-            class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
-            on:click={() => handleWithdrawalDecision(true)}
-            disabled={withdrawalSubmitting || !withdrawalComment.trim()}
-          >
-            <Icon
-              icon="mdi:check-circle-outline"
-              width="1.2em"
-              height="1.2em"
-              class="inline mr-1"
+            <Textarea
+              id="withdrawal-comment"
+              bind:value={withdrawalComment}
+              rows={3}
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
+              placeholder="Type your comment here..."
+              required
             />
-            Approve
-          </Button>
-          <Button
-            class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
-            on:click={() => handleWithdrawalDecision(false)}
-            disabled={withdrawalSubmitting || !withdrawalComment.trim()}
-          >
-            <Icon
-              icon="mdi:close-circle-outline"
-              width="1.2em"
-              height="1.2em"
-              class="inline mr-1"
-            />
-            Reject
-          </Button>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-4 mt-4 justify-end">
+            <Button
+              class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
+              on:click={() => handleWithdrawalDecision(true)}
+              disabled={withdrawalSubmitting || !withdrawalComment.trim()}
+            >
+              <Icon
+                icon="mdi:check-circle-outline"
+                width="1.2em"
+                height="1.2em"
+                class="inline mr-1"
+              />
+              Approve
+            </Button>
+            <Button
+              class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
+              on:click={() => handleWithdrawalDecision(false)}
+              disabled={withdrawalSubmitting || !withdrawalComment.trim()}
+            >
+              <Icon
+                icon="mdi:close-circle-outline"
+                width="1.2em"
+                height="1.2em"
+                class="inline mr-1"
+              />
+              Reject
+            </Button>
+          </div>
+
         </div>
       {/if}
     </div>
-    <Dialog.Footer class="mt-4 flex justify-end px-4 pb-4">
+
+    <Dialog.Footer class="flex-shrink-0 mt-4 flex justify-end px-4 pb-4">
       <Button on:click={() => (showWithdrawalDialog = false)} variant="outline">
         <Icon
           icon="mdi:close"
@@ -2354,7 +2387,7 @@
             height="1.2rem"
           />
           Ok</Button
-        >
+          >
       </div>
     {:else if newStatusContent === 2}
       <div class="flex flex-col items-center justify-center">
