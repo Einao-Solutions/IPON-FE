@@ -98,7 +98,8 @@
       'design-ctc',
       'design-license',
       'design-mortgage',
-      'design-merger'
+      'design-merger',
+      'renewal'
     ].includes(service.id)) {
       // NEW STREAMLINED FLOW - Handle context-aware design post-registration services
       const event = new CustomEvent('openStreamlinedPostRegModal', {

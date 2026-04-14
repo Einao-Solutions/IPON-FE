@@ -309,6 +309,7 @@
       const fileResult = results[0];
       const isPatent = fileResult.fileTypes === 0;
       const isTrademark = fileResult.fileTypes === 2;
+      const isDesign = fileResult.fileTypes === 1;
 
       // Follow exact same renewal logic as postregistration/search
       if (isPatent) {
@@ -360,6 +361,20 @@
         }));
         await goto(
           `/payment?type=trademarkRenewal`,
+        );
+      } else if (isDesign) {
+        // Design renewal logic
+        const renewalCost = await fetch(
+          `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Design}&userId=${$loggedInUser?.id}`,
+        );
+        const renewalData = await renewalCost.json();
+        sessionStorage.setItem("renewalData", JSON.stringify({
+          ...renewalData,
+          fileId: fileNumber,
+          applicantName: fileResult.fileApplicant ?? `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
+        }));
+        await goto(
+          `/payment?type=designRenewal`,
         );
       }
 

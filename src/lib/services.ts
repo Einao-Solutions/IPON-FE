@@ -686,12 +686,12 @@ export const designServices: IPService[] = [
   {
     id: "renewal",
     name: "RENEWAL",
-    description: "Renew your trademark",
+    description: "Renew your design",
     icon: "mdi:refresh",
-    route: "/home/renewal",
+    route: "modal",
     category: "filing",
     price: "₦15,500",
-    maintenance: true,
+    maintenance: false,
   },
 
   // FINANCIAL CATEGORY
