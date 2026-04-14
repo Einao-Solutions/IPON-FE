@@ -246,18 +246,29 @@
   // Recordal Dialog Helpers
   // ======================
   const hiddenKeys = new Set([
-    "id", "isapproved", "documenturl", "authorizationletterurl",
-    "assignmentdeedurl", "appealdocs", "oldattachmenturl",
-    "newattachmenturl", "fileid",
+    "id",
+    "isapproved",
+    "documenturl",
+    "authorizationletterurl",
+    "assignmentdeedurl",
+    "appealdocs",
+    "oldattachmenturl",
+    "newattachmenturl",
+    "fileid",
   ]);
 
   function isHiddenKey(key: string): boolean {
-    return hiddenKeys.has(key.toLowerCase()) || key.toLowerCase().endsWith("url");
+    return (
+      hiddenKeys.has(key.toLowerCase()) || key.toLowerCase().endsWith("url")
+    );
   }
 
   function formatFieldName(key: string, stripPrefix?: string): string {
     let cleaned = key;
-    if (stripPrefix && cleaned.toLowerCase().startsWith(stripPrefix.toLowerCase())) {
+    if (
+      stripPrefix &&
+      cleaned.toLowerCase().startsWith(stripPrefix.toLowerCase())
+    ) {
       cleaned = cleaned.slice(stripPrefix.length);
     }
     return cleaned
@@ -266,9 +277,13 @@
       .trim();
   }
 
-  function getRecordalEntries(data: any, filter: (key: string) => boolean): [string, any][] {
+  function getRecordalEntries(
+    data: any,
+    filter: (key: string) => boolean,
+  ): [string, any][] {
     return Object.entries(data).filter(
-      ([key, value]) => value != null && value !== "" && !isHiddenKey(key) && filter(key),
+      ([key, value]) =>
+        value != null && value !== "" && !isHiddenKey(key) && filter(key),
     );
   }
 
@@ -968,7 +983,7 @@
             FileId: publicationFileId,
             Approve: approve,
             Comment: publicationComment,
-            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId
+            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
           }),
         },
       );
@@ -1021,7 +1036,7 @@
             FileId: withdrawalFileId,
             Approve: approve,
             Comment: withdrawalComment,
-            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId
+            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
           }),
         },
       );
@@ -1066,7 +1081,11 @@
   }
 
   // Open design license dialog
-  function openDesignLicenseDialog(fileId: string, applicationId: string, status: number) {
+  function openDesignLicenseDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+  ) {
     designLicenseFileId = fileId;
     designLicenseApplicationId = applicationId;
     designLicenseStatus = status;
@@ -1331,14 +1350,25 @@
     <!-- Header -->
     <div class="border-b border-slate-200 px-6 py-4">
       <div class="flex items-start gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900">
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900"
+        >
           <Icon
-            icon={selectedApplication?.applicationType === FormApplicationTypes.Assignment ? "mdi:swap-horizontal" :
-                  selectedApplication?.applicationType === FormApplicationTypes.Merger ? "mdi:merge" :
-                  selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate ? "mdi:pencil-outline" :
-                  selectedApplication?.applicationType === FormApplicationTypes.Amendment ? "mdi:file-edit-outline" :
-                  "mdi:file-document-outline"}
-            width="1.3em" class="text-white"
+            icon={selectedApplication?.applicationType ===
+            FormApplicationTypes.Assignment
+              ? "mdi:swap-horizontal"
+              : selectedApplication?.applicationType ===
+                  FormApplicationTypes.Merger
+                ? "mdi:merge"
+                : selectedApplication?.applicationType ===
+                    FormApplicationTypes.ClericalUpdate
+                  ? "mdi:pencil-outline"
+                  : selectedApplication?.applicationType ===
+                      FormApplicationTypes.Amendment
+                    ? "mdi:file-edit-outline"
+                    : "mdi:file-document-outline"}
+            width="1.3em"
+            class="text-white"
           />
         </div>
         <div class="flex-1 min-w-0">
@@ -1360,7 +1390,10 @@
                           : "Application Details"}
           </Dialog.Title>
           <Dialog.Description class="text-xs text-slate-600 mt-1">
-            {mapTypeToString(selectedApplication?.applicationType || 0)} • File ID: <span class="font-medium text-slate-900">{fileData?.fileId ?? "—"}</span>
+            {mapTypeToString(selectedApplication?.applicationType || 0)} • File ID:
+            <span class="font-medium text-slate-900"
+              >{fileData?.fileId ?? "—"}</span
+            >
           </Dialog.Description>
         </div>
       </div>
@@ -1370,29 +1403,46 @@
     <div class="flex-1 overflow-y-auto px-6 py-4">
       {#if recordalLoading}
         <div class="flex flex-col items-center justify-center h-40 gap-2">
-          <Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="animate-spin text-slate-300" />
+          <Icon
+            icon="line-md:loading-loop"
+            width="2rem"
+            height="2rem"
+            class="animate-spin text-slate-300"
+          />
           <p class="text-xs text-slate-500">Loading application data</p>
         </div>
       {:else if recordalData}
         <div class="space-y-0">
-
           {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
             <!-- Assignment: Assignee -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Assignee Details</th>
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Field</th
+                    >
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Assignee Details</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => !k.toLowerCase().startsWith("assignor")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => !k
+                        .toLowerCase()
+                        .startsWith("assignor")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td
+                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
+                        >{formatFieldName(key)}</td
+                      >
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                          <div class="space-y-0.5">
+                            {#each value as item}<div>{item}</div>{/each}
+                          </div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1404,17 +1454,30 @@
               <table class="w-full text-sm mt-4">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Assignor Details</th>
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Field</th
+                    >
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Assignor Details</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => k.toLowerCase().startsWith("assignor")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => k
+                      .toLowerCase()
+                      .startsWith("assignor")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key, "assignor")}</td>
+                      <td
+                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
+                        >{formatFieldName(key, "assignor")}</td
+                      >
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                          <div class="space-y-0.5">
+                            {#each value as item}<div>{item}</div>{/each}
+                          </div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1422,24 +1485,36 @@
                 </tbody>
               </table>
             </section>
-
           {:else if selectedApplication?.applicationType === FormApplicationTypes.Merger}
             <!-- Merger: New -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">New Information</th>
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Field</th
+                    >
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >New Information</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => !k.toLowerCase().startsWith("old")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => !k
+                        .toLowerCase()
+                        .startsWith("old")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td
+                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
+                        >{formatFieldName(key)}</td
+                      >
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                          <div class="space-y-0.5">
+                            {#each value as item}<div>{item}</div>{/each}
+                          </div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1452,17 +1527,30 @@
               <table class="w-full text-sm mt-4">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Existing Information</th>
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Field</th
+                    >
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Existing Information</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => k.toLowerCase().startsWith("old")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => k
+                      .toLowerCase()
+                      .startsWith("old")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key, "old")}</td>
+                      <td
+                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
+                        >{formatFieldName(key, "old")}</td
+                      >
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                          <div class="space-y-0.5">
+                            {#each value as item}<div>{item}</div>{/each}
+                          </div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1470,24 +1558,34 @@
                 </tbody>
               </table>
             </section>
-
           {:else if [7, 9, 36, 10].includes(selectedApplication?.applicationType ?? -1)}
             <!-- Change of Name / Address / Registered User / Reclassification -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Details</th>
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Field</th
+                    >
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Details</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
                   {#each getRecordalEntries(recordalData, () => true) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td
+                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
+                        >{formatFieldName(key)}</td
+                      >
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
+                          <div class="space-y-0.5">
+                            {#each value as item}<div>{item}</div>{/each}
+                          </div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1495,26 +1593,45 @@
                 </tbody>
               </table>
             </section>
-
           {:else if selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment}
             <!-- Clerical Update / Amendment -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
-                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Value</th>
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Field</th
+                    >
+                    <th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      >Value</th
+                    >
                   </tr>
                 </thead>
                 <tbody>
                   {#each Object.entries(recordalData).filter(([key, value]) => value != null && !["id", "isApproved", "documentUrl"].includes(key)) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
+                      <td
+                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
+                        >{formatFieldName(key)}</td
+                      >
                       <td class="px-3 py-2 text-slate-800">
                         {#if typeof value === "string" && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
-                          <img src={value} alt={key} class="max-w-xs h-auto rounded" style="max-height: 150px; object-fit: contain;" />
+                          <img
+                            src={value}
+                            alt={key}
+                            class="max-w-xs h-auto rounded"
+                            style="max-height: 150px; object-fit: contain;"
+                          />
                         {:else if key.endsWith("Url") && typeof value === "string" && value}
-                          <Button on:click={() => window.open(String(value), "_blank")} variant="outline" size="sm" class="flex items-center gap-1 text-xs">
+                          <Button
+                            on:click={() =>
+                              window.open(String(value), "_blank")}
+                            variant="outline"
+                            size="sm"
+                            class="flex items-center gap-1 text-xs"
+                          >
                             <Icon icon="mdi:open-in-new" width="0.9em" />
                             Open
                           </Button>
@@ -1532,13 +1649,18 @@
           <!-- Shared: Attachments -->
           {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl || recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
             <section class="mt-3">
-              <h4 class="text-xs font-semibold text-slate-900 mb-2">Attachments</h4>
+              <h4 class="text-xs font-semibold text-slate-900 mb-2">
+                Attachments
+              </h4>
               <div class="flex flex-wrap gap-4">
                 {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
                   <div class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-slate-600">Previous</span>
+                    <span class="text-xs font-medium text-slate-600"
+                      >Previous</span
+                    >
                     <img
-                      src={recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
+                      src={recordalData.oldAttachmentUrl ||
+                        recordalData.OldAttachmentUrl}
                       alt="Old Attachment"
                       class="max-w-xs h-auto rounded border border-slate-200"
                       style="max-height: 150px; object-fit: contain;"
@@ -1547,9 +1669,12 @@
                 {/if}
                 {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
                   <div class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-slate-600">Updated</span>
+                    <span class="text-xs font-medium text-slate-600"
+                      >Updated</span
+                    >
                     <img
-                      src={recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
+                      src={recordalData.newAttachmentUrl ||
+                        recordalData.NewAttachmentUrl}
                       alt="New Attachment"
                       class="max-w-xs h-auto rounded border border-slate-200"
                       style="max-height: 150px; object-fit: contain;"
@@ -1563,27 +1688,64 @@
           <!-- Shared: Documents -->
           {#if recordalData.documentUrl || recordalData.assignmentDeedUrl || recordalData.authorizationLetterUrl || (recordalData.appealDocs && recordalData.appealDocs.length > 0)}
             <section class="mt-3">
-              <h4 class="text-xs font-semibold text-slate-900 mb-2">Supporting Documents</h4>
+              <h4 class="text-xs font-semibold text-slate-900 mb-2">
+                Supporting Documents
+              </h4>
               <div class="flex flex-wrap gap-2">
                 {#if recordalData.documentUrl}
-                  <Button on:click={() => window.open(recordalData.documentUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
-                    <Icon icon="mdi:file-document-outline" width="1em" />Document
+                  <Button
+                    on:click={() =>
+                      window.open(recordalData.documentUrl, "_blank")}
+                    variant="outline"
+                    size="sm"
+                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                  >
+                    <Icon
+                      icon="mdi:file-document-outline"
+                      width="1em"
+                    />Document
                   </Button>
                 {/if}
                 {#if recordalData.assignmentDeedUrl}
-                  <Button on:click={() => window.open(recordalData.assignmentDeedUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                  <Button
+                    on:click={() =>
+                      window.open(recordalData.assignmentDeedUrl, "_blank")}
+                    variant="outline"
+                    size="sm"
+                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                  >
                     <Icon icon="mdi:file-sign" width="1em" />Assignment Deed
                   </Button>
                 {/if}
                 {#if recordalData.authorizationLetterUrl}
-                  <Button on:click={() => window.open(recordalData.authorizationLetterUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
-                    <Icon icon="mdi:file-certificate-outline" width="1em" />Authorization
+                  <Button
+                    on:click={() =>
+                      window.open(
+                        recordalData.authorizationLetterUrl,
+                        "_blank",
+                      )}
+                    variant="outline"
+                    size="sm"
+                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                  >
+                    <Icon
+                      icon="mdi:file-certificate-outline"
+                      width="1em"
+                    />Authorization
                   </Button>
                 {/if}
                 {#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
                   {#each recordalData.appealDocs as docUrl, index}
-                    <Button on:click={() => window.open(docUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
-                      <Icon icon="mdi:file-document-outline" width="1em" />Appeal {index + 1}
+                    <Button
+                      on:click={() => window.open(docUrl, "_blank")}
+                      variant="outline"
+                      size="sm"
+                      class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                    >
+                      <Icon
+                        icon="mdi:file-document-outline"
+                        width="1em"
+                      />Appeal {index + 1}
                     </Button>
                   {/each}
                 {/if}
@@ -1593,7 +1755,12 @@
         </div>
       {:else}
         <div class="flex flex-col items-center justify-center h-40 gap-2">
-          <Icon icon="mdi:file-alert-outline" class="text-slate-300" width="2.5rem" height="2.5rem" />
+          <Icon
+            icon="mdi:file-alert-outline"
+            class="text-slate-300"
+            width="2.5rem"
+            height="2.5rem"
+          />
           <p class="text-xs text-slate-400">No application data available</p>
         </div>
       {/if}
@@ -1602,7 +1769,10 @@
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
         {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
           <div class="mt-4 pt-4 border-t border-slate-200">
-            <Label for="approval-reason" class="text-xs font-semibold text-slate-900 block mb-2">
+            <Label
+              for="approval-reason"
+              class="text-xs font-semibold text-slate-900 block mb-2"
+            >
               Decision Reason <span class="text-red-500">*</span>
             </Label>
             <Textarea
@@ -1623,22 +1793,45 @@
     </div>
 
     <!-- Footer -->
-    <div class="border-t border-slate-200 px-6 py-3 flex flex-wrap gap-2 justify-end">
+    <div
+      class="border-t border-slate-200 px-6 py-3 flex flex-wrap gap-2 justify-end"
+    >
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
         {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
           <Button
             on:click={() => {
               if (!reason || reason.trim().length < 10) {
-                showToast("error", "Please provide a detailed reason (at least 10 characters)");
+                showToast(
+                  "error",
+                  "Please provide a detailed reason (at least 10 characters)",
+                );
                 return;
               }
               switch (selectedApplication?.applicationType) {
-                case 5: approveAssignment(selectedApplication); break;
-                case 7: approveRegUser(selectedApplication); break;
-                case 8: approveMerger(selectedApplication); break;
-                case 17: approveAmendment(selectedApplication); break;
-                case 9: case 36: case 10: approveChangeDataRecordal(selectedApplication); break;
-                case 11: approveRecordal("/api/files/ApproveClericalUpdate", selectedApplication, "Clerical update approved successfully"); break;
+                case 5:
+                  approveAssignment(selectedApplication);
+                  break;
+                case 7:
+                  approveRegUser(selectedApplication);
+                  break;
+                case 8:
+                  approveMerger(selectedApplication);
+                  break;
+                case 17:
+                  approveAmendment(selectedApplication);
+                  break;
+                case 9:
+                case 36:
+                case 10:
+                  approveChangeDataRecordal(selectedApplication);
+                  break;
+                case 11:
+                  approveRecordal(
+                    "/api/files/ApproveClericalUpdate",
+                    selectedApplication,
+                    "Clerical update approved successfully",
+                  );
+                  break;
               }
             }}
             disabled={!reason || reason.trim().length < 10}
@@ -1650,7 +1843,10 @@
           <Button
             on:click={() => {
               if (!reason || reason.trim().length < 10) {
-                showToast("error", "Please provide a detailed reason (at least 10 characters)");
+                showToast(
+                  "error",
+                  "Please provide a detailed reason (at least 10 characters)",
+                );
                 return;
               }
               if (selectedApplication) denyRecordal(selectedApplication);
@@ -1665,7 +1861,10 @@
       {/if}
 
       <Button
-        on:click={() => { showRecordalDialog = false; reason = ""; }}
+        on:click={() => {
+          showRecordalDialog = false;
+          reason = "";
+        }}
         variant="outline"
         class="text-xs font-medium border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded transition-colors"
       >
@@ -1747,7 +1946,9 @@
               Cancel
             </Button>
             <Button
-              on:click={() => { if (selectedApplication) handleDenyAppeal(selectedApplication); }}
+              on:click={() => {
+                if (selectedApplication) handleDenyAppeal(selectedApplication);
+              }}
               variant="destructive"
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2"
@@ -1761,7 +1962,10 @@
               {/if}
             </Button>
             <Button
-              on:click={() => { if (selectedApplication) handleApproveAppeal(selectedApplication); }}
+              on:click={() => {
+                if (selectedApplication)
+                  handleApproveAppeal(selectedApplication);
+              }}
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2 bg-green-600 hover:bg-green-700"
             >
@@ -2192,7 +2396,7 @@
 />
 
 <!-- Design License Dialog -->
-<DesignLicenseDialog 
+<DesignLicenseDialog
   bind:open={showDesignLicenseDialog}
   fileId={designLicenseFileId}
   applicationId={designLicenseApplicationId}
@@ -2475,7 +2679,12 @@
                   <!-- Patent License Application -->
                   {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openPatentLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
+                      on:click={() =>
+                        openPatentLicenseDialog(
+                          fileData.fileId,
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
                     >
                       View Application
                     </DropdownMenu.Item>
@@ -2483,7 +2692,12 @@
                   <!-- Design License Application -->
                   {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openDesignLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
+                      on:click={() =>
+                        openDesignLicenseDialog(
+                          fileData.fileId,
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
                     >
                       View Application
                     </DropdownMenu.Item>
@@ -2672,7 +2886,7 @@
                       >
                     {/if}
                   {/if}
-                  
+
                   <!-- LETTERS -->
                   <DropdownMenu.Separator />
                   <DropdownMenu.Label>Print</DropdownMenu.Label>
@@ -2822,6 +3036,26 @@
                       }}>Clerical Update Receipt</DropdownMenu.Item
                     >
                   {/if}
+                  <!-- Certification Docs -->
+                  {#if application.applicationType === FormApplicationTypes.Certification && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 18, 21);
+                      }}>Certificate Acknowledgement</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Item
+                      on:click={() => {
+                        generateLetter(application, 18, 22);
+                      }}>Certificate Payment Receipt</DropdownMenu.Item
+                    >
+                    {#if application.currentStatus === ApplicationStatuses.Active}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 18, 3);
+                        }}>Certificate</DropdownMenu.Item
+                      >
+                    {/if}
+                  {/if}
                   <!-- Certificate -->
                   {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
                     {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
@@ -2831,6 +3065,7 @@
                         Certificate
                       </DropdownMenu.Item>
                     {/if}
+
                     <!-- Renewal docs -->
                   {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
                     {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
