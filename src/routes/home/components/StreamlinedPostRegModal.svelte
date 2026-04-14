@@ -347,20 +347,24 @@
           correspondence: fileResult.correspondence,
         };
         sessionStorage.setItem("applicationData", JSON.stringify(patentData));
-      } else {
+      } else if (isTrademark) {
         // Trademark renewal logic
         const renewalCost = await fetch(
           `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Trademark}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
-        sessionStorage.setItem("renewalData", JSON.stringify(renewalData));
+        sessionStorage.setItem("renewalData", JSON.stringify({
+          ...renewalData,
+          fileId: fileNumber,
+          applicantName: fileResult.fileApplicant ?? `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
+        }));
         await goto(
-          `/payment?type=trademarkRenewal&fileId=${fileResult.fileId}`,
+          `/payment?type=trademarkRenewal`,
         );
       }
 
       // Route to payment page
-      await goto(`/payment?type=renewal&fileId=${fileResult.fileId}`);
+      // await goto(`/payment?type=renewal&fileId=${fileResult.fileId}`);
     } catch (err) {
       error = "Error processing renewal request.";
     }

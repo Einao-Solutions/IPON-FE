@@ -147,7 +147,7 @@ export const trademarkServices: IPService[] = [
     route: "/home/renewal",
     category: "filing",
     price: "₦15,500",
-    maintenance: true,
+    maintenance: false,
   },
   {
     id: "withdrawal",
