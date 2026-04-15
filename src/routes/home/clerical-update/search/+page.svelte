@@ -99,10 +99,7 @@
             (result.fileTypes === FileTypes.Patent &&
               result.fileStatus !== null &&
               [3, 4, 6, 7].includes(result.fileStatus)) ||
-              result.fileStatus !== null &&
-              [3, 4, 6, 7].includes(result.fileStatus)) ||
             (result.fileTypes === FileTypes.Design &&
-              result.fileStatus !== null &&
               result.fileStatus !== null &&
               [3, 4, 6, 7].includes(result.fileStatus)),
         );
