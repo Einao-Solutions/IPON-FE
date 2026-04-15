@@ -97,7 +97,8 @@
     return (
       $loggedInUser?.userRoles.includes(UserRoles.User) ||
       $loggedInUser?.userRoles.includes(UserRoles.Tech) ||
-      $loggedInUser?.userRoles.includes(UserRoles.SuperAdmin)
+      $loggedInUser?.userRoles.includes(UserRoles.SuperAdmin) ||
+      $loggedInUser?.userRoles.includes(UserRoles.PermSec)
     );
   }
 
@@ -139,7 +140,10 @@
           UserRoles.DesignCertification,
           // Administrative roles
           UserRoles.Minister,
-          UserRoles.PermSec,
+         
+          // ✅ PermSec removed — they now see UserDashboard like regular users
+          // UserRoles.PermSec,
+
           UserRoles.Finance,
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only

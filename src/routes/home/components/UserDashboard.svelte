@@ -15,20 +15,6 @@
 	// Separate state for user dashboard to avoid conflicts with staff dashboard
 	let userDashStats: DashBoardStats | null = null;
 
-	// 🐛 DEBUG: Log DashStats changes for comparison with StaffDashboard
-	// $: if ($DashStats) {
-	// 	console.log('🔍 USER DASHBOARD - DashStats:', {
-	// 		detailedStats: $DashStats.detailedStats,
-	// 		detailedStatsCount: $DashStats.detailedStats?.length || 0,
-	// 		patentStats: $DashStats.detailedStats?.filter(x => x.fileType === 0) || [],
-	// 		trademarkStats: $DashStats.detailedStats?.filter(x => x.fileType === 2) || [],
-	// 		designStats: $DashStats.detailedStats?.filter(x => x.fileType === 1) || [],
-	// 		userType: user?.userType,
-	// 		userRoles: user?.userRoles,
-	// 		userId: user?.creatorId
-	// 	});
-	// }
-
 	onMount(async () => {
 		isLoading = true;
 		await loadDashStats();
