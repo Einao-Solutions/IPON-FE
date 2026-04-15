@@ -746,6 +746,10 @@ export function getLetterName(letter: number): string {
       return "Design CTC Receipt";
     case 89:
       return "Design Amendment Receipt";
+    case 90:
+      return "Trademark CTC Acknowledgement";
+    case 91:
+      return "Trademark CTC Receipt";
 
     default:
       return "Unknown Document";

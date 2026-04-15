@@ -9,7 +9,7 @@
   import { Label } from "$lib/components/ui/label";
   import { Button } from "$lib/components/ui/button";
   import ApplicationsHistory from "./ApplicationsHistory.svelte";
-  import { getHistoryData } from "./datahelpers";
+  import { getHistoryData, getLetterName as getDocumentTypeName } from "./datahelpers";
   import HistorySheet from "../home/components/HistorySheet.svelte";
   import {
     fileTypeToString,
@@ -326,7 +326,19 @@
   let appId: string = "";
 
   function getLetterName(doc: any) {
-    return doc.name || "Unknown Document";
+    // First try to use the provided name
+    if (doc.name) {
+      return doc.name;
+    }
+    
+    // If no name provided, try to map document type to name
+    if (doc.documentType || doc.letterType || doc.type) {
+      const documentTypeId = doc.documentType || doc.letterType || doc.type;
+      return getDocumentTypeName(documentTypeId);
+    }
+    
+    // Final fallback
+    return "Unknown Document";
   }
 
   function generateLetter(
