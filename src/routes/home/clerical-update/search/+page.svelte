@@ -94,11 +94,15 @@
           (result) =>
             (result.fileTypes === FileTypes.Trademark &&
               result.fileStatus !== null &&
-              [3, 4, 6, 7, 14, 20].includes(result.fileStatus)) ||
+              [3, 4, 6, 7].includes(result.fileStatus)) ||
+            // New logic for patent files with status 3
             (result.fileTypes === FileTypes.Patent &&
               result.fileStatus !== null &&
               [3, 4, 6, 7].includes(result.fileStatus)) ||
+              result.fileStatus !== null &&
+              [3, 4, 6, 7].includes(result.fileStatus)) ||
             (result.fileTypes === FileTypes.Design &&
+              result.fileStatus !== null &&
               result.fileStatus !== null &&
               [3, 4, 6, 7].includes(result.fileStatus)),
         );
@@ -169,18 +173,26 @@
       <p>{error}</p>
     </div>
   {:else if filteredResults.length === 0}
-    <div class="bg-yellow-50 p-8 rounded-md text-center">
-      <Icon
-        icon="lucide:search-x"
-        width="2rem"
-        height="2rem"
-        class="mx-auto mb-2 text-yellow-600"
-      />
-      <h3 class="text-lg font-medium text-gray-800 mb-1">No results found</h3>
-      <p class="text-gray-600">
-        Please ensure that your file status can file for Clerical Updates before
-        using the module.
+    <div class="flex flex-col items-center justify-center py-16 px-6">
+      <div class="bg-amber-50 border border-amber-200 rounded-full p-4 mb-5">
+        <Icon
+          icon="lucide:search-x"
+          width="2.5rem"
+          height="2.5rem"
+          class="text-amber-500"
+        />
+      </div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">No results found</h3>
+      <p class="text-sm text-gray-500 max-w-md mb-4">
+        Please ensure that your file status is eligible for Clerical Updates before using this module.
       </p>
+      <div class="flex flex-wrap justify-center gap-2">
+        {#each ["Awaiting Search", "Awaiting Examiner", "Re-Conduct", "Formality Fail"] as status}
+          <span class="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+            {status}
+          </span>
+        {/each}
+      </div>
     </div>
   {:else}
     <div class="bg-white rounded-md shadow overflow-hidden">

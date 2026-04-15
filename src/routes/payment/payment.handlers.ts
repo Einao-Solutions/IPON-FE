@@ -90,6 +90,7 @@ export const paymentHandlers: Record<
   "patent-amendment": patentAmendment,
   reclassification,
   trademarkRenewal,
+  designRenewal,
   designlicense,
   designassignment,
   designmerger,
@@ -432,8 +433,10 @@ async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
 
   const data = sessionStorage.getItem("renewalData");
   const parsed = data ? JSON.parse(data) : null;
-  const cost = parsed?.cost ?? params.get("amount");
-  const rrr = parsed?.rrr ?? params.get("rrr");
+  if (!parsed) throw new Error("Missing renewal data");
+
+  const cost = parsed.cost;
+  const rrr = parsed.paymentId;
   if (!cost || !rrr) throw new Error("Missing payment data");
 
   ctx.state.setTitle("Renewal Payment");
@@ -442,7 +445,27 @@ async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid`,
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
+  );
+}
+async function designRenewal(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+
+  const data = sessionStorage.getItem("renewalData");
+  const parsed = data ? JSON.parse(data) : null;
+  if (!parsed) throw new Error("Missing renewal data");
+
+  const cost = parsed.cost;
+  const rrr = parsed.paymentId;
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  ctx.state.setTitle("Renewal Payment");
+  ctx.state.setFileNumber(parsed?.fileId ?? null);
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(parsed?.applicantName ?? "");
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
   );
 }
 async function simpleRedirectHandler(

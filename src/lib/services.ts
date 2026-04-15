@@ -288,15 +288,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦18,500",
   },
-  // {
-  //   id: "trademark-ctc",
-  //   name: "TRADEMARK CTC (CERTIFIED TRUE COPY)",
-  //   description: "Request certified true copies of trademark documents",
-  //   icon: "mdi:certificate-outline",
-  //   route: "modal",
-  //   category: "filing",
-  //   price: "",
-  // },
+  {
+    id: "trademark-ctc",
+    name: "TRADEMARK CTC (CERTIFIED TRUE COPY)",
+    description: "Request certified true copies of trademark documents",
+    icon: "mdi:certificate-outline",
+    route: "modal",
+    category: "filing",
+    price: "",
+  },
   {
     id: "registered-user",
     name: "REGISTERED USER",
@@ -686,12 +686,12 @@ export const designServices: IPService[] = [
   {
     id: "renewal",
     name: "RENEWAL",
-    description: "Renew your trademark",
+    description: "Renew your design",
     icon: "mdi:refresh",
-    route: "/home/renewal",
+    route: "modal",
     category: "filing",
     price: "₦15,500",
-    maintenance: true,
+    maintenance: false,
   },
 
   // FINANCIAL CATEGORY

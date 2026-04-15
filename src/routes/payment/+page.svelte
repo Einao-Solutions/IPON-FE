@@ -122,20 +122,11 @@
       });
 
       freeApplication = cost === "0";
-      // console.log("File number:", fileNumber);
-      // console.log("Clerical ID:", clerical);
-      // if (type === "clerical") {
-      //   const formData = localStorage.getItem("formData");
-      //   if (formData) {
-      //     const parsedForm = JSON.parse(formData);
-      //     await submitForm(parsedForm);
-      //   }
-      // }
 
       await setHash();
     } catch (err: any) {
       renewalErrorMessage = err?.message ?? "Unable to initialize payment";
-      // showRenewalErrorModal = true;
+      showRenewalErrorModal = true;
     } finally {
       isLoading = false;
     }
