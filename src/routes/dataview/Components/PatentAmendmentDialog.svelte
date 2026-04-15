@@ -154,7 +154,13 @@
     class="w-11/12 max-w-5xl mx-auto my-8 max-h-[90vh] rounded-xl shadow-lg bg-white border border-gray-200 flex flex-col"
   >
     <Dialog.Header class="flex-shrink-0">
-      <Dialog.Title class="text-2xl font-bold">
+      <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
+        <Icon
+          icon="mdi:file-document-edit"
+          width="1.5em"
+          height="1.5em"
+          class="text-green-600"
+        />
         Patent Amendment Details
       </Dialog.Title>
       <Dialog.Description>
@@ -164,7 +170,7 @@
 
     <div class="flex-1 overflow-auto p-4">
       {#if loading}
-        <div class="flex items-center gap-2 text-gray-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
@@ -181,7 +187,10 @@
         <div class="space-y-6">
           <!-- File Information -->
           <div class="bg-gray-100 rounded-lg p-4">
-            <h3 class="font-semibold text-lg mb-3">File Information</h3>
+            <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
+              <Icon icon="mdi:file-outline" class="text-green-600" />
+              File Information
+            </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label class="font-semibold text-sm text-gray-700">File Number:</Label>
@@ -201,10 +210,13 @@
           <!-- Changes Section -->
           {#if amendmentDetails.changes}
             <div class="bg-gray-100 rounded-lg p-4">
-              <h3 class="font-semibold text-lg mb-4">{getAmendmentTypeLabel(amendmentDetails.amendmentType)}</h3>
+              <h3 class="font-semibold text-lg mb-4 flex items-center gap-2">
+                <Icon icon="mdi:pencil-box-outline" class="text-green-600" />
+                {getAmendmentTypeLabel(amendmentDetails.amendmentType)}
+              </h3>
               
+              <!-- Applicant Name Changes -->
               {#if amendmentDetails.amendmentType === 'ApplicantName'}
-                <!-- Applicant Name Changes -->
                 <div class="space-y-4">
                   {#if amendmentDetails.changes.oldNames && amendmentDetails.changes.newNames}
                     {#each amendmentDetails.changes.oldNames as oldName, index}
@@ -711,14 +723,15 @@
 
           <!-- Comment Section -->
           <div class="mb-4">
-            <Label for="decision-comment" class="block font-medium mb-1">
+            <Label for="decision-comment" class="block font-medium mb-1 flex items-center gap-2">
+              <Icon icon="mdi:comment-text-outline" class="text-green-600" />
               Decision Comment: {#if !isReadOnly}<span class="text-red-500">*</span>{/if}
             </Label>
             <Textarea
               id="decision-comment"
               bind:value={comment}
               rows={3}
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-200"
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
               placeholder="Enter your review comment and decision reason..."
               required
               disabled={isReadOnly}
