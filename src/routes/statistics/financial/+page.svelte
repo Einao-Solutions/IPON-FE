@@ -217,7 +217,7 @@
           <Icon icon="lucide:bar-chart-2" class="w-7 h-7 text-white" />
         </div>
         <div class="flex-1">
-          <h2 class="text-2xl font-bold text-gray-900 mb-1">Revenue Comparison</h2>
+          <h2 class="text-2xl font-bold text-gray-900 mb-1">Revenue Statistics</h2>
           <p class="text-sm text-gray-600">
             {registryType} Registry — Compare government fees and payment volumes across periods
           </p>
