@@ -1839,7 +1839,7 @@
               <div>
                 <!-- Main heading for the statistics section -->
                 <h2 class="text-xl font-bold text-slate-800">
-                  Detailed Statistics
+                  Portfolio Analytics
                 </h2>
                 <!-- Descriptive subtext explaining what the statistics show -->
                 <p class="text-slate-600 text-sm">
