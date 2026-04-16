@@ -217,7 +217,7 @@
                     <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <Icon icon="mdi:cash-multiple" class="text-2xl text-green-600" />
                     </div>
-                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Revenue Comparison</h4>
+                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Revenue Statistics</h4>
                     <p class="text-sm text-gray-600 mb-4">
                       Compare government fees and payment volumes across custom periods — by month, quarter, year or date range
                     </p>
