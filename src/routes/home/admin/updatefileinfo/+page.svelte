@@ -7,6 +7,7 @@
     FormApplicationTypes,
     FileTypes,
   } from "$lib/helpers";
+  import { MapTradeMarkClass } from "$lib/constants";
   import { toast } from "svelte-french-toast";
   import { Button } from "$lib/components/ui/button";
   import { loggedInUser, loggedInToken } from "$lib/store";
@@ -490,6 +491,14 @@
       isLoading = false;
     }
   };
+
+  $: if (filing?.trademarkClass) {
+    const description = MapTradeMarkClass(Number(filing.trademarkClass));
+    if (description) {
+      filing.trademarkClassDescription = description;
+    }
+  }
+
 </script>
 
 <div class="space-y-4 p-4">
@@ -758,7 +767,7 @@
                     class="block text-sm font-medium text-gray-700 mb-1"
                     >Trademark Class (1-45)</label
                   >
-                  <input
+                  <!-- <input
                     id="trademark-class"
                     class="input"
                     type="number"
@@ -766,7 +775,18 @@
                     max="45"
                     bind:value={filing.trademarkClass}
                     placeholder="Trademark Class (1-45)"
-                  />
+                  /> -->
+
+                  <select
+                    id="trademark-class"
+                    class="input"
+                    bind:value={filing.trademarkClass}
+                  >
+                    <option value="">Select Trademark Class</option>
+                    {#each Array.from({length: 45}, (_, i) => i + 1) as classNum}
+                      <option value={classNum}>Class {classNum}</option>
+                    {/each}
+                  </select>
                 </div>
 
                 <div>
