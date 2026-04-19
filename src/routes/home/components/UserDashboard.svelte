@@ -21,18 +21,15 @@
 	});
 
 	async function loadDashStats() {
-		// Use $loggedInUser instead of user prop for consistent role checking
 		const currentUser = $loggedInUser || user;
 		const userId = currentUser.creatorId;
 		
 		// Only show all files for Tech, SuperAdmin roles
 		// Regular users (UserRoles.User) should only see their own files
 		const canSeeAllFiles = currentUser.userRoles?.some(role => 
-			[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
+			[UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.PermSec].includes(role)
 		);
-		
 
-		
 		let id = canSeeAllFiles ? null : userId;
 		const url = `${baseURL}/api/files/FileStatistics?userId=${id}`;
 		
@@ -112,7 +109,7 @@
 		// Use $loggedInUser for consistent role checking
 		const currentUser = $loggedInUser || user;
 		const canSeeAllFiles = currentUser.userRoles?.some(role => 
-			[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
+			[UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.PermSec].includes(role)
 		);
 		
 
@@ -318,7 +315,7 @@
 						height="1.5rem"
 						class="mr-1.5 text-green-800"
 					/>
-					<p>Patent Applications Statistics</p>
+					<p>Patent Applications</p>
 				</div>
 			</Accordion.Trigger>
 			<Accordion.Content>
@@ -354,7 +351,7 @@
 						height="1.5rem"
 						class="mr-1.5 text-green-800"
 					/>
-					<p>Design Applications Statistics</p>
+					<p>Design Applications</p>
 				</div>
 			</Accordion.Trigger>
 			<Accordion.Content>
@@ -391,7 +388,7 @@
 							</div>
 							<div class="flex-1 text-left">
 								<div class="flex items-center gap-2 mb-0.5">
-									<h4 class="font-semibold text-slate-800">Trademark Applications Statistics</h4>
+									<h4 class="font-semibold text-slate-800">Trademark Applications</h4>
 									<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Trademark).length}</span>
 								</div>
 								<p class="text-xs text-slate-500">Registered brand identities</p>
@@ -476,7 +473,7 @@
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
-								<h4 class="font-semibold text-slate-800">Trademark Applications Statistics</h4>
+								<h4 class="font-semibold text-slate-800">Trademark Applications</h4>
 								<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Trademark).length}</span>
 							</div>
 							<p class="text-xs text-slate-500">Registered brand identities</p>
@@ -546,7 +543,7 @@
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
-								<h4 class="font-semibold text-slate-800">Patent Applications Statistics</h4>
+								<h4 class="font-semibold text-slate-800">Patent Applications</h4>
 								<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Patent).length}</span>
 							</div>
 							<p class="text-xs text-slate-500">Protected inventions and innovations</p>
@@ -615,7 +612,7 @@
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
-								<h4 class="font-semibold text-slate-800">Design Applications Statistics</h4>
+								<h4 class="font-semibold text-slate-800">Design Applications</h4>
 								<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Design).length}</span>
 							</div>
 							<p class="text-xs text-slate-500">Safeguarded creative designs</p>
