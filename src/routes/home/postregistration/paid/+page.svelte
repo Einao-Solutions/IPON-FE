@@ -41,7 +41,7 @@
     // Get paymentType from URL using get(page)
     const pageData = get(page);
     paymentType = pageData.url.searchParams.get("paymentType") ?? "";
-    const data = JSON.parse(localStorage.getItem("formData") ?? "{}");
+    const data = JSON.parse(localStorage.getItem("formData") ?? JSON.parse(sessionStorage.getItem("renewalData") ?? "{}"));
     console.log("Form Data from localStorage:", data);
     const appId = localStorage.getItem("appId");
     applicationId = appId;

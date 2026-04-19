@@ -443,14 +443,14 @@ export const patentServices: IPService[] = [
 
   // RECORDALS CATEGORY
   {
-    id: "renewal-patent",
+    id: "renewal",
     name: "RENEWAL",
     description: "File Patent Recordal Applications",
     icon: "mdi:refresh",
-    route: "/home/postregistration",
+    route: "modal",
     category: "filing",
     price: "₦11,500",
-    maintenance: true,
+    maintenance: false,
   },
 
   // FINANCIAL CATEGORY

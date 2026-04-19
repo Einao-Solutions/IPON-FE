@@ -65,8 +65,6 @@ export const paymentHandlers: Record<
   (ctx: PaymentContext) => Promise<void>
 > = {
   newapplication,
-  renewal,
-  dashrenewal,
   update,
   opposition,
   oppositionCounter,
@@ -97,6 +95,7 @@ export const paymentHandlers: Record<
   designmortgage,
   designctc,
   designamendment,
+  patentRenewal,
 };
 
 /* ======================================================
@@ -156,61 +155,6 @@ async function newapplication(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileType(appData.type?.toString() ?? null);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=newapplication&fileId=${appData.id}&applicationId=${history.id}`,
-  );
-}
-
-async function renewal(ctx: PaymentContext): Promise<void> {
-  const raw = sessionStorage.getItem("applicationData");
-  const parsed = raw ? JSON.parse(raw) : null;
-
-  if (!parsed?.fileId) throw new Error("Invalid renewal data");
-
-  const res = await fetch(
-    `${baseURL}/api/files/GetPatentRenewalCost?fileId=${parsed.fileId}&fileType=0`,
-  );
-
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.message);
-  }
-
-  const result = await res.json();
-  const user = get(ctx.loggedInUser);
-
-  ctx.state.setTitle("Patent Renewal");
-  ctx.state.setCost(result.cost);
-  ctx.state.setPaymentId(result.rrr);
-  ctx.state.setFileNumber(parsed.fileId);
-  ctx.state.setFileApplicant(`${user?.firstName} ${user?.lastName}`);
-  ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal&fileId=${parsed.fileId}&rrr=${result.rrr}`,
-  );
-  ctx.state.setRenewalMeta({
-    isLateRenewal: result.isLateRenewal,
-    missedYearsCount: result.missedYearsCount,
-    lateYearsCount: result.lateYearsCount,
-  });
-}
-
-async function dashrenewal(ctx: PaymentContext): Promise<void> {
-  const params = ctx.page.url.searchParams;
-  const cost = params.get("amount");
-  const rrr = params.get("paymentId");
-  const fileId = params.get("fileId");
-
-  if (!cost || !rrr || !fileId) {
-    throw new Error("Missing dash renewal params");
-  }
-
-  const user = get(ctx.loggedInUser);
-
-  ctx.state.setTitle("Renewal");
-  ctx.state.setCost(cost);
-  ctx.state.setPaymentId(rrr);
-  ctx.state.setFileNumber(fileId);
-  ctx.state.setFileApplicant(`${user?.firstName} ${user?.lastName}`);
-  ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/status?rrr=${rrr}&paymentType=dashrenewal&fileId=${fileId}`,
   );
 }
 
@@ -428,6 +372,8 @@ async function reclassification(ctx: PaymentContext): Promise<void> {
     `https://${ctx.page.url.host}/payment/paid?paymentType=reclassification`,
   );
 }
+
+// Renewal Handlers
 async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
 
@@ -439,7 +385,7 @@ async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
   const rrr = parsed.paymentId;
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  ctx.state.setTitle("Renewal Payment");
+  ctx.state.setTitle("Trademark Renewal Payment");
   ctx.state.setFileNumber(parsed?.fileId ?? null);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
@@ -459,7 +405,27 @@ async function designRenewal(ctx: PaymentContext): Promise<void> {
   const rrr = parsed.paymentId;
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  ctx.state.setTitle("Renewal Payment");
+  ctx.state.setTitle("Design Renewal Payment");
+  ctx.state.setFileNumber(parsed?.fileId ?? null);
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(parsed?.applicantName ?? "");
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
+  );
+} 
+async function patentRenewal(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+
+  const data = sessionStorage.getItem("renewalData");
+  const parsed = data ? JSON.parse(data) : null;
+  if (!parsed) throw new Error("Missing renewal data");
+
+  const cost = parsed.cost;
+  const rrr = parsed.paymentId;
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  ctx.state.setTitle("Patent Renewal Payment");
   ctx.state.setFileNumber(parsed?.fileId ?? null);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
@@ -468,6 +434,7 @@ async function designRenewal(ctx: PaymentContext): Promise<void> {
     `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
   );
 }
+
 async function simpleRedirectHandler(
   ctx: PaymentContext,
   path: string,
@@ -511,7 +478,7 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
-  const fileId = params.get("fileId");
+  const fileId = pararrr ?? parsed.ms.get("fileId");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
