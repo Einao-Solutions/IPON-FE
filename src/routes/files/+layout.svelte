@@ -16,14 +16,14 @@
 	let showCustomTitle:boolean=false;
 	let fileType:string|undefined=undefined;
 	afterNavigate(({ from, to }) => {
-		console.log(to.url)
+	//	console.log(to.url)
 		currentPage.set(to.url);
-		console.log($currentPage);
+	//	console.log($currentPage);
 	});
 	$:{
 		if($currentPage) {
 			titleType = $currentPage.searchParams.get('titleType') ?? undefined;
-			console.log(titleType)
+		//	console.log(titleType)
 			if (titleType == 'specific')
 			{
 				const val=$currentPage.searchParams.get('fileType')
