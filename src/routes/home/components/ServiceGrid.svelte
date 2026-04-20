@@ -50,6 +50,7 @@
       'change-applicant-name',
       'change-applicant-address', 
       'renewal',
+      'restoration',
       'assignment',
       'merger',
       'registered-user',

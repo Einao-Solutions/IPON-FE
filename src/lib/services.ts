@@ -315,6 +315,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦11,500",
   },
+  {
+    id: "restoration",
+    name: "RESTORATION",
+    description: "Restore 'Inactive' files before renewal",
+    icon: "mdi:refresh",
+    route: "modal",
+    category: "filing",
+    price: "₦13,500"
+  },
   // FINANCIAL CATEGORY
   {
     id: "pay-certificate",

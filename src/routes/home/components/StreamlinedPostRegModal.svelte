@@ -222,7 +222,9 @@
 
         // For renewal, get file details and route directly to payment
         if (serviceId === "renewal") {
-          await handleRenewalService(searchQuery.trim(), ipType);
+          await handleRenewalService(searchQuery.trim(), ipType, false);
+        } else if (serviceId === "restoration") {
+          await handleRenewalService(searchQuery.trim(), ipType, true);
         } else if (
           [
             "patent-amendment",
@@ -287,6 +289,7 @@
   async function handleRenewalService(
     fileNumber: string,
     ipType: string,
+    restoration: boolean,
   ): Promise<void> {
     try {
       // Get file details - same API call as postregistration search
@@ -310,6 +313,26 @@
       const isPatent = fileResult.fileTypes === 0;
       const isTrademark = fileResult.fileTypes === 2;
       const isDesign = fileResult.fileTypes === 1;
+
+      // Handle restoration separately - skip renewal logic
+      if (restoration) {
+        const renewalCost = await fetch(
+          `${baseURL}/api/files/RestorationRequest?fileId=${fileNumber}&userId=${$loggedInUser?.id}`,
+        );
+        const renewalData = await renewalCost.json();
+        sessionStorage.setItem(
+          "formData",
+          JSON.stringify({
+            ...renewalData,
+            fileId: fileNumber,
+            applicantName:
+              fileResult.fileApplicant ??
+              `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
+          }),
+        );
+        await goto(`/payment?type=restoration`);
+        return;
+      }
 
       // Follow exact same renewal logic as postregistration/search
       if (isPatent) {
@@ -363,9 +386,6 @@
         );
         await goto(`/payment?type=designRenewal`);
       }
-
-      // Route to payment page
-      // await goto(`/payment?type=renewal&fileId=${fileResult.fileId}`);
     } catch (err) {
       error = "Error processing renewal request.";
     }
@@ -460,8 +480,10 @@
           {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage", "patent-merger"].includes(serviceId)}
             This service is only available for Active patent files.
           {:else if ["renewal"].includes(serviceId)}
-            Renewal is only available for registered {ipType} files
-            with status 'Active' or 'Inactive', 90 days before the due date.
+            Renewal is only available for registered {ipType} files with status 'Active'
+            or 'Inactive', 90 days before the due date.
+          {:else if ["restoration"].includes(serviceId)}
+            Restoration is only available for Inactive {ipType} files
           {:else}
             This service is only available for accepted and registered {ipType} files
             with status 'Publication' 'Awaiting Certification' and 'Active'

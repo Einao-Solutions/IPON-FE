@@ -54,7 +54,7 @@ export function getStatuses(
   ) {
     return [ApplicationStatuses.Active, ApplicationStatuses.Rejected];
   }
-  
+
   if (
     [
       ApplicationStatuses.AwaitingSearch,
@@ -130,6 +130,10 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "Awaiting Certificate Confirmation";
     case ApplicationStatuses.Opposition:
       return "Opposition";
+    case ApplicationStatuses.AwaitingRenewalConfirmation:
+      return "Awaiting Renewal Confirmation";
+    case ApplicationStatuses.PendingRenewal:
+      return "Pending Renewal";
     default:
       return "-";
   }
@@ -527,7 +531,7 @@ export function CanTreatApplication(
       );
     }
   }
-    
+
   if (
     applicationStatus === ApplicationStatuses.AwaitingCertificateConfirmation
   ) {
