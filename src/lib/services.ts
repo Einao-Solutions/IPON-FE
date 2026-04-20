@@ -322,7 +322,7 @@ export const trademarkServices: IPService[] = [
     icon: "mdi:refresh",
     route: "modal",
     category: "filing",
-    price: "₦13,500"
+    price: "₦13,500",
   },
   // FINANCIAL CATEGORY
   {
@@ -500,6 +500,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+    maintenance: true,
   },
   {
     id: "patent-ctc",
@@ -518,6 +519,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+    maintenance: true,
   },
   {
     id: "patent-mortgage",
@@ -527,6 +529,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+    maintenance: true,
   },
   {
     id: "patent-merger",
@@ -536,6 +539,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+    maintenance: true,
   },
 ];
 
@@ -639,13 +643,13 @@ export const designServices: IPService[] = [
 
   // RECORDALS CATEGORY
   {
-    id: 'design-amendment',
-    name: 'DESIGN AMENDMENT',
-    description: 'Amend existing design applications',
-    icon: 'mdi:file-edit-outline',
-    route: 'modal',
-    category: 'filing',
-    price: ''
+    id: "design-amendment",
+    name: "DESIGN AMENDMENT",
+    description: "Amend existing design applications",
+    icon: "mdi:file-edit-outline",
+    route: "modal",
+    category: "filing",
+    price: "",
   },
   {
     id: "design-assignment",
