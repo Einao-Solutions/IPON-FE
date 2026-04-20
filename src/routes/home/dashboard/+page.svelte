@@ -147,6 +147,10 @@
           UserRoles.Finance,
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only
+
+          UserRoles.TrademarkStaff, // ✅ added
+          UserRoles.PatentStaff,    // ✅ added
+          UserRoles.DesignStaff,    // ✅ added
         ].includes(e),
       );
     }
