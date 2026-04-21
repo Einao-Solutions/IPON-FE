@@ -65,7 +65,8 @@
                 UserRoles.PermSec,
                 UserRoles.Minister,
                 UserRoles.Tech,
-                UserRoles.SuperAdmin
+                UserRoles.SuperAdmin,
+                UserRoles.PatentStaff, 
             ].includes(x)
         );
     }
@@ -80,7 +81,8 @@
                 UserRoles.Tech,
                 UserRoles.Minister,
                 UserRoles.PermSec,
-                UserRoles.SuperAdmin
+                UserRoles.SuperAdmin,
+                UserRoles.DesignStaff, 
             ].includes(x)
         );
     }
@@ -97,7 +99,8 @@
                 UserRoles.PermSec,
                 UserRoles.Minister,
                 UserRoles.Tech,
-                UserRoles.SuperAdmin
+                UserRoles.SuperAdmin,
+                UserRoles.TrademarkStaff,
             ].includes(x)
         );
     }
@@ -159,7 +162,9 @@
             UserRoles.TrademarkSearch, UserRoles.TrademarkExaminer, UserRoles.TrademarkPublication,
             UserRoles.TrademarkOpposition, UserRoles.TrademarkAcceptance, UserRoles.TrademarkCertification,
             UserRoles.PatentSearch, UserRoles.PatentExaminer, UserRoles.PatentCertification,
-            UserRoles.DesignSearch, UserRoles.DesignExaminer, UserRoles.DesignCertification
+            UserRoles.DesignSearch, UserRoles.DesignExaminer, UserRoles.DesignCertification,
+            UserRoles.DesignStaff, UserRoles.PermSec, UserRoles.Minister, UserRoles.Finance,
+            UserRoles.Tech, UserRoles.SuperAdmin,
         ];
         const primaryRole = roles.find(role => ipRoles.includes(role)) || roles[0] || UserRoles.Staff;
         return getRoleDisplayInfo(primaryRole);
