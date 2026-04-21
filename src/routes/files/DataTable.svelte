@@ -49,13 +49,14 @@
 	let hideForId: Record<string, boolean> = {};
 	let isLoading=false;
 	let _filterValue;
-	$: classColumnHeader = (() => {
+	let classColumnHeader = 'Class/Type';
+	$: if (typeof window !== 'undefined') {
 		const ft = $page.url.searchParams.get('fileType');
-		if (ft === '0') return 'Patent Type';
-		if (ft === '1') return 'Design Type';
-		if (ft === '2') return 'Class';
-		return 'Class/Type';
-	})();
+		if (ft === '0') classColumnHeader = 'Patent Type';
+		else if (ft === '1') classColumnHeader = 'Design Type';
+		else if (ft === '2') classColumnHeader = 'Class';
+		else classColumnHeader = 'Class/Type';
+	}
 	$: {
 		$_hiddenColumnIds = Object.entries(hideForId)
 			.filter(([, hide]) => !hide)
