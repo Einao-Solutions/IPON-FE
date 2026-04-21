@@ -4,10 +4,12 @@
 	import * as Dialog from "$lib/components/ui/dialog"
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { mapStatusToString } from '../home/components/dashboardutils';
+	import { mapDesignTypeToString } from '$lib/designutils';
 	import {
 		type AffectedFiles, ApplicationStatuses,
 		baseURL,
 		FormApplicationTypes,
+		getPatentTypeLabel,
 		getStatusColour,
 		UserRoles,
 		UserTypes
@@ -43,10 +45,17 @@
 	export let showRenew:boolean=false;
 	let _selectedDataIds: any;
 	let _hiddenColumnIds: Writable<string[]>;
-	let hidableCols: string[] = ['date', 'title', 'fileId', 'fileStatus', 'fileType', 'trademarkClass', 'status'];
+	let hidableCols: string[] = ['date', 'title', 'fileId', 'fileStatus', 'fileType', 'classOrType', 'status'];
 	let hideForId: Record<string, boolean> = {};
 	let isLoading=false;
 	let _filterValue;
+	$: classColumnHeader = (() => {
+		const ft = $page.url.searchParams.get('fileType');
+		if (ft === '0') return 'Patent Type';
+		if (ft === '1') return 'Design Type';
+		if (ft === '2') return 'Class';
+		return 'Class/Type';
+	})();
 	$: {
 		$_hiddenColumnIds = Object.entries(hideForId)
 			.filter(([, hide]) => !hide)
@@ -117,10 +126,9 @@
 				header: 'Type'
 			}),
 			table.column({
-				accessor: 'trademarkClass',
-				header: 'Class',
+				accessor: 'classOrType',
+				header: classColumnHeader,
 				cell: ({ value }) => {
-					// Only show for trademark files
 					return value ? value : '';
 				}
 			}),
@@ -277,7 +285,11 @@
         fileStatus: curr.fileStatus ?? "-",
         title: curr.title ?? "-",
         fileType: fileTypeToString(curr.type),
-        trademarkClass: curr.trademarkClass ?? curr.tradeMarkClass ?? "",
+        classOrType: curr.type === 0
+          ? getPatentTypeLabel(curr.patentType ?? 0)
+          : curr.type === 1
+            ? (mapDesignTypeToString(curr.designType ?? 0) ?? "")
+            : (curr.trademarkClass ?? curr.tradeMarkClass ?? ""),
         id: curr.id,
         status:
           summaries.length > 1

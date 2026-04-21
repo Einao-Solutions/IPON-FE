@@ -11,6 +11,8 @@
     fileTypeToString,
     mapTypeToString,
   } from "../home/components/dashboardutils";
+  import { getPatentTypeLabel } from "$lib/helpers";
+  import { mapDesignTypeToString } from "$lib/designutils";
   import { writable } from "svelte/store";
   import {
     listOfIds,
@@ -170,7 +172,11 @@
         fileStatus: curr.fileStatus,
         title: curr.title,
         fileType: fileTypeToString(curr.type),
-        trademarkClass: curr.trademarkClass ?? curr.tradeMarkClass ?? "",
+        classOrType: curr.type === 0
+          ? getPatentTypeLabel(curr.patentType ?? 0)
+          : curr.type === 1
+            ? (mapDesignTypeToString(curr.designType ?? 0) ?? "")
+            : (curr.trademarkClass ?? curr.tradeMarkClass ?? ""),
         id: curr.id,
         status:
           allPending.length > 1
