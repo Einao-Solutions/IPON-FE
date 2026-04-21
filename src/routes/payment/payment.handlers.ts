@@ -96,6 +96,7 @@ export const paymentHandlers: Record<
   designctc,
   designamendment,
   patentRenewal,
+  restoration
 };
 
 /* ======================================================
@@ -434,7 +435,26 @@ async function patentRenewal(ctx: PaymentContext): Promise<void> {
     `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
   );
 }
+async function restoration(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
 
+  const data = sessionStorage.getItem("formData");
+  const parsed = data ? JSON.parse(data) : null;
+  if (!parsed) throw new Error("Missing restoration data");
+
+  const cost = parsed.cost;
+  const rrr = parsed.paymentId;
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  ctx.state.setTitle("Payment for Restoration of File");
+  ctx.state.setFileNumber(parsed?.fileId ?? null);
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileApplicant(parsed?.applicantName ?? "");
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=restoration`,
+  );
+} 
 async function simpleRedirectHandler(
   ctx: PaymentContext,
   path: string,

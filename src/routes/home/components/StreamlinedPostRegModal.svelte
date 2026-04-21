@@ -320,6 +320,10 @@
           `${baseURL}/api/files/RestorationRequest?fileId=${fileNumber}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
+        if (!renewalCost.ok) {
+          error = "This file is not eligible for restoration.";
+          return;
+        }
         sessionStorage.setItem(
           "formData",
           JSON.stringify({
