@@ -11,6 +11,8 @@
     fileTypeToString,
     mapTypeToString,
   } from "../home/components/dashboardutils";
+  import { getPatentTypeLabel } from "$lib/helpers";
+  import { mapDesignTypeToString } from "$lib/designutils";
   import { writable } from "svelte/store";
   import {
     listOfIds,
@@ -19,13 +21,13 @@
     loggedInToken,
   } from "$lib/store";
 
-  export let dataList: [] | null = null;
+  export let dataList: any[] | null = null;
   let count: number = 0;
   let previousPage: string = base;
   let isLoading = writable<boolean>(false);
   let currentPage: number = 0;
   let currentUrl = writable<URL>($page.url);
-  export let serverData: PageServerData;
+  export const serverData: PageServerData = undefined as any;
   afterNavigate(({ from, to }) => {
     previousPage = from?.url.pathname || previousPage;
     if (to?.url) {
@@ -33,8 +35,8 @@
   });
   function paginated(startIndex: number, count: number, _currentPage: number) {
     currentPage = _currentPage;
-    $currentUrl.searchParams.set("quantity", count);
-    $currentUrl.searchParams.set("index", startIndex);
+    $currentUrl.searchParams.set("quantity", count.toString());
+    $currentUrl.searchParams.set("index", startIndex.toString());
     loadData();
   }
   onMount(async () => {
@@ -81,7 +83,7 @@
     const quantity = quantityString ? parseInt(quantityString) : 10;
     const fileUrl = `${baseURL}/api/files/summary?index=${index}&quantity=${quantity}`;
 
-    const body = {
+    const body: Record<string, any> = {
       userType: $loggedInUser?.userRoles.some((role) => role > UserRoles.User)
         ? 1
         : 0,
@@ -170,6 +172,11 @@
         fileStatus: curr.fileStatus,
         title: curr.title,
         fileType: fileTypeToString(curr.type),
+        classOrType: curr.type === 0
+          ? getPatentTypeLabel(curr.patentType ?? 0)
+          : curr.type === 1
+            ? (mapDesignTypeToString(curr.designType ?? 0) ?? "")
+            : (curr.trademarkClass ?? curr.tradeMarkClass ?? ""),
         id: curr.id,
         status:
           allPending.length > 1

@@ -5,7 +5,7 @@
 
 	export let checked: Writable<boolean>;
 	export let id: string;
-	function onCheck(v){
+	function onCheck(v: boolean | 'indeterminate'){
 		if (v){
 			onSelected(id)
 		}
@@ -21,6 +21,7 @@
 		}
 		else {
 			selectedFilesForAction.update((data)=>{
+				if (!data) data = [];
 				data.push(fileId)
 				return [...data]
 			})
@@ -32,11 +33,12 @@
 			return;
 		} else {
 			selectedFilesForAction.update((data) => {
+				if (!data) return [];
 				const inde = data.indexOf(fileId)
 				if (inde !== -1) {
 					data.splice(inde, 1);
-					return [...data]
 				}
+				return [...data]
 			})
 		}
 	}
