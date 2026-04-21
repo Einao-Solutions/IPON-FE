@@ -31,7 +31,7 @@ async function fetchResult()
 	{
 		const {id, fileStatus } =await response.json();
 		if (id!==null && fileStatus!==null) {
-			if ([ApplicationStatuses.Expired, ApplicationStatuses.RejectedByExaminer, ApplicationStatuses.Re_conduct].includes(fileStatus)===false) {
+			if ([ApplicationStatuses.Inactive, ApplicationStatuses.RejectedByExaminer, ApplicationStatuses.Re_conduct].includes(fileStatus)===false) {
 				await goto(`/dataview?id=${id}`);
 				// F/PT/PCT/O/2024/3406
 			} else {

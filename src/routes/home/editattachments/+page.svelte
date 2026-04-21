@@ -67,7 +67,7 @@ async function searchFile() {
 
     // Patent file logic
     if (data.fileType === 0) {
-      if (data.fileStatus === ApplicationStatuses.Active || data.fileStatus === ApplicationStatuses.Expired) {
+      if (data.fileStatus === ApplicationStatuses.Active || data.fileStatus === ApplicationStatuses.Inactive) {
         errorModal = "The update attachment module does not work for Patent files with Active and InActive status.";
         return;
       }
@@ -90,7 +90,7 @@ async function searchFile() {
     }
     // Design file logic
     else if (data.fileType === 1) {
-      if (data.fileStatus === ApplicationStatuses.Active || data.fileStatus === ApplicationStatuses.Expired) {
+      if (data.fileStatus === ApplicationStatuses.Active || data.fileStatus === ApplicationStatuses.Inactive) {
         errorModal = "The update attachment module does not work for Design files with Active and Expired status.";
         return;
       }
