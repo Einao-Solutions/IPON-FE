@@ -1,6 +1,6 @@
 <script lang="ts">
     import { appattachmentsData, DashStats, loggedInUser, loggedInToken, newApplicationType } from '$lib/store';
-    import { DataMapper, FileStatsData, mapStatusToColor, mapTypeToString } from './dashboardutils';
+    import { DataMapper, FileStatsData, mapTypeToString } from './dashboardutils';
     import * as Accordion from '$lib/components/ui/accordion';
     import {
         baseURL, type DashBoardStats,

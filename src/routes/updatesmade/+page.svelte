@@ -2,6 +2,7 @@
 	import {
 		ApplicationStatuses,
 		baseURL, decodeUser,
+		getStatusColour,
 		type PatentData,
 		type Priority,
 		type RevisionsType,
@@ -10,7 +11,6 @@
 	import { Button } from '$lib/components/ui/button';
 	import Icon from '@iconify/svelte';
 	import {
-		getNewStatusColour,
 		getRevisionStatuses,
 		mapStatusOptionToString,
 		showTreatUpdateAppButton
@@ -430,7 +430,7 @@
 						type="button"
 						on:click={() => (selectedStatus = status)}
 						style="background-color: {selectedStatus === status
-							? getNewStatusColour(status)
+							? getStatusColour(status)
 							: 'transparent'} "
 						class="border rounded-md flex p-2 flex-grow items-center hover:bg-accent hover:cursor-pointer {selectedStatus ===
 						status
@@ -464,7 +464,7 @@
 						Are you sure you want to update the status to
 						<span
 							class="border w-fit p-1 rounded-md"
-							style="background-color: {getNewStatusColour(selectedStatus)}"
+							style="background-color: {getStatusColour(selectedStatus)}"
 						>
 						{mapStatusOptionToString(selectedStatus ?? 0)}
 						</span> ?

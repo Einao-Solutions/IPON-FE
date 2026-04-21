@@ -75,7 +75,7 @@ async function searchFile() {
       newUploads = {};
       // Set renderedKeys based on patent type number
       if (typeof data.patentType === 'number') {
-        if (data.patentType === PatentTypes.Non_Conventional) {
+        if (data.patentType === PatentTypes.Non_ConventioInactive
           renderedKeys = ['poa', 'cs', 'drawings', 'others'];
         } else if (data.patentType === PatentTypes.Conventional) {
           renderedKeys = ['poa', 'cs', 'drawings', 'others', 'priorityDocument'];
@@ -98,7 +98,7 @@ async function searchFile() {
       newUploads = {};
       renderedKeys = [
         'statementOfNovelty',
-        'designDrawings',
+        'designDrawings',Inactive
         'designPriorityDocument',
         'noveltyStatement'
       ];

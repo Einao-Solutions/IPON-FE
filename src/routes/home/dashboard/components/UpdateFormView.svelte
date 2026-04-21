@@ -39,7 +39,7 @@ async function fetchResult()
 					"please try again when the status has been updated or contact support", {
 					description: "current Status is " + mapStatusToString(fileStatus),
 					position: "top-right",
-					duration:4000
+					duration: 4000
 				})
 				isSearching=false;
 			}
