@@ -593,6 +593,7 @@
       } else if (updateType === ClericalUpdateTypes.FileClass) {
         formObj.FileClass = String(newData.fileClass);
         formObj.ClassDescription = newData.classDescription ?? "";
+        formObj.AdditionalDescription = newData.additionalDescription ?? "";
         formObj.Disclaimer = newData.disclaimer ?? "";
       } else if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
         formObj.CorrespondenceName = newData.correspondenceName ?? "";

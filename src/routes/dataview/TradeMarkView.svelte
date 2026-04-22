@@ -69,17 +69,11 @@
 			<Card.Title>Trademark class description</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			{data?.trademarkClassDescription}
+			<p>{data?.trademarkClassDescription}</p>
+			<p class="mt-2">{data?.additionalDescription}</p>
 		</Card.Content>
 	</Card.Root>
-	<Card.Root>
-		<Card.Header>
-			<Card.Title>Additional Description</Card.Title>
-		</Card.Header>
-		<Card.Content>
-			{data?.additionalDescription}
-		</Card.Content>
-	</Card.Root>
+	
 	<Card.Root>
 		<Card.Header>
 			<Card.Title>Trademark logo description</Card.Title>
