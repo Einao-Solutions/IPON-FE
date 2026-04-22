@@ -35,6 +35,16 @@
 		PatentSections, TrademarkSections
 	} from '$lib/helpers';
 	import { FindDeepDiff } from './apphelper';
+
+	interface BasicFormData {
+		title?: string;
+		class?: number;
+		description?: string;
+		additionalDescription?: string;
+		type?: number;
+		disclaimer?: string;
+		logo?: number;
+	}
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -159,8 +169,10 @@
 					if (res) {
 						// replace url
 						newDataApp.update((data) => {
-							const index = data.attachments.findIndex(x => x.name === name);
-							data.attachments[index].url = res;
+							if (data?.attachments) {
+								const index = data.attachments.findIndex(x => x.name === name);
+								data.attachments[index].url = res;
+							}
 							return data;
 						})
 					}
@@ -168,27 +180,28 @@
 			}
 			adjustmentType.set(1);
 			localStorage.removeItem("revisions")
-			await goto(`/updatesmade?id=${$applicationData.id}`);
+			await goto(`/updatesmade?id=${$applicationData?.id}`);
 		}
 	}
 	let failedPages: string[] = [];
 	async function validateForms() {
 		validatedPages.update((pages) => {
+			pages = pages ?? [];
 			const addedPages = pages.map((x) => x.name);
 			const allSections = sections
 				.filter((x) => ['verification', 'priority'].includes(x.name) === false)
 				.map((x) => x.name);
 			for (const section in allSections) {
 				if (addedPages.includes(allSections[section]) === false) {
-					pages.push({ name: allSections[section], status: false });
+					pages!.push({ name: allSections[section], status: false });
 				}
 			}
-			return [...pages];
+			return [...pages!];
 		});
 		for (let i = 0; i < sections.length; i++) {
 			validatePage.set(sections[i].name);
 		}
-		failedPages = $validatedPages?.filter((x) => x.status == false).map((x) => x.name);
+		failedPages = $validatedPages?.filter((x) => x.status == false).map((x) => x.name) ?? [];
 		validatePage.set(null);
 		if (failedPages.length > 0) {
 			const all = failedPages.join('\n');
@@ -202,7 +215,7 @@
 	}
 
 	async function createFile() {
-		let data: PatentData;
+		let data: Partial<PatentData> | undefined;
 		var cookieUser = document.cookie
 			.split(';')
 			.find((x) => x.startsWith('user=') || x.startsWith(' user='));
@@ -241,7 +254,7 @@
 				applicants: allApplicants,
 				attachments: [],
 				creatorAccount: $loggedInUser.creatorId
-			};
+			} as Partial<PatentData>;
 		}
 		if ($newApplicationType === 0) {
 			// patent
@@ -278,11 +291,11 @@
 				applicants: allApplicants,
 				attachments: [],
 				creatorAccount: $loggedInUser.creatorId
-			};
+			} as Partial<PatentData>;
 			
 		}
 		if ($newApplicationType === 2) {
-			const basicData = $formsData?.filter((x) => x.name === 'basic')[0]?.data ;
+			const basicData = $formsData?.filter((x) => x.name === 'basic')[0]?.data as BasicFormData;
 			const allApplicants =
 				($formsData?.filter((x) => x.name === 'applicant')[0]?.data as Applicant[]) ?? [];
 			const correspondence = $formsData?.filter((x) => x.name === 'correspondence')[0]
@@ -300,6 +313,7 @@
 				titleOfTradeMark: basicData.title,
 				trademarkClass: basicData.class,
 				trademarkClassDescription:basicData.description,
+				additionalDescription: basicData.additionalDescription,
 				trademarkLogo: basicData.logo,
 				trademarkType: basicData.type,
 				trademarkDisclaimer: basicData.disclaimer,
@@ -307,15 +321,15 @@
 				applicants: allApplicants,
 				attachments: [],
 				creatorAccount: $loggedInUser.creatorId
-			};
+			} as Partial<PatentData>;
 		}
 
-		var testing___ = { file: JSON.stringify({ ...data })};
-		var attachmentsLists=[];
+		var testing___ = { file: JSON.stringify({ ...data })} as Record<string, any>;
+		var attachmentsLists: any[]=[];
 		for (let i = 0; i < $appattachmentsData.length; i++) {
 			let attach = $appattachmentsData[i].data;
 			for (let fileIndex = 0; fileIndex < attach.length; fileIndex++) {
-				if (data.type === FilingType.Design && $appattachmentsData[i].name === 'designs') {
+				if (data?.type === FilingType.Design && $appattachmentsData[i].name === 'designs') {
 					attachmentsLists.push({
 						fileName: (attach[fileIndex] as File).name,
 						Name: 'design' + `${fileIndex + 1}`,
@@ -348,7 +362,7 @@
 			await goto('/payment?type=newapplication');
 		}
 	}
-	function arrayBufferToBase64(buffer) {
+	function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array) {
 		let binary = '';
 		const bytes = new Uint8Array(buffer);
 		const len = bytes.byteLength;
@@ -359,10 +373,10 @@
 	}
 
 
-	function toByteArray(file) {
-		return new Promise((resolve, reject) => {
+	function toByteArray(file: File) {
+		return new Promise<ArrayBuffer>((resolve, reject) => {
 			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
 			reader.onerror = reject;
 			reader.readAsArrayBuffer(file);
 		}).then((arrayBuffer) => new Uint8Array(arrayBuffer));

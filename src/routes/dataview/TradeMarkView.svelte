@@ -74,10 +74,18 @@
 	</Card.Root>
 	<Card.Root>
 		<Card.Header>
+			<Card.Title>Additional Description</Card.Title>
+		</Card.Header>
+		<Card.Content>
+			{data?.additionalDescription}
+		</Card.Content>
+	</Card.Root>
+	<Card.Root>
+		<Card.Header>
 			<Card.Title>Trademark logo description</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			{['Device', 'Word Mark', 'Word and Device'][data?.trademarkLogo]}
+			{data?.trademarkLogo != null ? ['Device', 'Word Mark', 'Word and Device'][data.trademarkLogo] : '—'}
 		</Card.Content>
 	</Card.Root>
 	<Card.Root>
@@ -85,7 +93,7 @@
 			<Card.Title>Trademark Type</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			{['Local', 'Foreign'][data?.trademarkType]}
+			{data?.trademarkType != null ? ['Local', 'Foreign'][data.trademarkType] : '—'}
 		</Card.Content>
 	</Card.Root>
 
@@ -95,7 +103,7 @@
 		</Card.Header>
 		<Card.Content class="overflow-x-auto">
 			<Table.Root>
-				{#if data.applicants.length === 0}
+				{#if !data?.applicants?.length}
 					<p>No applicants added</p>
 				{:else}
 					<Table.Header>
@@ -109,7 +117,7 @@
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each data.applicants as applicant, i (i)}
+						{#each (data?.applicants ?? []) as applicant, i (i)}
 							<Table.Row>
 								<Table.Cell class="w-1">{i + 1}</Table.Cell>
 								<Table.Cell>{applicant.name}</Table.Cell>
@@ -167,7 +175,7 @@
 			<Card.Title>Attachments</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			{#each data.attachments as attachment}
+			{#each (data?.attachments ?? []) as attachment}
 				<div
 					class="rounded-md border gap-6 flex items-center p-1.5 sm:w-1/2 w-full mb-2 justify-between"
 				>
@@ -208,7 +216,7 @@
 						</Table.Row>
 					</Table.Header>
 					<Table.Body>
-						{#each data.registeredUsers.filter((user) => user.isApproved) as user, i (i)}
+						{#each (data?.registeredUsers ?? []) as user, i (i)}
 							<Table.Row>
 								<Table.Cell class="w-1">{i + 1}</Table.Cell>
 								<Table.Cell>{user.name}</Table.Cell>

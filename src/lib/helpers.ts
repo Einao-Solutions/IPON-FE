@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
-export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -220,6 +220,7 @@ export type PatentData = {
   titleOfTradeMark: string | null;
   trademarkClass: number | null;
   trademarkClassDescription: string | null;
+  additionalDescription: string | null;
   filingCountry: string | null;
   fileOrigin: string | null;
   trademarkLogo: number | null;
@@ -248,6 +249,7 @@ export type PatentData = {
   attachments: { name: string; url: string[] }[] | null;
   creatorAccount: string | null;
   dateCreated: string | null;
+  filingDate: Date | null;
   fieldStatus: { [key: string]: number } | null;
   registeredUsers: RegisteredUser[] | null;
   oppositions: OppositionHistoryType[] | null;
@@ -867,9 +869,9 @@ export async function decodeUser() {
 }
 
 export function toByteArray(file: File) {
-  return new Promise((resolve, reject) => {
+  return new Promise<ArrayBuffer>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
     reader.onerror = reject;
     reader.readAsArrayBuffer(file);
   }).then((arrayBuffer) => new Uint8Array(arrayBuffer));
@@ -906,7 +908,7 @@ export function getDefaultCorr() {
   return JSON.parse(defaultCorr);
 }
 
-export function setDefaultCorr(data) {
+export function setDefaultCorr(data: CorrespondenceType) {
   const defaultCorrCookie = `defaultcorr=${JSON.stringify(data)}; path=/`;
   document.cookie = defaultCorrCookie.trimStart();
 }
