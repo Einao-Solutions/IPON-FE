@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
-export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -380,7 +380,7 @@ export enum ApplicationLetters {
 
 export enum ApplicationStatuses {
   Active = 0,
-  Inactive = 1,
+  Expired = 1,
   AwaitingPayment = 2,
   AwaitingSearch = 3,
   AwaitingExaminer = 4,
@@ -508,82 +508,25 @@ export function GetCountryImageLink(country: string) {
   return `https://flagcdn.com/20x15/${key}.png`;
 }
 
-export function getStatusColour(status: ApplicationStatuses | null): string {
+export function getStatusColour(status: ApplicationStatuses) {
   switch (status) {
-    case ApplicationStatuses.Active:
-      return "#5ce45c";
     case ApplicationStatuses.AwaitingPayment:
-      return "rgb(216 180 254)";
+      return "#8a00c2";
     case ApplicationStatuses.AwaitingSearch:
-      return "rgb(253, 224, 71)";
-    case ApplicationStatuses.AwaitingExaminer:
-      return "rgb(253, 224, 71)";
-    case ApplicationStatuses.RejectedByExaminer:
-      return "#fe9797";
-    case ApplicationStatuses.Re_conduct:
-      return "#FAA0A0";
-    case ApplicationStatuses.FormalityFail:
-      return "#FAA0A0";
+    case ApplicationStatuses.AwaitingExaminer ||
+      ApplicationStatuses.AwaitingCounter:
+      return "#9B870C";
     case ApplicationStatuses.KivSearch:
-      return "#cfcec3";
     case ApplicationStatuses.KivExaminer:
       return "#cfcec3";
+    case ApplicationStatuses.FormalityFail:
+      return "#FAA0A0";
+    case ApplicationStatuses.Re_conduct:
+      return "#FAA0A0";
     case ApplicationStatuses.Approved:
-      return "#5ce45c";
-    case ApplicationStatuses.Rejected:
-      return "#fe9797";
-    case ApplicationStatuses.None:
-      return "#cfcec3";
-    case ApplicationStatuses.AutoApproved:
-      return "#5ce45c";
-    case ApplicationStatuses.Publication:
-      return "#5ce45c";
-    case ApplicationStatuses.Opposition:
-      return "#e67e22";
-    case ApplicationStatuses.AwaitingResponse:
-      return "#9B870C";
-    case ApplicationStatuses.AwaitingOppositionStaff:
-      return "#9B870C";
-    case ApplicationStatuses.AwaitingResolution:
-      return "#9B870C";
-    case ApplicationStatuses.Resolved:
-      return "#468a46";
-    case ApplicationStatuses.AwaitingCertification:
-      return "#5cd5f9";
-    case ApplicationStatuses.AwaitingConfirmation:
-      return "#29C5F6";
-    case ApplicationStatuses.AwaitingSave:
-      return "#9B870C";
-    case ApplicationStatuses.AwaitingCertificateConfirmation:
-      return "#b1b3b3";
-    case ApplicationStatuses.Withdrawn:
-      return "#dc2626";
-    case ApplicationStatuses.AwaitingCertificatePayment:
-      return "#8a00c2";
+      return "#003300";
     case ApplicationStatuses.AwaitingRecordalProcess:
-      return "#5cd5f9";
-    case ApplicationStatuses.AppealRequest:
-      return "#ede064";
-    case ApplicationStatuses.AwaitingStatusUpdate:
-      return "#9B870C";
-    case ApplicationStatuses.RequestWithdrawal:
-      return "#e67e22";
-    case ApplicationStatuses.NewOpposition:
-      return "#ede064";
-    case ApplicationStatuses.AwaitingCounter:
-      return "rgb(253, 224, 71)";
-    case ApplicationStatuses.Amendment:
       return "#29C5F6";
-    case ApplicationStatuses.AwaitingRenewalConfirmation:
-      return "rgb(253, 224, 71)";
-    case ApplicationStatuses.Inactive:
-      return "#fa6d6d";
-    case ApplicationStatuses.PendingRenewal:
-      return "#fa6d6d";
-    case null:
-      return "";
-    default:
-      return "#cfcec3";
   }
 }
 
