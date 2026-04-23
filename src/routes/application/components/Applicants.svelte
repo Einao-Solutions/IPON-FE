@@ -282,26 +282,27 @@
 
 </script>
 
-<div class="flex-grow flex flex-col w-full h-full gap-2">
-<div class="rounded-md bg-accent h-20 pl-2 pr-2 text-center flex flex-col justify-center ">
+<div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-md space-y-6">
+<h2 class="text-2xl font-semibold text-gray-800">Applicant Information</h2>
+<p class="text-sm text-gray-500">
 	{$newApplicationType===0?applicantPatentDescription :$newApplicationType===1?applicantDesignDescription: applicantTrademarkDescription}
-</div>
+</p>
 	<div class="flex justify-between items-center">
-		<strong>List of Applicants</strong>
+		<h3 class="text-lg font-medium text-gray-700">List of Applicants</h3>
 		<div class="flex gap-4">
 				<Button variant="ghost" class="{showResetButton?'inline':'hidden'}  text-blue-500"
-								on:click={()=>resetValues()}>reset</Button>
+								on:click={()=>resetValues()}>Reset</Button>
 			{#if $allApplicants.length!==0}
 				<Button variant="outline" on:click={()=>EditorSave()}>{isEditing?'Save':'Edit'}</Button>
 			{/if}
-			<Button variant="default" on:click={()=>addApplicant()}>
+			<button type="button" class="bg-black text-white px-6 py-2 rounded-md hover:opacity-90 flex items-center gap-2" on:click={()=>addApplicant()}>
 				<Icon icon="mdi:plus" width="1.2rem" height="1.2rem" />
 				Add Applicant
-			</Button>
+			</button>
 		</div>
 	</div>
 
-	<div class="rounded-md border overflow-y-auto h-[300px] flex-grow overflow-x-auto">
+	<div class="rounded-lg border overflow-y-auto max-h-[400px] flex-grow overflow-x-auto">
 		<Table.Root >
 			{#if $allApplicants.length===0}
 				<p class="text-center justify-center text-xl flex flex-col h-[400px] ">Enter at least one applicant</p>
@@ -322,14 +323,14 @@
 						<Table.Row>
 							{#if isEditing}
 								<Table.Cell>{i+1}</Table.Cell>
-								<Table.Cell><Button variant="outline" size="icon" style="color: darkred" on:click={()=>removeApplicant(i)}>
+								<Table.Cell><Button variant="outline" size="icon" class="text-red-600 hover:bg-red-50" on:click={()=>removeApplicant(i)}>
 									<Icon icon="ei:minus" class="h-7 w-7" />
 								</Button> </Table.Cell>
 								<Table.Cell class="min-w-40" >
 									<Input
 												 value={applicant.name} on:input={(event)=>UpdateApplicantName(event.target?.value, i)}/>
 									{#if $listofValidatedApplicants[i].name!==true && $listofValidatedApplicants[i].name!==null }
-										<span style="color: darkred">name cannot be empty</span>
+										<span class="text-red-500 text-sm mt-1">name cannot be empty</span>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="flex flex-col">
@@ -372,30 +373,30 @@
 										</Popover.Content>
 									</Popover.Root>
 									{#if $listofValidatedApplicants[i].country!==true && $listofValidatedApplicants[i].country!==null }
-										<span style="color: darkred">select a country</span>
+										<span class="text-red-500 text-sm mt-1">select a country</span>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="min-w-40">
 									<Input value={applicant.phone} on:input={(event)=>UpdateApplicantPhone(event.target?.value, i)}/>
 									{#if $listofValidatedApplicants[i].phone!==true && $listofValidatedApplicants [i].phone!==null }
-										<span style="color: red">enter phone number</span>
+										<span class="text-red-500 text-sm mt-1">enter phone number</span>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="min-w-40">
 									<Input value={applicant.email} on:input={(event)=>UpdateApplicantEmail(event.target?.value, i)}/>
 									{#if $listofValidatedApplicants[i].email!==true && $listofValidatedApplicants [i].email!==null }
-										<span style="color: red">enter email address</span>
+										<span class="text-red-500 text-sm mt-1">enter email address</span>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="min-w-40">
 									<Input value={applicant.address} on:input={(event)=>UpdateApplicantAddress(event.target?.value, i)}/>
 									{#if $listofValidatedApplicants[i].address!==true && $listofValidatedApplicants [i].address!==null }
-										<span style="color: red">enter address</span>
+										<span class="text-red-500 text-sm mt-1">enter address</span>
 									{/if}
 								</Table.Cell>
 							{:else }
 								<Table.Cell class="w-1">{i+1}</Table.Cell>
-								<Table.Cell><Button variant="outline" size="icon" style="color: darkred" on:click={()=>removeApplicant(i)}>
+								<Table.Cell><Button variant="outline" size="icon" class="text-red-600 hover:bg-red-50" on:click={()=>removeApplicant(i)}>
 									<Icon icon="ei:minus" class="h-7 w-7" />
 								</Button> </Table.Cell>
 								<Table.Cell class="min-w-52">{applicant.name}</Table.Cell>
@@ -417,3 +418,9 @@
 	</div>
 
 </div>
+
+<style>
+	:global(.table-cell-input) {
+		@apply p-3 border rounded-md w-full;
+	}
+</style>

@@ -199,75 +199,101 @@ function ResetCorr()
 	}
 </script>
 <Toaster />
-<div class="flex-grow flex flex-col w-full h-full gap-2">
-	<div class="rounded-md bg-accent h-20 pl-2 pr-2 text-center flex flex-col justify-center ">
+<div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-md space-y-6">
+	<h2 class="text-2xl font-semibold text-gray-800">Correspondence Information</h2>
+	<p class="text-sm text-gray-500">
 		{correspondenceDescription}
-	</div>
+	</p>
 	<div class="flex justify-between items-center">
-		<strong>Correspondence Information</strong>
-		<Button variant="ghost" class="{showResetButton? 'inline':'hidden'} text-blue-500" on:click={()=>ResetCorr()}>reset</Button>
-		<Button on:click={()=>useDefault()}>Use Default</Button>
-	</div>
-	<div class="rounded-md border flex flex-col gap-5 py-2 px-3">
-<div class="flex flex-col space-y-1.5">
-	<Label for="name">Correspondence Name</Label>
-	<Input bind:value={name} id="name" />
-	<Label class="{showNameError===false?'hidden':'block'}" style="color: darkred">Name is required</Label>
-</div>
-		<div class="flex flex-col space-y-1.5">
-			<Label for="name">Correspondence Phone Number</Label>
-			<Input bind:value={phoneNumber} id="number" />
-			<Label class="{showPhoneError===false?'hidden':'block'}" style="color: darkred">Invalid Nigerian phone number</Label>
-		</div>
-		<div class="flex flex-col space-y-1.5">
-			<Label for="name">Correspondence Email address</Label>
-			<Input bind:value={email} id="email" />
-			<Label class="{showEmailError===false?'hidden':'block'}" style="color: darkred">invalid Email</Label>
-		</div>
-		<div class="flex flex-col space-y-1.5">
-			<Label for="address">Correspondence address</Label>
-			<Textarea bind:value={address} id="address" />
-			<Label class="{showAddressError===false?'hidden':'block'}" style="color: darkred">Address is required</Label>
-		</div>
-		<div class="flex flex-col space-y-1.5">
-			<Popover.Root open="{$openCitySelection}" let:ids>
-				<Popover.Trigger asChild let:builder>
-					<Button
-						builders={[builder]}
-						variant="outline"
-						role="combobox"
-						aria-expanded={$openCitySelection}
-						class="w-[200px] justify-between"
-					>
-						{(state!=="" && state!==null) ?state:"Select a state"}
-						<Icon icon="ph:caret-up-down-thin" width="1.2rem" height="1.2rem" class="opacity-50 shrink-0 ml-2" />
-					</Button>
-				</Popover.Trigger>
-				<Popover.Content class="w-[250px] h-[250px] p-0 z-50">
-					<Command.Root>
-						<Command.Input placeholder="Search countries..." />
-						<Command.Empty>No states found.</Command.Empty>
-						<Command.Group class="overflow-y-auto">
-							{#each nigeriaStates as stateselect}
-								<Command.Item
-									value={stateselect}
-									onSelect={(currentValue) => {
-              state = currentValue;
-              closeCountryAndFocusTrigger(ids.trigger);}}>
-									<Icon icon="basil:check-solid"
-												class={cn(
-                "mr-2 h-4 w-4",
-                state !== stateselect && "text-transparent"
-              )}
-									/>
-									{stateselect}
-								</Command.Item>
-							{/each}
-						</Command.Group>
-					</Command.Root>
-				</Popover.Content>
-			</Popover.Root>
-			<Label class="{showStateError===false?'hidden':'block'}" style="color: darkred">State is required</Label>
+		<h3 class="text-lg font-medium text-gray-700">Contact Details</h3>
+		<div class="flex gap-4">
+			<Button variant="ghost" class="{showResetButton? 'inline':'hidden'} text-blue-500" on:click={()=>ResetCorr()}>Reset</Button>
+			<button type="button" class="bg-black text-white px-6 py-2 rounded-md hover:opacity-90" on:click={()=>useDefault()}>Use Default</button>
 		</div>
 	</div>
+	<div class="border p-4 rounded-lg space-y-4">
+		<div class="grid grid-cols-2 gap-4">
+			<div>
+				<label class="block text-sm font-medium mb-1" for="name">Correspondence Name</label>
+				<input class="input" bind:value={name} id="name" placeholder="Enter name" />
+				{#if showNameError}
+					<p class="error">Name is required</p>
+				{/if}
+			</div>
+			<div>
+				<label class="block text-sm font-medium mb-1" for="number">Phone Number</label>
+				<input class="input" bind:value={phoneNumber} id="number" placeholder="Enter phone number" />
+				{#if showPhoneError}
+					<p class="error">Invalid Nigerian phone number</p>
+				{/if}
+			</div>
+			<div>
+				<label class="block text-sm font-medium mb-1" for="email">Email Address</label>
+				<input class="input" bind:value={email} id="email" placeholder="Enter email address" />
+				{#if showEmailError}
+					<p class="error">Invalid email</p>
+				{/if}
+			</div>
+			<div>
+				<!-- svelte-ignore a11y-label-has-associated-control -->
+				<label class="block text-sm font-medium mb-1">State</label>
+				<Popover.Root open="{$openCitySelection}" let:ids>
+					<Popover.Trigger asChild let:builder>
+						<Button
+							builders={[builder]}
+							variant="outline"
+							role="combobox"
+							aria-expanded={$openCitySelection}
+							class="w-full justify-between h-[46px]"
+						>
+							{(state!=="" && state!==null) ?state:"Select a state"}
+							<Icon icon="ph:caret-up-down-thin" width="1.2rem" height="1.2rem" class="opacity-50 shrink-0 ml-2" />
+						</Button>
+					</Popover.Trigger>
+					<Popover.Content class="w-[250px] h-[250px] p-0 z-50">
+						<Command.Root>
+							<Command.Input placeholder="Search states..." />
+							<Command.Empty>No states found.</Command.Empty>
+							<Command.Group class="overflow-y-auto">
+								{#each nigeriaStates as stateselect}
+									<Command.Item
+										value={stateselect}
+										onSelect={(currentValue) => {
+										state = currentValue;
+										closeCountryAndFocusTrigger(ids.trigger);}}>
+										<Icon icon="basil:check-solid"
+											class={cn(
+												"mr-2 h-4 w-4",
+												state !== stateselect && "text-transparent"
+											)}
+										/>
+										{stateselect}
+									</Command.Item>
+								{/each}
+							</Command.Group>
+						</Command.Root>
+					</Popover.Content>
+				</Popover.Root>
+				{#if showStateError}
+					<p class="error">State is required</p>
+				{/if}
+			</div>
+			<div class="col-span-2">
+				<label class="block text-sm font-medium mb-1" for="address">Address</label>
+				<Textarea bind:value={address} id="address" placeholder="Enter address" class="h-24" />
+				{#if showAddressError}
+					<p class="error">Address is required</p>
+				{/if}
+			</div>
+		</div>
+	</div>
 </div>
+
+<style>
+	.input {
+		@apply p-3 border rounded-md w-full;
+	}
+	.error {
+		@apply text-red-500 text-sm mt-1;
+	}
+</style>

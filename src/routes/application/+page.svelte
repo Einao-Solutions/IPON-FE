@@ -4,18 +4,19 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
-	import { ApplicationStatuses, FilingType, FormApplicationTypes } from '$lib/helpers';
+	import { ApplicationStatuses, FilingType, FormApplicationTypes, type PatentData } from '$lib/helpers';
+	import type { ComponentType, SvelteComponent } from 'svelte';
 	let loading: boolean = false;
-	$: viewComponent = null;
-	let basicPatentComponent = null,
-		basicTrademarkComponent=null,
-		inventorsComponent = null,
-		basicDesignComponent = null,
-		applicantsComponent = null,
-		correspondenceComponent = null,
-		priorityComponent = null,
-		attachmentComponent = null,
-		verificationComponent = null;
+	$: viewComponent = null as ComponentType<SvelteComponent> | null;
+	let basicPatentComponent: ComponentType<SvelteComponent> | null = null,
+		basicTrademarkComponent: ComponentType<SvelteComponent> | null = null,
+		inventorsComponent: ComponentType<SvelteComponent> | null = null,
+		basicDesignComponent: ComponentType<SvelteComponent> | null = null,
+		applicantsComponent: ComponentType<SvelteComponent> | null = null,
+		correspondenceComponent: ComponentType<SvelteComponent> | null = null,
+		priorityComponent: ComponentType<SvelteComponent> | null = null,
+		attachmentComponent: ComponentType<SvelteComponent> | null = null,
+		verificationComponent: ComponentType<SvelteComponent> | null = null;
 	$: screen = 0;
 	applicationScreen.subscribe(async (value) => {
 		viewComponent = null;
@@ -45,12 +46,11 @@
 						inventors:[],
 						correspondence:null,
 						patentType: null,
-						fileNumber: null,
 						formApplicationType: FormApplicationTypes.NewApplication,
-						status: ApplicationStatuses.AwaitingPayment,
+						fileStatus: ApplicationStatuses.AwaitingPayment,
 						type: FilingType.Patent,
 						attachments:[]
-					}
+					} as Partial<PatentData> as PatentData
 				);
 						}
 			loading=false;

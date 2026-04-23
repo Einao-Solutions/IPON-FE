@@ -16,7 +16,7 @@
   import { text } from "d3";
   import { showTreatUpdateAppButton } from "../../../dataview/datahelpers";
   import { toast } from "svelte-sonner";
-  import { countriesMap } from "$lib/constants";
+  import { countriesMap, tradeMarkClassesMap } from "$lib/constants";
   import { boolean } from "zod";
   import type { DesignTypes } from "$lib/designutils";
   import { mapDesignTypeToString } from "$lib/designutils";
@@ -64,6 +64,7 @@
     trademarkType?: number | null;
     inventors?: InventorInfo[] | null;
     patentType?: number | null;
+    additionalDescription?: string | null;
   }
   interface NewData {
     fileTitle: string;
@@ -96,6 +97,7 @@
     designCreators: DesignCreator[] | [];
     titleOfDesign?: string | null;
     DesignAttachments: File[];
+    additionalDescription?: string | null;
   }
   interface InventorInfo {
     id: string;
@@ -143,6 +145,7 @@
     designAttachments: [],
     inventors: [],
     patentType: null,
+    additionalDescription: null,
   };
 
   const pageData = get(page);
@@ -590,6 +593,7 @@
       } else if (updateType === ClericalUpdateTypes.FileClass) {
         formObj.FileClass = String(newData.fileClass);
         formObj.ClassDescription = newData.classDescription ?? "";
+        formObj.AdditionalDescription = newData.additionalDescription ?? "";
         formObj.Disclaimer = newData.disclaimer ?? "";
       } else if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
         formObj.CorrespondenceName = newData.correspondenceName ?? "";
@@ -1809,6 +1813,7 @@
                   </label>
                   <select
                     bind:value={newData.fileClass}
+                    on:change={() => { newData.classDescription = tradeMarkClassesMap.get(newData.fileClass) ?? null; }}
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   >
                     <option value="" disabled selected>Select class</option>
@@ -1824,11 +1829,25 @@
                 <!-- Description -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">
-                    New Description:
+                    New Class Description:
                   </label>
                   <textarea
                     bind:value={newData.classDescription}
                     placeholder={fileInfo.classDescription}
+                    disabled
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-not-allowed"
+                  ></textarea>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Auto-filled based on selected class.
+                  </p>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">
+                    New Additional Description:
+                  </label>
+                  <textarea
+                    bind:value={newData.additionalDescription}
+                    placeholder={fileInfo.additionalDescription}
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   ></textarea>
                   <p class="text-xs text-gray-500 mt-1">
