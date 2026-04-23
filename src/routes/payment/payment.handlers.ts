@@ -69,6 +69,7 @@ export const paymentHandlers: Record<
   dashrenewal,
   update,
   opposition,
+  counterstatement,
   oppositionCounter,
   oppositionResolution,
   statussearch,
@@ -294,7 +295,7 @@ async function opposition(ctx: PaymentContext): Promise<void> {
   ctx.state.setTitle(`Opposition of ${info.fileTitle}`);
   ctx.state.setCost(info.cost);
   ctx.state.setPaymentId(info.paymentId);
-  ctx.state.setFileNumber(info.fileId);
+  ctx.state.setFileNumber(info.fileNumber);
   ctx.state.setFileApplicant(opp.name);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/opposition/paid?rrr=${info.paymentId}`,
@@ -302,6 +303,32 @@ async function opposition(ctx: PaymentContext): Promise<void> {
 }
 
 /* ---------------- SIMPLE PARAM HANDLERS ---------------- */
+
+async function counterstatement(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const rrr = params.get("rrr");
+  const amount = params.get("amount");
+  const fileId = params.get("fileId");
+
+  if (!rrr || !amount) throw new Error("Missing counter statement payment data");
+
+  // Read invoice data saved by handleCSSubmit
+  const raw = sessionStorage.getItem("counterStatementPayload");
+  const payload = raw ? JSON.parse(raw) : null;
+
+  const applicantName = params.get("name") ?? payload?.applicantName ?? null;
+  const fileNumber = params.get("fileNumber") ?? payload?.fileNumber ?? fileId;
+
+  ctx.state.setTitle("Counter Statement");
+  ctx.state.setCost(amount);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setFileTitle(payload?.fileTitle ?? null);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/counterstatement/paid?rrr=${rrr}`,
+  );
+}
 
 async function oppositionCounter(ctx: PaymentContext) {
   return simpleParamHandler(ctx, "oppositionCounter");

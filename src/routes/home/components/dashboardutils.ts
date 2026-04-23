@@ -548,9 +548,11 @@ export function mapStatusToString(status: number) {
     case 30:
       return "New Opposition";
     case 31:
-      return "Awaiting Counter";
+      return "Awaiting Counter Statement";
     case 32:
       return "Awaiting Approval";
+    case 33:
+      return "Statutory Declaration";
     default:
       return "";
   }
@@ -618,15 +620,26 @@ export function fileTypeToString(file: number) {
   }
 }
 export function mapDateToString(data: string) {
-  return Intl.DateTimeFormat("en-NG", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    weekday: "short",
-    hour: "numeric",
-    minute: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(data));
+  if (!data || data === "" || data === null || data === undefined) {
+    return "";
+  }
+  try {
+    const date = new Date(data);
+    if (isNaN(date.getTime())) {
+      return "";
+    }
+    return Intl.DateTimeFormat("en-NG", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      weekday: "short",
+      hour: "numeric",
+      minute: "numeric",
+      timeZone: "UTC",
+    }).format(date);
+  } catch (err) {
+    return "";
+  }
 }
 
 export function mapDateToStringNoDate(data: string) {

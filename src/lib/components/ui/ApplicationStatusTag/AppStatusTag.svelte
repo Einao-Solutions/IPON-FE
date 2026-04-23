@@ -14,10 +14,15 @@
 			case 20:
 				return 'bg-purple-300';
 			case 3:
-			case 16:
 			case 17:
 			case 18:
 				return 'bg-yellow-300';
+			case 30:
+				return 'bg-red-200';
+			case 31:
+				return 'bg-yellow-300';
+			case 33:
+				return 'bg-orange-300';
 			case 4:
 				return 'bg-yellow-300';
 			case 5:
@@ -27,6 +32,7 @@
 			case 7:
 				return 'bg-red-300';
 			case 8:
+			case 31:
 			case 24:
 				return 'bg-red-300';
 			case 9:
@@ -65,10 +71,11 @@
 			case 20:
 				return 'text-purple-950';
 			case 3:
-			case 16:
 			case 17:
 			case 18:
 				return 'text-yellow-950';
+			case 33:
+				return 'text-orange-950';
 			case 4:
 				return 'text-yellow-950';
 			case 5:
@@ -76,8 +83,15 @@
 			case 6:
 				return 'text-red-950';
 			case 7:
+				return 'text-red-950';
 			case 24:
 				return 'text-red-950';
+			case 30:
+				return 'text-red-950';
+			case 31:
+				return 'text-yellow-950';
+			case 33:
+				return 'text-orange-950';
 			case 8:
 				return 'text-red-950';
 			case 9:

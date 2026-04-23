@@ -348,7 +348,7 @@
             </div>
             <!-- Other Payment Details -->
             <div class="grid gap-4">
-              {#if type && ["opposition", "oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
+              {#if type && ["oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
                 <div
                   class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
                 >

@@ -32,19 +32,13 @@
 	let simulate = false;
 
 	onMount(async () => {
-		setTimeout(() => {
-			checkVisible = true;
-		}, 300);
-		setTimeout(() => {
-			messageVisible = true;
-		}, 1000);
-		setTimeout(() => {
-			subMessageVisible = true;
-		}, 1800);
+		setTimeout(() => { checkVisible = true; }, 300);
+		setTimeout(() => { messageVisible = true; }, 1000);
+		setTimeout(() => { subMessageVisible = true; }, 1800);
 
-		const rrr = localStorage.getItem('rrr') ?? undefined;
+		const rrr = localStorage.getItem('rrr') ?? $page.url.searchParams.get('rrr') ?? undefined;
 		paymentId = rrr ?? null;
-		console.log('Updating status for opposition payment');
+
 		await updateOppositionPayment(paymentId);
 	});
 
@@ -58,7 +52,15 @@
 		console.log('Updating opposition payment status...');
 		const result = await fetch(
 			`${baseURL}/api/opposition/UpdateOppositionPayment?paymentId=${paymentId}`,
-			{ method: 'POST' }
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					status: 'success',
+					transactionRef: paymentId,
+					amount: 0
+				})
+			}
 		);
 		if (result.ok) {
 			checkVisible = true;
@@ -87,7 +89,7 @@
 		<h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">File Opposition</h1>
 
 		<div class="h-32 w-32 mx-auto mb-6 relative">
-			{#if (checkVisible = true)}
+			{#if checkVisible}
 				<div
 					class="h-full w-full bg-green-50 rounded-full flex justify-center items-center"
 					in:fade={{ duration: 400 }}
@@ -122,15 +124,21 @@
 				YOUR APPLICATION HAS BEEN RECEIVED AND IS RECEIVING DUE ATTENTION
 			</p>
 
-			<div class="mt-4" in:fade={{ duration: 300, delay: 300 }}>
+			<div class="mt-4 flex flex-col gap-3" in:fade={{ duration: 300, delay: 300 }}>
 				<!-- svelte-ignore a11y-missing-attribute -->
 				<a href="https://www.iponigeria.com" target="_blank" rel="noopener noreferrer">
 					<button
-						class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
+						class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
 					>
 						Return to IPO Nigeria
 					</button>
 				</a>
+				<button
+					on:click={() => goto('/home/dashboard')}
+					class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-md transition-colors duration-200"
+				>
+						Go to Dashboard
+				</button>
 			</div>
 		{/if}
 		<img

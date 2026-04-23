@@ -58,18 +58,18 @@
 
 		const _data = await response.json();
 		const __data = _data.data;
-		count = __data.count;
+		count = _data.count;
 		for (let i = 0; i < __data.length; i++) {
 			let curr = __data[i];
 			data.push({
 				's/n': __data.indexOf(curr) + 1,
 				id: curr.id,
-				title: curr.fileTitle,
+				title: curr.title,
 				creatorId: curr.creatorId,
 				fileCreatorId: curr.fileCreatorId,
 				paymentId: curr.paymentId,
 				fileId: curr.fileId,
-				date: curr.oppositionDate,
+				date: curr.date,
 				name: curr.name,
 				currentStatus: curr.status
 			});
