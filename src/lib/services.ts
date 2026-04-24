@@ -491,6 +491,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+    //maintenance: true,
   },
   {
     id: "patent-ctc",
@@ -509,6 +510,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+   // maintenance: true,
   },
   {
     id: "patent-mortgage",
@@ -518,6 +520,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+   // maintenance: true,
   },
   {
     id: "patent-merger",
@@ -527,6 +530,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+   //maintenance: true,
   },
 ];
 

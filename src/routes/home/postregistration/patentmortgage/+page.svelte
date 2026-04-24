@@ -250,11 +250,7 @@
 				newMortgagorCity: newMortgagorData.city,
 				newMortgagorState: newMortgagorData.state
 			};
-
-			// Debug: Log the payload before storing
-			console.log('Patent Mortgage Payload before storing:', payload);
-			console.log('Supporting docs with names:', supportingDocsData);
-
+			
 			// Store payload data for submission on result page
 			sessionStorage.setItem('patentMortgagePayload', JSON.stringify(payload));
 			
