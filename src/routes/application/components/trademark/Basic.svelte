@@ -260,6 +260,7 @@
 	})
 </script>
 
+<<<<<<< HEAD
 <div class="p-3 space-y-3">
 	<div>
 		<Label for="title">Title of trademark</Label>
@@ -414,4 +415,240 @@
 		<Label>Claims and disclaimer</Label>
 		<Textarea bind:value={$disclaimer} placeholder="claims and disclaimer" />
 	</div>
+=======
+<div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-md space-y-6">
+  <h2 class="text-2xl font-semibold text-gray-800">Trademark Information</h2>
+
+  <!-- Title of Trademark -->
+  <div>
+    <label for="title" class="block font-medium mb-2">Title of Trademark</label>
+    <Input
+      id="title"
+      bind:value={$title}
+      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+      placeholder="Enter trademark title"
+    />
+    {#if showTitleError}
+      <p class="text-red-500 text-sm mt-1">Title is required.</p>
+    {/if}
+  </div>
+
+  <!-- Trademark Class -->
+  <div>
+    <label for="class" class="block font-medium mb-2">Trademark Class</label>
+    <Popover.Root open={isclassOpen} let:ids>
+      <Popover.Trigger asChild let:builder>
+        <Button
+          builders={[builder]}
+          variant="outline"
+          role="combobox"
+          aria-expanded={false}
+          class="w-full max-w-xs justify-between border-gray-300 rounded-lg px-3 py-2"
+        >
+          <p>{$markclass ? `Class ${$markclass}` : "Select a class"}</p>
+          <Icon
+            icon="ph:caret-up-down-thin"
+            width="1.2rem"
+            height="1.2rem"
+            class="opacity-50 shrink-0 ml-2"
+          />
+        </Button>
+      </Popover.Trigger>
+      <Popover.Content class="w-[250px] h-[350px] p-0 z-50">
+        <Command.Root>
+          <Command.Input placeholder="Search classes..." />
+          <Command.Empty>No classes found.</Command.Empty>
+          <Command.Group class="overflow-y-auto">
+            {#each Array.from({ length: 45 }, (_, i) => i + 1) as cat, i}
+              <Command.Item
+                value={cat.toString()}
+                onSelect={(currentValue) => {
+                  $markclass = parseInt(currentValue);
+                  $classDescription = tradeMarkClassesMap.get($markclass) ?? "";
+                  isclassOpen = false;
+                  document.getElementById(ids.trigger)?.focus();
+                }}
+              >
+                <Icon
+                  icon="basil:check-solid"
+                  class={cn(
+                    "mr-2 h-4 w-4",
+                    $markclass !== i + 1 && "text-transparent",
+                  )}
+                />
+                <p
+                  class="mr-1.5 w-8 items-center flex text-center pl-2.5 border rounded-md p-1"
+                >
+                  {i + 1}
+                </p>
+                Class {cat}
+              </Command.Item>
+            {/each}
+          </Command.Group>
+        </Command.Root>
+      </Popover.Content>
+    </Popover.Root>
+    {#if showClassError}
+      <p class="text-red-500 text-sm mt-1">Trademark class is required.</p>
+    {/if}
+  </div>
+
+  <!-- Class Description -->
+  <div>
+    <label for="classDesc" class="block font-medium mb-2">Class Description</label>
+    <Textarea
+      id="classDesc"
+      bind:value={$classDescription}
+      placeholder="Description of selected class will appear here"
+      class="w-full border border-gray-300 rounded-lg px-3 py-2"
+      disabled
+    />
+  </div>
+
+  <!-- Additional Description -->
+  <div>
+    <label for="additionalDesc" class="block font-medium mb-2">Additional Description</label>
+    <Textarea
+      id="additionalDesc"
+      bind:value={$additionalDescription}
+      placeholder="Enter additional description"
+      maxlength={500}
+      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+    />
+    <p class="text-gray-500 text-xs mt-1">{$additionalDescription?.length || 0}/500</p>
+  </div>
+
+  <!-- Trademark Type -->
+  <div>
+    <!-- svelte-ignore a11y-label-has-associated-control -->
+    <label class="block font-medium mb-2">Trademark Type</label>
+    <Popover.Root open={ismarkTypeOpen} let:ids>
+      <Popover.Trigger asChild let:builder>
+        <Button
+          builders={[builder]}
+          variant="outline"
+          role="combobox"
+          aria-expanded={false}
+          class="w-full max-w-xs justify-between border-gray-300 rounded-lg px-3 py-2"
+        >
+          <p>{$markType !== undefined ? ["Local", "Foreign"][$markType] : "Select trademark type"}</p>
+          <Icon
+            icon="ph:caret-up-down-thin"
+            width="1.2rem"
+            height="1.2rem"
+            class="opacity-50 shrink-0 ml-2"
+          />
+        </Button>
+      </Popover.Trigger>
+      <Popover.Content class="w-[250px] h-[100px] p-0 z-50">
+        <Command.Root>
+          <Command.Group class="overflow-y-auto">
+            {#each ["Local", "Foreign"] as cat, i}
+              <Command.Item
+                value={cat}
+                onSelect={() => {
+                  $markType = i;
+                  ismarkTypeOpen = false;
+                  document.getElementById(ids.trigger)?.focus();
+                }}
+              >
+                <Icon
+                  icon="basil:check-solid"
+                  class={cn(
+                    "mr-2 h-4 w-4",
+                    $markType !== i && "text-transparent",
+                  )}
+                />
+                <p
+                  class="mr-1.5 w-8 items-center flex text-center pl-2.5 border rounded-md p-1"
+                >
+                  {i + 1}
+                </p>
+                {cat}
+              </Command.Item>
+            {/each}
+          </Command.Group>
+        </Command.Root>
+      </Popover.Content>
+    </Popover.Root>
+    {#if showTypeError}
+      <p class="text-red-500 text-sm mt-1">Trademark type is required.</p>
+    {/if}
+  </div>
+
+  <!-- Logo Description -->
+  <div>
+    <!-- svelte-ignore a11y-label-has-associated-control -->
+    <label class="block font-medium mb-2">Logo Description</label>
+    <Popover.Root open={isLogoDescOpen} let:ids>
+      <Popover.Trigger asChild let:builder>
+        <Button
+          builders={[builder]}
+          variant="outline"
+          role="combobox"
+          aria-expanded={false}
+          class="w-full max-w-xs justify-between border-gray-300 rounded-lg px-3 py-2"
+        >
+          <p>
+            {$markLogoDesc !== undefined ? ["Device", "Word Mark", "Word and Device"][$markLogoDesc] :
+              "Select logo type"}
+          </p>
+          <Icon
+            icon="ph:caret-up-down-thin"
+            width="1.2rem"
+            height="1.2rem"
+            class="opacity-50 shrink-0 ml-2"
+          />
+        </Button>
+      </Popover.Trigger>
+      <Popover.Content class="w-[250px] h-[150px] p-0 z-50">
+        <Command.Root>
+          <Command.Group class="overflow-y-auto">
+            {#each ["Device", "Word Mark", "Word and Device"] as cat, i}
+              <Command.Item
+                value={cat}
+                onSelect={() => {
+                  $markLogoDesc = i;
+                  isLogoDescOpen = false;
+                  document.getElementById(ids.trigger)?.focus();
+                }}
+              >
+                <Icon
+                  icon="basil:check-solid"
+                  class={cn(
+                    "mr-2 h-4 w-4",
+                    $markLogoDesc !== i && "text-transparent",
+                  )}
+                />
+                <p
+                  class="mr-1.5 w-8 items-center flex text-center pl-2.5 border rounded-md p-1"
+                >
+                  {i + 1}
+                </p>
+                {cat}
+              </Command.Item>
+            {/each}
+          </Command.Group>
+        </Command.Root>
+      </Popover.Content>
+    </Popover.Root>
+    {#if showLogoError}
+      <p class="text-red-500 text-sm mt-1">Logo description is required.</p>
+    {/if}
+  </div>
+
+  <!-- Claims and Disclaimer -->
+  <div>
+    <label for="disclaimer" class="block font-medium mb-2">Claims and Disclaimer</label>
+    <Textarea
+      id="disclaimer"
+      bind:value={$disclaimer}
+      placeholder="Enter claims and disclaimer"
+      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+    />
+    {#if showDisclaimerError}
+      <p class="text-red-500 text-sm mt-1">Disclaimer is required.</p>
+    {/if}
+  </div>
+>>>>>>> 3764c9917dbe4768e0965c820dcc76005f81aed2
 </div>
