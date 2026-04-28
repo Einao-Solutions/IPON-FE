@@ -336,7 +336,7 @@
     {#if performanceData && !loading && hasMeaningfulData}
 
       <!-- Overview Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <!-- <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-gradient-to-br from-green-50 via-white to-green-50 rounded-lg border-2 border-green-200/40 p-6 shadow-sm">
           <div class="flex items-center gap-3 mb-2">
             <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
@@ -373,6 +373,63 @@
             <p class="text-sm text-gray-600">Overall Rate</p>
           </div>
           <p class="text-3xl font-bold text-green-600">{performanceData.overview.overallRate}%</p>
+        </div>
+      </div> -->
+
+      <!-- Overview Table -->
+      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="text-left py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Registry</th>
+                <th class="text-left py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Period</th>
+                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Units</th>
+                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Active Units</th>
+                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Assigned</th>
+                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Processed</th>
+                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Overall Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="bg-white hover:bg-green-50/40 transition-colors">
+                <td class="py-4 px-6">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></div>
+                    <span class="font-semibold text-slate-800">{registryType}</span>
+                  </div>
+                </td>
+                <td class="py-4 px-6 text-slate-500 text-xs">
+                  {selectedPeriodValue} {selectedYear}
+                </td>
+                <td class="py-4 px-6 text-right">
+                  <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold bg-slate-100 text-slate-700">
+                    {performanceData.overview.totalUnits}
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-right">
+                  <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold bg-green-50 text-green-700">
+                    {activeUnits.length}
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-right">
+                  <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold bg-blue-50 text-blue-700">
+                    {performanceData.overview.totalAssigned.toLocaleString()}
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-right">
+                  <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold bg-green-50 text-green-700">
+                    {performanceData.overview.totalTreated.toLocaleString()}
+                  </span>
+                </td>
+                <td class="py-4 px-6 text-right">
+                  <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold text-white bg-green-600">
+                    {performanceData.overview.overallRate}%
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -463,6 +520,19 @@
           <h3 class="text-lg font-semibold text-gray-900 mb-2">Select Filters to View Unit Performance</h3>
           <p class="text-sm text-gray-600">Choose a year, period type, and period value to view unit performance data</p>
         </div>
+      </div>
+    {/if}
+
+    <!-- Print Button -->
+    {#if performanceData && !loading && hasMeaningfulData}
+      <div class="flex justify-end mt-6 mb-2">
+        <button
+          on:click={() => window.print()}
+          class="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+        >
+          <Icon icon="lucide:printer" class="w-4 h-4" />
+          Print Report
+        </button>
       </div>
     {/if}
 
