@@ -1591,23 +1591,15 @@
       <div
         class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
-<<<<<<< HEAD
-        <div class="absolute whitespace-nowrap animate-marquee top-1.5">
-          You can now file Withdrawals for all application types using the
-          'Withdrawal' Module on the dashboard.
-          <b>◆</b>
-          You can now file for Patent Assignment, Merger, Mortgage, License, CTC, and Amendment on the portal.
-=======
         <div class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold">
-          View your published marks under “Trademark Publication” in Trademark
-          Services. <b>◆</b> File opposition via the “Opposition” feature in
-          Trademark Services or the “Oppose” button on the Trademark Publication
-          list. <b>◆</b> Restore inactive trademarks using the “Restoration”
+          View your published marks under "Trademark Publication" in Trademark
+          Services. <b>◆</b> File opposition via the "Opposition" feature in
+          Trademark Services or the "Oppose" button on the Trademark Publication
+          list. <b>◆</b> Restore inactive trademarks using the "Restoration"
           feature in Trademark Services. <b>◆</b> Renew your Patent, Design, and
           Trademark applications from the Services section on your dashboard.
           <b>◆</b> You can now file for Patent Assignment, Merger, Mortgage, License,
           CTC, and Amendment on the portal.
->>>>>>> 3764c9917dbe4768e0965c820dcc76005f81aed2
         </div>
       </div>
     </div>
