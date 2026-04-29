@@ -111,6 +111,7 @@ const config = {
         "/statistics/performance/staff",
         "/statistics/performance/units",
         "/statistics/operational",
+        "/statistics/techfee",
         "/design",
         "/auth/reset-password",
         "/home/postregistration/designamendment",
