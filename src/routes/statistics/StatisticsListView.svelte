@@ -25,6 +25,12 @@
     goto(`/statistics/operational?registryType=${selectedRegistry}`);
   }
 
+  function navigateToTechFeeStatistics() {
+    goto(`/statistics/techfee?registryType=${selectedRegistry}`);
+  }
+
+  $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
+
   $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
                     userRoles.includes(UserRoles.Minister) || 
                     userRoles.includes(UserRoles.SuperAdmin);
@@ -190,7 +196,7 @@
                     <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <Icon icon="mdi:cog-outline" class="text-2xl text-green-600" />
                     </div>
-                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Filing Comparison</h4>
+                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Filings</h4>
                     <p class="text-sm text-gray-600 mb-4">
                       Compare filing volumes and operational breakdowns across custom periods — by month, quarter, year or date range
                     </p>
@@ -227,6 +233,32 @@
                     </div>
                   </div>
                 </button>
+
+              <!-- Tech Fee Revenue Statistics — SuperAdmin only -->
+                {#if isSuperAdmin}
+                  <button
+                    on:click={navigateToTechFeeStatistics}
+                    class="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 border-2 border-blue-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-blue-300/60 text-left w-full"
+                  >
+                    <div class="absolute inset-0 bg-gradient-to-br from-transparent via-blue-50/40 to-blue-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="relative z-10">
+                      <div class="flex items-center gap-2 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                          <Icon icon="mdi:chip" class="text-2xl text-blue-600" />
+                        </div>
+                        <span class="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">Super Admin</span>
+                      </div>
+                      <h4 class="text-lg font-semibold text-slate-800 mb-2">Tech Fee Revenue Statistics</h4>
+                      <p class="text-sm text-gray-600 mb-4">
+                        Compare EINAO technology fees and payment volumes across custom periods — by month, quarter, year or date range
+                      </p>
+                      <div class="flex items-center text-blue-600 text-sm font-medium">
+                        <span>View Details</span>
+                        <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </button>
+                {/if}
               </div>
 
             {/if}

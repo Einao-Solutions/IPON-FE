@@ -19,7 +19,7 @@
         variant={selectedPeriod === period ? "default" : "outline"}
         size="sm"
         on:click={() => onPeriodChange(period)}
-        class={selectedPeriod === period ? "bg-green-600 hover:bg-green-700" : ""}
+        class={selectedPeriod === period ? "bg-green-600 hover:bg-green-600" : ""}
       >
         {period}
       </Button>

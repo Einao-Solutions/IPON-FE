@@ -15,10 +15,9 @@
     Tooltip,
     Legend,
     DoughnutController,
-    ArcElement,
-    type ChartOptions
+    ArcElement
   } from "chart.js";
-  import ChartDataLabels from "chartjs-plugin-datalabels";  
+  import ChartDataLabels from "chartjs-plugin-datalabels";
 
   Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, DoughnutController, ArcElement, ChartDataLabels);
 
@@ -41,6 +40,14 @@
     count: number;
   }
 
+  interface MonthlyBreakdownDto {
+    label: string;
+    startDate: string;
+    endDate: string;
+    totalGovernmentFee: number;
+    totalPayments: number;
+  }
+
   interface FinancePeriodResultDto {
     label: string;
     startDate: string;
@@ -55,25 +62,16 @@
     periods: FinancePeriodResultDto[];
   }
 
-  interface MonthlyBreakdownDto {
-    label: string;
-    startDate: string;
-    endDate: string;
-    totalGovernmentFee: number;
-    totalPayments: number;
-  }
-
-  const MONTHS = ["January", "February", "March", "April", "May", "June",
-                  "July", "August", "September", "October", "November", "December"];
-  const QUARTERS = ["Q1: Jan-Mar", "Q2: Apr-Jun", "Q3: Jul-Sep", "Q4: Oct-Dec"];
+  const MONTHS = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
+  const QUARTERS = ["Q1: Jan-Mar","Q2: Apr-Jun","Q3: Jul-Sep","Q4: Oct-Dec"];
   const CURRENT_YEAR = new Date().getFullYear();
   const YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - i);
-  const COLORS = ["#16a34a", "#2563eb", "#d97706", "#dc2626", "#7c3aed"];
-
+  const COLORS = ["#16a34a","#2563eb","#d97706","#dc2626","#7c3aed"];
   const CHART_COLORS = [
-    "#10b981", "#3b82f6", "#a855f7", "#ec4899",
-    "#f59e0b", "#ef4444", "#06b6d4", "#84cc16",
-    "#f97316", "#6366f1"
+    "#10b981","#3b82f6","#a855f7","#ec4899",
+    "#f59e0b","#ef4444","#06b6d4","#84cc16",
+    "#f97316","#6366f1"
   ];
 
   let registryType = "";
@@ -94,7 +92,7 @@
   let comparisonPeriods: (FinancePeriodRequestDto & { _id: number; displayLabel: string })[] = [];
   let nextId = 0;
 
-  const PERIOD_TYPES: PeriodType[] = ["month", "quarter", "year", "month-range", "year-range"];
+  const PERIOD_TYPES: PeriodType[] = ["month","quarter","year","month-range","year-range"];
 
   // Chart refs
   let barCanvas: HTMLCanvasElement;
@@ -111,7 +109,6 @@
     if (!results || !barCanvas || !doughnutCanvas) return;
     destroyCharts();
 
-    // Fix 1: rename to avoid redeclaration
     const firstPeriod = results.periods[0];
     const paymentLabels = firstPeriod.paymentTypes.map(pt => pt.paymentType || "Unknown");
 
@@ -121,7 +118,6 @@
         labels: paymentLabels,
         datasets: results.periods.map((period, index) => ({
           label: period.label,
-          // Fix 3: align paymentTypes order to paymentLabels
           data: paymentLabels.map(label => {
             const found = period.paymentTypes.find(pt => (pt.paymentType || "Unknown") === label);
             return found?.totalGovernmentFee ?? 0;
@@ -142,16 +138,12 @@
           },
           tooltip: {
             callbacks: {
-              // Fix 3: ctx.parsed.y can be null, coerce to number
               label: (ctx) => ` ${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y ?? 0)}`
             }
           }
         },
         scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { size: 10 }, maxRotation: 30 }
-          },
+          x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 30 } },
           y: {
             beginAtZero: true,
             grid: { color: "#f1f5f9" },
@@ -164,7 +156,6 @@
       }
     });
 
-    // Fix 1: use firstPeriod instead of period0
     const labels = firstPeriod.paymentTypes.map(pt => pt.paymentType || "Unknown");
     const data = firstPeriod.paymentTypes.map(pt => pt.totalGovernmentFee);
     const total = data.reduce((a, b) => a + b, 0);
@@ -208,10 +199,6 @@
                 });
               }
             }
-          // legend: {
-          //   position: "bottom",
-          //   labels: { font: { size: 11 }, padding: 12, boxWidth: 12 }
-          // },
           },
           tooltip: {
             callbacks: {
@@ -222,16 +209,6 @@
               }
             }
           },
-          // Fix 2: cast as any to bypass strict TS check since plugin is registered globally
-          // ...({ datalabels: {
-          //   color: "#fff",
-          //   font: { size: 11, weight: "bold" },
-          //   formatter: (value: number) => {
-          //     const pct = total > 0 ? ((value / total) * 100) : 0;
-          //     if (pct < 3) return "";
-          //     return `${pct.toFixed(1)}%`;
-          //   }
-          // }} as any)
           ...({ datalabels: { display: false } } as any)
         }
       }
@@ -287,17 +264,18 @@
     if (!compareMode) { comparisonPeriods = []; results = null; }
   }
 
+  // ✅ ONLY DIFFERENCE — hits techfee endpoint
   async function fetchSingle() {
     loading = true; error = null; results = null;
     try {
       const dto = { RegistryType: registryType, Periods: [buildCurrentPeriod()] };
-      const response = await fetch(`${baseURL}/api/statistics/finance/compare`, {
+      const response = await fetch(`${baseURL}/api/statistics/finance/techfee/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to fetch financial statistics");
+      if (!response.ok) throw new Error(data.error || "Failed to fetch tech fee statistics");
       results = data.data;
     } catch (e) {
       error = (e as Error).message;
@@ -313,13 +291,14 @@
         RegistryType: registryType,
         Periods: comparisonPeriods.map(({ _id, displayLabel, ...p }) => p)
       };
-      const response = await fetch(`${baseURL}/api/statistics/finance/compare`, {
+      // ✅ ONLY DIFFERENCE — hits techfee endpoint
+      const response = await fetch(`${baseURL}/api/statistics/finance/techfee/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
       });
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Failed to fetch financial statistics");
+      if (!response.ok) throw new Error(data.error || "Failed to fetch tech fee statistics");
       results = data.data;
     } catch (e) {
       error = (e as Error).message;
@@ -336,7 +315,7 @@
   }
 
   $: allPaymentTypes = results
-    ? [...new Set(results.periods.flatMap(p => p.paymentTypes.map(pt => pt.paymentType)))] 
+    ? [...new Set(results.periods.flatMap(p => p.paymentTypes.map(pt => pt.paymentType)))]
     : [];
 
   $: maxPaymentTypeFee = results
@@ -345,9 +324,7 @@
 
   function formatCurrency(amount: number): string {
     return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0
+      style: "currency", currency: "NGN", minimumFractionDigits: 0
     }).format(amount);
   }
 
@@ -376,11 +353,9 @@
         class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
-        <span class="text-sm font-medium">Back to Financial Statistics</span>
+        <span class="text-sm font-medium">Back to Statistics</span>
       </button>
-      <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">
-        Financial Statistics
-      </h1>
+      <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">Tech Fee Revenue Statistics</h1>
       <div class="w-[200px]"></div>
     </div>
 
@@ -389,18 +364,18 @@
 
       <div class="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
         <div class="flex items-start gap-4 flex-1">
-          <div class="flex-shrink-0 w-14 h-14 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
-            <Icon icon="lucide:bar-chart-2" class="w-7 h-7 text-white" />
+          <div class="flex-shrink-0 w-14 h-14 bg-blue-600 rounded-lg flex items-center justify-center shadow-sm">
+            <Icon icon="mdi:chip" class="w-7 h-7 text-white" />
           </div>
           <div class="flex-1">
-            <h2 class="text-2xl font-bold text-gray-900 mb-1">Revenue Statistics</h2>
-            <p class="text-sm text-gray-600">{registryType} Registry — View government fees and payment volumes</p>
+            <h2 class="text-2xl font-bold text-gray-900 mb-1">EINAO Tech Fee Statistics</h2>
+            <p class="text-sm text-gray-600">{registryType} Registry — View tech fees and payment volumes</p>
           </div>
         </div>
         <button
           on:click={toggleCompareMode}
           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all flex-shrink-0
-            {compareMode ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600'}"
+            {compareMode ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400 hover:text-blue-600'}"
         >
           <Icon icon="lucide:git-compare" class="w-4 h-4" />
           {compareMode ? "Compare Periods ON" : "Compare Periods"}
@@ -436,7 +411,7 @@
                   Year
                 </label>
                 <div class="relative">
-                  <select bind:value={selectedYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
+                  <select bind:value={selectedYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all">
                     {#each YEARS as year}<option value={year}>{year}</option>{/each}
                   </select>
                   <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -450,7 +425,7 @@
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Select Month</label>
                 <div class="relative">
-                  <select bind:value={selectedMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
+                  <select bind:value={selectedMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all">
                     {#each MONTHS as month}<option value={month}>{month}</option>{/each}
                   </select>
                   <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -462,7 +437,7 @@
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Select Quarter</label>
                 <div class="relative">
-                  <select bind:value={selectedQuarter} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
+                  <select bind:value={selectedQuarter} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all">
                     {#each QUARTERS as q}<option value={q}>{q}</option>{/each}
                   </select>
                   <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -474,7 +449,7 @@
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Start Month</label>
                 <div class="relative">
-                  <select bind:value={selectedStartMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
+                  <select bind:value={selectedStartMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all">
                     {#each MONTHS as month, i}<option value={i + 1}>{month}</option>{/each}
                   </select>
                   <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -483,7 +458,7 @@
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">End Month</label>
                 <div class="relative">
-                  <select bind:value={selectedEndMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
+                  <select bind:value={selectedEndMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all">
                     {#each MONTHS as month, i}<option value={i + 1}>{month}</option>{/each}
                   </select>
                   <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -495,7 +470,7 @@
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Start Year</label>
                 <div class="relative">
-                  <select bind:value={selectedStartYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
+                  <select bind:value={selectedStartYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all">
                     {#each YEARS as year}<option value={year}>{year}</option>{/each}
                   </select>
                   <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -504,7 +479,7 @@
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">End Year</label>
                 <div class="relative">
-                  <select bind:value={selectedEndYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
+                  <select bind:value={selectedEndYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer transition-all">
                     {#each YEARS as year}<option value={year}>{year}</option>{/each}
                   </select>
                   <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
@@ -516,16 +491,16 @@
 
         {#if compareMode}
           <div class="flex flex-col justify-start">
-            <div class="bg-gray-50 border-2 border-green-300 rounded-lg p-4 h-full flex flex-col gap-3">
+            <div class="bg-gray-50 border-2 border-blue-300 rounded-lg p-4 h-full flex flex-col gap-3">
               <div class="flex items-center gap-3 mb-1">
-                <Icon icon="lucide:layers" class="w-5 h-5 text-green-600" />
+                <Icon icon="lucide:layers" class="w-5 h-5 text-blue-600" />
                 <span class="text-sm font-semibold text-gray-700">Comparison Periods</span>
                 <span class="ml-auto text-xs text-gray-400">{comparisonPeriods.length}/5</span>
               </div>
               <button
                 on:click={addToComparison}
                 disabled={comparisonPeriods.length >= 5}
-                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <Icon icon="mdi:plus" class="w-4 h-4" />
                 Add Period
@@ -563,7 +538,7 @@
           <button
             on:click={fetchComparison}
             disabled={loading || comparisonPeriods.length < 2}
-            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
           >
             {#if loading}
               <Icon icon="line-md:loading-loop" class="h-4 w-4 animate-spin" />
@@ -577,7 +552,7 @@
           <button
             on:click={fetchSingle}
             disabled={loading}
-            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+            class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
           >
             {#if loading}
               <Icon icon="line-md:loading-loop" class="h-4 w-4 animate-spin" />
@@ -603,7 +578,7 @@
     <!-- Loading -->
     {#if loading}
       <div class="flex items-center justify-center py-12">
-        <Icon icon="mdi:loading" class="h-8 w-8 animate-spin text-green-600" />
+        <Icon icon="mdi:loading" class="h-8 w-8 animate-spin text-blue-600" />
       </div>
     {/if}
 
@@ -618,13 +593,13 @@
               <tr class="bg-slate-50 border-b border-slate-200">
                 <th class="text-left py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Period</th>
                 <th class="text-left py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Date Range</th>
-                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Government Fee</th>
+                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Tech Fee</th>
                 <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Payments</th>
               </tr>
             </thead>
             <tbody>
               {#each results.periods as period, index}
-                <tr class="border-b border-slate-100 {index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-green-50/40 transition-colors">
+                <tr class="border-b border-slate-100 {index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/40 transition-colors">
                   <td class="py-4 px-6">
                     <div class="flex items-center gap-2">
                       <div class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: {COLORS[index % COLORS.length]}"></div>
@@ -654,12 +629,12 @@
                 <tr class="bg-slate-100 border-t-2 border-slate-200">
                   <td class="py-3.5 px-6 font-bold text-slate-800 text-xs uppercase tracking-wide" colspan="2">Total</td>
                   <td class="py-3.5 px-6 text-right">
-                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold text-white bg-green-600">
+                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold text-white bg-blue-600">
                       {formatCurrency(results.periods.reduce((a, p) => a + p.totalGovernmentFee, 0))}
                     </span>
                   </td>
                   <td class="py-3.5 px-6 text-right">
-                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold text-white bg-green-600">
+                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold text-white bg-blue-600">
                       {results.periods.reduce((a, p) => a + p.totalPayments, 0).toLocaleString()}
                     </span>
                   </td>
@@ -676,12 +651,12 @@
         <!-- Histogram Bar Chart -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <Icon icon="mdi:chart-bar-stacked" class="h-5 w-5 text-green-600" />
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Icon icon="mdi:chart-bar-stacked" class="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h3 class="font-semibold text-slate-800">Revenue Histogram</h3>
-              <p class="text-sm text-slate-500">Government fee per payment type {compareMode ? 'across periods' : 'for selected period'}</p>
+              <h3 class="font-semibold text-slate-800">Tech Fee Histogram</h3>
+              <p class="text-sm text-slate-500">Tech fee per payment type {compareMode ? 'across periods' : 'for selected period'}</p>
             </div>
           </div>
           <div class="relative h-64">
@@ -692,11 +667,11 @@
         <!-- Doughnut Chart -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div class="flex items-center gap-3 mb-6">
-            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-              <Icon icon="lucide:pie-chart" class="h-5 w-5 text-green-600" />
+            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Icon icon="lucide:pie-chart" class="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h3 class="font-semibold text-slate-800">Revenue Share by Payment Type</h3>
+              <h3 class="font-semibold text-slate-800">Tech Fee Share by Payment Type</h3>
               <p class="text-sm text-slate-500">
                 {compareMode ? `First period: ${results.periods[0].label}` : results.periods[0].label}
               </p>
@@ -708,21 +683,19 @@
         </div>
 
       </div>
-      <!-- end charts grid -->
 
       <!-- Quarterly Monthly Breakdown -->
       {#if selectedPeriodType === "quarter" && results.periods.some(p => p.monthlyBreakdown && p.monthlyBreakdown.length > 0)}
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
           <div class="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-            <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
-              <Icon icon="lucide:calendar-days" class="w-4 h-4 text-green-600" />
+            <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Icon icon="lucide:calendar-days" class="w-4 h-4 text-blue-600" />
             </div>
             <div>
               <h3 class="font-semibold text-slate-800">Monthly Breakdown</h3>
-              <p class="text-xs text-slate-400">Revenue per month within the selected quarter{results.periods.length > 1 ? 's' : ''}</p>
+              <p class="text-xs text-slate-400">Tech fee per month within the selected quarter{results.periods.length > 1 ? 's' : ''}</p>
             </div>
           </div>
-
           {#each results.periods as period, pIndex}
             {#if period.monthlyBreakdown && period.monthlyBreakdown.length > 0}
               <div class="{pIndex > 0 ? 'border-t border-gray-200' : ''}">
@@ -738,7 +711,7 @@
                       <tr class="bg-slate-50 border-b border-slate-200">
                         <th class="text-left py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Month</th>
                         <th class="text-left py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Date Range</th>
-                        <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Government Fee</th>
+                        <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Tech Fee</th>
                         <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Payments</th>
                         <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">% of Quarter</th>
                       </tr>
@@ -746,7 +719,7 @@
                     <tbody>
                       {#each period.monthlyBreakdown as month, mIndex}
                         {@const pct = period.totalGovernmentFee > 0 ? ((month.totalGovernmentFee / period.totalGovernmentFee) * 100).toFixed(1) : "0.0"}
-                        <tr class="border-b border-slate-100 transition-colors {mIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-green-50/40">
+                        <tr class="border-b border-slate-100 transition-colors {mIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/40">
                           <td class="py-3.5 px-6 font-medium text-slate-700">
                             <div class="flex items-center gap-2">
                               <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
@@ -804,15 +777,14 @@
               </div>
             {/if}
           {/each}
-
         </div>
       {/if}
 
       <!-- Payment Type Breakdown Table -->
       <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
         <div class="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
-          <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center">
-            <Icon icon="mdi:format-list-bulleted" class="w-4 h-4 text-green-600" />
+          <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Icon icon="mdi:format-list-bulleted" class="w-4 h-4 text-blue-600" />
           </div>
           <div>
             <h3 class="font-semibold text-slate-800">Payment Type Breakdown</h3>
@@ -831,7 +803,7 @@
             </thead>
             <tbody>
               {#each allPaymentTypes as paymentType, rowIndex}
-                <tr class="border-b border-slate-100 transition-colors {rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-green-50/40">
+                <tr class="border-b border-slate-100 transition-colors {rowIndex % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/40">
                   <td class="py-3.5 px-6 font-medium text-slate-700">
                     <div class="flex items-center gap-2">
                       <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
@@ -878,17 +850,15 @@
       </div>
 
       <!-- Print Button -->
-      {#if results && results.periods.length > 0}
-        <div class="flex justify-end mt-6 mb-2">
-          <button
-            on:click={() => window.print()}
-            class="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            <Icon icon="lucide:printer" class="w-4 h-4" />
-            Print Report
-          </button>
-        </div>
-      {/if}
+      <div class="flex justify-end mt-6 mb-2">
+        <button
+          on:click={() => window.print()}
+          class="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+        >
+          <Icon icon="lucide:printer" class="w-4 h-4" />
+          Print Report
+        </button>
+      </div>
 
     {/if}
 
