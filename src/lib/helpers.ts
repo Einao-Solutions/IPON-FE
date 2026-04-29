@@ -600,12 +600,14 @@ export function MapAttachmentToString(attachmentName: string) {
     case "drawings":
       return "Patent Drawing";
     case "pdoc":
+    case "Priority Documents":
     case "priorityDocument":
     case "designPriorityDocument":
       return "Priority Document";
     case "cs":
       return "Claims and Specifications";
     case "form2":
+    case "POA":
     case "poa":
       return "Power of Attorney";
     case "any":
@@ -613,10 +615,12 @@ export function MapAttachmentToString(attachmentName: string) {
       return "Other Document";
     case "nov":
     case "novelty":
+    case "novelty_statement":
     case "noveltyStatement":
       return "Novelty Statement";
     case "statementOfNovelty":
       return "Statement of Novelty";
+    case "Design Representations":
     case "designDrawings":
       return "Design Drawings";
     case "representation":
