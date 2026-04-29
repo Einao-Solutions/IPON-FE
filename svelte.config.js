@@ -126,7 +126,8 @@ const config = {
         "/home/postregistration/designmortgage",
         "/home/postregistration/designmortgage/result",
         "/home/postregistration/trademarkctc",
-        "/home/postregistration/trademarkctc/result"
+        "/home/postregistration/trademarkctc/result",
+        "/statistics/techfee"
       ],
     },
   },
