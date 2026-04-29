@@ -190,7 +190,7 @@
                     <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
                       <Icon icon="mdi:cog-outline" class="text-2xl text-green-600" />
                     </div>
-                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Filing Comparison</h4>
+                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Filings</h4>
                     <p class="text-sm text-gray-600 mb-4">
                       Compare filing volumes and operational breakdowns across custom periods — by month, quarter, year or date range
                     </p>
