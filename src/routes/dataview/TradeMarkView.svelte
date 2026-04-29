@@ -53,27 +53,36 @@
 			<Card.Title>Trademark Disclaimer</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			{data?.trademarkDisclaimer}
+			{data?.trademarkDisclaimer ?? "N/A"}
 		</Card.Content>
 	</Card.Root>
 	<Card.Root>
 		<Card.Header>
-			<Card.Title>Trademark class</Card.Title>
+			<Card.Title>Trademark Class</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			class {data?.trademarkClass}
+			Class {data?.trademarkClass}
 		</Card.Content>
 	</Card.Root>
 	<Card.Root>
 		<Card.Header>
-			<Card.Title>Trademark class description</Card.Title>
+			<Card.Title>Trademark Class Description</Card.Title>
 		</Card.Header>
 		<Card.Content>
 			<p>{data?.trademarkClassDescription}</p>
+		</Card.Content>
+	</Card.Root>
+
+	{#if data?.additionalDescription}
+	<Card.Root>
+		<Card.Header>
+			<Card.Title>Specification of Goods</Card.Title>
+		</Card.Header>
+		<Card.Content>
 			<p class="mt-2">{data?.additionalDescription}</p>
 		</Card.Content>
 	</Card.Root>
-	
+	{/if}
 	<Card.Root>
 		<Card.Header>
 			<Card.Title>Trademark logo description</Card.Title>
@@ -102,7 +111,7 @@
 				{:else}
 					<Table.Header>
 						<Table.Row>
-							<Table.Head class="w-1">s/n</Table.Head>
+							<Table.Head class="w-1">S/N</Table.Head>
 							<Table.Head>Name</Table.Head>
 							<Table.Head>Country</Table.Head>
 							<Table.Head>Phone</Table.Head>
@@ -151,7 +160,7 @@
 				<p id="address">{data?.correspondence?.address}</p>
 			</div>
 			<div>
-				<Label for="phone" class="font-bold">Number</Label>
+				<Label for="phone" class="font-bold">Phone Number</Label>
 				<p id="phone">{data?.correspondence?.phone}</p>
 			</div>
 			<div>
