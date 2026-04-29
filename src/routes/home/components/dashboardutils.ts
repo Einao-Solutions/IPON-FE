@@ -554,8 +554,10 @@ export function mapStatusToString(status: number) {
     case 32:
       return "Awaiting Approval";
     case 33:
-      return "Awaiting Renewal Confirmation";
+      return "Statutory Declaration";
     case 34:
+      return "Awaiting Renewal Confirmation";
+    case 35:
       return "Pending Renewal";
     default:
       return "";
