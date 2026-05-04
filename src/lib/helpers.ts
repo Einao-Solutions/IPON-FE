@@ -413,6 +413,8 @@ export enum ApplicationStatuses {
   AwaitingCounter = 31,
   Amendment = 32,
   StatutoryDeclaration = 33,
+  AwaitingRenewalConfirmation = 34,
+  PendingRenewal = 35,
   Value,
 }
 export enum PatentTypes {

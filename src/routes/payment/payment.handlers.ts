@@ -27,6 +27,8 @@ export interface PaymentContext {
     setApplicationId: (v: string | null) => void;
     setFileTitle: (v: string | null) => void;
     setResponseUrl: (v: string | null) => void;
+    isLateRenewal: (v: boolean) =>  void;
+    setPenaltyFee: (v: string) => void;
     setRenewalMeta: (meta: {
       missedYearsCount?: number;
       lateYearsCount?: number;
@@ -470,6 +472,8 @@ async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(parsed?.fileId ?? null);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
+  ctx.state.isLateRenewal(parsed.isLateRenewal ?? false);
+  ctx.state.setPenaltyFee(parsed.lateRenewalCost ?? "")
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,

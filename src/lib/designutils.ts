@@ -152,38 +152,73 @@ export function mapPatentAttStrToInt(index:string) {
 	}
 }
 
-	export function mapStatusStringToStatus(status:string){
-		switch (status) {
-			case "Active":return  0;
-			case "Expired": return  1;
-			case "AwaitingPayment": return  2;
-			case "AwaitingSearch": return  3;
-			case "AwaitingExaminer": return  4;
-			case "RejectedByExaminer": return  5;
-			case "Re_conduct": return  6;
-			case "FormalityFail": return  7;
-			case "KivSearch": return  8;
-			case "KivExaminer": return  9;
-			case "Approved": return  10;
-			case "Rejected": return  11;
-			case "None": return  12;
-			case "AutoApproved": return  13;
-			case "Publication": return 14;
-			case "Opposition": return 15;
-			case "AwaitingResponse": return 16;
-			case "AwaitingOppositionStaff": return 17;
-			case "AwaitingResolution": return 18;
-			case "Resolved": return 19;
-			case "AwaitingCertification": return 20;
-			case "AwaitingConfirmation": return  1;
-			case "AwaitingCertificatePayment": return 25;
-			case "AwaitingRecordalProcess": return 26;
-			case "AppealRequest": return 27;
-			case "AwaitingStatusUpddate": return 28;
-			case "RequestWithdrawal": return 29;
-			case "NewOpposition": return 30;
-			case "AwaitingCounter": return 31;
-			case "AwaitingApproval": return 32;
-
-		}
+export function mapStatusStringToStatus(status: string) {
+  switch (status) {
+    case "Active":
+      return 0;
+    case "Expired":
+      return 1;
+    case "AwaitingPayment":
+      return 2;
+    case "AwaitingSearch":
+      return 3;
+    case "AwaitingExaminer":
+      return 4;
+    case "RejectedByExaminer":
+      return 5;
+    case "Re_conduct":
+      return 6;
+    case "FormalityFail":
+      return 7;
+    case "KivSearch":
+      return 8;
+    case "KivExaminer":
+      return 9;
+    case "Approved":
+      return 10;
+    case "Rejected":
+      return 11;
+    case "None":
+      return 12;
+    case "AutoApproved":
+      return 13;
+    case "Publication":
+      return 14;
+    case "Opposition":
+      return 15;
+    case "AwaitingResponse":
+      return 16;
+    case "AwaitingOppositionStaff":
+      return 17;
+    case "AwaitingResolution":
+      return 18;
+    case "Resolved":
+      return 19;
+    case "AwaitingCertification":
+      return 20;
+    case "AwaitingConfirmation":
+      return 1;
+    case "AwaitingCertificatePayment":
+      return 25;
+    case "AwaitingRecordalProcess":
+      return 26;
+    case "AppealRequest":
+      return 27;
+    case "AwaitingStatusUpddate":
+      return 28;
+    case "RequestWithdrawal":
+      return 29;
+    case "NewOpposition":
+      return 30;
+    case "AwaitingCounter":
+      return 31;
+    case "AwaitingApproval":
+      return 32;
+    case "StatutoryDeclaration":
+      return 33;
+    case "AwaitingRenewalConfirmation":
+      return 34;
+    case "PendingRenewal":
+      return 35;
+  }
 }

@@ -17,6 +17,28 @@
   let isLoading = false;
   let error: string | null = null;
 
+  // Service ID groups (defined once, reused across validation & routing)
+  const recordalServices = ["renewal", "merger", "assignment", "registered-user"];
+  const changeServices = ["change-applicant-name", "change-applicant-address"];
+  const patentPostRegServices = [
+    "patent-amendment", "patent-assignment", "patent-ctc",
+    "patent-license", "patent-mortgage", "patent-merger",
+  ];
+  const designPostRegServices = [
+    "design-amendment", "design-assignment", "design-ctc",
+    "design-license", "design-mortgage", "design-merger",
+  ];
+
+  // Fetch file details by file number (shared helper — avoids duplicate API calls)
+  async function fetchFileDetails(fileNumber: string): Promise<any | null> {
+    const res = await fetch(
+      `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(fileNumber)}`,
+    );
+    const data = await res.json();
+    if (!res.ok || !data || data.length === 0) return null;
+    return data[0];
+  }
+
   // Map serviceId to the appropriate changeType for changedata services
   function getChangeType(serviceId: string): string | null {
     const changeTypeMap: Record<string, string> = {
@@ -87,9 +109,11 @@
     error = null;
 
     try {
-      // Check file type from backend - preserve exact same validation logic
+      const trimmedQuery = searchQuery.trim();
+
+      // Check file type from backend
       const res = await fetch(
-        `${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`,
+        `${baseURL}/api/files/files/${encodeURIComponent(trimmedQuery)}/type`,
       );
       const data = await res.json();
 
@@ -99,180 +123,83 @@
       }
 
       const actualType = data.type?.toLowerCase();
-      const expectedType = ipType; // 'trademark', 'patent', or 'design'
-
-      if (actualType !== expectedType) {
-        error = `File type mismatch. You selected "${expectedType}", but file is "${actualType}".`;
+      if (actualType !== ipType) {
+        error = `File type mismatch. You selected "${ipType}", but file is "${actualType}".`;
         return;
       }
 
-      // Check file status for recordals (renewal, merger, assignment, registered users)
-      if (
-        ["renewal", "merger", "assignment", "registered-user"].includes(
-          serviceId,
-        )
-      ) {
-        // Get file details to check status
-        const fileRes = await fetch(
-          `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`,
-        );
-        const fileData = await fileRes.json();
+      // Determine if we need file details for status validation
+      const isRecordal = recordalServices.includes(serviceId);
+      const isChange = changeServices.includes(serviceId);
+      const isPatentPostReg = patentPostRegServices.includes(serviceId);
+      const needsStatusCheck = isRecordal || isChange || isPatentPostReg;
 
-        if (!fileRes.ok || !fileData || fileData.length === 0) {
+      let file: any = null;
+
+      if (needsStatusCheck) {
+        file = await fetchFileDetails(trimmedQuery);
+        if (!file) {
           error = "Unable to verify file status. Please try again.";
           return;
         }
 
-        const file = fileData[0];
-        const fileStatus = file?.fileStatus;
-        const statusText = file?.statusText?.toLowerCase() || "";
+        const fileStatus = file.fileStatus;
 
-        // Allow only specific statuses: Publication, AwaitingCertification, AwaitingCertificateConfirmation, and Active
-        const allowedStatuses = [
-          ApplicationStatuses.Publication,
-          ApplicationStatuses.AwaitingCertification,
-          ApplicationStatuses.AwaitingCertificateConfirmation,
-          ApplicationStatuses.Active,
-        ];
+        // Build allowed statuses based on service group
+        let allowedStatuses: number[];
+        if (isRecordal) {
+          allowedStatuses = [
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.AwaitingCertification,
+            ApplicationStatuses.AwaitingCertificateConfirmation,
+            ApplicationStatuses.Active,
+            ApplicationStatuses.PendingRenewal,
+          ];
+        } else if (isChange) {
+          allowedStatuses = [
+            ApplicationStatuses.Active,
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.AwaitingCertification,
+          ];
+        } else {
+          // Patent post-registration: Active only
+          allowedStatuses = [ApplicationStatuses.Active];
+        }
 
-        const isStatusAllowed = allowedStatuses.includes(fileStatus);
-
-        if (!isStatusAllowed) {
-          error = `${serviceName} is only available for files with status: Publication, Awaiting Certification, Awaiting Certificate Confirmation, or Active. Current file status: ${file?.statusText || "Unknown"}`;
+        if (!allowedStatuses.includes(fileStatus)) {
+          if (isPatentPostReg) {
+            error = `${serviceName} is only available for Active patent files. Current file status: ${getStatusName(fileStatus)}`;
+          } else if (isChange) {
+            error = `${serviceName} is NOT available for this file status. Current file status: ${getStatusName(fileStatus)}`;
+          } else {
+            error = `${serviceName} is only available for files with status: Publication, Awaiting Certification, Awaiting Certificate Confirmation, or Active. Current file status: ${file.statusText || "Unknown"}`;
+          }
           return;
         }
       }
 
-      // Check file status for change of name/address services
-      if (
-        ["change-applicant-name", "change-applicant-address"].includes(
-          serviceId,
-        )
-      ) {
-        // Get file details to check status
-        const fileRes = await fetch(
-          `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`,
-        );
-        const fileData = await fileRes.json();
-
-        if (!fileRes.ok || !fileData || fileData.length === 0) {
-          error = "Unable to verify file status. Please try again.";
-          return;
-        }
-
-        const file = fileData[0];
-        const fileStatus = file?.fileStatus;
-
-        // Allowed statuses for change of name/address
-        const allowedStatuses = [
-          ApplicationStatuses.Active,
-          ApplicationStatuses.Publication,
-          ApplicationStatuses.AwaitingCertification,
-        ];
-        const isStatusAllowed = allowedStatuses.includes(fileStatus);
-        if (!isStatusAllowed) {
-          error = `${serviceName} is NOT available for this file status. Current file status: ${getStatusName(file?.fileStatus)}`;
-          return;
-        }
-      }
-
-      // Check file status for patent post-registration services
-      if (
-        [
-          "patent-amendment",
-          "patent-assignment",
-          "patent-ctc",
-          "patent-license",
-          "patent-mortgage",
-          "patent-merger",
-        ].includes(serviceId)
-      ) {
-        // Get file details to check status
-        const fileRes = await fetch(
-          `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`,
-        );
-        const fileData = await fileRes.json();
-
-        if (!fileRes.ok || !fileData || fileData.length === 0) {
-          error = "Unable to verify file status. Please try again.";
-          return;
-        }
-
-        const file = fileData[0];
-        const fileStatus = file?.fileStatus;
-
-        // Patent post-registration services only allowed for Active files
-        if (fileStatus !== ApplicationStatuses.Active) {
-          error = `${serviceName} is only available for Active patent files. Current file status: ${getStatusName(file?.fileStatus)}`;
-          return;
-        }
-      }
-
-      // Route to appropriate destination based on service type
+      // Route to appropriate destination
       const changeType = getChangeType(serviceId);
       const fileTypeNum =
         ipType === "trademark" ? "2" : ipType === "patent" ? "0" : "1";
 
       if (changeType) {
-        // Handle changedata services (name/address changes)
-        const route = `/home/postregistration/changedata?fileId=${searchQuery.trim()}&fileType=${fileTypeNum}&changeType=${changeType}`;
-        await goto(route);
+        await goto(`/home/postregistration/changedata?fileId=${trimmedQuery}&fileType=${fileTypeNum}&changeType=${changeType}`);
+      } else if (serviceId === "renewal") {
+        await handleRenewalService(trimmedQuery, ipType, false);
+      } else if (serviceId === "restoration") {
+        await handleRenewalService(trimmedQuery, ipType, true);
+      } else if (isPatentPostReg || designPostRegServices.includes(serviceId)) {
+        const fileType = isPatentPostReg ? "patent" : "design";
+        sessionStorage.setItem(
+          "searchParams",
+          JSON.stringify({ query: trimmedQuery, fileType, serviceType: serviceId }),
+        );
+        await goto("/home/postregistration/search");
       } else {
-        // Handle post-registration services (renewal, assignment, merger, registered-user)
-
-        // For renewal, get file details and route directly to payment
-        if (serviceId === "renewal") {
-          await handleRenewalService(searchQuery.trim(), ipType);
-        } else if (
-          [
-            "patent-amendment",
-            "patent-assignment",
-            "patent-ctc",
-            "patent-license",
-            "patent-mortgage",
-            "patent-merger",
-          ].includes(serviceId)
-        ) {
-          // For patent post-registration services, go to search page first with service type
-          sessionStorage.setItem(
-            "searchParams",
-            JSON.stringify({
-              query: searchQuery.trim(),
-              fileType: "patent",
-              serviceType: serviceId,
-            }),
-          );
-          await goto("/home/postregistration/search");
-        } else if (
-          [
-            "design-amendment",
-            "design-assignment",
-            "design-ctc",
-            "design-license",
-            "design-mortgage",
-            "design-merger",
-          ].includes(serviceId)
-        ) {
-          // For design post-registration services, go to search page first with service type
-          sessionStorage.setItem(
-            "searchParams",
-            JSON.stringify({
-              query: searchQuery.trim(),
-              fileType: "design",
-              serviceType: serviceId,
-            }),
-          );
-          await goto("/home/postregistration/search");
-        } else {
-          // For other post-registration services, go directly to service page
-          const route = getPostRegistrationRoute(
-            serviceId,
-            searchQuery.trim(),
-            fileTypeNum,
-          );
-          if (route) {
-            await goto(route);
-          }
+        const route = getPostRegistrationRoute(serviceId, trimmedQuery, fileTypeNum);
+        if (route) {
+          await goto(route);
         }
       }
     } catch (err) {
@@ -289,97 +216,52 @@
     ipType: string,
   ): Promise<void> {
     try {
-      // Get file details - same API call as postregistration search
-      const response = await fetch(
-        `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${fileNumber}`,
-      );
-
-      if (!response.ok) {
-        error = "Failed to fetch file details for renewal.";
+      const file = await fetchFileDetails(fileNumber);
+      if (!file) {
+        error = restoration ? "Failed to fetch file details for renewal." : "File not found.";
         return;
       }
 
-      const results = await response.json();
+      const applicantName =
+        file.fileApplicant ?? `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`;
 
-      if (!results || results.length === 0) {
-        error = "File not found.";
-        return;
-      }
-
-      const fileResult = results[0];
-      const isPatent = fileResult.fileTypes === 0;
-      const isTrademark = fileResult.fileTypes === 2;
-      const isDesign = fileResult.fileTypes === 1;
-
-      // Follow exact same renewal logic as postregistration/search
-      if (isPatent) {
-        const currentStatus = fileResult?.fileStatus;
-        // Only allow Active (0) or Inactive (1) status for patents
-        if (currentStatus !== 0 && currentStatus !== 1) {
-          error = "Patent file must be Active or Inactive.";
+      // Handle restoration separately
+      if (restoration) {
+        const restorationRes = await fetch(
+          `${baseURL}/api/files/RestorationRequest?fileId=${fileNumber}&userId=${$loggedInUser?.id}`,
+        );
+        const restorationData = await restorationRes.json();
+        if (!restorationRes.ok) {
+          error = "This file is not eligible for restoration.";
           return;
         }
-
-        // Check for PCT or Conventional patent type
-        const patentTypeStr = (fileResult.patentType || "").toLowerCase();
-        if (["pct", "conventional"].includes(patentTypeStr)) {
-          if (
-            !Array.isArray(fileResult.firstPriorityInfo) ||
-            fileResult.firstPriorityInfo.length === 0
-          ) {
-            error =
-              "First Priority Information does not exist for this file. Please use the Update Patent module on the dashboard to update your file before filing for a renewal.";
-            return;
-          }
-        }
-
-        // Store patent data for payment
-        sessionStorage.removeItem("applicantDetails");
-        const patentData = {
-          fileId: fileResult.fileId,
-          type: 0, // patent
-          titleOfInvention: fileResult.titleOfInvention,
-          fileApplicant: fileResult.fileApplicant,
-          applicantEmail: fileResult.applicantEmail,
-          applicantPhone: fileResult.applicantPhone,
-          patentType: fileResult.patentType,
-          patentApplicationType: fileResult.patentApplicationType,
-          filingDate: fileResult.filingDate,
-          correspondence: fileResult.correspondence,
-        };
-        sessionStorage.setItem("applicationData", JSON.stringify(patentData));
-      } else if (isTrademark) {
-        // Trademark renewal logic
-        const renewalCost = await fetch(
-          `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Trademark}&userId=${$loggedInUser?.id}`,
+        sessionStorage.setItem(
+          "formData",
+          JSON.stringify({ ...restorationData, fileId: fileNumber, applicantName }),
         );
-        const renewalData = await renewalCost.json();
-        sessionStorage.setItem("renewalData", JSON.stringify({
-          ...renewalData,
-          fileId: fileNumber,
-          applicantName: fileResult.fileApplicant ?? `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
-        }));
-        await goto(
-          `/payment?type=trademarkRenewal`,
-        );
-      } else if (isDesign) {
-        // Design renewal logic
-        const renewalCost = await fetch(
-          `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Design}&userId=${$loggedInUser?.id}`,
-        );
-        const renewalData = await renewalCost.json();
-        sessionStorage.setItem("renewalData", JSON.stringify({
-          ...renewalData,
-          fileId: fileNumber,
-          applicantName: fileResult.fileApplicant ?? `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
-        }));
-        await goto(
-          `/payment?type=designRenewal`,
-        );
+        await goto(`/payment?type=restoration`);
+        return;
       }
 
-      // Route to payment page
-      // await goto(`/payment?type=renewal&fileId=${fileResult.fileId}`);
+      // Map file type to FileTypes enum and payment route
+      const fileTypeMap: Record<number, { fileType: number; paymentType: string }> = {
+        0: { fileType: FileTypes.Patent, paymentType: "patentRenewal" },
+        2: { fileType: FileTypes.Trademark, paymentType: "trademarkRenewal" },
+        1: { fileType: FileTypes.Design, paymentType: "designRenewal" },
+      };
+
+      const config = fileTypeMap[file.fileTypes];
+      if (!config) return;
+
+      const renewalRes = await fetch(
+        `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${config.fileType}&userId=${$loggedInUser?.id}`,
+      );
+      const renewalData = await renewalRes.json();
+      sessionStorage.setItem(
+        "renewalData",
+        JSON.stringify({ ...renewalData, fileId: fileNumber, applicantName }),
+      );
+      await goto(`/payment?type=${config.paymentType}`);
     } catch (err) {
       error = "Error processing renewal request.";
     }
@@ -471,8 +353,12 @@
         <!-- Info Message -->
         <div class="text-xs text-gray-500 bg-blue-50 p-3 rounded-md">
           <Icon icon="mdi:information-outline" class="w-4 h-4 inline mr-1" />
-          {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage", "patent-merger"].includes(serviceId)}
+          {#if patentPostRegServices.includes(serviceId)}
             This service is only available for Active patent files.
+          {:else if ["renewal"].includes(serviceId)}
+            Renewal is only available for registered {ipType} files with status 'Active' within 90 days to the due date, or 'Pending Renewal' status.
+          {:else if ["restoration"].includes(serviceId)}
+            Restoration is only available for Inactive {ipType} files
           {:else}
             This service is only available for accepted and registered {ipType} files
             with status 'Publication' 'Awaiting Certification' and 'Active'
