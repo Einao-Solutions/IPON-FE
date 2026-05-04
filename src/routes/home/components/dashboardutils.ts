@@ -28,7 +28,7 @@ export enum FileStatsData {
 export function DataMapper(
   datatype: FileStatsData,
   data: FileStatsType[],
-  isStaff: boolean
+  isStaff: boolean,
 ) {
   const listNotShow = [0, 1, 2, 11, 12];
   if (!isStaff) {
@@ -57,7 +57,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 0 &&
             x.type === 0 &&
-            !listNotShow.includes(x.status as number)
+            !listNotShow.includes(x.status as number),
         )?.count ?? 0
       );
     case FileStatsData.newDesignTotal: {
@@ -67,7 +67,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 1 &&
             x.type === 0 &&
-            !listNotShow.includes(x.status as number)
+            !listNotShow.includes(x.status as number),
         )
         .map((x) => x.count)
         ?.reduce((x, y) => x + y, 0);
@@ -79,7 +79,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 0 &&
             x.type === 1 &&
-            !listNotShow.includes(x.status as number)
+            !listNotShow.includes(x.status as number),
         )?.count ?? 0
       );
     case FileStatsData.newDesignRenew:
@@ -88,7 +88,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 1 &&
             x.type === 1 &&
-            !listNotShow.includes(x.status as number)
+            !listNotShow.includes(x.status as number),
         )?.count ?? 0
       );
     case FileStatsData.newDesignRenewPending: {
@@ -96,7 +96,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 1 &&
           x.type === 1 &&
-          !listNotShow.includes(x.status as number)
+          !listNotShow.includes(x.status as number),
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -127,7 +127,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        }
+        },
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -140,7 +140,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 0 &&
           x.type === 1 &&
-          !listNotShow.includes(x.status as number)
+          !listNotShow.includes(x.status as number),
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -171,7 +171,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        }
+        },
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -184,7 +184,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 1 &&
           x.type === 0 &&
-          !listNotShow.includes(x.status as number)
+          !listNotShow.includes(x.status as number),
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -215,7 +215,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        }
+        },
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -228,7 +228,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 0 &&
           x.type === 0 &&
-          !listNotShow.includes(x.status as number)
+          !listNotShow.includes(x.status as number),
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -259,7 +259,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        }
+        },
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -272,7 +272,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 1 &&
           x.type === 2 &&
-          !listNotShow.includes(x.status as number)
+          !listNotShow.includes(x.status as number),
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -303,7 +303,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        }
+        },
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -316,7 +316,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 0 &&
           x.type === 2 &&
-          !listNotShow.includes(x.status as number)
+          !listNotShow.includes(x.status as number),
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -347,7 +347,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        }
+        },
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -361,7 +361,7 @@ export function DataMapper(
           (x) =>
             x.fileType == 0 &&
             x.type === 2 &&
-            !listNotShow.includes(x.status as number)
+            !listNotShow.includes(x.status as number),
         )?.count ?? 0
       );
     case FileStatsData.newDesignUpdate:
@@ -370,7 +370,7 @@ export function DataMapper(
           (x) =>
             x.fileType == 1 &&
             x.type === 2 &&
-            !listNotShow.includes(x.status as number)
+            !listNotShow.includes(x.status as number),
         )?.count ?? 0
       );
 
@@ -380,7 +380,7 @@ export function DataMapper(
           (x) =>
             [0, 1, 11, 13, 14].find((f) => f === x.status) === undefined &&
             typeof x.type === "number" &&
-            x.fileType == undefined
+            x.fileType == undefined,
         )
         .map((x) => x.count)
         .reduce((a, b) => a + b, 0);
@@ -389,7 +389,7 @@ export function DataMapper(
         (x) =>
           [0, 1, 11, 13, 14].find((f) => f === x.status) === undefined &&
           typeof x.type === "number" &&
-          x.fileType == undefined
+          x.fileType == undefined,
       );
       const values = filtered.reduce(
         (acc, curr) => {
@@ -419,7 +419,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        }
+        },
       );
       let final = [];
       for (const valuesKey in values) {
@@ -470,14 +470,16 @@ export function mapTypeToString(type: number) {
       return "Amendment";
     case 18:
       return "Certification";
-    case 19:  
+    case 19:
       return "License";
-    case 20:  
+    case 20:
       return "Mortgage";
-    case 21: 
+    case 21:
       return "Certified True Copy (CTC)";
-      case 36:
-        return "Reclassification";
+    case 36:
+      return "Reclassification";
+    case 23:
+      return "Restoration";
     default:
       return "";
   }
@@ -548,7 +550,7 @@ export function mapStatusToString(status: number) {
     case 30:
       return "New Opposition";
     case 31:
-      return "Awaiting Counter Statement";
+      return "Awaiting Counter";
     case 32:
       return "Awaiting Approval";
     case 33:
@@ -557,6 +559,65 @@ export function mapStatusToString(status: number) {
       return "Awaiting Renewal Confirmation";
     case 35:
       return "Pending Renewal";
+    default:
+      return "";
+  }
+}
+
+export function fileTypeToString(file: number) {
+  switch (file) {
+    case 0:
+      return "Patent";
+    case 1:
+      return "Design";
+    case 2:
+      return "Trademark";
+    default:
+      return "";
+  }
+}
+export function mapDateToString(data: string) {
+  return Intl.DateTimeFormat("en-NG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    weekday: "short",
+    hour: "numeric",
+    minute: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(data));
+}
+
+export function mapDateToStringNoDate(data: string) {
+  return Intl.DateTimeFormat("en-NG", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date(data));
+}
+
+export function mapPatentAppTypeToString(data: number) {
+  switch (data) {
+    case 0:
+      return "Patent";
+    case 1:
+      return "Business Method";
+    case 2:
+      return "Utility Model";
+    default:
+      return "";
+  }
+}
+
+export function mapPatentTypeToString(data: number) {
+  switch (data) {
+    case 0:
+      return "Conventional";
+    case 1:
+      return "Non Conventional";
+    case 2:
+      return "PCT";
     default:
       return "";
   }
@@ -606,76 +667,6 @@ export function mapStatusToColor(status: string) {
       return "orange";
     case "New Opposition":
       return "yellow";
-    default:
-      return "";
-  }
-}
-
-export function fileTypeToString(file: number) {
-  switch (file) {
-    case 0:
-      return "Patent";
-    case 1:
-      return "Design";
-    case 2:
-      return "Trademark";
-    default:
-      return "";
-  }
-}
-export function mapDateToString(data: string) {
-  if (!data || data === "" || data === null || data === undefined) {
-    return "";
-  }
-  try {
-    const date = new Date(data);
-    if (isNaN(date.getTime())) {
-      return "";
-    }
-    return Intl.DateTimeFormat("en-NG", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      weekday: "short",
-      hour: "numeric",
-      minute: "numeric",
-      timeZone: "UTC",
-    }).format(date);
-  } catch (err) {
-    return "";
-  }
-}
-
-export function mapDateToStringNoDate(data: string) {
-  return Intl.DateTimeFormat("en-NG", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    weekday: "short",
-  }).format(new Date(data));
-}
-
-export function mapPatentAppTypeToString(data: number) {
-  switch (data) {
-    case 0:
-      return "Patent";
-    case 1:
-      return "Business Method";
-    case 2:
-      return "Utility Model";
-    default:
-      return "";
-  }
-}
-
-export function mapPatentTypeToString(data: number) {
-  switch (data) {
-    case 0:
-      return "Conventional";
-    case 1:
-      return "Non Conventional";
-    case 2:
-      return "PCT";
     default:
       return "";
   }

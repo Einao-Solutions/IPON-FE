@@ -214,6 +214,7 @@
   async function handleRenewalService(
     fileNumber: string,
     ipType: string,
+    restoration: boolean,
   ): Promise<void> {
     try {
       const file = await fetchFileDetails(fileNumber);

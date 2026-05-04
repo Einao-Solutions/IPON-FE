@@ -315,6 +315,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦11,500",
   },
+  {
+    id: "restoration",
+    name: "RESTORATION",
+    description: "Restore 'Inactive' files before renewal",
+    icon: "mdi:refresh",
+    route: "modal",
+    category: "filing",
+    price: "₦13,500",
+  },
   // FINANCIAL CATEGORY
   {
     id: "pay-certificate",
@@ -443,14 +452,14 @@ export const patentServices: IPService[] = [
 
   // RECORDALS CATEGORY
   {
-    id: "renewal-patent",
+    id: "renewal",
     name: "RENEWAL",
     description: "File Patent Recordal Applications",
     icon: "mdi:refresh",
-    route: "/home/postregistration",
+    route: "modal",
     category: "filing",
     price: "₦11,500",
-    maintenance: true,
+    maintenance: false,
   },
 
   // FINANCIAL CATEGORY
@@ -491,6 +500,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+    //maintenance: true,
   },
   {
     id: "patent-ctc",
@@ -509,6 +519,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+   // maintenance: true,
   },
   {
     id: "patent-mortgage",
@@ -518,6 +529,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+   // maintenance: true,
   },
   {
     id: "patent-merger",
@@ -527,6 +539,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
+   //maintenance: true,
   },
 ];
 
@@ -630,13 +643,13 @@ export const designServices: IPService[] = [
 
   // RECORDALS CATEGORY
   {
-    id: 'design-amendment',
-    name: 'DESIGN AMENDMENT',
-    description: 'Amend existing design applications',
-    icon: 'mdi:file-edit-outline',
-    route: 'modal',
-    category: 'filing',
-    price: ''
+    id: "design-amendment",
+    name: "DESIGN AMENDMENT",
+    description: "Amend existing design applications",
+    icon: "mdi:file-edit-outline",
+    route: "modal",
+    category: "filing",
+    price: "",
   },
   {
     id: "design-assignment",
