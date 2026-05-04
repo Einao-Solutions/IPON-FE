@@ -9,7 +9,10 @@
   import { Label } from "$lib/components/ui/label";
   import { Button } from "$lib/components/ui/button";
   import ApplicationsHistory from "./ApplicationsHistory.svelte";
-  import { getHistoryData, getLetterName as getDocumentTypeName } from "./datahelpers";
+  import {
+    getHistoryData,
+    getLetterName as getDocumentTypeName,
+  } from "./datahelpers";
   import HistorySheet from "../home/components/HistorySheet.svelte";
   import {
     fileTypeToString,
@@ -38,11 +41,15 @@
   import DocumentModule from "../home/dashboard/components/DocumentModule.svelte";
   import { CanUpdateApplication } from "./datahelpers";
   import OppositionHistory from "./OppositionHistory.svelte";
+  import { ApplicationLetters } from "$lib/helpers";
   $: fileData = $applicationData;
-  let historyComponent: HistorySheet | null = null;
-  let historyData = {};
+  let historyComponent: any = null;
+  let historyData: Record<string, any> = {};
   let showStatusHistory = false;
   let isUser: boolean = false;
+  $: hasDefaultCorrespondence =
+    ($loggedInUser as any)?.defaultCorrespondence !== undefined;
+  $: rtmNumber = (fileData as any)?.rtmNumber;
 
   let showAllDates: boolean = false;
   applicationData.subscribe((data) => {
@@ -69,12 +76,12 @@
     // isUser = $loggedInUser?.userRoles.includes(UserRoles.Agent)
   });
   let showAssignForm = false;
-  let assignForm = undefined;
+  let assignForm: any = undefined;
   let assignData = {};
   function showAssignmentButton() {
     // patent or trademark
-    if (fileData.type === 0 || fileData.type === 2) {
-      if (fileData?.currentStatus !== 2) {
+    if (fileData?.type === 0 || fileData?.type === 2) {
+      if (fileData?.fileStatus !== 2) {
         return true;
       }
       return false;
@@ -89,13 +96,13 @@
       ).default;
       let closed = () => (showAssignForm = false);
       let applicantName =
-        fileData?.applicants.length > 1
-          ? fileData.applicants[0].name + " et al."
-          : fileData.applicants[0].name;
-      let applicantEmail = fileData?.applicants[0].email;
-      let applicantCountry = fileData?.applicants[0].country;
-      let applicantNumber = fileData?.applicants[0].phone;
-      let applicantAddress = fileData?.applicants[0].address;
+        (fileData?.applicants?.length ?? 0) > 1
+          ? fileData!.applicants![0].name + " et al."
+          : (fileData?.applicants?.[0]?.name ?? "");
+      let applicantEmail = fileData?.applicants?.[0]?.email;
+      let applicantCountry = fileData?.applicants?.[0]?.country;
+      let applicantNumber = fileData?.applicants?.[0]?.phone;
+      let applicantAddress = fileData?.applicants?.[0]?.address;
       let fileTitle =
         fileData?.type == 0
           ? fileData.titleOfInvention
@@ -122,7 +129,7 @@
 
   let ownershipData = {};
   let showOwnership = false;
-  let ownershipForm = undefined;
+  let ownershipForm: any = undefined;
   async function showOwnershipForm() {
     if (!ownershipForm) {
       ownershipForm = (
@@ -133,9 +140,9 @@
     ownershipData = {
       closed: closed,
       requiredData: {
-        fileId: fileData.id,
-        oldCorrespondence: fileData.correspondence,
-        oldId: fileData.creatorAccount,
+        fileId: fileData?.id,
+        oldCorrespondence: fileData?.correspondence,
+        oldId: fileData?.creatorAccount,
       },
     };
     showOwnership = true;
@@ -144,15 +151,16 @@
 
   function getExpiryData() {
     if (fileData == null) {
-      return "pending";
+      return [];
     }
-    var allDates: Date[] = fileData.applicationHistory
-      ?.filter((x) => x.applicationType === 1 || x.applicationType === 0)
-      .map((e) => ({
-        expiryDate: e.expiryDate,
-        currentStatus: e.currentStatus,
-        licenseType: e.licenseType,
-      }));
+    var allDates =
+      fileData.applicationHistory
+        ?.filter((x) => x.applicationType === 1 || x.applicationType === 0)
+        .map((e) => ({
+          expiryDate: e.expiryDate,
+          currentStatus: e.currentStatus,
+          licenseType: (e as any).licenseType,
+        })) ?? [];
     const mappedDates = allDates.map((e) => ({
       currentStatus: e.currentStatus,
       licenseType: e.licenseType,
@@ -160,7 +168,7 @@
         e.expiryDate !== null
           ? new Date(
               new Date(e.expiryDate).getFullYear() -
-                (fileData.type == 0 ? 1 : fileData.type == 1 ? 5 : 7),
+                (fileData!.type == 0 ? 1 : fileData!.type == 1 ? 5 : 7),
               new Date(e.expiryDate).getMonth(),
               new Date(e.expiryDate).getDate(),
             ).toLocaleString("default", {
@@ -196,7 +204,7 @@
   let showCorrespondenceRequest = false;
 
   function renewApplication() {
-    if (hasValidCorrespondenceDetails(fileData?.correspondence ?? {})) {
+    if (hasValidCorrespondenceDetails(fileData?.correspondence ?? undefined)) {
       const currentStatus = fileData?.fileStatus;
       if (currentStatus === ApplicationStatuses.AwaitingPayment) {
         toast.info("cannot renew an application currently under review", {
@@ -300,7 +308,7 @@
         }
       }
       goto(
-        `/payment?type=tradecertificate&amount=${amount}&paymentId=${rrr}&fileId=${fileData.id}&title=${fileData.titleOfTradeMark}`,
+        `/payment?type=tradecertificate&amount=${amount}&paymentId=${rrr}&fileId=${fileData?.id}&title=${fileData?.titleOfTradeMark}`,
       );
     }
   }
@@ -314,7 +322,7 @@
 
   function viewMetadata() {
     metaDataInfo.set(fileData);
-    goto(`/metadata?fileId=${fileData.id}&applicationId=NONE&type=file`);
+    goto(`/metadata?fileId=${fileData?.id}&applicationId=NONE&type=file`);
   }
   let showGetDocumentsDialog = false;
   let getDocFileNumber = "";
@@ -330,20 +338,20 @@
     if (doc.name) {
       return doc.name;
     }
-    
+
     // If no name provided, try to map document type to name
     if (doc.documentType || doc.letterType || doc.type) {
       const documentTypeId = doc.documentType || doc.letterType || doc.type;
       return getDocumentTypeName(documentTypeId);
     }
-    
+
     // Final fallback
     return "Unknown Document";
   }
 
   function generateLetter(
     fileId: string,
-    letterType: string,
+    letterType: ApplicationLetters,
     applicationId: string,
   ) {
     window.open(
@@ -470,7 +478,7 @@
 <Dialog.Root bind:open={showCorrespondenceRequest}>
   <Dialog.Content>
     <Dialog.Header>Missing Information</Dialog.Header>
-    {#if $loggedInUser?.defaultCorrespondence === undefined}
+    {#if !hasDefaultCorrespondence}
       <p>
         This application has some details missing in the correspondence section,
         Please update your default correspondence in the profile section.
@@ -544,7 +552,9 @@
               <Table.Cell>{i + 1}</Table.Cell>
               <Table.Cell>{data.licenseType ?? "Fresh"}</Table.Cell>
               <Table.Cell
-                ><AppStatusTag value={data.currentStatus} /></Table.Cell
+                ><AppStatusTag
+                  value={data.currentStatus ?? undefined}
+                /></Table.Cell
               >
               <Table.Cell>{data.start} - {data.end}</Table.Cell>
             </Table.Row>
@@ -566,6 +576,7 @@
     <!-- STEP 1 -->
     {#if step === 0}
       <div class="flex flex-col gap-4">
+        <!-- svelte-ignore a11y-label-has-associated-control -->
         <label class="font-medium">New Status</label>
 
         <div class="grid grid-cols-2 gap-3">
@@ -585,6 +596,7 @@
           {/each}
         </div>
 
+        <!-- svelte-ignore a11y-label-has-associated-control -->
         <label class="font-medium">Reason</label>
         <textarea
           class="border rounded p-2 w-full h-28"
@@ -660,20 +672,28 @@
       <Card.Content class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
           <Label for="type" class="font-bold">File Type</Label>
-          <p id="name">{fileTypeToString(fileData.type)}</p>
+          <p id="name">{fileTypeToString(fileData.type ?? 0)}</p>
         </div>
-        <div class="w-fit flex-col flex space-y-2">
+        <!-- <div class="w-fit flex-col flex space-y-2">
           <Label for="type" class="font-bold">Renewal Date</Label>
           <Button on:click={() => (showAllDates = true)}>Show All Dates</Button>
-        </div>
+        </div> -->
         <div>
           <Label for="type" class="font-bold">File Status</Label>
-          <AppStatusTag value={fileData.fileStatus} />
+          <AppStatusTag value={fileData.fileStatus ?? undefined} />
         </div>
+        {#if rtmNumber}
+          <div>
+            <Label for="type" class="font-bold">RTM</Label>
+            <p>{rtmNumber}</p>
+          </div>
+        {/if}
         <div>
           <Label for="type" class="font-bold">Filing Date</Label>
           <p id="name">
-            {mapDateToString(fileData.filingDate ?? fileData.dateCreated)}
+            {mapDateToString(
+              String(fileData.filingDate ?? fileData.dateCreated ?? ""),
+            )}
           </p>
         </div>
         <Button
@@ -733,7 +753,7 @@
         <div>
           <Button
             on:click={() => {
-              getDocFileNumber = fileData?.fileId;
+              getDocFileNumber = fileData?.fileId ?? "";
               showGetDocumentsDialog = true;
             }}>Print Documents</Button
           >
@@ -748,7 +768,6 @@
         bind:getDocResult
         bind:documents
         bind:appId
-        {getLetterName}
         {generateLetter}
         {getDocuments}
         onClose={resetGetDocumentsDialog}
@@ -775,17 +794,18 @@
     </Tabs.Content>
     <Tabs.Content value="applications">
       <ApplicationsHistory
-        allApplications={fileData.applicationHistory}
+        allApplications={fileData.applicationHistory ?? []}
         {fileData}
         showMissingDetailsForm={() => (showCorrespondenceRequest = true)}
-        isAdmin={$loggedInUser?.userRoles?.includes(
-          UserRoles.Tech || UserRoles.SuperAdmin,
-        )}
       />
     </Tabs.Content>
 
     <Tabs.Content value="oppositions">
-      <OppositionHistory allOppositions={fileData.oppositions} {fileData} />
+      <OppositionHistory
+        allOppositions={fileData.oppositions ?? []}
+        {fileData}
+        showMissingDetailsForm={() => (showCorrespondenceRequest = true)}
+      />
     </Tabs.Content>
     <!-- <Tabs.Content value="assignment">
 			{#if fileData.applicationHistory.find(x=>x.applicationType===5)}
