@@ -222,9 +222,7 @@
 
         // For renewal, get file details and route directly to payment
         if (serviceId === "renewal") {
-          await handleRenewalService(searchQuery.trim(), ipType, false);
-        } else if (serviceId === "restoration") {
-          await handleRenewalService(searchQuery.trim(), ipType, true);
+          await handleRenewalService(searchQuery.trim(), ipType);
         } else if (
           [
             "patent-amendment",
@@ -289,7 +287,6 @@
   async function handleRenewalService(
     fileNumber: string,
     ipType: string,
-    restoration: boolean,
   ): Promise<void> {
     try {
       // Get file details - same API call as postregistration search
@@ -314,82 +311,75 @@
       const isTrademark = fileResult.fileTypes === 2;
       const isDesign = fileResult.fileTypes === 1;
 
-      // Handle restoration separately - skip renewal logic
-      if (restoration) {
-        const renewalCost = await fetch(
-          `${baseURL}/api/files/RestorationRequest?fileId=${fileNumber}&userId=${$loggedInUser?.id}`,
-        );
-        const renewalData = await renewalCost.json();
-        if (!renewalCost.ok) {
-          error = "This file is not eligible for restoration.";
-          return;
-        }
-        sessionStorage.setItem(
-          "formData",
-          JSON.stringify({
-            ...renewalData,
-            fileId: fileNumber,
-            applicantName:
-              fileResult.fileApplicant ??
-              `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
-          }),
-        );
-        await goto(`/payment?type=restoration`);
-        return;
-      }
-
       // Follow exact same renewal logic as postregistration/search
       if (isPatent) {
-        const renewalCost = await fetch(
-          `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Patent}&userId=${$loggedInUser?.id}`,
-        );
-        const renewalData = await renewalCost.json();
-        sessionStorage.setItem(
-          "renewalData",
-          JSON.stringify({
-            ...renewalData,
-            fileId: fileNumber,
-            applicantName:
-              fileResult.fileApplicant ??
-              `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
-          }),
-        );
-        await goto(`/payment?type=patentRenewal`);
+        const currentStatus = fileResult?.fileStatus;
+        // Only allow Active (0) or Inactive (1) status for patents
+        if (currentStatus !== 0 && currentStatus !== 1) {
+          error = "Patent file must be Active or Inactive.";
+          return;
+        }
+
+        // Check for PCT or Conventional patent type
+        const patentTypeStr = (fileResult.patentType || "").toLowerCase();
+        if (["pct", "conventional"].includes(patentTypeStr)) {
+          if (
+            !Array.isArray(fileResult.firstPriorityInfo) ||
+            fileResult.firstPriorityInfo.length === 0
+          ) {
+            error =
+              "First Priority Information does not exist for this file. Please use the Update Patent module on the dashboard to update your file before filing for a renewal.";
+            return;
+          }
+        }
+
+        // Store patent data for payment
+        sessionStorage.removeItem("applicantDetails");
+        const patentData = {
+          fileId: fileResult.fileId,
+          type: 0, // patent
+          titleOfInvention: fileResult.titleOfInvention,
+          fileApplicant: fileResult.fileApplicant,
+          applicantEmail: fileResult.applicantEmail,
+          applicantPhone: fileResult.applicantPhone,
+          patentType: fileResult.patentType,
+          patentApplicationType: fileResult.patentApplicationType,
+          filingDate: fileResult.filingDate,
+          correspondence: fileResult.correspondence,
+        };
+        sessionStorage.setItem("applicationData", JSON.stringify(patentData));
       } else if (isTrademark) {
         // Trademark renewal logic
         const renewalCost = await fetch(
           `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Trademark}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
-        sessionStorage.setItem(
-          "renewalData",
-          JSON.stringify({
-            ...renewalData,
-            fileId: fileNumber,
-            applicantName:
-              fileResult.fileApplicant ??
-              `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
-          }),
+        sessionStorage.setItem("renewalData", JSON.stringify({
+          ...renewalData,
+          fileId: fileNumber,
+          applicantName: fileResult.fileApplicant ?? `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
+        }));
+        await goto(
+          `/payment?type=trademarkRenewal`,
         );
-        await goto(`/payment?type=trademarkRenewal`);
       } else if (isDesign) {
         // Design renewal logic
         const renewalCost = await fetch(
           `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Design}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
-        sessionStorage.setItem(
-          "renewalData",
-          JSON.stringify({
-            ...renewalData,
-            fileId: fileNumber,
-            applicantName:
-              fileResult.fileApplicant ??
-              `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
-          }),
+        sessionStorage.setItem("renewalData", JSON.stringify({
+          ...renewalData,
+          fileId: fileNumber,
+          applicantName: fileResult.fileApplicant ?? `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
+        }));
+        await goto(
+          `/payment?type=designRenewal`,
         );
-        await goto(`/payment?type=designRenewal`);
       }
+
+      // Route to payment page
+      // await goto(`/payment?type=renewal&fileId=${fileResult.fileId}`);
     } catch (err) {
       error = "Error processing renewal request.";
     }
@@ -483,11 +473,6 @@
           <Icon icon="mdi:information-outline" class="w-4 h-4 inline mr-1" />
           {#if ["patent-amendment", "patent-assignment", "patent-ctc", "patent-license", "patent-mortgage", "patent-merger"].includes(serviceId)}
             This service is only available for Active patent files.
-          {:else if ["renewal"].includes(serviceId)}
-            Renewal is only available for registered {ipType} files with status 'Active'
-            or 'Inactive', 90 days before the due date.
-          {:else if ["restoration"].includes(serviceId)}
-            Restoration is only available for Inactive {ipType} files
           {:else}
             This service is only available for accepted and registered {ipType} files
             with status 'Publication' 'Awaiting Certification' and 'Active'

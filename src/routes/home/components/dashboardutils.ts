@@ -28,7 +28,7 @@ export enum FileStatsData {
 export function DataMapper(
   datatype: FileStatsData,
   data: FileStatsType[],
-  isStaff: boolean,
+  isStaff: boolean
 ) {
   const listNotShow = [0, 1, 2, 11, 12];
   if (!isStaff) {
@@ -57,7 +57,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 0 &&
             x.type === 0 &&
-            !listNotShow.includes(x.status as number),
+            !listNotShow.includes(x.status as number)
         )?.count ?? 0
       );
     case FileStatsData.newDesignTotal: {
@@ -67,7 +67,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 1 &&
             x.type === 0 &&
-            !listNotShow.includes(x.status as number),
+            !listNotShow.includes(x.status as number)
         )
         .map((x) => x.count)
         ?.reduce((x, y) => x + y, 0);
@@ -79,7 +79,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 0 &&
             x.type === 1 &&
-            !listNotShow.includes(x.status as number),
+            !listNotShow.includes(x.status as number)
         )?.count ?? 0
       );
     case FileStatsData.newDesignRenew:
@@ -88,7 +88,7 @@ export function DataMapper(
           (x) =>
             x.fileType === 1 &&
             x.type === 1 &&
-            !listNotShow.includes(x.status as number),
+            !listNotShow.includes(x.status as number)
         )?.count ?? 0
       );
     case FileStatsData.newDesignRenewPending: {
@@ -96,7 +96,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 1 &&
           x.type === 1 &&
-          !listNotShow.includes(x.status as number),
+          !listNotShow.includes(x.status as number)
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -127,7 +127,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        },
+        }
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -140,7 +140,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 0 &&
           x.type === 1 &&
-          !listNotShow.includes(x.status as number),
+          !listNotShow.includes(x.status as number)
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -171,7 +171,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        },
+        }
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -184,7 +184,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 1 &&
           x.type === 0 &&
-          !listNotShow.includes(x.status as number),
+          !listNotShow.includes(x.status as number)
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -215,7 +215,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        },
+        }
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -228,7 +228,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 0 &&
           x.type === 0 &&
-          !listNotShow.includes(x.status as number),
+          !listNotShow.includes(x.status as number)
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -259,7 +259,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        },
+        }
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -272,7 +272,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 1 &&
           x.type === 2 &&
-          !listNotShow.includes(x.status as number),
+          !listNotShow.includes(x.status as number)
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -303,7 +303,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        },
+        }
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -316,7 +316,7 @@ export function DataMapper(
         (x) =>
           x.fileType === 0 &&
           x.type === 2 &&
-          !listNotShow.includes(x.status as number),
+          !listNotShow.includes(x.status as number)
       );
       const _filteredValues = _filtered.reduce(
         //new app: awaiting search: 20
@@ -347,7 +347,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        },
+        }
       );
       const finalRes = [];
       for (const valuesKey in _filteredValues) {
@@ -361,7 +361,7 @@ export function DataMapper(
           (x) =>
             x.fileType == 0 &&
             x.type === 2 &&
-            !listNotShow.includes(x.status as number),
+            !listNotShow.includes(x.status as number)
         )?.count ?? 0
       );
     case FileStatsData.newDesignUpdate:
@@ -370,7 +370,7 @@ export function DataMapper(
           (x) =>
             x.fileType == 1 &&
             x.type === 2 &&
-            !listNotShow.includes(x.status as number),
+            !listNotShow.includes(x.status as number)
         )?.count ?? 0
       );
 
@@ -380,7 +380,7 @@ export function DataMapper(
           (x) =>
             [0, 1, 11, 13, 14].find((f) => f === x.status) === undefined &&
             typeof x.type === "number" &&
-            x.fileType == undefined,
+            x.fileType == undefined
         )
         .map((x) => x.count)
         .reduce((a, b) => a + b, 0);
@@ -389,7 +389,7 @@ export function DataMapper(
         (x) =>
           [0, 1, 11, 13, 14].find((f) => f === x.status) === undefined &&
           typeof x.type === "number" &&
-          x.fileType == undefined,
+          x.fileType == undefined
       );
       const values = filtered.reduce(
         (acc, curr) => {
@@ -419,7 +419,7 @@ export function DataMapper(
             status: string;
             statusType: number;
           }[];
-        },
+        }
       );
       let final = [];
       for (const valuesKey in values) {
@@ -470,16 +470,14 @@ export function mapTypeToString(type: number) {
       return "Amendment";
     case 18:
       return "Certification";
-    case 19:
+    case 19:  
       return "License";
-    case 20:
+    case 20:  
       return "Mortgage";
-    case 21:
+    case 21: 
       return "Certified True Copy (CTC)";
-    case 36:
-      return "Reclassification";
-    case 23:
-      return "Restoration";
+      case 36:
+        return "Reclassification";
     default:
       return "";
   }
@@ -550,13 +548,60 @@ export function mapStatusToString(status: number) {
     case 30:
       return "New Opposition";
     case 31:
-      return "Awaiting Counter";
+      return "Awaiting Counter Statement";
     case 32:
       return "Awaiting Approval";
     case 33:
-      return "Awaiting Renewal Confirmation";
-    case 34:
-      return "Pending Renewal";
+      return "Statutory Declaration";
+    default:
+      return "";
+  }
+}
+
+export function mapStatusToColor(status: string) {
+  switch (status) {
+    case "Active":
+      return "green";
+    case "Inactive":
+      return "red";
+    case "Awaiting Payment":
+      return "purple";
+    case "Awaiting Certificate Payment":
+      return "purple";
+    case "Awaiting Search":
+      return "yellow";
+    case "Awaiting Examiner":
+      return "yellow";
+    case "Rejected By Examiner":
+      return "red";
+    case "RejectedBySearch":
+      return "red";
+    case "Re_conduct":
+      return "red";
+    case "Formality Fail":
+      return "red";
+    case "Kiv Search":
+      return "gray";
+    case "Kiv Examiner":
+      return "gray";
+    case "Approved":
+      return "green";
+    case "Rejected":
+      return "red";
+    case "Awaiting Recordal Process":
+      return "blue";
+    case "Appeal Requested":
+      return "yellow";
+    case "None":
+      return "";
+    case "Auto-Approved":
+      return "green";
+    case "Awaiting Status Update":
+      return "yellow";
+    case "Request Withdrawal":
+      return "orange";
+    case "New Opposition":
+      return "yellow";
     default:
       return "";
   }
@@ -575,15 +620,26 @@ export function fileTypeToString(file: number) {
   }
 }
 export function mapDateToString(data: string) {
-  return Intl.DateTimeFormat("en-NG", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    weekday: "short",
-    hour: "numeric",
-    minute: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(data));
+  if (!data || data === "" || data === null || data === undefined) {
+    return "";
+  }
+  try {
+    const date = new Date(data);
+    if (isNaN(date.getTime())) {
+      return "";
+    }
+    return Intl.DateTimeFormat("en-NG", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      weekday: "short",
+      hour: "numeric",
+      minute: "numeric",
+      timeZone: "UTC",
+    }).format(date);
+  } catch (err) {
+    return "";
+  }
 }
 
 export function mapDateToStringNoDate(data: string) {

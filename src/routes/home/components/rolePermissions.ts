@@ -717,21 +717,6 @@ export const ROLE_DISPLAY_CONFIG: Record<UserRoles, RoleDisplayInfo> = {
 		title: 'Staff Officer',
 		department: 'General',
 		fileTypes: [FileTypes.Patent, FileTypes.Design, FileTypes.Trademark]
-	},
-	[UserRoles.TrademarkStaff]: {
-		title: 'Trademark Staff',
-		department: 'Trademark Department',
-		fileTypes: [FileTypes.Trademark]
-	},
-	[UserRoles.PatentStaff]: {
-		title: 'Patent Staff',
-		department: 'Patent Department',
-		fileTypes: [FileTypes.Patent]
-	},
-	[UserRoles.DesignStaff]: {
-		title: 'Design Staff',
-		department: 'Design Department',
-		fileTypes: [FileTypes.Design]
 	}
 };
 
@@ -762,37 +747,14 @@ export function getAllowedStatuses(role: UserRoles, appType: FormApplicationType
 
 export function getUserPrimaryFileType(roles: UserRoles[]): FileTypes | null {
 	// Determine primary file type based on roles
-	if (roles.some(r => [
-		UserRoles.TrademarkSearch, UserRoles.TrademarkExaminer, UserRoles.TrademarkPublication,
-		UserRoles.TrademarkOpposition, UserRoles.TrademarkAcceptance, UserRoles.TrademarkCertification,
-		UserRoles.TrademarkStaff  // ✅ added
-	].includes(r))) {
+	if (roles.some(r => [UserRoles.TrademarkSearch, UserRoles.TrademarkExaminer, UserRoles.TrademarkPublication, UserRoles.TrademarkOpposition, UserRoles.TrademarkAcceptance, UserRoles.TrademarkCertification].includes(r))) {
 		return FileTypes.Trademark;
 	}
-	if (roles.some(r => [
-		UserRoles.PatentSearch, UserRoles.PatentExaminer, UserRoles.PatentCertification,
-		UserRoles.PatentStaff  // ✅ added
-	].includes(r))) {
+	if (roles.some(r => [UserRoles.PatentSearch, UserRoles.PatentExaminer, UserRoles.PatentCertification].includes(r))) {
 		return FileTypes.Patent;
 	}
-	if (roles.some(r => [
-		UserRoles.DesignSearch, UserRoles.DesignExaminer, UserRoles.DesignCertification,
-		UserRoles.DesignStaff  // ✅ added
-	].includes(r))) {
+	if (roles.some(r => [UserRoles.DesignSearch, UserRoles.DesignExaminer, UserRoles.DesignCertification].includes(r))) {
 		return FileTypes.Design;
 	}
 	return null;
-}
-
-// Staff roles with specific display names
-export function getStaffRoleDisplayInfo(role: UserRoles): RoleDisplayInfo {
-	switch (role) {
-		case UserRoles.TrademarkStaff:
-			return { title: "Trademark Staff", department: "Trademark Department", fileTypes: [FileTypes.Trademark] };
-		case UserRoles.PatentStaff:
-			return { title: "Patent Staff", department: "Patent Department", fileTypes: [FileTypes.Patent] };
-		case UserRoles.DesignStaff:
-			return { title: "Design Staff", department: "Design Department", fileTypes: [FileTypes.Design] };
-	}
-	return ROLE_DISPLAY_CONFIG[role] || ROLE_DISPLAY_CONFIG[UserRoles.User];
 }

@@ -44,7 +44,7 @@
 	let showRequiredErrors = writable<string[]>([]);
 	let showSizeError = writable<boolean>(false);
 	let isLoading = true;
-	let isUploaded: Record<number, boolean> = {};
+	let isUploaded = {};
 	onMount(() => {
 		isLoading = true;
 		let data = $formsData?.find((x) => x.name === 'attachments');
@@ -78,22 +78,21 @@
 			const clone = JSON.parse(JSON.stringify($applicationData?.attachments));
 			const mapped = data ? (data.data as AttachmentType[]) : (clone as AttachmentType[]);
 			if (data) {
-				attachments = [...(data.data as AttachmentType[])];
+				attachments = [...data.data];
 			for (let i =0;i<attachments.length;i++) {
-				if (attachments[i].type===0){powLink=attachments[i].data[0].url }
-				if (attachments[i].type===1){repLink=attachments[i].data[0].url }
-				if (attachments[i].type===2){other1Link=attachments[i].data[0].url }
-				if (attachments[i].type===3){other2Link=attachments[i].data[0].url }
+				if (attachments[i].type===0){powLink=attachments[i].data[0] }
+				if (attachments[i].type===1){repLink=attachments[i].data[0] }
+				if (attachments[i].type===2){other1Link=attachments[i].data[0] }
+				if (attachments[i].type===3){other2Link=attachments[i].data[0] }
 
 						isUploaded[attachments[i].type]=true;
 			}
 			} else {
 				let datadd: AttachmentType[] = [];
-				const cloneData = clone as { name: string; url: string[] }[];
-				powLink = cloneData.find((x) => x.name === 'form2')?.url[0] ?? undefined;
-				repLink = cloneData.find((x) => x.name === 'representation')?.url[0] ?? undefined;
-				other1Link = cloneData.find((x) => x.name === 'other1')?.url[0] ?? undefined;
-				other2Link = cloneData.find((x) => x.name === 'other2')?.url[0] ?? undefined;
+				powLink = mapped.find((x) => x.name === 'form2')?.url[0] ?? undefined;
+				repLink = mapped.find((x) => x.name === 'representation')?.url[0] ?? undefined;
+				other1Link = mapped.find((x) => x.name === 'other1')?.url[0] ?? undefined;
+				other2Link = mapped.find((x) => x.name === 'other2')?.url[0] ?? undefined;
 				if (powLink) {
 					isUploaded[0] = true;
 					attachments.push({
@@ -205,8 +204,8 @@
 			listofErrors.push('No attachments added');
 		} else {
 			if (!attc.find((x) => x.type === 1) &&
-				(($formsData?.find((x)=>x.name==="basic")?.data as any)?.logo===0 ||
-					($formsData?.find((x)=>x.name==="basic")?.data as any)?.logo===2)) {
+				($formsData?.find((x)=>x.name==="basic")?.data?.logo===0 ||
+					$formsData?.find((x)=>x.name==="basic")?.data?.logo===2)) {
 				listofErrors.push('trademark representation is required');
 				hasErrors = true;
 			}
@@ -253,7 +252,7 @@
 				return;
 			}
 			let createdUrl = URL.createObjectURL(file);
-			const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(Number(x)));
+			const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(x));
 			if (attachments.find((x) => x.type === type)) {
 				attachments[attachments.findIndex((x) => x.type === type)].data.push({
 					url: createdUrl,
@@ -293,13 +292,13 @@
 		let index = $attachmentLoadingStatus.findIndex((x) => x.type === type);
 		if (index !== -1) {
 			return $attachmentLoadingStatus[index].status;
-		} else if ((attachments.filter((x) => x.type === Number(type))[0] as any)?.fileName != null) {
+		} else if (attachments.filter((x) => x.name === type)[0].fileName != null) {
 			return false;
 		} else return null;
 	};
 
 	function removeAttachment(type: number) {
-		const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(Number(x)));
+		const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(x));
 		//creation mode
 		appattachmentsData.update((data) => {
 			const ind = data.findIndex((x) => x.name === attachmentName[type].toString());
@@ -329,11 +328,10 @@
 	let content: string | null = null;
 	function viewAttachment(type: number) {
 		if ($applicationMode == 1) {
-			content = attachments.find((x) => x.type === type)?.data[0]?.url ?? null;
+			content = attachments.find((x) => x.type.toString() == type).data[0].url;
 		} else {
-			const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(Number(x)));
+			const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(x));
 			const inde = $appattachmentsData.find((x) => x.name === attachmentName[type].toString());
-			if (!inde) return null;
 			content = URL.createObjectURL(inde.data[0]);
 			const link = document.createElement('a');
 			link.href = content;
@@ -349,7 +347,7 @@
 				parsed.push({ name: mapTradeAttInToString(type), url: [data[0].url] });
 			});
 			const sorted=parsed.sort((a,b)=>a.name>b.name?1:-1)
-			const originalSorted=$applicationData?.attachments?.sort((a,b)=>a.name>b.name?1:-1);
+			const originalSorted=$applicationData?.attachments.sort((a,b)=>a.name>b.name?1:-1);
 			console.log(sorted, originalSorted)
 			if (objsHasDiff(sorted, originalSorted)) {
 				showResetButton = true;
@@ -380,11 +378,11 @@
 
 	function resetAttachments() {
 		const clone = JSON.parse(JSON.stringify($applicationData?.attachments));
-		const mapped = clone as { name: string; url: string[] }[];
+		const mapped = clone as AttachmentType[];
 		let datadd: AttachmentType[] = [];
 		mapped.forEach((x) => {
 			let urls: string[] = x.url;
-			let attchdata: { fileName: string; url: string }[] = [];
+			let attchdata = [];
 			urls.forEach((y) => {
 				attchdata.push({ fileName: y, url: y });
 			});
@@ -393,8 +391,8 @@
 		attachments = [...datadd];
 		attachments.forEach((x) => (isUploaded[x.type] = true));
 	}
-	function getAttachmentName(current: number | string) {
-		return attachments.find((x) => x.type === current)?.data[0]?.fileName ?? 'uploaded';
+	function getAttachmentName(current: PatentAttachments | string) {
+		return attachments.find((x) => x.type === current).data[0]?.fileName ?? 'uploaded';
 	}
 </script>
 
@@ -415,9 +413,9 @@
 		<iframe src={content} width="95%" height="100%" title="-"></iframe>
 	</Dialog.Content>
 </Dialog.Root>
-<div class="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-md space-y-6">
+<div class="sm:p-4 sm:m-3 sm:space-y-4">
 	<div class="flex gap-6 items-center">
-		<h2 class="text-2xl font-semibold text-gray-800">Attachments</h2>
+		<p>All Attachments</p>
 		<Button
 			variant="ghost"
 			class="text-blue-500 {showResetButton ? 'inline' : 'hidden'}"
@@ -426,98 +424,94 @@
 		</Button>
 	</div>
 	{#if showError}
-		<div class="text-red-500 bg-red-100 space-y-2 border border-red-200 rounded-lg p-3">
+		<div class="text-red-500 bg-red-200 space-y-2 border rounded-md p-2">
 			{#each listofErrors as rror}
-				<p class="text-sm">{rror}</p>
+				<p>{rror}</p>
 			{/each}
 		</div>
 	{/if}
 	<div>
-		<label for="poa" class="block font-medium mb-2">Power of Attorney <span class="text-red-500">*</span></label>
-		<div class="flex space-x-2 items-center">
+		<Label for="poa">Power of Attorney</Label>
+		<div class="flex space-x-2">
 			<Input
 				id="poa"
 				accept=".pdf"
 				multiple={false}
 				type="file"
-				class="border border-gray-300 rounded-lg bg-white"
 				on:change={(event) => fileChanged(0, event)}
 			/>
 			{#if powLink}
-				<a target="_blank" href={viewAttachment(0)} class="rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 transition">
+				<a target="_blank" href={viewAttachment(0)} class="rounded-md border bg-blue-100 p-2">
 					<Icon icon="ep:view" width="1.2rem" height="1.2rem" />
 				</a>
-				<button on:click={() => removeAttachment(0)} class="rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-red-200 p-2 text-sm font-medium transition shadow-sm border border-red-200">
+				<Button on:click={() => removeAttachment(0)} size="icon" variant="destructive">
 					<Icon icon="pajamas:remove" width="1.2rem" height="1.2rem" />
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>
 	<div>
-		<label for="rep" class="block font-medium mb-1">Proposed Trademark Representation</label>
-		<p class="text-xs text-gray-500 mb-2">
+		<Label for="rep">Proposed trademark representation</Label>
+		<p class="text-xs text-gray-500 mb-2 font-medium">
 			Only image files (jpg, jpeg, png) with a minimum size of 300×300px are accepted for trademark representation. 
 		</p>
-		<div class="flex space-x-2 items-center">
+		<div class="flex space-x-2">
 			<Input
 				id="rep"
 				accept=".png, .jpeg, .jpg"
 				multiple={false}
 				type="file"
-				class="border border-gray-300 rounded-lg bg-white"
 				on:change={(event) => fileChanged(1, event)}
 			/>
 			{#if repLink}
-				<a target="_blank" href={viewAttachment(1)} class="rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 transition">
+				<a target="_blank" href={viewAttachment(1)} class="rounded-md border bg-blue-100 p-2">
 					<Icon icon="ep:view" width="1.2rem" height="1.2rem" />
 				</a>
-				<button on:click={() => removeAttachment(1)} class="rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-red-200 p-2 text-sm font-medium transition shadow-sm border border-red-200">
+				<Button on:click={() => removeAttachment(1)} size="icon" variant="destructive">
 					<Icon icon="pajamas:remove" width="1.2rem" height="1.2rem" />
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>
 
 	<div>
-		<label for="support1" class="block font-medium mb-2">Supporting Document 1</label>
-		<div class="flex space-x-2 items-center">
+		<Label for="rep">supporting document 1</Label>
+		<div class="flex space-x-2">
 			<Input
-				id="support1"
+				id="rep"
 				accept=".png, .jpeg, .jpg, .pdf"
 				multiple={false}
 				type="file"
-				class="border border-gray-300 rounded-lg bg-white"
 				on:change={(event) => fileChanged(2, event)}
 			/>
 			{#if other1Link}
-				<a target="_blank" href={viewAttachment(2)} class="rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 transition">
+				<a target="_blank" href={viewAttachment(2)} class="rounded-md border bg-blue-100 p-2">
 					<Icon icon="ep:view" width="1.2rem" height="1.2rem" />
 				</a>
-				<button on:click={() => removeAttachment(2)} class="rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-red-200 p-2 text-sm font-medium transition shadow-sm border border-red-200">
+				<Button on:click={() => removeAttachment(2)} size="icon" variant="destructive">
 					<Icon icon="pajamas:remove" width="1.2rem" height="1.2rem" />
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>
 
 	<div>
-		<label for="support2" class="block font-medium mb-2">Supporting Document 2</label>
-		<div class="flex space-x-2 items-center">
+		<Label for="rep">supporting document 2</Label>
+		<div class="flex space-x-2">
 			<Input
-				id="support2"
+				id="rep"
 				accept=".png, .jpeg, .jpg, .pdf"
 				multiple={false}
 				type="file"
-				class="border border-gray-300 rounded-lg bg-white"
 				on:change={(event) => fileChanged(3, event)}
 			/>
 			{#if other2Link}
-				<a target="_blank" href={viewAttachment(3)} class="rounded-lg border border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100 p-2 transition">
+				<a target="_blank" href={viewAttachment(3)} class="rounded-md border bg-blue-100 p-2">
 					<Icon icon="ep:view" width="1.2rem" height="1.2rem" />
 				</a>
-				<button on:click={() => removeAttachment(3)} class="rounded-lg bg-red-100 text-red-600 hover:bg-red-600 hover:text-red-200 p-2 text-sm font-medium transition shadow-sm border border-red-200">
+				<Button on:click={() => removeAttachment(3)} size="icon" variant="destructive">
 					<Icon icon="pajamas:remove" width="1.2rem" height="1.2rem" />
-				</button>
+				</Button>
 			{/if}
 		</div>
 	</div>

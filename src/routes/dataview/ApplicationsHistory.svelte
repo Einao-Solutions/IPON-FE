@@ -214,6 +214,11 @@
   // let submittingAppeal = false;
   // let isApproving = false;
 
+  // Opposition Detail Sheet State
+  let selectedOpposition: any = null;
+  let showOppositionDetail: boolean = false;
+  let oppositionDetailLoading: boolean = false;
+
   // ======================
   // Helper Functions
   // ======================
@@ -246,29 +251,18 @@
   // Recordal Dialog Helpers
   // ======================
   const hiddenKeys = new Set([
-    "id",
-    "isapproved",
-    "documenturl",
-    "authorizationletterurl",
-    "assignmentdeedurl",
-    "appealdocs",
-    "oldattachmenturl",
-    "newattachmenturl",
-    "fileid",
+    "id", "isapproved", "documenturl", "authorizationletterurl",
+    "assignmentdeedurl", "appealdocs", "oldattachmenturl",
+    "newattachmenturl", "fileid",
   ]);
 
   function isHiddenKey(key: string): boolean {
-    return (
-      hiddenKeys.has(key.toLowerCase()) || key.toLowerCase().endsWith("url")
-    );
+    return hiddenKeys.has(key.toLowerCase()) || key.toLowerCase().endsWith("url");
   }
 
   function formatFieldName(key: string, stripPrefix?: string): string {
     let cleaned = key;
-    if (
-      stripPrefix &&
-      cleaned.toLowerCase().startsWith(stripPrefix.toLowerCase())
-    ) {
+    if (stripPrefix && cleaned.toLowerCase().startsWith(stripPrefix.toLowerCase())) {
       cleaned = cleaned.slice(stripPrefix.length);
     }
     return cleaned
@@ -277,13 +271,9 @@
       .trim();
   }
 
-  function getRecordalEntries(
-    data: any,
-    filter: (key: string) => boolean,
-  ): [string, any][] {
+  function getRecordalEntries(data: any, filter: (key: string) => boolean): [string, any][] {
     return Object.entries(data).filter(
-      ([key, value]) =>
-        value != null && value !== "" && !isHiddenKey(key) && filter(key),
+      ([key, value]) => value != null && value !== "" && !isHiddenKey(key) && filter(key),
     );
   }
 
@@ -646,6 +636,28 @@
       showToast("error", "An error occurred while fetching appeal details");
     }
   }
+
+  async function viewOppositionDetail(fileNumber: string) {
+    oppositionDetailLoading = true;
+    try {
+      const res = await fetch(`${baseURL}/api/opposition/getOppositionDetail?fileNumber=${fileNumber}`);
+      if (res.ok) {
+        const json = await res.json();
+        console.log('Opposition detail response:', json);
+        selectedOpposition = json.opposition;
+        console.log('Selected opposition:', selectedOpposition);
+        showOppositionDetail = true;
+      } else {
+        showToast("error", "Failed to fetch opposition details");
+      }
+    } catch (error) {
+      console.error("Fetch opposition detail error:", error);
+      showToast("error", "An error occurred while fetching opposition details");
+    } finally {
+      oppositionDetailLoading = false;
+    }
+  }
+
   // New variables for appeal treatment
   let appealReason = "";
   let appealReasonError = "";
@@ -983,7 +995,7 @@
             FileId: publicationFileId,
             Approve: approve,
             Comment: publicationComment,
-            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
+            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId
           }),
         },
       );
@@ -1036,7 +1048,7 @@
             FileId: withdrawalFileId,
             Approve: approve,
             Comment: withdrawalComment,
-            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
+            UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId
           }),
         },
       );
@@ -1081,11 +1093,7 @@
   }
 
   // Open design license dialog
-  function openDesignLicenseDialog(
-    fileId: string,
-    applicationId: string,
-    status: number,
-  ) {
+  function openDesignLicenseDialog(fileId: string, applicationId: string, status: number) {
     designLicenseFileId = fileId;
     designLicenseApplicationId = applicationId;
     designLicenseStatus = status;
@@ -1350,25 +1358,14 @@
     <!-- Header -->
     <div class="border-b border-slate-200 px-6 py-4">
       <div class="flex items-start gap-3">
-        <div
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900"
-        >
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900">
           <Icon
-            icon={selectedApplication?.applicationType ===
-            FormApplicationTypes.Assignment
-              ? "mdi:swap-horizontal"
-              : selectedApplication?.applicationType ===
-                  FormApplicationTypes.Merger
-                ? "mdi:merge"
-                : selectedApplication?.applicationType ===
-                    FormApplicationTypes.ClericalUpdate
-                  ? "mdi:pencil-outline"
-                  : selectedApplication?.applicationType ===
-                      FormApplicationTypes.Amendment
-                    ? "mdi:file-edit-outline"
-                    : "mdi:file-document-outline"}
-            width="1.3em"
-            class="text-white"
+            icon={selectedApplication?.applicationType === FormApplicationTypes.Assignment ? "mdi:swap-horizontal" :
+                  selectedApplication?.applicationType === FormApplicationTypes.Merger ? "mdi:merge" :
+                  selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate ? "mdi:pencil-outline" :
+                  selectedApplication?.applicationType === FormApplicationTypes.Amendment ? "mdi:file-edit-outline" :
+                  "mdi:file-document-outline"}
+            width="1.3em" class="text-white"
           />
         </div>
         <div class="flex-1 min-w-0">
@@ -1390,10 +1387,7 @@
                           : "Application Details"}
           </Dialog.Title>
           <Dialog.Description class="text-xs text-slate-600 mt-1">
-            {mapTypeToString(selectedApplication?.applicationType || 0)} • File ID:
-            <span class="font-medium text-slate-900"
-              >{fileData?.fileId ?? "—"}</span
-            >
+            {mapTypeToString(selectedApplication?.applicationType || 0)} • File ID: <span class="font-medium text-slate-900">{fileData?.fileId ?? "—"}</span>
           </Dialog.Description>
         </div>
       </div>
@@ -1403,46 +1397,29 @@
     <div class="flex-1 overflow-y-auto px-6 py-4">
       {#if recordalLoading}
         <div class="flex flex-col items-center justify-center h-40 gap-2">
-          <Icon
-            icon="line-md:loading-loop"
-            width="2rem"
-            height="2rem"
-            class="animate-spin text-slate-300"
-          />
+          <Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="animate-spin text-slate-300" />
           <p class="text-xs text-slate-500">Loading application data</p>
         </div>
       {:else if recordalData}
         <div class="space-y-0">
+
           {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
             <!-- Assignment: Assignee -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Assignee Details</th
-                    >
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Assignee Details</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => !k
-                        .toLowerCase()
-                        .startsWith("assignor")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => !k.toLowerCase().startsWith("assignor")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
-                      >
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1454,30 +1431,17 @@
               <table class="w-full text-sm mt-4">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Assignor Details</th
-                    >
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Assignor Details</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => k
-                      .toLowerCase()
-                      .startsWith("assignor")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => k.toLowerCase().startsWith("assignor")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key, "assignor")}</td
-                      >
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key, "assignor")}</td>
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1485,36 +1449,24 @@
                 </tbody>
               </table>
             </section>
+
           {:else if selectedApplication?.applicationType === FormApplicationTypes.Merger}
             <!-- Merger: New -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >New Information</th
-                    >
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">New Information</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => !k
-                        .toLowerCase()
-                        .startsWith("old")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => !k.toLowerCase().startsWith("old")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
-                      >
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1527,30 +1479,17 @@
               <table class="w-full text-sm mt-4">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Existing Information</th
-                    >
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Existing Information</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => k
-                      .toLowerCase()
-                      .startsWith("old")) as [key, value]}
+                  {#each getRecordalEntries(recordalData, (k) => k.toLowerCase().startsWith("old")) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key, "old")}</td
-                      >
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key, "old")}</td>
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1558,34 +1497,24 @@
                 </tbody>
               </table>
             </section>
+
           {:else if [7, 9, 36, 10].includes(selectedApplication?.applicationType ?? -1)}
             <!-- Change of Name / Address / Registered User / Reclassification -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Details</th
-                    >
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Details</th>
                   </tr>
                 </thead>
                 <tbody>
                   {#each getRecordalEntries(recordalData, () => true) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
-                      >
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
                       <td class="px-3 py-2 text-slate-800">
                         {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
+                          <div class="space-y-0.5">{#each value as item}<div>{item}</div>{/each}</div>
                         {:else}{value}{/if}
                       </td>
                     </tr>
@@ -1593,45 +1522,26 @@
                 </tbody>
               </table>
             </section>
+
           {:else if selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment}
             <!-- Clerical Update / Amendment -->
             <section>
               <table class="w-full text-sm">
                 <thead>
                   <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Value</th
-                    >
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Field</th>
+                    <th class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs">Value</th>
                   </tr>
                 </thead>
                 <tbody>
                   {#each Object.entries(recordalData).filter(([key, value]) => value != null && !["id", "isApproved", "documentUrl"].includes(key)) as [key, value]}
                     <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
-                      >
+                      <td class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap">{formatFieldName(key)}</td>
                       <td class="px-3 py-2 text-slate-800">
                         {#if typeof value === "string" && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
-                          <img
-                            src={value}
-                            alt={key}
-                            class="max-w-xs h-auto rounded"
-                            style="max-height: 150px; object-fit: contain;"
-                          />
+                          <img src={value} alt={key} class="max-w-xs h-auto rounded" style="max-height: 150px; object-fit: contain;" />
                         {:else if key.endsWith("Url") && typeof value === "string" && value}
-                          <Button
-                            on:click={() =>
-                              window.open(String(value), "_blank")}
-                            variant="outline"
-                            size="sm"
-                            class="flex items-center gap-1 text-xs"
-                          >
+                          <Button on:click={() => window.open(String(value), "_blank")} variant="outline" size="sm" class="flex items-center gap-1 text-xs">
                             <Icon icon="mdi:open-in-new" width="0.9em" />
                             Open
                           </Button>
@@ -1649,18 +1559,13 @@
           <!-- Shared: Attachments -->
           {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl || recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
             <section class="mt-3">
-              <h4 class="text-xs font-semibold text-slate-900 mb-2">
-                Attachments
-              </h4>
+              <h4 class="text-xs font-semibold text-slate-900 mb-2">Attachments</h4>
               <div class="flex flex-wrap gap-4">
                 {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
                   <div class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-slate-600"
-                      >Previous</span
-                    >
+                    <span class="text-xs font-medium text-slate-600">Previous</span>
                     <img
-                      src={recordalData.oldAttachmentUrl ||
-                        recordalData.OldAttachmentUrl}
+                      src={recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
                       alt="Old Attachment"
                       class="max-w-xs h-auto rounded border border-slate-200"
                       style="max-height: 150px; object-fit: contain;"
@@ -1669,12 +1574,9 @@
                 {/if}
                 {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
                   <div class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-slate-600"
-                      >Updated</span
-                    >
+                    <span class="text-xs font-medium text-slate-600">Updated</span>
                     <img
-                      src={recordalData.newAttachmentUrl ||
-                        recordalData.NewAttachmentUrl}
+                      src={recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
                       alt="New Attachment"
                       class="max-w-xs h-auto rounded border border-slate-200"
                       style="max-height: 150px; object-fit: contain;"
@@ -1688,64 +1590,27 @@
           <!-- Shared: Documents -->
           {#if recordalData.documentUrl || recordalData.assignmentDeedUrl || recordalData.authorizationLetterUrl || (recordalData.appealDocs && recordalData.appealDocs.length > 0)}
             <section class="mt-3">
-              <h4 class="text-xs font-semibold text-slate-900 mb-2">
-                Supporting Documents
-              </h4>
+              <h4 class="text-xs font-semibold text-slate-900 mb-2">Supporting Documents</h4>
               <div class="flex flex-wrap gap-2">
                 {#if recordalData.documentUrl}
-                  <Button
-                    on:click={() =>
-                      window.open(recordalData.documentUrl, "_blank")}
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                  >
-                    <Icon
-                      icon="mdi:file-document-outline"
-                      width="1em"
-                    />Document
+                  <Button on:click={() => window.open(recordalData.documentUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                    <Icon icon="mdi:file-document-outline" width="1em" />Document
                   </Button>
                 {/if}
                 {#if recordalData.assignmentDeedUrl}
-                  <Button
-                    on:click={() =>
-                      window.open(recordalData.assignmentDeedUrl, "_blank")}
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                  >
+                  <Button on:click={() => window.open(recordalData.assignmentDeedUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
                     <Icon icon="mdi:file-sign" width="1em" />Assignment Deed
                   </Button>
                 {/if}
                 {#if recordalData.authorizationLetterUrl}
-                  <Button
-                    on:click={() =>
-                      window.open(
-                        recordalData.authorizationLetterUrl,
-                        "_blank",
-                      )}
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                  >
-                    <Icon
-                      icon="mdi:file-certificate-outline"
-                      width="1em"
-                    />Authorization
+                  <Button on:click={() => window.open(recordalData.authorizationLetterUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                    <Icon icon="mdi:file-certificate-outline" width="1em" />Authorization
                   </Button>
                 {/if}
                 {#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
                   {#each recordalData.appealDocs as docUrl, index}
-                    <Button
-                      on:click={() => window.open(docUrl, "_blank")}
-                      variant="outline"
-                      size="sm"
-                      class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                    >
-                      <Icon
-                        icon="mdi:file-document-outline"
-                        width="1em"
-                      />Appeal {index + 1}
+                    <Button on:click={() => window.open(docUrl, "_blank")} variant="outline" size="sm" class="gap-1 text-xs border-slate-300 hover:bg-slate-50">
+                      <Icon icon="mdi:file-document-outline" width="1em" />Appeal {index + 1}
                     </Button>
                   {/each}
                 {/if}
@@ -1755,12 +1620,7 @@
         </div>
       {:else}
         <div class="flex flex-col items-center justify-center h-40 gap-2">
-          <Icon
-            icon="mdi:file-alert-outline"
-            class="text-slate-300"
-            width="2.5rem"
-            height="2.5rem"
-          />
+          <Icon icon="mdi:file-alert-outline" class="text-slate-300" width="2.5rem" height="2.5rem" />
           <p class="text-xs text-slate-400">No application data available</p>
         </div>
       {/if}
@@ -1769,10 +1629,7 @@
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
         {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
           <div class="mt-4 pt-4 border-t border-slate-200">
-            <Label
-              for="approval-reason"
-              class="text-xs font-semibold text-slate-900 block mb-2"
-            >
+            <Label for="approval-reason" class="text-xs font-semibold text-slate-900 block mb-2">
               Decision Reason <span class="text-red-500">*</span>
             </Label>
             <Textarea
@@ -1793,45 +1650,22 @@
     </div>
 
     <!-- Footer -->
-    <div
-      class="border-t border-slate-200 px-6 py-3 flex flex-wrap gap-2 justify-end"
-    >
+    <div class="border-t border-slate-200 px-6 py-3 flex flex-wrap gap-2 justify-end">
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
         {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
           <Button
             on:click={() => {
               if (!reason || reason.trim().length < 10) {
-                showToast(
-                  "error",
-                  "Please provide a detailed reason (at least 10 characters)",
-                );
+                showToast("error", "Please provide a detailed reason (at least 10 characters)");
                 return;
               }
               switch (selectedApplication?.applicationType) {
-                case 5:
-                  approveAssignment(selectedApplication);
-                  break;
-                case 7:
-                  approveRegUser(selectedApplication);
-                  break;
-                case 8:
-                  approveMerger(selectedApplication);
-                  break;
-                case 17:
-                  approveAmendment(selectedApplication);
-                  break;
-                case 9:
-                case 36:
-                case 10:
-                  approveChangeDataRecordal(selectedApplication);
-                  break;
-                case 11:
-                  approveRecordal(
-                    "/api/files/ApproveClericalUpdate",
-                    selectedApplication,
-                    "Clerical update approved successfully",
-                  );
-                  break;
+                case 5: approveAssignment(selectedApplication); break;
+                case 7: approveRegUser(selectedApplication); break;
+                case 8: approveMerger(selectedApplication); break;
+                case 17: approveAmendment(selectedApplication); break;
+                case 9: case 36: case 10: approveChangeDataRecordal(selectedApplication); break;
+                case 11: approveRecordal("/api/files/ApproveClericalUpdate", selectedApplication, "Clerical update approved successfully"); break;
               }
             }}
             disabled={!reason || reason.trim().length < 10}
@@ -1843,10 +1677,7 @@
           <Button
             on:click={() => {
               if (!reason || reason.trim().length < 10) {
-                showToast(
-                  "error",
-                  "Please provide a detailed reason (at least 10 characters)",
-                );
+                showToast("error", "Please provide a detailed reason (at least 10 characters)");
                 return;
               }
               if (selectedApplication) denyRecordal(selectedApplication);
@@ -1861,10 +1692,7 @@
       {/if}
 
       <Button
-        on:click={() => {
-          showRecordalDialog = false;
-          reason = "";
-        }}
+        on:click={() => { showRecordalDialog = false; reason = ""; }}
         variant="outline"
         class="text-xs font-medium border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-2 rounded transition-colors"
       >
@@ -1946,9 +1774,7 @@
               Cancel
             </Button>
             <Button
-              on:click={() => {
-                if (selectedApplication) handleDenyAppeal(selectedApplication);
-              }}
+              on:click={() => { if (selectedApplication) handleDenyAppeal(selectedApplication); }}
               variant="destructive"
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2"
@@ -1962,10 +1788,7 @@
               {/if}
             </Button>
             <Button
-              on:click={() => {
-                if (selectedApplication)
-                  handleApproveAppeal(selectedApplication);
-              }}
+              on:click={() => { if (selectedApplication) handleApproveAppeal(selectedApplication); }}
               disabled={submittingAppeal || !appealReason?.trim()}
               class="flex items-center gap-2 bg-green-600 hover:bg-green-700"
             >
@@ -1997,167 +1820,175 @@
 <!-- Publication Dialog -->
 <Dialog.Root bind:open={showPublicationDialog}>
   <Dialog.Content
-    class="w-11/12 max-w-4xl mx-auto my-8 max-h-[90vh] rounded-xl shadow-lg bg-white border border-gray-200 flex flex-col"
+    class="w-full max-w-lg mx-auto my-8 rounded-xl shadow-lg bg-white border border-gray-200"
   >
-    <Dialog.Header class="flex-shrink-0">
+    <Dialog.Header>
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
         <Icon
           icon="mdi:certificate-outline"
           width="1.5em"
           height="1.5em"
-          class="text-green-600"
+          class="text-blue-600"
         />
         Publication Details
       </Dialog.Title>
-      <Dialog.Description>
-        Review and process publication application details.
-      </Dialog.Description>
     </Dialog.Header>
-
-    <div class="flex-1 overflow-auto p-4">
+    <div class="px-4 py-2">
       {#if publicationLoading}
-        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-blue-600 py-8">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
             height="2em"
             class="animate-spin"
           />
-          <span>Loading publication details...</span>
+          <span>Loading...</span>
         </div>
       {:else if publicationError}
-        <div class="text-red-500 py-8 flex items-center gap-2 justify-center">
+        <div class="text-red-500 py-8 flex items-center gap-2">
           <Icon icon="mdi:alert-circle-outline" width="1.5em" height="1.5em" />
           {publicationError}
         </div>
       {:else if publicationDetails}
-        <div class="space-y-6">
-
-          <!-- File Information -->
-          <div class="bg-gray-100 rounded-lg p-4">
-            <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
-              <Icon icon="mdi:file-document-outline" class="text-green-600" />
-              File Information
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label class="font-semibold">File Number:</Label>
-                <p class="mt-1 p-2 bg-white rounded border">
-                  {publicationDetails.fileId ?? "N/A"}
-                </p>
-              </div>
-              <div>
-                <Label class="font-semibold">Publication Date:</Label>
-                <p class="mt-1 p-2 bg-white rounded border">
-                  {publicationDetails.publicationDate
-                    ? new Date(
-                      publicationDetails.publicationDate,
-                    ).toLocaleDateString()
-                    : "N/A"}
-                </p>
-              </div>
-            </div>
+        <div class="space-y-4">
+          <div class="flex items-center gap-2">
+            <Icon
+              icon="mdi:file-document-outline"
+              width="1.2em"
+              height="1.2em"
+              class="text-gray-500"
+            />
+            <span class="font-semibold">File Number:</span>
+            <span class="text-gray-700">{publicationDetails.fileId}</span>
           </div>
-
-          <!-- Attachments -->
-          <div class="mb-6">
-            <Label for="publication-attachments" class="font-semibold mb-3 block flex items-center gap-2">
-              <Icon icon="mdi:attachment" class="text-green-600" />
-              Publication Attachments:
-            </Label>
+          <div class="flex items-center gap-2">
+            <Icon
+              icon="mdi:calendar"
+              width="1.2em"
+              height="1.2em"
+              class="text-gray-500"
+            />
+            <span class="font-semibold">Publication Date:</span>
+            <span class="text-gray-700">
+              {publicationDetails.publicationDate
+                ? new Date(
+                    publicationDetails.publicationDate,
+                  ).toLocaleDateString()
+                : "N/A"}
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <Icon
+                icon="mdi:attachment"
+                width="1.2em"
+                height="1.2em"
+                class="text-gray-500"
+              />
+              <span class="font-semibold">Attachments:</span>
+            </div>
             {#if publicationDetails.attachments && publicationDetails.attachments.length}
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {#each publicationDetails.attachments as attachment, index}
-                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <div class="flex items-center justify-between gap-3">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-medium text-gray-800 truncate">
-                          {attachment.name || `Publication Document ${index + 1}`}
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {publicationDetails.attachments.length}
-                        </div>
-                      </div>
-                      <div class="flex-shrink-0">
-                        {#if Array.isArray(attachment.url)}
-                          {#each attachment.url as url, urlIndex}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener"
-                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                            >
-                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
-                            </a>
-                          {/each}
-                        {:else}
-                          <a
-                            href={attachment.url}
-                            target="_blank"
-                            rel="noopener"
-                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                          >
-                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                            <span>View</span>
-                          </a>
-                        {/if}
-                      </div>
-                    </div>
-                  </div>
+              <ul class="space-y-2 ml-6">
+                {#each publicationDetails.attachments as att}
+                  <li class="flex items-center gap-2">
+                    <Icon
+                      icon="mdi:file-pdf-box"
+                      width="1.2em"
+                      height="1.2em"
+                      class="text-red-500"
+                    />
+                    <span>{att.name}</span>
+                    {#if Array.isArray(att.url)}
+                      {#each att.url as url}
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener"
+                          class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
+                          title="View"
+                        >
+                          <Icon
+                            icon="mdi:eye-outline"
+                            width="1em"
+                            height="1em"
+                          />
+                          <span>View</span>
+                        </a>
+                      {/each}
+                    {:else}
+                      <a
+                        href={att.url}
+                        target="_blank"
+                        rel="noopener"
+                        class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
+                        title="View"
+                      >
+                        <Icon icon="mdi:eye-outline" width="1em" height="1em" />
+                        <span>View</span>
+                      </a>
+                    {/if}
+                  </li>
                 {/each}
-              </div>
+              </ul>
             {:else}
-              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
-                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
-                <p>No attachments submitted</p>
-              </div>
+              <span class="text-gray-500 ml-6">No attachments</span>
             {/if}
           </div>
-
-          <!-- Comment Section -->
-          <div class="mb-4">
-            <Label for="publication-comment" class="block font-medium mb-1 flex items-center gap-2">
-              <Icon icon="mdi:comment-text-outline" class="text-green-600" />
-              Decision Comment: <span class="text-red-500">*</span>
-            </Label>
-            <Textarea
+          <div>
+            <label for="publication-comment" class="block font-medium mb-1"
+              >Comment:</label
+            >
+            <textarea
               id="publication-comment"
               bind:value={publicationComment}
-              rows={3}
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
-              placeholder="Enter your review comment and decision reason..."
+              rows="3"
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-200"
+              placeholder="Type your comment here..."
               required
-            />
+            ></textarea>
           </div>
-
-          <!-- Action Buttons -->
-          <div class="flex gap-4 mt-4 justify-end">
-            <Button
+          <div class="flex gap-4 mt-4">
+            <button
               class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
               on:click={() => handlePublicationDecision(true)}
               disabled={publicationSubmitting || !publicationComment.trim()}
             >
-              <Icon icon="mdi:check-circle-outline" width="1.2em" height="1.2em" class="inline mr-1" />
+              <Icon
+                icon="mdi:check-circle-outline"
+                width="1.2em"
+                height="1.2em"
+                class="inline mr-1"
+              />
               Approve
-            </Button>
-            <Button
+            </button>
+            <button
               class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
               on:click={() => handlePublicationDecision(false)}
               disabled={publicationSubmitting || !publicationComment.trim()}
             >
-              <Icon icon="mdi:close-circle-outline" width="1.2em" height="1.2em" class="inline mr-1" />
+              <Icon
+                icon="mdi:close-circle-outline"
+                width="1.2em"
+                height="1.2em"
+                class="inline mr-1"
+              />
               Reject
-            </Button>
+            </button>
           </div>
-
         </div>
       {/if}
     </div>
-
-    <Dialog.Footer class="flex-shrink-0 mt-4 flex justify-end px-4 pb-4 border-t bg-gray-50">
-      <Button on:click={() => (showPublicationDialog = false)} variant="outline">
-        <Icon icon="mdi:close" width="1.2em" height="1.2em" class="inline mr-1" />
+    <Dialog.Footer class="mt-4 flex justify-end px-4 pb-4">
+      <Button
+        on:click={() => (showPublicationDialog = false)}
+        variant="outline"
+      >
+        <Icon
+          icon="mdi:close"
+          width="1.2em"
+          height="1.2em"
+          class="inline mr-1"
+        />
         Close
       </Button>
     </Dialog.Footer>
@@ -2167,33 +1998,32 @@
 <!-- Withdrawal Dialog -->
 <Dialog.Root bind:open={showWithdrawalDialog}>
   <Dialog.Content
-    class="w-11/12 max-w-4xl mx-auto my-8 max-h-[90vh] rounded-xl shadow-lg bg-white border border-gray-200 flex flex-col"
+    class="w-11/12 max-w-2xl mx-auto my-8 rounded-xl shadow-lg bg-white border border-gray-200"
   >
-    <Dialog.Header class="flex-shrink-0">
+    <Dialog.Header>
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
         <Icon
           icon="mdi:file-remove-outline"
           width="1.5em"
           height="1.5em"
-          class="text-green-600"
+          class="text-red-600"
         />
         Withdrawal Request Details
       </Dialog.Title>
-      <Dialog.Description>
-        Review and process withdrawal application details.
-      </Dialog.Description>
+      <Dialog.Description
+        >Review and process withdrawal application details.</Dialog.Description
+      >
     </Dialog.Header>
-
-    <div class="flex-1 overflow-auto p-4">
+    <div class="p-4">
       {#if withdrawalLoading}
-        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-red-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
             height="2em"
             class="animate-spin"
           />
-          <span>Loading withdrawal details...</span>
+          <span>Loading...</span>
         </div>
       {:else if withdrawalError}
         <div class="text-red-500 py-8 flex items-center gap-2 justify-center">
@@ -2201,196 +2031,156 @@
           {withdrawalError}
         </div>
       {:else if withdrawalDetails}
-        <div class="space-y-6">
-
-          <!-- File Information -->
-          <div class="bg-gray-100 rounded-lg p-4">
-            <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
-              <Icon icon="mdi:file-document-outline" class="text-green-600" />
-              File Information
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label class="font-semibold">File Number:</Label>
-                <p class="mt-1 p-2 bg-white rounded border">
-                  {withdrawalDetails.fileId}
-                </p>
-              </div>
-              <div>
-                <Label class="font-semibold">Withdrawal Request Date:</Label>
-                <p class="mt-1 p-2 bg-white rounded border">
-                  {withdrawalDetails.withdrawalRequestDate
-                    ? new Date(
-                      withdrawalDetails.withdrawalRequestDate,
-                    ).toLocaleString()
-                    : "N/A"}
-                </p>
-              </div>
-            </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <Label class="font-semibold">File Number:</Label>
+            <p class="mt-1 p-2 bg-gray-50 rounded border">
+              {withdrawalDetails.fileId}
+            </p>
           </div>
-
-          <!-- Withdrawal Letter Attachments -->
-          <div class="mb-6">
-            <Label class="font-semibold mb-3 block flex items-center gap-2">
-              <Icon icon="mdi:file-document" class="text-green-600" />
-              Withdrawal Letter Attachments:
-            </Label>
-            {#if withdrawalDetails.withdrawalLetterAttachments && withdrawalDetails.withdrawalLetterAttachments.length}
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {#each withdrawalDetails.withdrawalLetterAttachments as attachment, index}
-                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <div class="flex items-center justify-between gap-3">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-medium text-gray-800 truncate">
-                          {attachment.name || `Withdrawal Letter ${index + 1}`}
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails.withdrawalLetterAttachments.length}
-                        </div>
-                      </div>
-                      <div class="flex-shrink-0">
-                        {#if Array.isArray(attachment.url)}
-                          {#each attachment.url as url, urlIndex}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener"
-                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                            >
-                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
-                            </a>
-                          {/each}
-                        {:else}
-                          <a
-                            href={attachment.url}
-                            target="_blank"
-                            rel="noopener"
-                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                          >
-                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                            <span>View</span>
-                          </a>
-                        {/if}
-                      </div>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {:else}
-              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
-                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
-                <p>No withdrawal letter attachments</p>
-              </div>
-            {/if}
+          <div>
+            <Label class="font-semibold">Withdrawal Request Date:</Label>
+            <p class="mt-1 p-2 bg-gray-50 rounded border">
+              {withdrawalDetails.withdrawalRequestDate
+                ? new Date(
+                    withdrawalDetails.withdrawalRequestDate,
+                  ).toLocaleString()
+                : "N/A"}
+            </p>
           </div>
-
-          <!-- Supporting Document Attachments -->
-          <div class="mb-6">
-            <Label class="font-semibold mb-3 block flex items-center gap-2">
-              <Icon icon="mdi:file-multiple" class="text-green-600" />
-              Supporting Document Attachments:
-            </Label>
-            {#if withdrawalDetails.supportingDocumentAttachments && withdrawalDetails.supportingDocumentAttachments.length}
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {#each withdrawalDetails.supportingDocumentAttachments as attachment, index}
-                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
-                    <div class="flex items-center justify-between gap-3">
-                      <div class="flex-1 min-w-0">
-                        <div class="font-medium text-gray-800 truncate">
-                          {attachment.name || `Supporting Document ${index + 1}`}
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails.supportingDocumentAttachments.length}
-                        </div>
-                      </div>
-                      <div class="flex-shrink-0">
-                        {#if Array.isArray(attachment.url)}
-                          {#each attachment.url as url, urlIndex}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener"
-                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                            >
-                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
-                            </a>
-                          {/each}
-                        {:else}
-                          <a
-                            href={attachment.url}
-                            target="_blank"
-                            rel="noopener"
-                            class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                          >
-                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                            <span>View</span>
-                          </a>
-                        {/if}
-                      </div>
-                    </div>
-                  </div>
-                {/each}
-              </div>
-            {:else}
-              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
-                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
-                <p>No supporting documents</p>
-              </div>
-            {/if}
-          </div>
-
-          <!-- Comment Section -->
-          <div class="mb-4">
-            <Label for="withdrawal-comment" class="block font-medium mb-1"
-              >Comment:</Label
+          <!-- <div>
+                        <Label class="font-semibold">Withdrawal Date:</Label>
+                        <p class="mt-1 p-2 bg-gray-50 rounded border">
+                            {withdrawalDetails.withdrawalDate
+                                ? new Date(withdrawalDetails.withdrawalDate).toLocaleString()
+                                : 'N/A'}
+                        </p>
+                    </div> -->
+        </div>
+        <div class="mb-4">
+          <Label class="font-semibold mb-1"
+            >Withdrawal Letter Attachments:</Label
+          >
+          {#if withdrawalDetails.withdrawalLetterAttachments && withdrawalDetails.withdrawalLetterAttachments.length}
+            <ul class="list-disc pl-5 space-y-2">
+              {#each withdrawalDetails.withdrawalLetterAttachments as att}
+                <li>
+                  <span class="font-medium">{att.name}:</span>
+                  {#if Array.isArray(att.url)}
+                    {#each att.url as url}
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener"
+                        class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
+                      >
+                        <Icon icon="mdi:eye-outline" width="1em" height="1em" />
+                        <span>View</span>
+                      </a>
+                    {/each}
+                  {:else}
+                    <a
+                      href={att.url}
+                      target="_blank"
+                      rel="noopener"
+                      class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
+                    >
+                      <Icon icon="mdi:eye-outline" width="1em" height="1em" />
+                      <span>View</span>
+                    </a>
+                  {/if}
+                </li>
+              {/each}
+            </ul>
+          {:else}
+            <span class="text-gray-500 ml-6"
+              >No withdrawal letter attachments</span
             >
-            <Textarea
-              id="withdrawal-comment"
-              bind:value={withdrawalComment}
-              rows={3}
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
-              placeholder="Type your comment here..."
-              required
+          {/if}
+        </div>
+        <div class="mb-4">
+          <Label class="font-semibold mb-1"
+            >Supporting Document Attachments:</Label
+          >
+          {#if withdrawalDetails.supportingDocumentAttachments && withdrawalDetails.supportingDocumentAttachments.length}
+            <ul class="list-disc pl-5 space-y-2">
+              {#each withdrawalDetails.supportingDocumentAttachments as att}
+                <li>
+                  <span class="font-medium">{att.name}:</span>
+                  {#if Array.isArray(att.url)}
+                    {#each att.url as url}
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener"
+                        class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
+                      >
+                        <Icon icon="mdi:eye-outline" width="1em" height="1em" />
+                        <span>View</span>
+                      </a>
+                    {/each}
+                  {:else}
+                    <a
+                      href={att.url}
+                      target="_blank"
+                      rel="noopener"
+                      class="ml-2 text-blue-600 underline flex items-center gap-1 hover:text-blue-800"
+                    >
+                      <Icon icon="mdi:eye-outline" width="1em" height="1em" />
+                      <span>View</span>
+                    </a>
+                  {/if}
+                </li>
+              {/each}
+            </ul>
+          {:else}
+            <span class="text-gray-500 ml-6">No supporting documents</span>
+          {/if}
+        </div>
+        <div class="mb-4">
+          <Label for="withdrawal-comment" class="block font-medium mb-1"
+            >Comment:</Label
+          >
+          <Textarea
+            id="withdrawal-comment"
+            bind:value={withdrawalComment}
+            rows={3}
+            class="w-full border rounded p-2 focus:ring-2 focus:ring-red-200"
+            placeholder="Type your comment here..."
+            required
+          />
+        </div>
+        <div class="flex gap-4 mt-4 justify-end">
+          <Button
+            class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
+            on:click={() => handleWithdrawalDecision(true)}
+            disabled={withdrawalSubmitting || !withdrawalComment.trim()}
+          >
+            <Icon
+              icon="mdi:check-circle-outline"
+              width="1.2em"
+              height="1.2em"
+              class="inline mr-1"
             />
-          </div>
-
-          <!-- Action Buttons -->
-          <div class="flex gap-4 mt-4 justify-end">
-            <Button
-              class="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
-              on:click={() => handleWithdrawalDecision(true)}
-              disabled={withdrawalSubmitting || !withdrawalComment.trim()}
-            >
-              <Icon
-                icon="mdi:check-circle-outline"
-                width="1.2em"
-                height="1.2em"
-                class="inline mr-1"
-              />
-              Approve
-            </Button>
-            <Button
-              class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
-              on:click={() => handleWithdrawalDecision(false)}
-              disabled={withdrawalSubmitting || !withdrawalComment.trim()}
-            >
-              <Icon
-                icon="mdi:close-circle-outline"
-                width="1.2em"
-                height="1.2em"
-                class="inline mr-1"
-              />
-              Reject
-            </Button>
-          </div>
-
+            Approve
+          </Button>
+          <Button
+            class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded shadow disabled:opacity-50 transition"
+            on:click={() => handleWithdrawalDecision(false)}
+            disabled={withdrawalSubmitting || !withdrawalComment.trim()}
+          >
+            <Icon
+              icon="mdi:close-circle-outline"
+              width="1.2em"
+              height="1.2em"
+              class="inline mr-1"
+            />
+            Reject
+          </Button>
         </div>
       {/if}
     </div>
-
-    <Dialog.Footer class="flex-shrink-0 mt-4 flex justify-end px-4 pb-4">
+    <Dialog.Footer class="mt-4 flex justify-end px-4 pb-4">
       <Button on:click={() => (showWithdrawalDialog = false)} variant="outline">
         <Icon
           icon="mdi:close"
@@ -2429,7 +2219,7 @@
 />
 
 <!-- Design License Dialog -->
-<DesignLicenseDialog
+<DesignLicenseDialog 
   bind:open={showDesignLicenseDialog}
   fileId={designLicenseFileId}
   applicationId={designLicenseApplicationId}
@@ -2579,7 +2369,8 @@
         <Button
           disabled={isNewStatusLoading === true}
           variant="outline"
-          on:click={() => (newStatusContent = null)}>Cancel</Button>
+          on:click={() => (newStatusContent = null)}>Cancel</Button
+        >
         <Button
           disabled={isNewStatusLoading === true}
           on:click={() => confirmChange()}
@@ -2591,7 +2382,7 @@
             height="1.2rem"
           />
           Ok</Button
-          >
+        >
       </div>
     {:else if newStatusContent === 2}
       <div class="flex flex-col items-center justify-center">
@@ -2603,8 +2394,9 @@
             newStatusContent = null;
             newStatus = null;
             newStatusReason = null;
-          }}>OK</Button>
-        </div>
+          }}>OK</Button
+        >
+      </div>
     {/if}
   </Sheet.Content>
 </Sheet.Root>
@@ -2710,12 +2502,7 @@
                   <!-- Patent License Application -->
                   {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() =>
-                        openPatentLicenseDialog(
-                          fileData.fileId,
-                          application.id,
-                          application.currentStatus ?? 0,
-                        )}
+                      on:click={() => openPatentLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
@@ -2723,12 +2510,7 @@
                   <!-- Design License Application -->
                   {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() =>
-                        openDesignLicenseDialog(
-                          fileData.fileId,
-                          application.id,
-                          application.currentStatus ?? 0,
-                        )}
+                      on:click={() => openDesignLicenseDialog(fileData.fileId, application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>
@@ -2852,7 +2634,7 @@
                     >
                   {/if}
                   <!-- Publication status update -->
-                  {#if ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin)) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
+                  {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) && application.applicationType === 14 && application.currentStatus === ApplicationStatuses.AwaitingStatusUpdate}
                     <DropdownMenu.Item
                       on:click={() =>
                         openPublicationDialog(fileData?.fileId, application.id)}
@@ -2877,7 +2659,7 @@
                       >
                         View Withdrawal Application
                       </DropdownMenu.Item>
-                    {:else if fileData.type === 2 && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    {:else if fileData.type === 2 && $loggedInUser?.userRoles?.includes(UserRoles.TrademarkAcceptance)}
                       <DropdownMenu.Item
                         on:click={() =>
                           openWithdrawalDialog(fileData.fileId, application.id)}
@@ -2916,6 +2698,36 @@
                         }}>View Application</DropdownMenu.Item
                       >
                     {/if}
+                  {/if}
+                  
+                  <!-- View Opposition -->
+                  {#if fileData.fileStatus === ApplicationStatuses.NewOpposition}
+                    <DropdownMenu.Item
+                      on:click={async () => {
+                        // Fetch opposition for this file
+                        oppositionDetailLoading = true;
+                        try {
+                          const res = await fetch(`${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&fileId=${fileData.fileId}`);
+                          if (res.ok) {
+                            const json = await res.json();
+                            const oppList = json.data || [];
+                            if (oppList.length > 0) {
+                              viewOppositionDetail(fileData.fileId);
+                            } else {
+                              showToast("error", "No opposition found for this file");
+                            }
+                          } else {
+                            showToast("error", "Failed to load opposition");
+                          }
+                        } catch (e) {
+                          showToast("error", "Error loading opposition");
+                        } finally {
+                          oppositionDetailLoading = false;
+                        }
+                      }}
+                    >
+                      View Opposition
+                    </DropdownMenu.Item>
                   {/if}
 
                   <!-- LETTERS -->
@@ -3067,26 +2879,6 @@
                       }}>Clerical Update Receipt</DropdownMenu.Item
                     >
                   {/if}
-                  <!-- Certification Docs -->
-                  {#if application.applicationType === FormApplicationTypes.Certification && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 18, 21);
-                      }}>Certificate Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 18, 22);
-                      }}>Certificate Payment Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Active}
-                      <DropdownMenu.Item
-                        on:click={() => {
-                          generateLetter(application, 18, 3);
-                        }}>Certificate</DropdownMenu.Item
-                      >
-                    {/if}
-                  {/if}
                   <!-- Certificate -->
                   {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
                     {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
@@ -3096,7 +2888,6 @@
                         Certificate
                       </DropdownMenu.Item>
                     {/if}
-
                     <!-- Renewal docs -->
                   {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
                     {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
@@ -3116,3 +2907,217 @@
     </Table.Body>
   </Table.Root>
 </div>
+
+<!-- Opposition Detail Sheet -->
+<Sheet.Root bind:open={showOppositionDetail}>
+	<Sheet.Content side="right" class="w-full sm:max-w-2xl overflow-y-auto">
+		{#if oppositionDetailLoading}
+			<div class="flex justify-center items-center h-full">
+				<Icon icon="line-md:loading-loop" class="w-8 h-8 text-green-600" />
+			</div>
+		{:else if selectedOpposition}
+			<Sheet.Header>
+				<Sheet.Title class="text-2xl font-bold text-slate-900">Opposition Details</Sheet.Title>
+				<Sheet.Description class="text-slate-600 mt-2">
+					File: <span class="font-semibold">{selectedOpposition.fileNumber}</span>
+				</Sheet.Description>
+			</Sheet.Header>
+
+			<div class="space-y-6 mt-6">
+				<!-- Status Section -->
+				<div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+				<div class="space-y-3">
+					<div>
+						<p class="text-sm font-semibold text-slate-600">File Status</p>
+						<div class="mt-1">
+							<AppStatusTag value={selectedOpposition.fileStatus} />
+						</div>
+					</div>
+					<div class="border-t border-green-200 pt-3">
+						<p class="text-sm font-semibold text-slate-600">Opposition Application Status</p>
+						<div class="mt-1">
+							<AppStatusTag value={selectedOpposition.oppositionStatus} />
+						</div>
+					</div>
+				</div>
+				{#if selectedOpposition.hasCounterStatement}
+						<div class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-orange-600">
+							<Icon icon="mdi:alert-circle" class="w-5 h-5" />
+							<span class="text-sm font-medium">Counter Statement Filed</span>
+							{#if selectedOpposition.counterStatementDate}
+								<span class="text-xs text-slate-600">on {mapDateToString(selectedOpposition.counterStatementDate)}</span>
+							{/if}
+						</div>
+					{:else}
+						<div class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-green-600">
+							<Icon icon="mdi:check-circle" class="w-5 h-5" />
+							<span class="text-sm font-medium">No Counter Statement Yet</span>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Opposition Details -->
+				<div class="space-y-4">
+					<div class="border-b border-slate-200 pb-3">
+						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition ID</p>
+						<p class="text-sm text-slate-700 mt-1">{selectedOpposition.id}</p>
+					</div>
+
+					<div class="border-b border-slate-200 pb-3">
+						<p class="text-xs font-semibold text-slate-500 uppercase">Payment Reference</p>
+						<p class="text-sm text-slate-700 font-mono mt-1">{selectedOpposition.paymentId}</p>
+					</div>
+
+					<div class="border-b border-slate-200 pb-3">
+						<p class="text-xs font-semibold text-slate-500 uppercase">Filing Date</p>
+						<p class="text-sm text-slate-700 mt-1">{mapDateToString(selectedOpposition.date)}</p>
+					</div>
+				</div>
+
+				<!-- Opposer Information -->
+				<div>
+					<h3 class="font-semibold text-slate-900 text-lg mb-4">Opposer Information</h3>
+					<div class="bg-slate-50 rounded-lg p-4 space-y-3">
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Name</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.name}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Email</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.email}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Phone</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.phone || '—'}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Address</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.address || '—'}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Nationality</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.nationality || '—'}</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Opposition Grounds -->
+				<div>
+					<h3 class="font-semibold text-slate-900 text-lg mb-4">Grounds for Opposition</h3>
+					<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+						<p class="text-sm text-slate-700 whitespace-pre-wrap">{selectedOpposition.reason}</p>
+					</div>
+				</div>
+
+				<!-- Supporting Documents -->
+				{#if selectedOpposition.supportingDocs && selectedOpposition.supportingDocs.length > 0}
+					<div>
+						<h3 class="font-semibold text-slate-900 text-lg mb-4">Supporting Documents</h3>
+						<div class="space-y-2">
+							{#each selectedOpposition.supportingDocs as doc, idx}
+								<a
+									href={doc}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+								>
+									<div class="flex items-center gap-2">
+										<Icon icon="mdi:file-document" class="w-5 h-5 text-slate-600" />
+										<span class="text-sm font-medium text-slate-900">Document {idx + 1}</span>
+									</div>
+									<Icon icon="mdi:download" class="w-4 h-4 text-green-600" />
+								</a>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Counter Statements (if filed) -->
+				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.length > 0}
+					<div>
+						<h3 class="font-semibold text-slate-900 text-lg mb-4">Counter Statements</h3>
+						<div class="space-y-4">
+							{#each selectedOpposition.counterStatements as cs, idx}
+								<div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+									<div class="flex items-start justify-between mb-2">
+										<p class="text-sm font-semibold text-orange-900">Counter Statement {idx + 1}</p>
+										<p class="text-xs text-orange-700">{mapDateToString(cs.submittedDate)}</p>
+									</div>
+									<p class="text-sm text-orange-900 whitespace-pre-wrap">{cs.text}</p>
+									{#if cs.attachments && cs.attachments.length > 0}
+										<div class="mt-3 pt-3 border-t border-orange-200">
+											<p class="text-xs font-semibold text-orange-700 mb-2">Attachments:</p>
+											<div class="space-y-1">
+												{#each cs.attachments as attachment}
+													<a
+														href={attachment}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="text-xs text-orange-600 hover:text-orange-800 underline block"
+													>
+														View Document
+													</a>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Statutory Declarations (if filed) -->
+				{#if selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.length > 0}
+					<div>
+						<h3 class="font-semibold text-slate-900 text-lg mb-4">Statutory Declarations</h3>
+						<div class="space-y-4">
+							{#each selectedOpposition.statutoryDeclarations as sd, idx}
+								<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+									<div class="flex items-start justify-between mb-2">
+										<p class="text-sm font-semibold text-blue-900">Declaration {idx + 1}</p>
+										<p class="text-xs text-blue-700">{mapDateToString(sd.submittedDate)}</p>
+									</div>
+									<p class="text-sm text-blue-900 whitespace-pre-wrap">{sd.text}</p>
+									{#if sd.attachments && sd.attachments.length > 0}
+										<div class="mt-3 pt-3 border-t border-blue-200">
+											<p class="text-xs font-semibold text-blue-700 mb-2">Attachments:</p>
+											<div class="space-y-1">
+												{#each sd.attachments as attachment}
+													<a
+														href={attachment}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="text-xs text-blue-600 hover:text-blue-800 underline block"
+													>
+														View Document
+													</a>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- File Counter Statement Button -->
+			{#if selectedOpposition && (!selectedOpposition.hasCounterStatement || selectedOpposition.oppositionStatus === 31)}
+				<div class="mt-8 pt-6 border-t border-slate-200">
+					<Button
+						on:click={() => {
+							const fileNumber = selectedOpposition.fileNumber;
+							window.location.href = `/opposition?step=counterstatement&fileNumber=${fileNumber}`;
+						}}
+						class="w-full bg-blue-600 hover:bg-blue-700 text-white"
+					>
+						<Icon icon="mdi:reply" class="w-4 h-4 mr-2" />
+						File Counter Statement
+					</Button>
+				</div>
+			{/if}
+		{/if}
+	</Sheet.Content>
+</Sheet.Root>

@@ -47,14 +47,6 @@ export function getStatuses(
   ) {
     return [ApplicationStatuses.Rejected, ApplicationStatuses.Active];
   }
-
-  if (
-    fileType !== FilingType.Trademark &&
-    currentStatus == ApplicationStatuses.AwaitingCertificateConfirmation
-  ) {
-    return [ApplicationStatuses.Active, ApplicationStatuses.Rejected];
-  }
-
   if (
     [
       ApplicationStatuses.AwaitingSearch,
@@ -130,12 +122,38 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "Awaiting Certificate Confirmation";
     case ApplicationStatuses.Opposition:
       return "Opposition";
-    case ApplicationStatuses.AwaitingRenewalConfirmation:
-      return "Awaiting Renewal Confirmation";
-    case ApplicationStatuses.PendingRenewal:
-      return "Pending Renewal";
     default:
       return "-";
+  }
+}
+
+export function getNewStatusColour(obj: ApplicationStatuses | null): string {
+  switch (obj) {
+    case ApplicationStatuses.AwaitingPayment:
+      return "#8a00c2";
+    case ApplicationStatuses.AwaitingSearch:
+    case ApplicationStatuses.AwaitingExaminer:
+      return "#468a46";
+    case ApplicationStatuses.KivSearch:
+    case ApplicationStatuses.KivExaminer:
+      return "#cfcec3";
+    case ApplicationStatuses.FormalityFail:
+    case ApplicationStatuses.Re_conduct:
+    case ApplicationStatuses.Rejected:
+      return "#fe9797";
+    case ApplicationStatuses.Active:
+    case ApplicationStatuses.Approved:
+      return "#468a46";
+    case ApplicationStatuses.Publication:
+      return "#468a46";
+    case ApplicationStatuses.AwaitingRecordalProcess:
+      return "#29C5F6";
+    case ApplicationStatuses.AppealRequest:
+      return "#ede064ff";
+    case null:
+      return "";
+    default:
+      return "#cfcec3";
   }
 }
 
@@ -182,7 +200,7 @@ export function showTreatUpdateAppButton(
   let hasRequiredPatentSearchPatentRoles = [
     UserRoles.PatentSearch,
     UserRoles.Tech,
-    UserRoles.PatentDesignRegistrar,
+    UserRoles.PatentDesignRegistrar
   ];
   let hasRequiredTrademarkSearchPatentRoles = [
     UserRoles.TrademarkSearch,
@@ -192,11 +210,7 @@ export function showTreatUpdateAppButton(
     UserRoles.DesignSearch,
     UserRoles.Tech,
   ];
-  let hasRequiredPatentExamRoles = [
-    UserRoles.PatentExaminer,
-    UserRoles.PatentDesignRegistrar,
-    UserRoles.Tech,
-  ];
+  let hasRequiredPatentExamRoles = [UserRoles.PatentExaminer, UserRoles.PatentDesignRegistrar, UserRoles.Tech];
   let hasRequiredTrademarkExamRoles = [
     UserRoles.TrademarkExaminer,
     UserRoles.Tech,
@@ -400,14 +414,14 @@ export function CanTreatApplication(
   }
   if (applicationStatus === ApplicationStatuses.Publication) {
     hasRole = userRoles.some((x) =>
-      [
-        UserRoles.TrademarkPublication,
-        UserRoles.TrademarkOpposition,
-        UserRoles.Tech,
-        UserRoles.SuperAdmin,
-        UserRoles.TrademarkRegistrar,
-      ].includes(x),
-    );
+        [
+          UserRoles.TrademarkPublication,
+          UserRoles.TrademarkOpposition,
+          UserRoles.Tech,
+          UserRoles.SuperAdmin,
+          UserRoles.TrademarkRegistrar,
+        ].includes(x),
+      );
   }
   if (
     applicationStatus === ApplicationStatuses.KivExaminer ||
@@ -463,13 +477,7 @@ export function CanTreatApplication(
 
     if (type == FilingType.Design) {
       hasRole = userRoles.some((x) =>
-        [
-          UserRoles.DesignExaminer,
-          UserRoles.AppealExaminer,
-          UserRoles.Tech,
-          UserRoles.SuperAdmin,
-          UserRoles.PatentDesignRegistrar,
-        ].includes(x),
+        [UserRoles.DesignExaminer, UserRoles.AppealExaminer, UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.PatentDesignRegistrar].includes(x),
       );
     }
 
@@ -491,17 +499,10 @@ export function CanTreatApplication(
   ) {
     if (type === FilingType.Trademark) {
       hasRole = userRoles.some((x) =>
-        [
-          UserRoles.TrademarkCertification,
-          UserRoles.Tech,
-          UserRoles.SuperAdmin,
-          UserRoles.TrademarkRegistrar,
-          UserRoles.PatentDesignRegistrar,
-        ].includes(x),
+        [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkRegistrar, UserRoles.PatentDesignRegistrar].includes(x),
       );
     }
   }
-
   if (
     applicationStatus === ApplicationStatuses.AwaitingCertificateConfirmation
   ) {
@@ -510,6 +511,7 @@ export function CanTreatApplication(
         [
           UserRoles.PatentCertification,
           UserRoles.DesignCertification,
+          UserRoles.PatentDesignRegistrar,
           UserRoles.SuperAdmin,
           UserRoles.Tech,
           UserRoles.PatentDesignRegistrar,
