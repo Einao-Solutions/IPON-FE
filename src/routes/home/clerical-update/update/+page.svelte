@@ -1843,7 +1843,7 @@
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">
-                    New Additional Description:
+                    New Specification of Goods:
                   </label>
                   <textarea
                     bind:value={newData.additionalDescription}
@@ -1851,7 +1851,7 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500"
                   ></textarea>
                   <p class="text-xs text-gray-500 mt-1">
-                    Optional: Enter new description.
+                    Optional: Enter new specification of goods/services.
                   </p>
                 </div>
               {/if}

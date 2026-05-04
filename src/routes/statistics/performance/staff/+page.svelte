@@ -728,6 +728,19 @@
         </div>
       {/if}
 
+      <!-- Print Button -->
+      {#if selectedUnit !== null && performanceData && !loading}
+        <div class="flex justify-end mt-6 mb-2">
+          <button
+            on:click={() => window.print()}
+            class="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+          >
+            <Icon icon="lucide:printer" class="w-4 h-4" />
+            Print Report
+          </button>
+        </div>
+      {/if}
+
     {/if}
 
     <!-- No Unit Selected State -->
