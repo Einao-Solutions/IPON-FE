@@ -1026,7 +1026,7 @@
 					</div>
 
 					<div class="border-b border-slate-200 pb-3">
-						<p class="text-xs font-semibold text-slate-500 uppercase">Filing Date</p>
+						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition Date</p>
 						<p class="text-sm text-slate-700 mt-1">{mapDateToString(selectedOpposition.date)}</p>
 					</div>
 				</div>

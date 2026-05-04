@@ -188,7 +188,6 @@
           [
             UserRoles.SuperAdmin,
             UserRoles.TrademarkOpposition,
-            UserRoles.TrademarkRegistrar,
             UserRoles.Tech,
           ].includes(role),
         )
