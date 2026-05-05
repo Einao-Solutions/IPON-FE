@@ -51,19 +51,22 @@
 
   function handlePeriodTypeChange(type: string) {
     selectedPeriodType = type;
-    selectedPeriodValue = periodValues[0];
+    selectedPeriodValue = type === "month" 
+      ? new Date().toLocaleString('default', { month: 'long' }) 
+      : "Q1";
     performanceData = null;
     destroyCharts();
+    loadPerformanceData(); // ✅ auto fetch after type change
   }
 
   function handlePeriodValueChange(value: string) {
     selectedPeriodValue = value;
-    loadPerformanceData();
+    loadPerformanceData(); // ✅ already fetching
   }
 
   function handleYearChange(year: number) {
     selectedYear = year;
-    loadPerformanceData();
+    loadPerformanceData(); // ✅ already fetching
   }
 
   function handleClearFilters() {
@@ -192,6 +195,8 @@
   }
 
   onMount(() => {
+    // Auto-fetch on mount with current month + year
+    loadPerformanceData();
     return () => destroyCharts();
   });
 </script>
