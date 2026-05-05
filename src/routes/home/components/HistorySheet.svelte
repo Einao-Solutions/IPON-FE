@@ -1,6 +1,7 @@
 <script lang="ts">
     import * as Sheet from "$lib/components/ui/sheet/index"
-    import { type DataHistory, getStatusColour } from '$lib/helpers';
+    import type { DataHistory } from '$lib/helpers';
+    import { getNewStatusColour } from '../../dataview/datahelpers';
     import Icon from '@iconify/svelte';
     import { Button } from '$lib/components/ui/button';
     import { mapDateToString, mapStatusToString } from './dashboardutils';

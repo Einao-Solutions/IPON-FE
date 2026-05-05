@@ -5,8 +5,11 @@
 	import { onMount } from 'svelte';
 	import { baseURL, type DashBoardStats, FileTypes, UserRoles, type UsersType } from '$lib/helpers';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
-	import { mapTypeToString } from './dashboardutils';
+	import { mapTypeToString, mapDateToString } from './dashboardutils';
 	import * as Accordion from "$lib/components/ui/accordion"
+	import * as Sheet from '$lib/components/ui/sheet';
+	import { toast } from 'svelte-sonner';
+	import AvailabilitySearchModal from './AvailabilitySearchModal.svelte';
 	export let user: UsersType ;
 	export let showOnlyTotals: boolean = false;
 	export let showOnlyStatistics: boolean = false;
@@ -15,21 +18,152 @@
 	// Separate state for user dashboard to avoid conflicts with staff dashboard
 	let userDashStats: DashBoardStats | null = null;
 
+	// 🐛 DEBUG: Log DashStats changes for comparison with StaffDashboard
+	// $: if ($DashStats) {
+	// 	console.log('🔍 USER DASHBOARD - DashStats:', {
+	// 		detailedStats: $DashStats.detailedStats,
+	// 		detailedStatsCount: $DashStats.detailedStats?.length || 0,
+	// 		patentStats: $DashStats.detailedStats?.filter(x => x.fileType === 0) || [],
+	// 		trademarkStats: $DashStats.detailedStats?.filter(x => x.fileType === 2) || [],
+	// 		designStats: $DashStats.detailedStats?.filter(x => x.fileType === 1) || [],
+	// 		userType: user?.userType,
+	// 		userRoles: user?.userRoles,
+	// 		userId: user?.creatorId
+	// 	});
+	// }
+
 	onMount(async () => {
 		isLoading = true;
 		await loadDashStats();
+		await loadOppositions();
 	});
 
+	let oppositions: any[] = [];
+	let oppositionCount: number = 0;
+	let oppositionsLoading: boolean = false;
+	let showOtherAppsList: boolean = false;
+	let isAvailabilityModalOpen: boolean = false;
+
+	// Opposition Detail Sheet state
+	let selectedOpposition: any = null;
+	let showOppositionDetail: boolean = false;
+	let oppositionDetailLoading: boolean = false;
+	let oppositionActionLoading: boolean = false;
+
+	$: canManageOpposition = ($loggedInUser || user)?.userRoles?.some((role: number) =>
+		[UserRoles.TrademarkOpposition, UserRoles.SuperAdmin].includes(role)
+	);
+
+	async function loadOppositions() {
+		const currentUser = $loggedInUser || user;
+		oppositionsLoading = true;
+		try {
+			const res = await fetch(`${baseURL}/api/opposition/loadSummary?quantity=50&skip=0&userId=${currentUser.id}`);
+			if (res.ok) {
+				const body = await res.json();
+				const items = body.data ?? [];
+				oppositionCount = body.count ?? items.length;
+				oppositions = items.map((x: any, i: number) => ({
+					sn: i + 1,
+					date: x.date,
+					title: x.title,
+					name: x.name,
+					status: x.status,
+					paymentId: x.paymentId,
+					fileId: x.fileId,
+					id: x.id
+				}));
+			}
+		} catch (e) {
+			console.error('Failed to load oppositions', e);
+		} finally {
+			oppositionsLoading = false;
+		}
+	}
+
+	async function viewOppositionDetail(fileNumberOrId: string, fallbackId?: string) {
+		oppositionDetailLoading = true;
+		showOppositionDetail = true;
+		try {
+			// Prefer fileNumber (gets current opposition), fall back to oppositionId if needed
+			let url = `${baseURL}/api/opposition/getOppositionDetail`;
+			if (fileNumberOrId) {
+				url += `?fileNumber=${fileNumberOrId}`;
+			} else if (fallbackId) {
+				url += `?oppositionId=${fallbackId}`;
+			} else {
+				throw new Error('No valid opposition identifier provided');
+			}
+			
+			const res = await fetch(url);
+			if (res.ok) {
+				const json = await res.json();
+				selectedOpposition = json.opposition ?? json.data ?? json;
+				console.log('Opposition detail loaded:', selectedOpposition);
+			} else {
+				toast.error('Failed to load opposition details');
+				showOppositionDetail = false;
+			}
+		} catch (e) {
+			console.error('Failed to load opposition detail', e);
+			toast.error('Failed to load opposition details');
+			showOppositionDetail = false;
+		} finally {
+			oppositionDetailLoading = false;
+		}
+	}
+
+	async function declineOpposition(oppositionId: string) {
+		oppositionActionLoading = true;
+		try {
+			const res = await fetch(`${baseURL}/api/opposition/decline?oppositionId=${oppositionId}`, { method: 'POST' });
+			if (res.ok) {
+				toast.success('Opposition declined successfully.');
+				showOppositionDetail = false;
+				await loadOppositions();
+			} else {
+				const err = await res.json();
+				toast.error(err.message ?? 'Failed to decline opposition.');
+			}
+		} catch (e) {
+			toast.error('Failed to decline opposition.');
+		} finally {
+			oppositionActionLoading = false;
+		}
+	}
+
+	async function upholdOpposition(oppositionId: string) {
+		oppositionActionLoading = true;
+		try {
+			const res = await fetch(`${baseURL}/api/opposition/uphold?oppositionId=${oppositionId}`, { method: 'POST' });
+			if (res.ok) {
+				toast.success('Opposition upheld successfully.');
+				showOppositionDetail = false;
+				await loadOppositions();
+			} else {
+				const err = await res.json();
+				toast.error(err.message ?? 'Failed to uphold opposition.');
+			}
+		} catch (e) {
+			toast.error('Failed to uphold opposition.');
+		} finally {
+			oppositionActionLoading = false;
+		}
+	}
+
 	async function loadDashStats() {
+		// Use $loggedInUser instead of user prop for consistent role checking
 		const currentUser = $loggedInUser || user;
 		const userId = currentUser.creatorId;
 		
 		// Only show all files for Tech, SuperAdmin roles
 		// Regular users (UserRoles.User) should only see their own files
 		const canSeeAllFiles = currentUser.userRoles?.some(role => 
-			[UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.PermSec].includes(role)
+			[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
 		);
+		
 
+		
 		let id = canSeeAllFiles ? null : userId;
 		const url = `${baseURL}/api/files/FileStatistics?userId=${id}`;
 		
@@ -109,7 +243,7 @@
 		// Use $loggedInUser for consistent role checking
 		const currentUser = $loggedInUser || user;
 		const canSeeAllFiles = currentUser.userRoles?.some(role => 
-			[UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.PermSec].includes(role)
+			[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
 		);
 		
 
@@ -301,6 +435,81 @@
 				</div>
 			</div>
 		</a>
+
+		<!-- Other Applications Total (expandable) -->
+		<div class="rounded-xl border border-green-200/40 bg-gradient-to-r from-green-50 via-white to-green-50 overflow-hidden">
+			<button
+				type="button"
+				class="group flex items-center justify-between p-4 w-full text-left hover:bg-green-50/60 transition-all duration-300"
+				on:click={() => { showOtherAppsList = !showOtherAppsList; }}
+			>
+				<div class="flex items-center space-x-4">
+					<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+						<Icon icon="mdi:file-multiple-outline" class="text-lg text-green-600 group-hover:text-green-700" />
+					</div>
+					<div>
+						<p class="font-semibold text-slate-800 group-hover:text-slate-900">Other Applications</p>
+						<p class="text-xs text-slate-500">Opposition and other services</p>
+					</div>
+				</div>
+				<div class="flex items-center gap-3">
+					<p class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300">{oppositions.length}</p>
+					<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-slate-400 group-hover:text-green-500 transition-transform duration-300 {showOtherAppsList ? 'rotate-180' : ''}" />
+				</div>
+			</button>
+			{#if showOtherAppsList}
+				<div class="border-t border-green-100 px-4 py-2 space-y-1">
+					<!-- Opposition Applications -->
+					<button
+						type="button"
+						on:click={() => {
+							const el = document.getElementById('other-applications-accordion');
+							if (el) {
+								el.scrollIntoView({ behavior: 'smooth' });
+								// Click the trigger to open it if closed
+								const trigger = el.querySelector('[data-state="closed"]');
+								if (trigger) trigger.click();
+							}
+						}}
+						class="flex items-center justify-between p-3 rounded-lg hover:bg-green-50 transition-colors duration-200 w-full text-left group/item"
+					>
+						<div class="flex items-center space-x-3">
+							<div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+								<Icon icon="mdi:gavel" class="text-sm text-green-600" />
+							</div>
+							<div>
+								<p class="text-sm font-medium text-slate-700 group-hover/item:text-green-700">Opposition Applications</p>
+								<p class="text-xs text-slate-400">Filed oppositions against trademarks</p>
+							</div>
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-semibold">{oppositions.length}</span>
+							<Icon icon="heroicons:arrow-right" class="w-4 h-4 text-slate-300 group-hover/item:text-green-500 transition-colors" />
+						</div>
+					</button>
+					<!-- Availability Search -->
+					<button
+						type="button"
+						on:click={() => { isAvailabilityModalOpen = true; }}
+						class="flex items-center justify-between p-3 rounded-lg hover:bg-green-50 transition-colors duration-200 w-full text-left group/item"
+					>
+						<div class="flex items-center space-x-3">
+							<div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+								<Icon icon="mdi:magnify" class="text-sm text-green-600" />
+							</div>
+							<div>
+								<p class="text-sm font-medium text-slate-700 group-hover/item:text-green-700">Availability Search</p>
+								<p class="text-xs text-slate-400">Search for trademark availability</p>
+							</div>
+						</div>
+						<div class="flex items-center gap-2">
+							<Icon icon="heroicons:arrow-right" class="w-4 h-4 text-slate-300 group-hover/item:text-green-500 transition-colors" />
+						</div>
+					</button>
+					<!-- More application types can be added here in the future -->
+				</div>
+			{/if}
+		</div>
 	</div>
 	{/if}
 	
@@ -315,7 +524,7 @@
 						height="1.5rem"
 						class="mr-1.5 text-green-800"
 					/>
-					<p>Patent Applications</p>
+					<p>Patent Applications Statistics</p>
 				</div>
 			</Accordion.Trigger>
 			<Accordion.Content>
@@ -351,7 +560,7 @@
 						height="1.5rem"
 						class="mr-1.5 text-green-800"
 					/>
-					<p>Design Applications</p>
+					<p>Design Applications Statistics</p>
 				</div>
 			</Accordion.Trigger>
 			<Accordion.Content>
@@ -388,7 +597,7 @@
 							</div>
 							<div class="flex-1 text-left">
 								<div class="flex items-center gap-2 mb-0.5">
-									<h4 class="font-semibold text-slate-800">Trademark Applications</h4>
+									<h4 class="font-semibold text-slate-800">Trademark Applications Statistics</h4>
 									<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Trademark).length}</span>
 								</div>
 								<p class="text-xs text-slate-500">Registered brand identities</p>
@@ -473,7 +682,7 @@
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
-								<h4 class="font-semibold text-slate-800">Trademark Applications</h4>
+								<h4 class="font-semibold text-slate-800">Trademark Applications Statistics</h4>
 								<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Trademark).length}</span>
 							</div>
 							<p class="text-xs text-slate-500">Registered brand identities</p>
@@ -543,7 +752,7 @@
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
-								<h4 class="font-semibold text-slate-800">Patent Applications</h4>
+								<h4 class="font-semibold text-slate-800">Patent Applications Statistics</h4>
 								<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Patent).length}</span>
 							</div>
 							<p class="text-xs text-slate-500">Protected inventions and innovations</p>
@@ -612,7 +821,7 @@
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
-								<h4 class="font-semibold text-slate-800">Design Applications</h4>
+								<h4 class="font-semibold text-slate-800">Design Applications Statistics</h4>
 								<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{getType(FileTypes.Design).length}</span>
 							</div>
 							<p class="text-xs text-slate-500">Safeguarded creative designs</p>
@@ -671,11 +880,290 @@
 				</div>
 			</Accordion.Content>
 		</Accordion.Item>	
+
+		<!-- Other Applications Hub -->
+		<Accordion.Item id="other-applications-accordion" value="other" class="border border-slate-200/60 rounded-xl bg-gradient-to-r from-white via-slate-50/50 to-white hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60">
+			<Accordion.Trigger class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline">
+				<div class="flex items-center justify-between w-full px-3 py-2">
+					<div class="flex items-center space-x-3 flex-1">
+						<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-lg flex items-center justify-center shadow-sm border border-green-100">
+							<Icon icon="mdi:file-multiple-outline" class="w-6 h-6 text-green-600" />
+						</div>
+						<div class="flex-1 text-left">
+							<div class="flex items-center gap-2 mb-0.5">
+								<h4 class="font-semibold text-slate-800">Other Applications</h4>
+								<span class="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-xs font-semibold">{oppositions.length}</span>
+							</div>
+							<p class="text-xs text-slate-500">Opposition and other services</p>
+						</div>
+					</div>
+					<div class="flex-shrink-0 ml-2">
+						<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+					</div>
+				</div>
+			</Accordion.Trigger>
+			<Accordion.Content>
+				<div class="px-2 pb-3">
+					{#if oppositionsLoading}
+						<div class="flex justify-center py-6">
+							<Icon icon="line-md:loading-loop" class="w-6 h-6 text-green-600" />
+						</div>
+					{:else if oppositions.length === 0}
+						<p class="text-center text-slate-500 text-sm py-4">No opposition applications found.</p>
+					{:else}
+						<div class="overflow-x-auto rounded-lg border border-slate-200">
+							<table class="min-w-full text-sm">
+								<thead class="bg-slate-50 text-slate-600">
+									<tr>
+										<th class="px-3 py-2 text-left font-semibold">S/N</th>
+										<th class="px-3 py-2 text-left font-semibold">Date</th>
+										<th class="px-3 py-2 text-left font-semibold">Title</th>
+										<th class="px-3 py-2 text-left font-semibold">File ID</th>
+										<th class="px-3 py-2 text-left font-semibold">Opposer Name</th>
+										<th class="px-3 py-2 text-left font-semibold">Status</th>
+										<th class="px-3 py-2 text-left font-semibold">Payment ID</th>
+										<th class="px-3 py-2 text-left font-semibold">View Opposition</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-slate-100">
+									{#each oppositions as row}
+										<tr class="hover:bg-slate-50 transition-colors">
+											<td class="px-3 py-2 text-slate-700">{row.sn}</td>
+											<td class="px-3 py-2 text-slate-700 whitespace-nowrap">{row.date ? mapDateToString(row.date) : '—'}</td>
+											<td class="px-3 py-2 text-slate-700">{row.title ?? '—'}</td>
+											<td class="px-3 py-2 text-slate-700">{row.fileId ?? '—'}</td>
+											<td class="px-3 py-2 text-slate-700">{row.name ?? '—'}</td>
+											<td class="px-3 py-2">
+												<AppStatusTag value={row.status} />
+											</td>
+											<td class="px-3 py-2 text-slate-700">{row.paymentId ?? '—'}</td>
+											<td class="px-3 py-2">
+												{#if row.id}
+													<button
+														on:click={() => viewOppositionDetail(row.fileId || '', row.id)}
+														class="text-xs text-green-600 hover:text-green-800 font-medium underline"
+													>View</button>
+												{:else}
+													<span class="text-slate-400 text-xs">—</span>
+												{/if}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
+				</div>
+			</Accordion.Content>
+		</Accordion.Item>
 	</Accordion.Root>
 	<!-- End of detailed statistics view -->
 	{/if}
 {/if}
 </div>
+
+<!-- Availability Search Modal -->
+<AvailabilitySearchModal bind:isOpen={isAvailabilityModalOpen} />
+
+<!-- Opposition Detail Sheet -->
+<Sheet.Root bind:open={showOppositionDetail}>
+	<Sheet.Content side="right" class="w-full sm:max-w-2xl overflow-y-auto">
+		{#if oppositionDetailLoading}
+			<div class="flex justify-center items-center h-full">
+				<Icon icon="line-md:loading-loop" class="w-8 h-8 text-green-600" />
+			</div>
+		{:else if selectedOpposition}
+			<Sheet.Header>
+				<Sheet.Title class="text-2xl font-bold text-slate-900">Opposition Details</Sheet.Title>
+				<Sheet.Description class="text-slate-600 mt-2">
+					File: <span class="font-semibold">{selectedOpposition.fileNumber}</span>
+				</Sheet.Description>
+			</Sheet.Header>
+
+			<div class="space-y-6 mt-6">
+				<!-- Status Section -->
+				<div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+				<div class="space-y-3">
+					<div>
+						<p class="text-sm font-semibold text-slate-600">File Status</p>
+						<div class="mt-1">
+							<AppStatusTag value={selectedOpposition.fileStatus} />
+						</div>
+					</div>
+					<div class="border-t border-green-200 pt-3">
+						<p class="text-sm font-semibold text-slate-600">Opposition Application Status</p>
+						<div class="mt-1">
+							<AppStatusTag value={selectedOpposition.oppositionStatus} />
+						</div>
+					</div>
+				</div>
+				{#if selectedOpposition.hasCounterStatement}
+						<div class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-orange-600">
+							<Icon icon="mdi:alert-circle" class="w-5 h-5" />
+							<span class="text-sm font-medium">Counter Statement Filed</span>
+							{#if selectedOpposition.counterStatementDate}
+								<span class="text-xs text-slate-600">on {mapDateToString(selectedOpposition.counterStatementDate)}</span>
+							{/if}
+						</div>
+					{:else}
+						<div class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-green-600">
+							<Icon icon="mdi:check-circle" class="w-5 h-5" />
+							<span class="text-sm font-medium">No Counter Statement Yet</span>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Opposition Details -->
+				<div class="space-y-4">
+					<div class="border-b border-slate-200 pb-3">
+						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition ID</p>
+						<p class="text-sm text-slate-700 mt-1">{selectedOpposition.id}</p>
+					</div>
+
+					<div class="border-b border-slate-200 pb-3">
+						<p class="text-xs font-semibold text-slate-500 uppercase">Payment Reference</p>
+						<p class="text-sm text-slate-700 font-mono mt-1">{selectedOpposition.paymentId}</p>
+					</div>
+
+					<div class="border-b border-slate-200 pb-3">
+						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition Date</p>
+						<p class="text-sm text-slate-700 mt-1">{mapDateToString(selectedOpposition.date)}</p>
+					</div>
+				</div>
+
+				<!-- Opposer Information -->
+				<div>
+					<h3 class="font-semibold text-slate-900 text-lg mb-4">Opposer Information</h3>
+					<div class="bg-slate-50 rounded-lg p-4 space-y-3">
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Name</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.name}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Email</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.email}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Phone</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.phone || '—'}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Address</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.address || '—'}</p>
+						</div>
+						<div>
+							<p class="text-xs font-semibold text-slate-600 uppercase">Nationality</p>
+							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.nationality || '—'}</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Opposition Grounds -->
+				<div>
+					<h3 class="font-semibold text-slate-900 text-lg mb-4">Grounds for Opposition</h3>
+					<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+						<p class="text-sm text-slate-700 whitespace-pre-wrap">{selectedOpposition.reason}</p>
+					</div>
+				</div>
+
+				<!-- Supporting Documents -->
+				{#if selectedOpposition.supportingDocs && selectedOpposition.supportingDocs.length > 0}
+					<div>
+						<h3 class="font-semibold text-slate-900 text-lg mb-4">Supporting Documents</h3>
+						<div class="space-y-2">
+							{#each selectedOpposition.supportingDocs as doc, idx}
+								<a
+									href={doc}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+								>
+									<div class="flex items-center gap-2">
+										<Icon icon="mdi:file-document" class="w-5 h-5 text-slate-600" />
+										<span class="text-sm font-medium text-slate-900">Document {idx + 1}</span>
+									</div>
+									<Icon icon="mdi:download" class="w-4 h-4 text-green-600" />
+								</a>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Counter Statements (if filed) -->
+				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.length > 0}
+					<div>
+						<h3 class="font-semibold text-slate-900 text-lg mb-4">Counter Statements</h3>
+						<div class="space-y-4">
+							{#each selectedOpposition.counterStatements as cs, idx}
+								<div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+									<div class="flex items-start justify-between mb-2">
+										<p class="text-sm font-semibold text-orange-900">Counter Statement {idx + 1}</p>
+										<p class="text-xs text-orange-700">{mapDateToString(cs.submittedDate)}</p>
+									</div>
+									<p class="text-sm text-orange-900 whitespace-pre-wrap">{cs.text}</p>
+									{#if cs.attachments && cs.attachments.length > 0}
+										<div class="mt-3 pt-3 border-t border-orange-200">
+											<p class="text-xs font-semibold text-orange-700 mb-2">Attachments:</p>
+											<div class="space-y-1">
+												{#each cs.attachments as attachment}
+													<a
+														href={attachment}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="text-xs text-orange-600 hover:text-orange-800 underline block"
+													>
+														View Document
+													</a>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Statutory Declarations (if filed) -->
+				{#if selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.length > 0}
+					<div>
+						<h3 class="font-semibold text-slate-900 text-lg mb-4">Statutory Declarations</h3>
+						<div class="space-y-4">
+							{#each selectedOpposition.statutoryDeclarations as sd, idx}
+								<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+									<div class="flex items-start justify-between mb-2">
+										<p class="text-sm font-semibold text-blue-900">Declaration {idx + 1}</p>
+										<p class="text-xs text-blue-700">{mapDateToString(sd.submittedDate)}</p>
+									</div>
+									<p class="text-sm text-blue-900 whitespace-pre-wrap">{sd.text}</p>
+									{#if sd.attachments && sd.attachments.length > 0}
+										<div class="mt-3 pt-3 border-t border-blue-200">
+											<p class="text-xs font-semibold text-blue-700 mb-2">Attachments:</p>
+											<div class="space-y-1">
+												{#each sd.attachments as attachment}
+													<a
+														href={attachment}
+														target="_blank"
+														rel="noopener noreferrer"
+														class="text-xs text-blue-600 hover:text-blue-800 underline block"
+													>
+														View Document
+													</a>
+												{/each}
+											</div>
+										</div>
+									{/if}
+								</div>
+							{/each}
+						</div>
+					</div>
+				{/if}
+
+
+			</div>
+		{/if}
+	</Sheet.Content>
+</Sheet.Root>
 
 <style>
 	/* Dashboard wrapper */

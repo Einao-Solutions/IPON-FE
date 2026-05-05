@@ -41,7 +41,7 @@
   let missedYearsCount = 0;
   let lateYearsCount = 0;
   let isLateRenewal = false;
-  let lateRenewalCost = "";
+  let latePenaltyCost = "";
   let serviceFee = "";
 
   let showRenewalErrorModal = false;
@@ -110,6 +110,8 @@
           setFileId: (v) => (fileId = v),
           setApplicationId: (v) => (applicationId = v),
           setFileTitle: (v) => (fileTitle = v),
+          isLateRenewal: (v) => (isLateRenewal = v),
+          setPenaltyFee: (v) => (latePenaltyCost = v),
           setResponseUrl: (v) => (responseurl = v),
           setRenewalMeta: (meta) => {
             missedYearsCount = meta.missedYearsCount ?? 0;
@@ -147,6 +149,33 @@
           .join(""),
       );
   }
+
+  /* ---------------- Submit form ---------------- */
+  // async function submitForm(formObj: Record<string, any>) {
+  //   // console.log("Resubmitting after payment:", formObj);
+
+  //   // Reconstruct FormData from stored JSON
+  //   const formData = new FormData();
+  //   Object.entries(formObj).forEach(([key, value]) => {
+  //     if (value !== null && value !== undefined) {
+  //       formData.append(key, String(value));
+  //     }
+  //   });
+  //   const filey = formObj.fileId;
+  //   fileId = filey;
+  //   const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+  //     method: "POST",
+  //     body: formData,
+  //   });
+  //   const data = await result.text();
+  //   clericalId = data;
+  //   if (!result.ok) {
+  //     const error = await result.text();
+  //     toast.error(`Failed to save clerical update application`);
+  //     return;
+  //   }
+  //   toast.success("Application Saved");
+  // }
 
   async function freeUpdate(fileId: string, clericalId: string) {
     const result = await fetch(
@@ -213,7 +242,7 @@
         <h2 class="text-lg font-semibold mb-2">
           Your file is not yet due for Renewal
         </h2>
-        <p class="mb-4">Renewal is only available 90 days before the due date.</p>
+        <p class="mb-4">{renewalErrorMessage}</p>
         <Button
           class="outline bg-red-500 text-white"
           on:click={() => goto("/home/dashboard")}>Back</Button
@@ -239,7 +268,7 @@
         <!-- Card Header -->
         <div class="bg-gray-800 p-6 text-white">
           <h2 class="text-xl font-semibold mb-1">{title}</h2>
-          <p class="text-blue-100 text-sm">Payment ID: {paymentId}</p>
+          <p class="text-blue-100 text-sm">Payment Reference: {paymentId}</p>
         </div>
 
         <!-- Payment Form -->
@@ -251,46 +280,37 @@
           <!-- Payment Details Grid -->
           <div class="space-y-6 mb-8">
             <!-- Amount Due - Highlighted -->
-            <!-- {#if type === "renewal" && Number(fileType) === 0 && cost}
+            {#if isLateRenewal}
               <div
                 class="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4"
               >
                 <div class="font-semibold text-gray-700 mb-2">
-                  Patent Renewal Cost Breakdown
+                  Renewal Fee Breakdown
                 </div>
                 <div class="flex flex-col gap-1 text-sm text-gray-600">
                   <div class="flex justify-between">
-                    <span>(Base Renewal Fee {missedYearsCount} )</span>
+                    <span>Renewal Fee</span>
                     <span>
-                      ₦{(missedYearsCount * 11500).toLocaleString("en-NG")}
+                      ₦{Number(cost) - Number(latePenaltyCost)}
                     </span>
                   </div>
-                  {#if isLateRenewal}
-                    <div class="flex justify-between">
-                      <span
-                        >Late Renewal Penalty ({lateYearsCount} year{lateYearsCount >
-                        1
-                          ? "s"
-                          : ""})</span
-                      >
-                      <span
-                        >₦{(lateYearsCount * 5000).toLocaleString(
-                          "en-NG",
-                        )}</span
-                      >
-                    </div>
-                  {/if}
+                  <div class="flex justify-between">
+                    <span>Late Renewal Penalty Fee</span>
+                    <span>
+                      ₦{latePenaltyCost}
+                    </span>
+                  </div>
                   <div
                     class="flex justify-between font-bold border-t pt-2 mt-2"
                   >
                     <span>Total</span>
                     <span
-                      >₦{parseFloat(cost ?? "0").toLocaleString("en-NG")}</span
+                      >₦{cost}</span
                     >
                   </div>
                 </div>
               </div>
-            {/if} -->
+            {/if}
             <div
               class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200"
             >
@@ -300,7 +320,7 @@
                     class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"
                   >
                     <Icon
-                      icon="material-symbols:attach-money"
+                      icon="mdi:naira"
                       width="1.5rem"
                       height="1.5rem"
                       class="text-green-600"
@@ -321,7 +341,7 @@
             </div>
             <!-- Other Payment Details -->
             <div class="grid gap-4">
-              {#if type && ["opposition", "oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
+              {#if type && ["oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
                 <div
                   class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
                 >

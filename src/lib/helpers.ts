@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
- export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -414,8 +414,9 @@ export enum ApplicationStatuses {
   NewOpposition = 30,
   AwaitingCounter = 31,
   Amendment = 32,
-  AwaitingRenewalConfirmation = 33,
-  PendingRenewal = 34,
+  StatutoryDeclaration = 33,
+  AwaitingRenewalConfirmation = 34,
+  PendingRenewal = 35,
   Value,
 }
 export enum PatentTypes {
@@ -600,12 +601,14 @@ export function MapAttachmentToString(attachmentName: string) {
     case "drawings":
       return "Patent Drawing";
     case "pdoc":
+    case "Priority Documents":
     case "priorityDocument":
     case "designPriorityDocument":
       return "Priority Document";
     case "cs":
       return "Claims and Specifications";
     case "form2":
+    case "POA":
     case "poa":
       return "Power of Attorney";
     case "any":
@@ -613,10 +616,12 @@ export function MapAttachmentToString(attachmentName: string) {
       return "Other Document";
     case "nov":
     case "novelty":
+    case "novelty_statement":
     case "noveltyStatement":
       return "Novelty Statement";
     case "statementOfNovelty":
       return "Statement of Novelty";
+    case "Design Representations":
     case "designDrawings":
       return "Design Drawings";
     case "representation":

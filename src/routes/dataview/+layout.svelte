@@ -8,6 +8,7 @@
   import {
     CanTreatApplication,
     CanUpdateApplication,
+    getNewStatusColour,
     getStatuses,
     mapStatusOptionToString,
     parseLoggedInUser,
@@ -20,7 +21,6 @@
     baseURL,
     FileTypes,
     FilingType,
-    getStatusColour,
     type PatentData,
     UserRoles,
     UserTypes,
@@ -430,7 +430,7 @@
         <button
           on:click={() => (selectedStatus = status)}
           style="background-color: {selectedStatus === status
-            ? getStatusColour(status)
+            ? getNewStatusColour(status)
             : 'transparent'} "
           class="border rounded-md flex p-2 flex-grow items-center hover:bg-accent hover:cursor-pointer {selectedStatus ===
           status
@@ -477,7 +477,7 @@
       Are you sure you want to update the status to
       <span
         class="border w-fit p-1 rounded-md"
-        style="background-color: {getStatusColour(selectedStatus)}"
+        style="background-color: {getNewStatusColour(selectedStatus)}"
       >
         {mapStatusOptionToString(selectedStatus)}
       </span> ?

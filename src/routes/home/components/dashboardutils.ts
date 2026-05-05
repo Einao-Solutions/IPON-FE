@@ -554,8 +554,10 @@ export function mapStatusToString(status: number) {
     case 32:
       return "Awaiting Approval";
     case 33:
-      return "Awaiting Renewal Confirmation";
+      return "Statutory Declaration";
     case 34:
+      return "Awaiting Renewal Confirmation";
+    case 35:
       return "Pending Renewal";
     default:
       return "";
@@ -616,6 +618,55 @@ export function mapPatentTypeToString(data: number) {
       return "Non Conventional";
     case 2:
       return "PCT";
+    default:
+      return "";
+  }
+}
+
+export function mapStatusToColor(status: string) {
+  switch (status) {
+    case "Active":
+      return "green";
+    case "Inactive":
+      return "red";
+    case "Awaiting Payment":
+      return "purple";
+    case "Awaiting Certificate Payment":
+      return "purple";
+    case "Awaiting Search":
+      return "yellow";
+    case "Awaiting Examiner":
+      return "yellow";
+    case "Rejected By Examiner":
+      return "red";
+    case "RejectedBySearch":
+      return "red";
+    case "Re_conduct":
+      return "red";
+    case "Formality Fail":
+      return "red";
+    case "Kiv Search":
+      return "gray";
+    case "Kiv Examiner":
+      return "gray";
+    case "Approved":
+      return "green";
+    case "Rejected":
+      return "red";
+    case "Awaiting Recordal Process":
+      return "blue";
+    case "Appeal Requested":
+      return "yellow";
+    case "None":
+      return "";
+    case "Auto-Approved":
+      return "green";
+    case "Awaiting Status Update":
+      return "yellow";
+    case "Request Withdrawal":
+      return "orange";
+    case "New Opposition":
+      return "yellow";
     default:
       return "";
   }

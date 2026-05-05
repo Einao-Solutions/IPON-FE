@@ -2,55 +2,45 @@
 	import { onMount } from 'svelte';
 	import Icon from '@iconify/svelte';
 	import { applicationData, applicationMode, formsData } from '$lib/store';
+	import {Label} from "$lib/components/ui/label";
 	import { tradeMarkClassesMap } from '$lib/constants';
-	import { type AttachmentType, type Applicant, type CorrespondenceType, GetCountryImageLink } from '$lib/helpers';
+	import * as Table from "$lib/components/ui/table/index"
+	import { type AttachmentType, type CorrespondenceType, GetCountryImageLink } from '$lib/helpers';
 	import { mapTrademarkAttToString, mapTradeStringToInt, mapTradeStringToString } from '$lib/designutils';
-
-	interface BasicFormData {
-		title: string;
-		class: number;
-		description: string;
-		additionalDescription: string;
-		type: number;
-		logo: number;
-		disclaimer: string;
-	}
-
-	let basics: BasicFormData | undefined = undefined;
-	let applicants: Applicant[] = [];
-	let correspondence: CorrespondenceType | undefined = undefined;
-	let isLoading: boolean | undefined = undefined;
-	let attachments: AttachmentType[] = [];
-
-	onMount(() => {
-		isLoading = true;
-		let allData = $formsData;
-		basics = (allData?.find(x => x.name === "basic")?.data as BasicFormData) || undefined;
-		applicants = (allData?.find(x => x.name === "applicant")?.data as Applicant[]) || [];
-		correspondence = (allData?.find(x => x.name === "correspondence")?.data as CorrespondenceType) || undefined;
-		attachments = ($formsData?.filter(x => x.name === "attachments")[0]?.data as AttachmentType[]) ?? [];
-		if ($applicationMode === 1) {
+let basics:unknown
+	let applicants:[]
+	let correspondence:CorrespondenceType
+	let isLoading:boolean|undefined=undefined;
+	let attachments:AttachmentType[]
+	onMount(()=>{
+		isLoading=true;
+		let allData = $formsData
+		basics= allData?.find(x=>x.name==="basic")?.data || undefined
+		applicants= allData?.find(x=>x.name==="applicant")?.data || undefined
+		correspondence= allData?.find(x=>x.name==="correspondence")?.data || undefined
+		attachments = $formsData?.filter(x=>x.name==="attachments")[0]?.data as AttachmentType[]??undefined;
+		if ($applicationMode===1){
 			// edit mode
-			applicants = applicants.length ? applicants : ($applicationData?.applicants as Applicant[] ?? []);
-			correspondence = correspondence ?? ($applicationData?.correspondence as CorrespondenceType | undefined);
-			attachments = attachments.length ? attachments : ($applicationData?.attachments?.map((val: any) => ({
-				type: mapTradeStringToInt(val.name), data: [{
+			applicants=applicants??$applicationData?.applicants;
+			correspondence=correspondence??$applicationData?.correspondence;
+			attachments= attachments?? $applicationData?.attachments.map((val)=> ({
+				type:mapTradeStringToInt(val.name), data: [
+				{
 					url: val.url[0],
-					fileName: String(mapTradeStringToString(val.name))
-				}]
-			})) as AttachmentType[] ?? []);
-			basics = basics ?? {
-				title: ($applicationData as any)?.titleOfTradeMark,
-				class: ($applicationData as any)?.trademarkClass,
-				description: ($applicationData as any)?.trademarkClassDescription,
-				additionalDescription: ($applicationData as any)?.additionalDescription,
-				type: ($applicationData as any)?.trademarkType,
-				logo: ($applicationData as any)?.trademarkLogo,
-				disclaimer: ($applicationData as any)?.trademarkDisclaimer,
-			};
+					fileName: mapTradeStringToString(val.name)
+				}
+			]}));
+			basics = basics?? {
+				title: $applicationData.titleOfTradeMark,
+				class: $applicationData.trademarkClass,
+				description: $applicationData.trademarkClassDescription,
+				type: $applicationData.trademarkType,
+				logo: $applicationData.trademarkLogo,
+				disclaimer: $applicationData.trademarkDisclaimer,
+			}
 		}
-		isLoading = false;
-	});
+		isLoading=false;
+	})
 </script>
 
 
@@ -59,81 +49,102 @@
 		<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
 	</div>
 	{:else if isLoading===false}
-<div class="max-w-4xl mx-auto px-4 space-y-6">
-	<h1 class="text-2xl font-bold text-gray-900 mb-6">Summary of Trademark Application</h1>
-
-	<!-- Basic Information -->
-	<div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm space-y-3 mb-8">
-		<div class="border-b pb-2">
-			<h2 class="text-lg font-semibold text-gray-800">1. Trademark Information</h2>
-		</div>
-		<div class="text-gray-700 text-sm space-y-2">
-			<p><strong>Title:</strong> {basics?.title || '—'}</p>
-			<p><strong>Class:</strong> Class {basics?.class || '—'}</p>
-			<p><strong>Class Description:</strong> {basics?.description || '—'}</p>
-			<p><strong>Additional Description:</strong> {basics?.additionalDescription || '—'}</p>
-			<p><strong>Type:</strong> {basics?.type !== undefined ? ['Local', 'Foreign'][basics.type] || '—' : '—'}</p>
-			<p><strong>Logo Description:</strong> {basics?.logo !== undefined ? ['Device', 'Word Mark', 'Word and Device'][basics.logo] || '—' : '—'}</p>
-			<p><strong>Claims and Disclaimer:</strong> {basics?.disclaimer || '—'}</p>
-		</div>
+<div class="m-2 space-y-3">
+	<div class="border rounded-md p-2">
+		<Label for='title'>Trademark Title</Label>
+		<p>{basics.title || undefined}</p>
+	</div>
+	<div class="border rounded-md p-2">
+		<Label for='title'>Trademark Class</Label>
+		<p>Class {basics.class || undefined}</p>
+		<Label for='desc'>Class Descripition</Label>
+		<p>{basics.description||undefined}</p>
+	</div>
+	<div class="border rounded-md p-2">
+		<Label for='type'>Trademark Type</Label>
+		<p>{['Local', 'Foreign'][basics.type] || undefined}</p>
+	</div>
+	<div class="border rounded-md p-2">
+		<Label for='logo'>Trademark Logo description</Label>
+		<p>{['Device', 'Word Mark', 'Word and Device'][basics.logo] || undefined}</p>
+	</div>
+	<div class="border rounded-md p-2">
+		<Label for='disclaimer'>Claims and disclaimer</Label>
+		<p>{basics.disclaimer || undefined}</p>
 	</div>
 
-	<!-- Applicants -->
-	<div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm space-y-3 mb-8">
-		<div class="border-b pb-2">
-			<h2 class="text-lg font-semibold text-gray-800">2. Applicants Information</h2>
-		</div>
-		<div class="text-gray-700 text-sm space-y-2">
+	<div class="rounded-md border p-2">
+		<Label>Applicants Information</Label>
+		<Table.Root >
 			{#if applicants.length===0}
-				<p class="text-gray-400">No applicants added</p>
+				<p>No applicants added</p>
 			{:else}
-				{#each applicants as applicant, i (i)}
-					<div class="mb-3">
-						<p><strong>{i + 1}.</strong> <strong>Name:</strong> {applicant.name}</p>
-						<p class="flex items-center gap-2"><strong>Country:</strong>
-							<img src="{GetCountryImageLink(applicant.country)}" width="20" height="15" alt="flag"/>
+				<Table.Header>
+					<Table.Row>
+						<Table.Head class="w-1">s/n</Table.Head>
+						<Table.Head>Name</Table.Head>
+						<Table.Head>Country</Table.Head>
+						<Table.Head>Phone</Table.Head>
+						<Table.Head>Email</Table.Head>
+						<Table.Head>Address</Table.Head>
+					</Table.Row>
+				</Table.Header>
+				<Table.Body>
+					{#each applicants as applicant, i (i)}
+						<Table.Row>
+							<Table.Cell class="w-1">{i+1}</Table.Cell>
+							<Table.Cell>{applicant.name}</Table.Cell>
+							<Table.Cell >
+						<span class="flex gap-2">
+						<img src="{GetCountryImageLink(applicant.country)}" width="20" height="15" alt="@flag"/>
 							{applicant.country}
-						</p>
-						<p><strong>Phone:</strong> {applicant.phone}</p>
-						<p><strong>Email:</strong> {applicant.email}</p>
-						<p><strong>Address:</strong> {applicant.address}</p>
-					</div>
-				{/each}
+						</span>
+							</Table.Cell>
+							<Table.Cell>{applicant.phone}</Table.Cell>
+							<Table.Cell>{applicant.email}</Table.Cell>
+							<Table.Cell>{applicant.address}</Table.Cell>
+						</Table.Row>
+					{/each}
+				</Table.Body>
 			{/if}
+		</Table.Root>
+	</div>
+	<div class="rounded-md border p-2">
+		<Label>Correspondence Information</Label>
+		<div>
+			<Label>Name</Label>
+			<p>{correspondence?.name}</p>
+		</div>
+		<div>
+			<Label>Address</Label>
+			<p>{correspondence?.address}</p>
+		</div>
+		<div>
+			<Label>Number</Label>
+			<p>{correspondence?.phone}</p>
+		</div>
+		<div>
+			<Label>Email</Label>
+			<p>{correspondence?.email}</p>
+		</div>
+		<div>
+			<Label>State</Label>
+			<p>{correspondence?.state}</p>
 		</div>
 	</div>
 
-	<!-- Correspondence -->
-	<div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm space-y-3 mb-8">
-		<div class="border-b pb-2">
-			<h2 class="text-lg font-semibold text-gray-800">3. Correspondence Information</h2>
-		</div>
-		<div class="text-gray-700 text-sm space-y-2">
-			<p><strong>Name:</strong> {correspondence?.name || '—'}</p>
-			<p><strong>Address:</strong> {correspondence?.address || '—'}</p>
-			<p><strong>Phone:</strong> {correspondence?.phone || '—'}</p>
-			<p><strong>Email:</strong> {correspondence?.email || '—'}</p>
-			<p><strong>State:</strong> {correspondence?.state || '—'}</p>
-		</div>
-	</div>
-
-	<!-- Attachments -->
-	<div class="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm space-y-3 mb-8">
-		<div class="border-b pb-2">
-			<h2 class="text-lg font-semibold text-gray-800">4. Attachments</h2>
-		</div>
-		<div class="text-gray-700 text-sm space-y-3">
-			{#each attachments.filter(x=>x.type!=null) as attached, i (i)}
-				<div class="flex items-center gap-4 border p-3 rounded-lg">
-					<p class="font-medium">{mapTrademarkAttToString(attached.type)}</p>
-					<p class="line-clamp-1 text-ellipsis text-gray-500 flex-1">{attached.data[0].url}</p>
-					<a target="_blank" href="{attached.data[0].url}" class="rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-800 px-4 py-1 text-sm font-medium transition shadow-sm border border-blue-200">
-						View
+	<div class="rounded-md border p-2 m-1">
+		<Label>Attachments</Label>
+		{#each attachments.filter(x=>x.type!=null) as attached, i (i)}
+				<div class="rounded-md border p-1.5 flex gap-4 m-2 items-center justify-start">
+					<p>{mapTrademarkAttToString(attached.type)}</p>
+					<p class="line-clamp-1 text-ellipsis">{attached.data[0].url}</p>
+					<a target="_blank" href="{attached.data[0].url}" class="rounded-md border bg-blue-100 p-2" >
+						<Icon icon="ep:view" width="1.2rem" height="1.2rem" />
 					</a>
-					<Icon icon="simple-line-icons:check" width="1.2rem" height="1.2rem" class="text-green-500" />
+					<Icon icon="simple-line-icons:check" width="1.2rem" height="1.2rem" class="text-green-500 ml-auto" />
 				</div>
-			{/each}
-		</div>
+		{/each}
 	</div>
 </div>
 	{/if}

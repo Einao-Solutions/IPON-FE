@@ -255,9 +255,11 @@ export function mapStatusStringToStatus(status: string) {
       return 31;
     case "AwaitingApproval":
       return 32;
-    case "AwaitingRenewalConfirmation":
+    case "StatutoryDeclaration":
       return 33;
-    case "PendingRenewal":
+    case "AwaitingRenewalConfirmation":
       return 34;
+    case "PendingRenewal":
+      return 35;
   }
 }
