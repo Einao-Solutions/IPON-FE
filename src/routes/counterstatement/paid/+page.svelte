@@ -18,7 +18,7 @@
 		setTimeout(() => { messageVisible = true; }, 1000);
 		setTimeout(() => { subMessageVisible = true; }, 1800);
 
-		const rrr = localStorage.getItem('rrr') ?? $page.url.searchParams.get('rrr') ?? undefined;
+		const rrr = $page.url.searchParams.get('rrr') ?? localStorage.getItem('rrr') ?? undefined;
 		paymentId = rrr ?? null;
 
 		await updateCounterStatementPayment(paymentId);

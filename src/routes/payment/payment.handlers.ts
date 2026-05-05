@@ -242,7 +242,7 @@ async function opposition(ctx: PaymentContext): Promise<void> {
   ctx.state.setTitle(`Opposition of ${info.fileTitle}`);
   ctx.state.setCost(info.cost);
   ctx.state.setPaymentId(info.paymentId);
-  ctx.state.setFileNumber(info.fileId);
+  ctx.state.setFileNumber(info.fileNumber ?? info.fileId);
   ctx.state.setFileApplicant(opp.name);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/opposition/paid?rrr=${info.paymentId}`,

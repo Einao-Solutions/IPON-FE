@@ -115,15 +115,15 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
     case ApplicationStatuses.AppealRequest:
       return "Appeal Requested";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
-      return "Awaiting Counter";
+      return "Awaiting Counter Statement";
     case ApplicationStatuses.Amendment:
       return "Amendment";
     case ApplicationStatuses.AwaitingRecordalProcess:
       return "Awaiting Recordal Process";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter Statement";
     case ApplicationStatuses.AwaitingCertificateConfirmation:

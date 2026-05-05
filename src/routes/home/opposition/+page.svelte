@@ -93,7 +93,7 @@
 				>
 					<div class="flex items-center space-x-3">
 						<div class="relative z-10">
-							New Opposition
+							Opposed
 						</div>
 						<span class="relative z-10 font-semibold tracking-wide">{newOpposition}</span>
 					</div>
@@ -109,7 +109,7 @@
 				>
 					<div class="flex items-center space-x-3">
 						<div class="relative z-10">
-							Awaiting Counter
+							Awaiting Counter Statement
 						</div>
 						<span class="relative z-10 font-semibold tracking-wide">{awaitingCounter}</span>
 					</div>

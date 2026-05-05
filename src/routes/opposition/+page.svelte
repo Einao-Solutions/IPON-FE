@@ -99,7 +99,8 @@
       // Auto-trigger counter statement — pre-fill input and search immediately
       csSearchInput = urlFileNumber;
       currentStep = "cs-search";
-      handleCSSearchWithNumber(urlFileNumber);
+      const urlOppositionId = $page.url.searchParams.get("oppositionId");
+      handleCSSearchWithNumber(urlFileNumber, urlOppositionId ?? undefined);
     } else if (urlFileId) {
       // auto trigger search with fileId — skip landing, go straight to search
       currentStep = "search";
@@ -107,7 +108,7 @@
     }
   });
 
-  async function handleCSSearchWithNumber(fileNumber: string) {
+  async function handleCSSearchWithNumber(fileNumber: string, overrideOppositionId?: string) {
     csIsLoading = true;
     toast.loading("Fetching File Information", { description: "Please hold on...", duration: 1000 });
     try {
@@ -127,7 +128,7 @@
           paymentId: d.paymentId ?? "",
           cost: d.cost ?? "",
           fileId: d.fileId ?? "",
-          oppositionId: d.oppositionId ?? "",
+          oppositionId: overrideOppositionId ?? d.oppositionId ?? "",
         };
         currentStep = "cs-results";
       } else {

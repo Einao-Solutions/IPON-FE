@@ -465,7 +465,7 @@ export function mapTypeToString(type: number) {
     case 15:
       return "Withdrawal Request";
     case 16:
-      return "New Opposition";
+      return "Opposed";
     case 17:
       return "Amendment";
     case 18:
@@ -520,7 +520,7 @@ export function mapStatusToString(status: number) {
     case 15:
       return "Opposition";
     case 16:
-      return "Awaiting Counter";
+      return "Awaiting Counter Statement";
     case 17:
       return "Awaiting Staff";
     case 18:
@@ -548,13 +548,13 @@ export function mapStatusToString(status: number) {
     case 29:
       return "Request Withdrawal";
     case 30:
-      return "New Opposition";
+      return "Opposed";
     case 31:
-      return "Awaiting Counter";
+      return "Awaiting Counter Statement";
     case 32:
       return "Awaiting Approval";
     case 33:
-      return "Statutory Declaration";
+      return "Awaiting Statutory Declaration";
     case 34:
       return "Awaiting Renewal Confirmation";
     case 35:
@@ -665,7 +665,7 @@ export function mapStatusToColor(status: string) {
       return "yellow";
     case "Request Withdrawal":
       return "orange";
-    case "New Opposition":
+    case "Opposed":
       return "yellow";
     default:
       return "";

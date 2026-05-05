@@ -94,6 +94,10 @@
         header: "Date",
       }),
       table.column({
+        accessor: "fileId",
+        header: "File Number",
+      }),
+      table.column({
         accessor: "title",
         header: "Title",
       }),
@@ -110,7 +114,7 @@
         header: "Payment ID",
       }),
       table.column({
-        accessor: "fileId",
+        accessor: "fileCreatorId",
         header: "View File",
       }),
       table.column({
@@ -288,12 +292,14 @@
         throw new Error("No data returned");
       }
 
+      console.log('Opposition API response:', JSON.stringify(data, null, 2));
+
       // Transform API response to match template field names
-      // Backend may return data directly or nested under .opposition
-      const opp = data.opposition ?? data;
+      // Backend returns { success, data: [...] } or { opposition: {...} } or direct object
+      const opp = Array.isArray(data.data) ? data.data[0] : (data.opposition ?? data);
       opposition = {
         id: opp.id,
-        OppositionDate: opp.oppositionDate ?? opp.dateOpposed,
+        OppositionDate: opp.oppositionDate ?? opp.dateOpposed ?? opp.date,
         Status: opp.oppositionStatus ?? opp.status,
         Name: opp.name ?? opp.opposerName,
         Email: opp.email ?? opp.opposerEmail,
@@ -646,7 +652,7 @@
           <div>
             <p class="text-sm text-gray-500">Opposition Date</p>
             <p class="text-lg font-semibold">
-              {mapDateToString(opposition.OppositionDate)}
+              {opposition.OppositionDate ? mapDateToString(opposition.OppositionDate) : '—'}
             </p>
           </div>
           <div>
@@ -655,8 +661,8 @@
                 Awaiting Payment
               </span>
             {:else if opposition.Status === 30 || opposition.Status === 29}
-              <span class="inline-block px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
-                New Opposition
+              <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+                Awaiting Counter Statement
               </span>
             {:else if opposition.Status === 31}
               <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
@@ -664,7 +670,7 @@
               </span>
             {:else if opposition.Status === 33}
               <span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
-                Counter Statement Filed
+                Awaiting Statutory Declaration
               </span>
             {:else if opposition.Status === 17}
               <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
@@ -1453,10 +1459,10 @@
                             </DropdownMenu.Item>
                           </DropdownMenu.Content>
                         </DropdownMenu.Root>
-                      {:else if cell.id === "fileId"}
+                      {:else if cell.id === "fileCreatorId"}
                         <Button
                           on:click={async () => {
-                            const fileNumber = cell.render();
+                            const fileNumber = row.cells.find((c) => c.id === "fileId")?.render();
                             try {
                               const res = await fetch(`${baseURL}/api/files/GetFileIdByFileNumber?fileNumber=${encodeURIComponent(fileNumber)}`);
                               if (res.ok) {
@@ -1477,6 +1483,10 @@
                       {:else if cell.id === "date"}
                         <div class="w-24">
                           <Render of={mapDateToString(cell.render())} />
+                        </div>
+                      {:else if cell.id === "fileId"}
+                        <div class="w-32 whitespace-nowrap">
+                          <Render of={cell.render()} />
                         </div>
                       {:else if cell.id === "currentStatus"}
                         <div class="w-24">
