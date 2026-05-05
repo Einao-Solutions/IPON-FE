@@ -92,6 +92,7 @@
 
         filteredResults = results.filter(
           (result) =>
+            // Existing logic for trademark and patent
             (result.fileTypes === FileTypes.Trademark &&
               result.fileStatus !== null &&
               [3, 4, 6, 7].includes(result.fileStatus)) ||

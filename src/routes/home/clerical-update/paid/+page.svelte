@@ -57,13 +57,9 @@
     paymentType = $page.url.searchParams.get("paymentType") ?? "";
     const clericalId = localStorage.getItem("clericalId");
 
-    // ✅ Fix: use FileId (capital F) to match how clerical data is stored
-    const fileId = formDataObj?.FileId ?? formDataObj?.fileId ?? null;
-
-    //console.log("Clerical paid debug:", { formDataObj, fileId, clericalId });
     if (paymentType === "clerical") {
       // Only show animations after successful clerical update
-      await updateClerical(fileId, clericalId);
+      await updateClerical(formDataObj?.fileId, clericalId);
     } else {
       // For non-clerical types, show animations immediately
       showSuccessAnimations();

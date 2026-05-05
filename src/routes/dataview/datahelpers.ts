@@ -753,3 +753,33 @@ export function getLetterName(letter: number): string {
       return "Unknown Document";
   }
 }
+
+export function getNewStatusColour(obj: ApplicationStatuses | null): string {
+  switch (obj) {
+    case ApplicationStatuses.AwaitingPayment:
+      return "#8a00c2";
+    case ApplicationStatuses.AwaitingSearch:
+    case ApplicationStatuses.AwaitingExaminer:
+      return "#468a46";
+    case ApplicationStatuses.KivSearch:
+    case ApplicationStatuses.KivExaminer:
+      return "#cfcec3";
+    case ApplicationStatuses.FormalityFail:
+    case ApplicationStatuses.Re_conduct:
+    case ApplicationStatuses.Rejected:
+      return "#fe9797";
+    case ApplicationStatuses.Active:
+    case ApplicationStatuses.Approved:
+      return "#468a46";
+    case ApplicationStatuses.Publication:
+      return "#468a46";
+    case ApplicationStatuses.AwaitingRecordalProcess:
+      return "#29C5F6";
+    case ApplicationStatuses.AppealRequest:
+      return "#ede064ff";
+    case null:
+      return "";
+    default:
+      return "#cfcec3";
+  }
+}

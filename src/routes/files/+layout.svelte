@@ -16,18 +16,18 @@
 	let showCustomTitle:boolean=false;
 	let fileType:string|undefined=undefined;
 	afterNavigate(({ from, to }) => {
-	//	console.log(to.url)
-		if (to?.url) currentPage.set(to.url);
-	//	console.log($currentPage);
+		console.log(to.url)
+		currentPage.set(to.url);
+		console.log($currentPage);
 	});
 	$:{
 		if($currentPage) {
 			titleType = $currentPage.searchParams.get('titleType') ?? undefined;
-		//	console.log(titleType)
+			console.log(titleType)
 			if (titleType == 'specific')
 			{
 				const val=$currentPage.searchParams.get('fileType')
-				const num= parseInt(val ?? '0')
+				const num= parseInt(val)
 				title =  'All '+fileTypeToString(num)+'s';
 			}
 			if(titleType=='search')
@@ -39,9 +39,9 @@
 				fileType=$currentPage.searchParams.get('fileType') ?? undefined;
 				if(fileType){fileType=fileTypeToString(parseInt(fileType));}
 				const applicationType= $currentPage.searchParams.get('appType');
-				appType=parseInt(applicationType ?? '0')
+				appType=parseInt(applicationType)
 				const status= $currentPage.searchParams.get('status')
-				appStatus=parseInt(status ?? '0');
+				appStatus=parseInt(status);
 				showCustomTitle=true;
 			}
 			if (titleType=='renew')
@@ -66,7 +66,7 @@
 				{#if fileType}
 				<p>{fileType}</p>
 					{/if}
-				<div class="m-1 p-1 border rounded-md">{mapTypeToString(appType ?? 0)}</div>
+				<div class="m-1 p-1 border rounded-md">{mapTypeToString(appType)}</div>
 				<AppStatusTag value="{appStatus}" />
 			</div>
 			{/if}

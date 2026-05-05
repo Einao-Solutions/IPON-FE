@@ -131,12 +131,12 @@
   >
     <Dialog.Header class="flex-shrink-0">
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
-        <Icon
+        <!-- <Icon
           icon="mdi:transfer-right"
           width="1.5em"
           height="1.5em"
-          class="text-green-600"
-        />
+          class="text-blue-600"
+        /> -->
         Patent Assignment Details
       </Dialog.Title>
       <Dialog.Description>
@@ -146,7 +146,7 @@
 
     <div class="flex-1 overflow-auto p-4">
       {#if loading}
-        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-blue-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
@@ -252,7 +252,7 @@
           <!-- Assignment Deed Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block flex items-center gap-2">
-              <Icon icon="mdi:file-document" class="text-green-600" />
+              <Icon icon="mdi:file-document" class="text-gray-600" />
               Assignment Deed Attachments:
             </Label>
             {#if assignmentDetails.assignmentDeedAttachments && assignmentDetails.assignmentDeedAttachments.length}
@@ -294,7 +294,7 @@
           <!-- Supporting Document Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block flex items-center gap-2">
-              <Icon icon="mdi:file-multiple" class="text-green-600" />
+              <Icon icon="mdi:file-multiple" class="text-gray-600" />
               Supporting Document Attachments:
             </Label>
             {#if assignmentDetails.supportingDocumentAttachments && assignmentDetails.supportingDocumentAttachments.length}
@@ -335,15 +335,14 @@
 
           <!-- Comment Section -->
           <div class="mb-4">
-            <Label for="decision-comment" class="block font-medium mb-1 flex items-center gap-2">
-              <Icon icon="mdi:comment-text-outline" class="text-green-600" />
+            <Label for="assignment-comment" class="block font-medium mb-1">
               Decision Comment: {#if !isReadOnly}<span class="text-red-500">*</span>{/if}
             </Label>
             <Textarea
               id="assignment-comment"
               bind:value={comment}
               rows={3}
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-200"
               placeholder="Enter your review comment and decision reason..."
               required
               disabled={isReadOnly}
