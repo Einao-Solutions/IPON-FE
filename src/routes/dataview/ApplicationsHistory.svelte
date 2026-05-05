@@ -2928,11 +2928,6 @@
                         generateLetter(application, 0, 1);
                       }}>Acknowledgement Letter</DropdownMenu.Item
                     >
-                    <!-- <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 0, 2);
-                      }}>Acceptance Letter</DropdownMenu.Item
-                    > -->
                     <DropdownMenu.Item
                       on:click={() => {
                         generateLetter(application, 0, 37);
@@ -3098,8 +3093,8 @@
                     {/if}
 
                     <!-- Renewal docs -->
-                  {:else if application.applicationType == 1 && application.currentStatus === ApplicationStatuses.Approved}
-                    {#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification || UserRoles.Tech || UserRoles.SuperAdmin)}
+                  {:else if application.applicationType == FormApplicationTypes.LicenseRenewal && (application.currentStatus === ApplicationStatuses.Approved || application.currentStatus === ApplicationStatuses.AutoApproved)}
+                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
                       <DropdownMenu.Item
                         on:click={() => renewalCertificate(application)}
                       >
