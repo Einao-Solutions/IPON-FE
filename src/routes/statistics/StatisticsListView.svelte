@@ -30,6 +30,7 @@
   }
 
   $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
+  $: isEinaoFinance = userRoles.includes(UserRoles.EinaoFinance); // ✅ ONLY EinaoFinance, no SuperAdmin fallback
 
   $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
                     userRoles.includes(UserRoles.Minister) || 
@@ -234,8 +235,8 @@
                   </div>
                 </button>
 
-              <!-- Tech Fee Revenue Statistics — SuperAdmin only -->
-                {#if isSuperAdmin}
+                <!-- Tech Fee Revenue Statistics — EinaoFinance ONLY -->
+                {#if isEinaoFinance}
                   <button
                     on:click={navigateToTechFeeStatistics}
                     class="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 border-2 border-blue-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-blue-300/60 text-left w-full"
@@ -246,7 +247,7 @@
                         <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                           <Icon icon="mdi:chip" class="text-2xl text-blue-600" />
                         </div>
-                        <span class="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">Super Admin</span>
+                        <span class="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">EINAO Finance</span>
                       </div>
                       <h4 class="text-lg font-semibold text-slate-800 mb-2">Tech Fee Revenue Statistics</h4>
                       <p class="text-sm text-gray-600 mb-4">
@@ -260,7 +261,6 @@
                   </button>
                 {/if}
               </div>
-
             {/if}
           </div>
         </Accordion.Content>
