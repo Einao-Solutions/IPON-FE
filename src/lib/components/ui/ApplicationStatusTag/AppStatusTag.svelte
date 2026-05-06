@@ -20,6 +20,8 @@
 				return 'bg-yellow-300';
 			case 30:
 				return 'bg-red-200';
+			case 37:
+				return 'bg-red-200';
 			case 31:
 				return 'bg-yellow-300';
 			case 33:
@@ -89,6 +91,7 @@
 			case 24:
 				return 'text-red-950';
 			case 30:
+			case 37:
 				return 'text-red-950';
 			case 31:
 				return 'text-yellow-950';

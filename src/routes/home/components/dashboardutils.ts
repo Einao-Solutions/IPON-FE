@@ -480,6 +480,10 @@ export function mapTypeToString(type: number) {
       return "Reclassification";
     case 23:
       return "Restoration";
+    case 24:
+      return "Counter Statement";
+    case 25:
+      return "Statutory Declaration";
     default:
       return "";
   }
@@ -561,6 +565,8 @@ export function mapStatusToString(status: number) {
       return "Pending Renewal";
     case 36:
       return "Awaiting Office Process";
+    case 37:
+      return "Abandoned";
     default:
       return "";
   }

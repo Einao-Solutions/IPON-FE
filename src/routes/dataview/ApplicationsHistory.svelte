@@ -2458,6 +2458,8 @@
               <span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
             {:else if application.applicationType === FormApplicationTypes.NewOpposition && application.currentStatus === 33}
               <span class="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
+            {:else if application.applicationType === FormApplicationTypes.CounterStatement || application.applicationType === FormApplicationTypes.StatutoryDeclaration}
+              <span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Submitted</span>
             {:else}
               <AppStatusTag value={application.currentStatus ?? undefined} />
             {/if}

@@ -12,6 +12,7 @@
 	let awaitingCounter = 0;
 	let newOpposition = 0;
 	let awaitingOfficeProcess = 0;
+	let abandoned = 0;
 	let isLoading: boolean = false;
 	onMount(async () => {
 		await loadOppositionStats();
@@ -42,6 +43,7 @@
 		awaitingCounter = stats.awaitingCounter;
 		newOpposition = stats.newOpposition;
 		awaitingOfficeProcess = stats.awaitingOfficeProcess ?? 0;
+		abandoned = stats.abandoned ?? 0;
 
 		// If backend doesn't provide awaitingOfficeProcess, fetch it directly
 		if (!stats.awaitingOfficeProcess) {
@@ -140,6 +142,21 @@
 							Awaiting Office Process
 						</div>
 						<span class="relative z-10 font-semibold tracking-wide">{awaitingOfficeProcess}</span>
+					</div>
+					<div
+						class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+					></div>
+				</Button>
+
+				<Button
+					class="group relative overflow-hidden bg-red-500 hover:bg-red-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] px-6 py-3 rounded-xl"
+					on:click={() => loadData(37, 10, 0)}
+				>
+					<div class="flex items-center space-x-3">
+						<div class="relative z-10">
+							Abandoned
+						</div>
+						<span class="relative z-10 font-semibold tracking-wide">{abandoned}</span>
 					</div>
 					<div
 						class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"

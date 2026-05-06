@@ -8,6 +8,7 @@
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapTypeToString, mapDateToString } from './dashboardutils';
 	import * as Accordion from "$lib/components/ui/accordion"
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { toast } from 'svelte-sonner';
 	import AvailabilitySearchModal from './AvailabilitySearchModal.svelte';
@@ -980,7 +981,7 @@
 										<th class="px-3 py-2 text-left font-semibold">Opposer Name</th>
 										<th class="px-3 py-2 text-left font-semibold">Status</th>
 										<th class="px-3 py-2 text-left font-semibold">Payment ID</th>
-										<th class="px-3 py-2 text-left font-semibold">View Opposition</th>
+										<th class="px-3 py-2 text-left font-semibold">Action</th>
 									</tr>
 								</thead>
 								<tbody class="divide-y divide-slate-100">
@@ -1007,10 +1008,25 @@
 											<td class="px-3 py-2 text-slate-700">{row.paymentId ?? '—'}</td>
 											<td class="px-3 py-2">
 												{#if row.id}
-													<button
-														on:click={() => viewOppositionDetail(row.fileId || '', row.id)}
-														class="text-xs text-green-600 hover:text-green-800 font-medium underline"
-													>View</button>
+													<DropdownMenu.Root>
+														<DropdownMenu.Trigger asChild let:builder>
+															<Button builders={[builder]} size="sm" class="text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+																More Action
+																<Icon icon="lucide:chevron-down" class="w-3 h-3 ml-1" />
+															</Button>
+														</DropdownMenu.Trigger>
+														<DropdownMenu.Content align="end" class="w-56">
+															<DropdownMenu.Item on:click={() => viewOppositionDetail(row.fileId || '', row.id)}>
+																View Opposition
+															</DropdownMenu.Item>
+															<DropdownMenu.Separator />
+															<DropdownMenu.Label>Print</DropdownMenu.Label>
+															<DropdownMenu.Separator />
+															<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?fileId=${row.fileId}&letterType=93&applicationId=${row.id}`)}>
+																Statutory Declaration Acknowledgement
+															</DropdownMenu.Item>
+														</DropdownMenu.Content>
+													</DropdownMenu.Root>
 												{:else}
 													<span class="text-slate-400 text-xs">—</span>
 												{/if}
