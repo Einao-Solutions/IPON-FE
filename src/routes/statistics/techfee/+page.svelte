@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { baseURL } from "$lib/helpers";
+  import { baseURL, UserRoles } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
@@ -337,6 +337,14 @@
   onMount(async () => {
     const user = $loggedInUser;
     if (!user) { goto("/auth"); return; }
+
+    // ✅ ONLY EinaoFinance — SuperAdmin cannot access
+    if (!user.userRoles?.includes(UserRoles.EinaoFinance)) {
+      toast.error("Access denied — EINAO Finance role required");
+      goto("/statistics");
+      return;
+    }
+
     registryType = $page.url.searchParams.get("registryType") ?? "";
     selectedMonth = MONTHS[new Date().getMonth()];
     await fetchSingle();
