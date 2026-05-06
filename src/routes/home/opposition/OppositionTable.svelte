@@ -453,8 +453,17 @@
   function canResolve(row: []) {
     return (
       ($loggedInUser.userRoles.includes(UserRoles.Tech) ||
+        $loggedInUser.userRoles.includes(UserRoles.SuperAdmin) ||
         $loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
       parseInt(row.find((x) => x.id === "currentStatus").value) === 17
+    );
+  }
+  function isAwaitingOfficeProcess(row: []) {
+    return (
+      ($loggedInUser.userRoles.includes(UserRoles.Tech) ||
+        $loggedInUser.userRoles.includes(UserRoles.SuperAdmin) ||
+        $loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
+      parseInt(row.find((x) => x.id === "currentStatus").value) === 36
     );
   }
   function canUploadResponse(row: []) {
@@ -672,6 +681,10 @@
               <span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
                 Awaiting Statutory Declaration
               </span>
+            {:else if opposition.Status === 36}
+              <span class="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">
+                Awaiting Office Process
+              </span>
             {:else if opposition.Status === 17}
               <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
                 Awaiting Resolution
@@ -839,6 +852,13 @@
             <div class="border border-purple-200 rounded-lg overflow-hidden bg-purple-50/30">
               {#each opposition.StatutoryDeclarations as sd, i}
                 <div class="p-4 {i > 0 ? 'border-t border-purple-200' : ''}">
+                  <div class="flex items-center gap-2 mb-2">
+                    {#if sd.role === 'applicant'}
+                      <span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Applicant</span>
+                    {:else if sd.role === 'opposer'}
+                      <span class="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Opposer</span>
+                    {/if}
+                  </div>
                   {#if sd.filedBy}
                     <p class="text-sm"><span class="font-medium text-gray-600">Filed By:</span> {sd.filedBy}</p>
                   {/if}
@@ -922,7 +942,7 @@
           {/if}
 
           <!-- Uphold / Decline buttons - visible to TrademarkOpposition/Tech/SuperAdmin after counter statement filed -->
-          {#if (opposition.Status === 33 || opposition.Status === 17) && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkOpposition) || $loggedInUser?.userRoles?.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+          {#if (opposition.Status === 33 || opposition.Status === 36 || opposition.Status === 17) && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkOpposition) || $loggedInUser?.userRoles?.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
             <button
               on:click={() => {
                 selectedID = opposition.id ?? "";
@@ -1450,6 +1470,13 @@
                                 on:click={() => viewResolve(row.cells)}
                               >
                                 Mark as resolved
+                              </DropdownMenu.Item>
+                            {/if}
+                            {#if isAwaitingOfficeProcess(row.cells)}
+                              <DropdownMenu.Item
+                                on:click={() => raiseOppositionView(row.cells)}
+                              >
+                                View Counter Statement
                               </DropdownMenu.Item>
                             {/if}
                             <DropdownMenu.Item

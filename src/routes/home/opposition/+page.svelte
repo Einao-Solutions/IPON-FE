@@ -11,6 +11,7 @@
 	let counter = {};
 	let awaitingCounter = 0;
 	let newOpposition = 0;
+	let awaitingOfficeProcess = 0;
 	let isLoading: boolean = false;
 	onMount(async () => {
 		await loadOppositionStats();
@@ -40,6 +41,16 @@
 		const stats = await response.json();
 		awaitingCounter = stats.awaitingCounter;
 		newOpposition = stats.newOpposition;
+		awaitingOfficeProcess = stats.awaitingOfficeProcess ?? 0;
+
+		// If backend doesn't provide awaitingOfficeProcess, fetch it directly
+		if (!stats.awaitingOfficeProcess) {
+			const res = await fetch(`${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&type=36`);
+			if (res.ok) {
+				const result = await res.json();
+				awaitingOfficeProcess = result.count ?? 0;
+			}
+		}
 	}
 	let oppositionType = undefined;
 	let count = 0;
@@ -118,6 +129,23 @@
 						class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
 					></div>
 				</Button>
+
+				{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkOpposition) || $loggedInUser?.userRoles?.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin)}
+				<Button
+					class="group relative overflow-hidden bg-orange-500 hover:bg-orange-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] px-6 py-3 rounded-xl"
+					on:click={() => loadData(36, 10, 0)}
+				>
+					<div class="flex items-center space-x-3">
+						<div class="relative z-10">
+							Awaiting Office Process
+						</div>
+						<span class="relative z-10 font-semibold tracking-wide">{awaitingOfficeProcess}</span>
+					</div>
+					<div
+						class="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+					></div>
+				</Button>
+				{/if}
 			</div>
 			<div>
 				<OppositionTable dataList={data} {count} {oppositionType} />
