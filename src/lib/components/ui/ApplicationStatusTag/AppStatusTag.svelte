@@ -16,6 +16,7 @@
 			case 3:
 			case 17:
 			case 18:
+			case 36:
 				return 'bg-yellow-300';
 			case 30:
 				return 'bg-red-200';
@@ -73,6 +74,7 @@
 			case 3:
 			case 17:
 			case 18:
+			case 36:
 				return 'text-yellow-950';
 			case 33:
 				return 'text-orange-950';

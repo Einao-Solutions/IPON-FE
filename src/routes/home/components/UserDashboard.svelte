@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { BackgroundGradient } from '$lib/components/ui/BackgroundGradient';
+	import { Button } from '$lib/components/ui/button';
 	import { DashStats, loggedInToken, loggedInUser, oppositionSearchId } from '$lib/store';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
@@ -1066,7 +1067,9 @@
 					<div class="border-t border-green-200 pt-3">
 						<p class="text-sm font-semibold text-slate-600">Opposition Application Status</p>
 						<div class="mt-1">
-							{#if selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33}
+							{#if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 36}
+								<AppStatusTag value={36} />
+							{:else if selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33}
 								<span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
 							{:else if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 30 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 29 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 31}
 								<span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
@@ -1164,11 +1167,11 @@
 				{/if}
 
 				<!-- Counter Statements (if filed) -->
-				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.length > 0}
+				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id).length > 0}
 					<div>
 						<h3 class="font-semibold text-slate-900 text-lg mb-4">Counter Statements</h3>
 						<div class="space-y-4">
-							{#each selectedOpposition.counterStatements as cs, idx}
+							{#each selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id) as cs, idx}
 								<div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
 									<div class="flex items-start justify-between mb-2">
 										<p class="text-sm font-semibold text-orange-900">Counter Statement {idx + 1}</p>
@@ -1204,22 +1207,29 @@
 						<h3 class="font-semibold text-slate-900 text-lg mb-4">Statutory Declarations</h3>
 						<div class="space-y-4">
 							{#each selectedOpposition.statutoryDeclarations as sd, idx}
-								<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+								<div class="{sd.role === 'applicant' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4">
 									<div class="flex items-start justify-between mb-2">
-										<p class="text-sm font-semibold text-blue-900">Declaration {idx + 1}</p>
-										<p class="text-xs text-blue-700">{mapDateToString(sd.submittedDate)}</p>
+										<div>
+											<p class="text-sm font-semibold {sd.role === 'applicant' ? 'text-green-900' : 'text-blue-900'}">Declaration {idx + 1}</p>
+											<span class="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full {sd.role === 'applicant' ? 'bg-green-200 text-green-800' : 'bg-blue-200 text-blue-800'}">
+												{sd.role === 'applicant' ? 'Applicant' : 'Opposer'}
+											</span>
+										</div>
+										<p class="text-xs {sd.role === 'applicant' ? 'text-green-700' : 'text-blue-700'}">{mapDateToString(sd.submittedDate ?? sd.dateCreated)}</p>
 									</div>
-									<p class="text-sm text-blue-900 whitespace-pre-wrap">{sd.text}</p>
+									{#if sd.text || sd.comment}
+										<p class="text-sm {sd.role === 'applicant' ? 'text-green-900' : 'text-blue-900'} whitespace-pre-wrap">{sd.text ?? sd.comment}</p>
+									{/if}
 									{#if sd.attachments && sd.attachments.length > 0}
-										<div class="mt-3 pt-3 border-t border-blue-200">
-											<p class="text-xs font-semibold text-blue-700 mb-2">Attachments:</p>
+										<div class="mt-3 pt-3 border-t {sd.role === 'applicant' ? 'border-green-200' : 'border-blue-200'}">
+											<p class="text-xs font-semibold {sd.role === 'applicant' ? 'text-green-700' : 'text-blue-700'} mb-2">Attachments:</p>
 											<div class="space-y-1">
 												{#each sd.attachments as attachment}
 													<a
 														href={attachment}
 														target="_blank"
 														rel="noopener noreferrer"
-														class="text-xs text-blue-600 hover:text-blue-800 underline block"
+														class="text-xs {sd.role === 'applicant' ? 'text-green-600 hover:text-green-800' : 'text-blue-600 hover:text-blue-800'} underline block"
 													>
 														View Document
 													</a>
@@ -1233,6 +1243,22 @@
 					</div>
 				{/if}
 
+			<!-- File Statutory Declaration Button -->
+			{#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd) => sd.role === 'applicant'))}
+				<div class="mt-8 pt-6 border-t border-slate-200">
+					<Button
+						on:click={() => {
+							const fileNumber = selectedOpposition.fileNumber;
+							const oppId = selectedOpposition.id;
+							window.location.href = `/opposition?step=statutorydeclaration&role=applicant&fileNumber=${fileNumber}&oppositionId=${oppId}`;
+						}}
+						class="w-full bg-orange-600 hover:bg-orange-700 text-white"
+					>
+						<Icon icon="mdi:file-document-edit" class="w-4 h-4 mr-2" />
+						File Statutory Declaration
+					</Button>
+				</div>
+			{/if}
 
 			</div>
 		{/if}

@@ -99,7 +99,8 @@ export const paymentHandlers: Record<
   designamendment,
   patentRenewal,
   restoration,
-  counterstatement
+  counterstatement,
+  statutorydeclaration
 };
 
 /* ======================================================
@@ -817,5 +818,30 @@ async function counterstatement(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/counterstatement/paid?rrr=${rrr}`,
+  );
+}
+
+async function statutorydeclaration(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const rrr = params.get("rrr");
+  const amount = params.get("amount");
+  const fileId = params.get("fileId");
+
+  if (!rrr || !amount) throw new Error("Missing statutory declaration payment data");
+
+  const raw = sessionStorage.getItem("statutoryDeclarationPayload");
+  const payload = raw ? JSON.parse(raw) : null;
+
+  const applicantName = params.get("name") ?? payload?.applicantName ?? null;
+  const fileNumber = params.get("fileNumber") ?? payload?.fileNumber ?? fileId;
+
+  ctx.state.setTitle("Statutory Declaration");
+  ctx.state.setCost(amount);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setFileTitle(payload?.fileTitle ?? null);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/statutorydeclaration/paid?rrr=${rrr}`,
   );
 }

@@ -559,6 +559,8 @@ export function mapStatusToString(status: number) {
       return "Awaiting Renewal Confirmation";
     case 35:
       return "Pending Renewal";
+    case 36:
+      return "Awaiting Office Process";
     default:
       return "";
   }
