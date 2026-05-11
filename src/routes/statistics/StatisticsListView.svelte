@@ -30,7 +30,7 @@
   }
 
   $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
-  $: isEinaoFinance = userRoles.includes(UserRoles.EinaoFinance); // ✅ ONLY EinaoFinance, no SuperAdmin fallback
+  $: isEinaoFinance = userRoles.includes(UserRoles.EinaoFinance); // ONLY EinaoFinance, no SuperAdmin fallback
 
   $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
                     userRoles.includes(UserRoles.Minister) || 
@@ -38,13 +38,13 @@
 
   $: isFinanceOnly = userRoles.includes(UserRoles.Finance) && !isFullAccess;
 
-  // ✅ Pass isFinanceOnly as parameter so $: can track it
-  $: sections = getSectionsForRole(isFinanceOnly);
+  $: sections = getSectionsForRole(isFinanceOnly, isEinaoFinance);
 
-  function getSectionsForRole(financeOnly: boolean) {
+  function getSectionsForRole(financeOnly: boolean, einaoFinance: boolean) {
     const sections = [];
     
-    if (!financeOnly) {
+    // ✅ EinaoFinance sees all sections
+    if (!financeOnly && !einaoFinance) {
       sections.push({
         id: "performance",
         title: "Performance Statistics",
@@ -54,8 +54,9 @@
         iconBg: "bg-green-100"
       });
     }
-    
-    if (!financeOnly) {
+
+    // ✅ EinaoFinance sees all sections
+    if (!financeOnly && !einaoFinance) {
       sections.push({
         id: "operational",
         title: "Operational Statistics",
@@ -70,7 +71,8 @@
       userRoles.includes(UserRoles.PermSec) ||
       userRoles.includes(UserRoles.Minister) ||
       userRoles.includes(UserRoles.Finance) ||
-      userRoles.includes(UserRoles.SuperAdmin)
+      userRoles.includes(UserRoles.SuperAdmin) ||
+      einaoFinance 
     ) {
       sections.push({
         id: "financial",
