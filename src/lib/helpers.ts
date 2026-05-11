@@ -628,17 +628,18 @@ export function MapAttachmentToString(attachmentName: string) {
     case "designDrawings":
       return "Design Drawings";
     case "representation":
-      return "Proposed trademark representation";
+    case "Proposed Trademark Representation":
+      return "Proposed Trademark Representation";
     case "other1":
-      return "Supporting document 1";
+      return "Supporting Document 1";
     case "other2":
-      return "Supporting document 2";
+      return "Supporting Document 2";
     case "authorization":
-      return "letter of authorization";
+      return "Letter of Authorization";
     case "complete_specifications":
-      return "Complete specifications";
+      return "Complete Specifications";
     case "deed_of_assignment":
-      return "Deed of assignment";
+      return "Deed of Assignment";
     default:
       return "Supporting Document";
   }
