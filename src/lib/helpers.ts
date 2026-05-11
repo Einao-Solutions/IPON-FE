@@ -295,6 +295,8 @@ export enum FormApplicationTypes {
   Mortgage = 20,
   CertifiedTrueCopy = 21,
   Reclassification = 36,
+  CounterStatement = 24,
+  StatutoryDeclaration = 25,
 }
 
 export enum ApplicationLetters {
@@ -417,7 +419,8 @@ export enum ApplicationStatuses {
   StatutoryDeclaration = 33,
   AwaitingRenewalConfirmation = 34,
   PendingRenewal = 35,
-  Value,
+  AwaitingOfficeProcess = 36,
+  Abandoned = 37,
 }
 export enum PatentTypes {
   Conventional = 0,

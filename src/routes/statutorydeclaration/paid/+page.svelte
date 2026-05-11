@@ -21,17 +21,17 @@
 		const rrr = $page.url.searchParams.get('rrr') ?? localStorage.getItem('rrr') ?? undefined;
 		paymentId = rrr ?? null;
 
-		await updateCounterStatementPayment(paymentId);
+		await updateStatutoryDeclarationPayment(paymentId);
 	});
 
-	async function updateCounterStatementPayment(paymentId: string | null) {
+	async function updateStatutoryDeclarationPayment(paymentId: string | null) {
 		if (!paymentId) {
 			toast.error('Payment ID is missing.');
 			isStatusUpdating = false;
 			return;
 		}
 		const result = await fetch(
-			`${baseURL}/api/opposition/UpdateCounterStatementPayment?paymentId=${paymentId}`,
+			`${baseURL}/api/opposition/UpdateStatutoryDeclarationPayment?paymentId=${paymentId}`,
 			{
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -46,7 +46,7 @@
 			checkVisible = true;
 			messageVisible = true;
 			subMessageVisible = true;
-			sessionStorage.removeItem('counterStatementPayload');
+			sessionStorage.removeItem('statutoryDeclarationPayload');
 		} else {
 			const error = await result.json();
 			toast.error(`Error updating status: ${error.message}`);
@@ -63,7 +63,7 @@
 			<h3 class="text-md">Commercial Law Department</h3>
 		</div>
 
-		<h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Counter Statement</h1>
+		<h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">Statutory Declaration</h1>
 
 		<div class="h-32 w-32 mx-auto mb-6 relative">
 			{#if checkVisible}

@@ -1,7 +1,7 @@
 <script lang="ts">
   import SideMenu from "./SideMenu.svelte";
   import { Input } from "$lib/components/ui/input";
-  import { loggedInUser, loggedInToken } from "$lib/store";
+  import { loggedInUser, loggedInToken, oppositionSearchId } from "$lib/store";
   import { onMount } from "svelte";
   import type { LayoutServerData } from "../../../.svelte-kit/types/src/routes/home/$types";
   import { Button } from "$lib/components/ui/button";
@@ -135,12 +135,19 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <Input
-            placeholder="Search files, applicants, or file numbers..."
+            placeholder="Search files, applicants, file numbers, or OPP-ID..."
             bind:value={searchTitle}
             type="search"
             class="pl-10 pr-4 py-2.5 w-full border-slate-200 bg-slate-50/50 focus:bg-white focus:border-green-400 focus:ring-2 focus:ring-green-100 rounded-xl transition-all duration-200"
             on:keypress={(event) => {
-              if (event.key === "Enter" && searchTitle) goto(`/files?title=${searchTitle}`);
+              if (event.key === "Enter" && searchTitle) {
+                if (searchTitle.toUpperCase().startsWith("OPP-")) {
+                  oppositionSearchId.set(searchTitle.trim());
+                  goto('/home/dashboard');
+                } else {
+                  goto(`/files?title=${searchTitle}`);
+                }
+              }
             }}
           />
         </div>
