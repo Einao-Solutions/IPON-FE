@@ -1,12 +1,14 @@
 <script lang="ts">
 	import { BackgroundGradient } from '$lib/components/ui/BackgroundGradient';
-	import { DashStats, loggedInToken, loggedInUser } from '$lib/store';
+	import { Button } from '$lib/components/ui/button';
+	import { DashStats, loggedInToken, loggedInUser, oppositionSearchId } from '$lib/store';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
 	import { baseURL, type DashBoardStats, FileTypes, UserRoles, type UsersType } from '$lib/helpers';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapTypeToString, mapDateToString } from './dashboardutils';
 	import * as Accordion from "$lib/components/ui/accordion"
+	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import { toast } from 'svelte-sonner';
 	import AvailabilitySearchModal from './AvailabilitySearchModal.svelte';
@@ -36,7 +38,45 @@
 		isLoading = true;
 		await loadDashStats();
 		await loadOppositions();
+
+		// Check if there's a pending opposition search from the general search box
+		if ($oppositionSearchId) {
+			await handleOppositionSearch($oppositionSearchId);
+			oppositionSearchId.set(null);
+		}
 	});
+
+	// Also react if the store changes while the component is mounted
+	$: if ($oppositionSearchId) {
+		handleOppositionSearch($oppositionSearchId).then(() => oppositionSearchId.set(null));
+	}
+
+	async function handleOppositionSearch(term: string) {
+		const searchId = term.replace(/^OPP-/i, '');
+		// Try to find in already-loaded oppositions
+		const match = oppositions.find((row) =>
+			row.id?.toLowerCase().startsWith(searchId.toLowerCase())
+		);
+		if (match) {
+			await viewOppositionDetail(match.fileId || '', match.id);
+		} else {
+			// Fetch from backend
+			try {
+				const res = await fetch(`${baseURL}/api/opposition/getOppositionDetail?oppositionId=${searchId}`, {
+					headers: { 'Authorization': `Bearer ${$loggedInToken}` }
+				});
+				if (res.ok) {
+					const json = await res.json();
+					selectedOpposition = json.opposition ?? json.data ?? json;
+					showOppositionDetail = true;
+				} else {
+					toast.error('No opposition found with that ID.');
+				}
+			} catch (e) {
+				toast.error('Failed to search opposition.');
+			}
+		}
+	}
 
 	let oppositions: any[] = [];
 	let oppositionCount: number = 0;
@@ -58,7 +98,17 @@
 		const currentUser = $loggedInUser || user;
 		oppositionsLoading = true;
 		try {
-			const res = await fetch(`${baseURL}/api/opposition/loadSummary?quantity=50&skip=0&userId=${currentUser.id}`);
+			const isSuperOrTech = currentUser.userRoles?.some((role: number) =>
+				[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
+			);
+			const url = isSuperOrTech
+				? `${baseURL}/api/opposition/loadSummary?quantity=50&skip=0`
+				: `${baseURL}/api/opposition/loadSummary?quantity=50&skip=0&userId=${currentUser.id}`;
+			const res = await fetch(url, {
+				headers: {
+					'Authorization': `Bearer ${$loggedInToken}`
+				}
+			});
 			if (res.ok) {
 				const body = await res.json();
 				const items = body.data ?? [];
@@ -85,7 +135,6 @@
 		oppositionDetailLoading = true;
 		showOppositionDetail = true;
 		try {
-			// Prefer fileNumber (gets current opposition), fall back to oppositionId if needed
 			let url = `${baseURL}/api/opposition/getOppositionDetail`;
 			if (fileNumberOrId) {
 				url += `?fileNumber=${fileNumberOrId}`;
@@ -98,7 +147,17 @@
 			const res = await fetch(url);
 			if (res.ok) {
 				const json = await res.json();
-				selectedOpposition = json.opposition ?? json.data ?? json;
+				const data = json.opposition ?? json.data ?? json;
+				if (Array.isArray(data)) {
+					// If a specific opposition was requested, find it; otherwise show first
+					if (fallbackId) {
+						selectedOpposition = data.find((o: any) => o.id === fallbackId) ?? data[0];
+					} else {
+						selectedOpposition = data[0];
+					}
+				} else {
+					selectedOpposition = data;
+				}
 				console.log('Opposition detail loaded:', selectedOpposition);
 			} else {
 				toast.error('Failed to load opposition details');
@@ -922,7 +981,7 @@
 										<th class="px-3 py-2 text-left font-semibold">Opposer Name</th>
 										<th class="px-3 py-2 text-left font-semibold">Status</th>
 										<th class="px-3 py-2 text-left font-semibold">Payment ID</th>
-										<th class="px-3 py-2 text-left font-semibold">View Opposition</th>
+										<th class="px-3 py-2 text-left font-semibold">Action</th>
 									</tr>
 								</thead>
 								<tbody class="divide-y divide-slate-100">
@@ -934,15 +993,40 @@
 											<td class="px-3 py-2 text-slate-700">{row.fileId ?? '—'}</td>
 											<td class="px-3 py-2 text-slate-700">{row.name ?? '—'}</td>
 											<td class="px-3 py-2">
-												<AppStatusTag value={row.status} />
+												{#if row.status === 30 || row.status === 29 || row.status === 31}
+													<span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
+												{:else if row.status === 33}
+													<span class="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
+												{:else if row.status === 17}
+													<span class="inline-block px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">Awaiting Resolution</span>
+												{:else if row.status === 19}
+													<span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Resolved</span>
+												{:else}
+													<AppStatusTag value={row.status} />
+												{/if}
 											</td>
 											<td class="px-3 py-2 text-slate-700">{row.paymentId ?? '—'}</td>
 											<td class="px-3 py-2">
 												{#if row.id}
-													<button
-														on:click={() => viewOppositionDetail(row.fileId || '', row.id)}
-														class="text-xs text-green-600 hover:text-green-800 font-medium underline"
-													>View</button>
+													<DropdownMenu.Root>
+														<DropdownMenu.Trigger asChild let:builder>
+															<Button builders={[builder]} size="sm" class="text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+																More Action
+																<Icon icon="lucide:chevron-down" class="w-3 h-3 ml-1" />
+															</Button>
+														</DropdownMenu.Trigger>
+														<DropdownMenu.Content align="end" class="w-56">
+															<DropdownMenu.Item on:click={() => viewOppositionDetail(row.fileId || '', row.id)}>
+																View Opposition
+															</DropdownMenu.Item>
+															<DropdownMenu.Separator />
+															<DropdownMenu.Label>Print</DropdownMenu.Label>
+															<DropdownMenu.Separator />
+															<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?fileId=${row.fileId}&letterType=93&applicationId=${row.id}`)}>
+																Statutory Declaration Acknowledgement
+															</DropdownMenu.Item>
+														</DropdownMenu.Content>
+													</DropdownMenu.Root>
 												{:else}
 													<span class="text-slate-400 text-xs">—</span>
 												{/if}
@@ -980,11 +1064,17 @@
 				</Sheet.Description>
 			</Sheet.Header>
 
+
+
 			<div class="space-y-6 mt-6">
 				<!-- Status Section -->
 				<div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
 				<div class="space-y-3">
 					<div>
+						<p class="text-sm font-semibold text-slate-600">Opposition ID</p>
+						<p class="text-sm font-mono text-slate-800 mt-1" title={selectedOpposition.id}>OPP-{selectedOpposition.id?.slice(0, 8).toUpperCase()}</p>
+					</div>
+					<div class="border-t border-green-200 pt-3">
 						<p class="text-sm font-semibold text-slate-600">File Status</p>
 						<div class="mt-1">
 							<AppStatusTag value={selectedOpposition.fileStatus} />
@@ -993,11 +1083,19 @@
 					<div class="border-t border-green-200 pt-3">
 						<p class="text-sm font-semibold text-slate-600">Opposition Application Status</p>
 						<div class="mt-1">
-							<AppStatusTag value={selectedOpposition.oppositionStatus} />
+							{#if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 36}
+								<AppStatusTag value={36} />
+							{:else if selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33}
+								<span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
+							{:else if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 30 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 29 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 31}
+								<span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
+							{:else}
+								<AppStatusTag value={selectedOpposition.status ?? selectedOpposition.oppositionStatus} />
+							{/if}
 						</div>
 					</div>
 				</div>
-				{#if selectedOpposition.hasCounterStatement}
+				{#if selectedOpposition.hasCounterStatement || selectedOpposition.oppositionStatus === 33}
 						<div class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-orange-600">
 							<Icon icon="mdi:alert-circle" class="w-5 h-5" />
 							<span class="text-sm font-medium">Counter Statement Filed</span>
@@ -1006,8 +1104,8 @@
 							{/if}
 						</div>
 					{:else}
-						<div class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-green-600">
-							<Icon icon="mdi:check-circle" class="w-5 h-5" />
+						<div class="mt-3 pt-3 border-t border-red-200 flex items-center gap-2 text-red-600">
+							<Icon icon="mdi:close-circle" class="w-5 h-5" />
 							<span class="text-sm font-medium">No Counter Statement Yet</span>
 						</div>
 					{/if}
@@ -1015,11 +1113,6 @@
 
 				<!-- Opposition Details -->
 				<div class="space-y-4">
-					<div class="border-b border-slate-200 pb-3">
-						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition ID</p>
-						<p class="text-sm text-slate-700 mt-1">{selectedOpposition.id}</p>
-					</div>
-
 					<div class="border-b border-slate-200 pb-3">
 						<p class="text-xs font-semibold text-slate-500 uppercase">Payment Reference</p>
 						<p class="text-sm text-slate-700 font-mono mt-1">{selectedOpposition.paymentId}</p>
@@ -1090,11 +1183,11 @@
 				{/if}
 
 				<!-- Counter Statements (if filed) -->
-				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.length > 0}
+				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id).length > 0}
 					<div>
 						<h3 class="font-semibold text-slate-900 text-lg mb-4">Counter Statements</h3>
 						<div class="space-y-4">
-							{#each selectedOpposition.counterStatements as cs, idx}
+							{#each selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id) as cs, idx}
 								<div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
 									<div class="flex items-start justify-between mb-2">
 										<p class="text-sm font-semibold text-orange-900">Counter Statement {idx + 1}</p>
@@ -1130,22 +1223,29 @@
 						<h3 class="font-semibold text-slate-900 text-lg mb-4">Statutory Declarations</h3>
 						<div class="space-y-4">
 							{#each selectedOpposition.statutoryDeclarations as sd, idx}
-								<div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+								<div class="{sd.role === 'applicant' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4">
 									<div class="flex items-start justify-between mb-2">
-										<p class="text-sm font-semibold text-blue-900">Declaration {idx + 1}</p>
-										<p class="text-xs text-blue-700">{mapDateToString(sd.submittedDate)}</p>
+										<div>
+											<p class="text-sm font-semibold {sd.role === 'applicant' ? 'text-green-900' : 'text-blue-900'}">Declaration {idx + 1}</p>
+											<span class="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full {sd.role === 'applicant' ? 'bg-green-200 text-green-800' : 'bg-blue-200 text-blue-800'}">
+												{sd.role === 'applicant' ? 'Applicant' : 'Opposer'}
+											</span>
+										</div>
+										<p class="text-xs {sd.role === 'applicant' ? 'text-green-700' : 'text-blue-700'}">{mapDateToString(sd.submittedDate ?? sd.dateCreated)}</p>
 									</div>
-									<p class="text-sm text-blue-900 whitespace-pre-wrap">{sd.text}</p>
+									{#if sd.text || sd.comment}
+										<p class="text-sm {sd.role === 'applicant' ? 'text-green-900' : 'text-blue-900'} whitespace-pre-wrap">{sd.text ?? sd.comment}</p>
+									{/if}
 									{#if sd.attachments && sd.attachments.length > 0}
-										<div class="mt-3 pt-3 border-t border-blue-200">
-											<p class="text-xs font-semibold text-blue-700 mb-2">Attachments:</p>
+										<div class="mt-3 pt-3 border-t {sd.role === 'applicant' ? 'border-green-200' : 'border-blue-200'}">
+											<p class="text-xs font-semibold {sd.role === 'applicant' ? 'text-green-700' : 'text-blue-700'} mb-2">Attachments:</p>
 											<div class="space-y-1">
 												{#each sd.attachments as attachment}
 													<a
 														href={attachment}
 														target="_blank"
 														rel="noopener noreferrer"
-														class="text-xs text-blue-600 hover:text-blue-800 underline block"
+														class="text-xs {sd.role === 'applicant' ? 'text-green-600 hover:text-green-800' : 'text-blue-600 hover:text-blue-800'} underline block"
 													>
 														View Document
 													</a>
@@ -1159,6 +1259,22 @@
 					</div>
 				{/if}
 
+			<!-- File Statutory Declaration Button -->
+			{#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd) => sd.role === 'applicant'))}
+				<div class="mt-8 pt-6 border-t border-slate-200">
+					<Button
+						on:click={() => {
+							const fileNumber = selectedOpposition.fileNumber;
+							const oppId = selectedOpposition.id;
+							window.location.href = `/opposition?step=statutorydeclaration&role=applicant&fileNumber=${fileNumber}&oppositionId=${oppId}`;
+						}}
+						class="w-full bg-orange-600 hover:bg-orange-700 text-white"
+					>
+						<Icon icon="mdi:file-document-edit" class="w-4 h-4 mr-2" />
+						File Statutory Declaration
+					</Button>
+				</div>
+			{/if}
 
 			</div>
 		{/if}

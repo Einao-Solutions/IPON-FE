@@ -65,3 +65,4 @@ export const assignmentData = writable<assignmentType|null>(null)
 export const currentMenuView = writable<string|null>("Dashboard");
 export const metaDataInfo=writable<any|null>(null);
 export const selectedFilesForAction = writable<string[]|undefined>(undefined);
+export const oppositionSearchId = writable<string|null>(null);

@@ -115,15 +115,15 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
     case ApplicationStatuses.AppealRequest:
       return "Appeal Requested";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
-      return "Awaiting Counter";
+      return "Awaiting Counter Statement";
     case ApplicationStatuses.Amendment:
       return "Amendment";
     case ApplicationStatuses.AwaitingRecordalProcess:
       return "Awaiting Recordal Process";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter Statement";
     case ApplicationStatuses.AwaitingCertificateConfirmation:
@@ -601,7 +601,7 @@ export function getLetterName(letter: number): string {
     case 17:
       return "Opposition Response Receipt";
     case 18:
-      return "Opposition Response Acknowledgement";
+      return "Counter Statement Acknowledgement";
     case 19:
       return "Opposition Resolution Receipt";
     case 20:
@@ -748,6 +748,8 @@ export function getLetterName(letter: number): string {
       return "Trademark CTC Acknowledgement";
     case 91:
       return "Trademark CTC Receipt";
+    case 93:
+      return "Statutory Declaration Acknowledgement";
 
     default:
       return "Unknown Document";

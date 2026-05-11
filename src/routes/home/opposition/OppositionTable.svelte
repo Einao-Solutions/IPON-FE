@@ -94,6 +94,10 @@
         header: "Date",
       }),
       table.column({
+        accessor: "fileId",
+        header: "File Number",
+      }),
+      table.column({
         accessor: "title",
         header: "Title",
       }),
@@ -110,7 +114,7 @@
         header: "Payment ID",
       }),
       table.column({
-        accessor: "fileId",
+        accessor: "fileCreatorId",
         header: "View File",
       }),
       table.column({
@@ -288,12 +292,14 @@
         throw new Error("No data returned");
       }
 
+      console.log('Opposition API response:', JSON.stringify(data, null, 2));
+
       // Transform API response to match template field names
-      // Backend may return data directly or nested under .opposition
-      const opp = data.opposition ?? data;
+      // Backend returns { success, data: [...] } or { opposition: {...} } or direct object
+      const opp = Array.isArray(data.data) ? data.data[0] : (data.opposition ?? data);
       opposition = {
         id: opp.id,
-        OppositionDate: opp.oppositionDate ?? opp.dateOpposed,
+        OppositionDate: opp.oppositionDate ?? opp.dateOpposed ?? opp.date,
         Status: opp.oppositionStatus ?? opp.status,
         Name: opp.name ?? opp.opposerName,
         Email: opp.email ?? opp.opposerEmail,
@@ -447,8 +453,17 @@
   function canResolve(row: []) {
     return (
       ($loggedInUser.userRoles.includes(UserRoles.Tech) ||
+        $loggedInUser.userRoles.includes(UserRoles.SuperAdmin) ||
         $loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
       parseInt(row.find((x) => x.id === "currentStatus").value) === 17
+    );
+  }
+  function isAwaitingOfficeProcess(row: []) {
+    return (
+      ($loggedInUser.userRoles.includes(UserRoles.Tech) ||
+        $loggedInUser.userRoles.includes(UserRoles.SuperAdmin) ||
+        $loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
+      parseInt(row.find((x) => x.id === "currentStatus").value) === 36
     );
   }
   function canUploadResponse(row: []) {
@@ -646,7 +661,7 @@
           <div>
             <p class="text-sm text-gray-500">Opposition Date</p>
             <p class="text-lg font-semibold">
-              {mapDateToString(opposition.OppositionDate)}
+              {opposition.OppositionDate ? mapDateToString(opposition.OppositionDate) : '—'}
             </p>
           </div>
           <div>
@@ -655,8 +670,8 @@
                 Awaiting Payment
               </span>
             {:else if opposition.Status === 30 || opposition.Status === 29}
-              <span class="inline-block px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
-                New Opposition
+              <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+                Awaiting Counter Statement
               </span>
             {:else if opposition.Status === 31}
               <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
@@ -664,7 +679,15 @@
               </span>
             {:else if opposition.Status === 33}
               <span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
-                Counter Statement Filed
+                Awaiting Statutory Declaration
+              </span>
+            {:else if opposition.Status === 36}
+              <span class="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">
+                Awaiting Office Process
+              </span>
+            {:else if opposition.Status === 37}
+              <span class="inline-block px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                Abandoned
               </span>
             {:else if opposition.Status === 17}
               <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
@@ -681,6 +704,39 @@
             {/if}
           </div>
         </div>
+
+        <!-- Deadline Countdown -->
+        {#if opposition.Status === 30 || opposition.Status === 29 || opposition.Status === 31}
+          {@const deadlineDate = opposition.applicantNotifiedDate ? new Date(new Date(opposition.applicantNotifiedDate).getTime() + 30 * 24 * 60 * 60 * 1000) : null}
+          {@const daysRemaining = deadlineDate ? Math.ceil((deadlineDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) : null}
+          {#if daysRemaining !== null}
+            <div class="p-3 rounded-lg border {daysRemaining <= 5 ? 'bg-red-50 border-red-200' : daysRemaining <= 15 ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}">
+              <p class="text-sm font-medium {daysRemaining <= 5 ? 'text-red-700' : daysRemaining <= 15 ? 'text-amber-700' : 'text-blue-700'} flex items-center gap-2">
+                <Icon icon="lucide:clock" class="w-4 h-4" />
+                {#if daysRemaining > 0}
+                  {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining to file Counter Statement
+                {:else}
+                  Counter Statement deadline has expired
+                {/if}
+              </p>
+            </div>
+          {/if}
+        {:else if opposition.Status === 33}
+          {@const sdDeadlineDate = opposition.counterStatementDate ? new Date(new Date(opposition.counterStatementDate).getTime() + 30 * 24 * 60 * 60 * 1000) : null}
+          {@const sdDaysRemaining = sdDeadlineDate ? Math.ceil((sdDeadlineDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) : null}
+          {#if sdDaysRemaining !== null}
+            <div class="p-3 rounded-lg border {sdDaysRemaining <= 5 ? 'bg-red-50 border-red-200' : sdDaysRemaining <= 15 ? 'bg-amber-50 border-amber-200' : 'bg-orange-50 border-orange-200'}">
+              <p class="text-sm font-medium {sdDaysRemaining <= 5 ? 'text-red-700' : sdDaysRemaining <= 15 ? 'text-amber-700' : 'text-orange-700'} flex items-center gap-2">
+                <Icon icon="lucide:clock" class="w-4 h-4" />
+                {#if sdDaysRemaining > 0}
+                  {sdDaysRemaining} day{sdDaysRemaining !== 1 ? 's' : ''} remaining to file Statutory Declaration
+                {:else}
+                  Statutory Declaration deadline has expired
+                {/if}
+              </p>
+            </div>
+          {/if}
+        {/if}
 
         <!-- File Info -->
         {#if opposition.FileNumber || opposition.FileName}
@@ -833,6 +889,13 @@
             <div class="border border-purple-200 rounded-lg overflow-hidden bg-purple-50/30">
               {#each opposition.StatutoryDeclarations as sd, i}
                 <div class="p-4 {i > 0 ? 'border-t border-purple-200' : ''}">
+                  <div class="flex items-center gap-2 mb-2">
+                    {#if sd.role === 'applicant'}
+                      <span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Applicant</span>
+                    {:else if sd.role === 'opposer'}
+                      <span class="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Opposer</span>
+                    {/if}
+                  </div>
                   {#if sd.filedBy}
                     <p class="text-sm"><span class="font-medium text-gray-600">Filed By:</span> {sd.filedBy}</p>
                   {/if}
@@ -872,18 +935,34 @@
 
         <!-- Resolution Info (shown if already resolved) -->
         {#if opposition.Status === 19 && opposition.decision}
-          <div class="border rounded-lg overflow-hidden {opposition.decision === 'upheld' ? 'border-blue-200 bg-blue-50/30' : 'border-orange-200 bg-orange-50/30'}">
+          <div class="border rounded-lg overflow-hidden {opposition.decision === 'upheld' ? 'border-blue-200 bg-blue-50/30' : opposition.decision === 'abandoned' ? 'border-red-200 bg-red-50/30' : 'border-orange-200 bg-orange-50/30'}">
             <div class="p-4">
-              <h3 class="text-md font-semibold mb-2 {opposition.decision === 'upheld' ? 'text-blue-700' : 'text-orange-700'} flex items-center gap-2">
+              <h3 class="text-md font-semibold mb-2 {opposition.decision === 'upheld' ? 'text-blue-700' : opposition.decision === 'abandoned' ? 'text-red-700' : 'text-orange-700'} flex items-center gap-2">
                 <Icon icon={opposition.decision === 'upheld' ? 'lucide:check-circle' : 'lucide:x-circle'} class="w-4 h-4" />
-                Opposition {opposition.decision === 'upheld' ? 'Upheld' : 'Declined'}
+                Opposition {opposition.decision === 'upheld' ? 'Upheld' : opposition.decision === 'abandoned' ? 'Abandoned' : 'Declined'}
               </h3>
+              {#if opposition.decision === 'abandoned'}
+                <p class="text-sm text-red-700">This application was abandoned because no counter statement was filed within 30 days.</p>
+              {/if}
               {#if opposition.resolvedBy}
                 <p class="text-sm"><span class="font-medium text-gray-600">Resolved By:</span> {opposition.resolvedBy}</p>
               {/if}
               {#if opposition.resolutionStatement}
                 <p class="text-sm mt-2 text-gray-800 whitespace-pre-wrap">{opposition.resolutionStatement}</p>
               {/if}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Abandoned notice for status 37 -->
+        {#if opposition.Status === 37}
+          <div class="border rounded-lg overflow-hidden border-red-200 bg-red-50/30">
+            <div class="p-4">
+              <h3 class="text-md font-semibold mb-2 text-red-700 flex items-center gap-2">
+                <Icon icon="lucide:alert-triangle" class="w-4 h-4" />
+                Application Abandoned
+              </h3>
+              <p class="text-sm text-red-700">This application was abandoned because no counter statement was filed within 30 days.</p>
             </div>
           </div>
         {/if}
@@ -916,7 +995,7 @@
           {/if}
 
           <!-- Uphold / Decline buttons - visible to TrademarkOpposition/Tech/SuperAdmin after counter statement filed -->
-          {#if (opposition.Status === 33 || opposition.Status === 17) && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkOpposition) || $loggedInUser?.userRoles?.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+          {#if (opposition.Status === 33 || opposition.Status === 36 || opposition.Status === 17) && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkOpposition) || $loggedInUser?.userRoles?.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
             <button
               on:click={() => {
                 selectedID = opposition.id ?? "";
@@ -1446,6 +1525,13 @@
                                 Mark as resolved
                               </DropdownMenu.Item>
                             {/if}
+                            {#if isAwaitingOfficeProcess(row.cells)}
+                              <DropdownMenu.Item
+                                on:click={() => raiseOppositionView(row.cells)}
+                              >
+                                View Counter Statement
+                              </DropdownMenu.Item>
+                            {/if}
                             <DropdownMenu.Item
                               on:click={() => viewOppositionHistory(row.cells)}
                             >
@@ -1453,10 +1539,10 @@
                             </DropdownMenu.Item>
                           </DropdownMenu.Content>
                         </DropdownMenu.Root>
-                      {:else if cell.id === "fileId"}
+                      {:else if cell.id === "fileCreatorId"}
                         <Button
                           on:click={async () => {
-                            const fileNumber = cell.render();
+                            const fileNumber = row.cells.find((c) => c.id === "fileId")?.render();
                             try {
                               const res = await fetch(`${baseURL}/api/files/GetFileIdByFileNumber?fileNumber=${encodeURIComponent(fileNumber)}`);
                               if (res.ok) {
@@ -1477,6 +1563,10 @@
                       {:else if cell.id === "date"}
                         <div class="w-24">
                           <Render of={mapDateToString(cell.render())} />
+                        </div>
+                      {:else if cell.id === "fileId"}
+                        <div class="w-32 whitespace-nowrap">
+                          <Render of={cell.render()} />
                         </div>
                       {:else if cell.id === "currentStatus"}
                         <div class="w-24">
