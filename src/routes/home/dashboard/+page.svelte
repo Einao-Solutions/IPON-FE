@@ -1592,7 +1592,7 @@
         class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
         <div class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold">
-          View your published marks under "Trademark Publication" in Trademark
+          View your accepted marks under "Trademark Publication" in Trademark
           Services. <b>◆</b> File opposition via the "Opposition" feature in
           Trademark Services or the "Oppose" button on the Trademark Publication
           list. <b>◆</b> Restore inactive trademarks using the "Restoration"

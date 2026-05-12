@@ -858,7 +858,7 @@
           </button>
 
           <!-- Counter Statement -->
-          <button
+          <!-- <button
             on:click={() => (currentStep = "cs-search")}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
@@ -873,10 +873,10 @@
               </div>
               <span class="text-gray-400 group-hover:text-green-600 text-xl">→</span>
             </div>
-          </button>
+          </button> -->
 
           <!-- Statutory -->
-          <button
+          <!-- <button
             on:click={() => (currentStep = "sd-role")}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
@@ -891,7 +891,7 @@
               </div>
               <span class="text-gray-400 group-hover:text-green-600 text-xl">→</span>
             </div>
-          </button>
+          </button> -->
         </div>
       </div>
     {:else if currentStep === "search"}
