@@ -25,7 +25,6 @@
     UserRoles,
     FileTypes,
     type DashBoardStats,
-    type ApplicationHistoryType,
   } from "$lib/helpers";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Card from "$lib/components/ui/card";
@@ -48,9 +47,9 @@
   function toggleModal(): void {
     isModalOpen = !isModalOpen;
   }
-  let updateForm: any = null;
-  let renewForm: any = null;
-  let assignForm: any = null;
+  let updateForm: UpdateFormView | null = null;
+  let renewForm: RenewView | null = null;
+  let assignForm: AssignView | null = null;
   let selectedCreation: number | null = null;
   let showNewApplication: boolean = false;
   let showPreRegistrationDialog: boolean = false;
@@ -98,15 +97,14 @@
     return (
       $loggedInUser?.userRoles.includes(UserRoles.User) ||
       $loggedInUser?.userRoles.includes(UserRoles.Tech) ||
-      $loggedInUser?.userRoles.includes(UserRoles.SuperAdmin) ||
-      $loggedInUser?.userRoles.includes(UserRoles.PermSec)
+      $loggedInUser?.userRoles.includes(UserRoles.SuperAdmin)
     );
   }
 
   onMount(async () => {
-    const currentUser = sessionStorage.getItem("User")
-      ? JSON.parse(sessionStorage.getItem("User") || "{}")
-      : null;
+      const currentUser = sessionStorage.getItem("User")
+    ? JSON.parse(sessionStorage.getItem("User") || "{}")
+    : null;
 
     isLoading = true;
     let cookieUser = document.cookie
@@ -141,17 +139,10 @@
           UserRoles.DesignCertification,
           // Administrative roles
           UserRoles.Minister,
-
-          // ✅ PermSec removed — they now see UserDashboard like regular users
-          // UserRoles.PermSec,
-
+          UserRoles.PermSec,
           UserRoles.Finance,
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only
-
-          UserRoles.TrademarkStaff, // ✅ added
-          UserRoles.PatentStaff, // ✅ added
-          UserRoles.DesignStaff, // ✅ added
         ].includes(e),
       );
     }
@@ -250,36 +241,16 @@
       assignData = { closed: closed };
     }
   }
-  let isCertificate = false;
-  let manualUpdate: ApplicationHistoryType | null = null;
-  let validateRRR: string | null = null;
-  let remita_confirmation = "";
-  let showAlertDialog = false;
-  let amount: string | null = null;
-  let paymentDate: string | null = null;
-  let status: string | null = null;
-  let paymentDesc: string | null = null;
-  let showManualUpdate = false;
-  let showCancel = false;
-
-  async function updateCertPaymentStatus(
-    rrr: string,
-    fileId: string | null | undefined,
-  ) {
-    // stub — implement if needed
-  }
-
   async function checkPayment(
     application: ApplicationHistoryType,
     id: string | null,
   ) {
     if (!id) {
-      toast.error("No Remita ID available");
+      showToast("error", "No Remita ID available");
       return;
     }
 
-    isCertificate =
-      fileData?.applicationHistory?.[0]?.certificatePaymentId === id;
+    isCertificate = fileData.applicationHistory[0].certificatePaymentId === id;
     manualUpdate = application;
     validateRRR = id;
     remita_confirmation = "checking";
@@ -297,7 +268,7 @@
         application.currentStatus ===
         ApplicationStatuses.AwaitingCertificatePayment
       ) {
-        await updateCertPaymentStatus(id, fileData?.id);
+        await updateCertPaymentStatus(id, fileData.id);
       }
 
       showManualUpdate =
@@ -306,7 +277,7 @@
       showCancel = !showManualUpdate;
     } catch (error) {
       console.error("Payment check error:", error);
-      toast.error("Failed to verify payment");
+      showToast("error", "Failed to verify payment");
     }
   }
 
@@ -428,7 +399,7 @@
   }
   let ownershipData = {};
   let showOwnership = false;
-  let ownershipForm: any = undefined;
+  let ownershipForm = undefined;
   async function showOwnershipForm() {
     if (!ownershipForm) {
       ownershipForm = (
@@ -479,7 +450,7 @@
 
     appealsLoading = true;
     appealsError = null;
-    appealsResults = undefined;
+    appealsResults = null;
 
     try {
       const response = await fetch(
@@ -489,11 +460,11 @@
       if (!response.ok) {
         const errorData = await response.json();
         appealsError = errorData.message || "An error occurred";
-        throw new Error(appealsError ?? undefined);
+        throw new Error(appealsError);
       }
 
       const data = await response.json();
-      filteredResults = data.filter((result: any) => result.fileStatus == 11);
+      filteredResults = data.filter((result) => result.fileStatus == 11);
 
       if (filteredResults?.length == 0) {
         appealsError =
@@ -1297,7 +1268,6 @@
 
     <div class="mt-6 space-y-4">
       <div class="space-y-2">
-        <!-- svelte-ignore a11y-label-has-associated-control -->
         <label class="block text-sm font-medium text-gray-700"
           >File Number</label
         >
@@ -1365,7 +1335,7 @@
         on:click={() => {
           showChangeOfAgentDialog = false;
           changeAgentFileNumber = "";
-          changeAgentResult = [];
+          changeAgentResult = null;
           changeAgentError = null;
           changeAgentSearched = false;
         }}
@@ -1402,7 +1372,6 @@
 
     <div class="mt-6 space-y-4">
       <div class="space-y-2">
-        <!-- svelte-ignore a11y-label-has-associated-control -->
         <label class="block text-sm font-medium text-gray-700"
           >File Number</label
         >
@@ -1415,7 +1384,6 @@
       </div>
 
       <div class="space-y-2">
-        <!-- svelte-ignore a11y-label-has-associated-control -->
         <label class="block text-sm font-medium text-gray-700">Payment ID</label
         >
         <input
@@ -1612,6 +1580,7 @@
       </div>
     </div>
   </div>
+  
 {/if}
 {#if isLoading}
   <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
@@ -1623,10 +1592,10 @@
         class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
         <div class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold">
-          View your published marks under “Trademark Publication” in Trademark
-          Services. <b>◆</b> File opposition via the “Opposition” feature in
-          Trademark Services or the “Oppose” button on the Trademark Publication
-          list. <b>◆</b> Restore inactive trademarks using the “Restoration”
+          View your published marks under "Trademark Publication" in Trademark
+          Services. <b>◆</b> File opposition via the "Opposition" feature in
+          Trademark Services or the "Oppose" button on the Trademark Publication
+          list. <b>◆</b> Restore inactive trademarks using the "Restoration"
           feature in Trademark Services. <b>◆</b> Renew your Patent, Design, and
           Trademark applications from the Services section on your dashboard.
           <b>◆</b> You can now file for Patent Assignment, Merger, Mortgage, License,
@@ -1870,7 +1839,7 @@
               <div>
                 <!-- Main heading for the statistics section -->
                 <h2 class="text-xl font-bold text-slate-800">
-                  Portfolio Analytics
+                  Detailed Statistics
                 </h2>
                 <!-- Descriptive subtext explaining what the statistics show -->
                 <p class="text-slate-600 text-sm">

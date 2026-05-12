@@ -7,8 +7,8 @@ import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
 // export const baseURL = "http://localhost:5044";
-//  export const baseURL = "https://backend.einaotest.com";
-export const baseURL = "https://integration.iponigeria.com";
+ export const baseURL = "https://backend.einaotest.com";
+// export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
 export const nonConventionalDescription =
@@ -295,6 +295,8 @@ export enum FormApplicationTypes {
   Mortgage = 20,
   CertifiedTrueCopy = 21,
   Reclassification = 36,
+  CounterStatement = 24,
+  StatutoryDeclaration = 25,
 }
 
 export enum ApplicationLetters {
@@ -414,9 +416,11 @@ export enum ApplicationStatuses {
   NewOpposition = 30,
   AwaitingCounter = 31,
   Amendment = 32,
-  AwaitingRenewalConfirmation = 33,
-  PendingRenewal = 34,
-  Value,
+  StatutoryDeclaration = 33,
+  AwaitingRenewalConfirmation = 34,
+  PendingRenewal = 35,
+  AwaitingOfficeProcess = 36,
+  Abandoned = 37,
 }
 export enum PatentTypes {
   Conventional = 0,
@@ -624,17 +628,18 @@ export function MapAttachmentToString(attachmentName: string) {
     case "designDrawings":
       return "Design Drawings";
     case "representation":
-      return "Proposed trademark representation";
+    case "Proposed Trademark Representation":
+      return "Proposed Trademark Representation";
     case "other1":
-      return "Supporting document 1";
+      return "Supporting Document 1";
     case "other2":
-      return "Supporting document 2";
+      return "Supporting Document 2";
     case "authorization":
-      return "letter of authorization";
+      return "Letter of Authorization";
     case "complete_specifications":
-      return "Complete specifications";
+      return "Complete Specifications";
     case "deed_of_assignment":
-      return "Deed of assignment";
+      return "Deed of Assignment";
     default:
       return "Supporting Document";
   }

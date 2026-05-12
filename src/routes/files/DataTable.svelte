@@ -4,12 +4,10 @@
 	import * as Dialog from "$lib/components/ui/dialog"
 	import { Textarea } from '$lib/components/ui/textarea';
 	import { mapStatusToString } from '../home/components/dashboardutils';
-	import { mapDesignTypeToString } from '$lib/designutils';
 	import {
 		type AffectedFiles, ApplicationStatuses,
 		baseURL,
 		FormApplicationTypes,
-		getPatentTypeLabel,
 		getStatusColour,
 		UserRoles,
 		UserTypes
@@ -22,6 +20,7 @@
 	import { ChevronsUpDown } from 'lucide-svelte';
 	import DataTableCheckbox from './data-table-checkbox.svelte';
 	import CreateTicket from '../home/components/CreateTicket.svelte';
+	import type { RecordSetStore } from 'svelte-headless-table/dist/utils/store';
 	import FilterFile from '../home/FilterFile.svelte';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { listOfIds, loggedInUser, queryBody, selectedFilesForAction } from '$lib/store';
@@ -31,32 +30,23 @@
 	import * as Pagination from "$lib/components/ui/pagination"
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import { Toaster } from '$lib/components/ui/sonner';
-	import { toast } from 'svelte-sonner';
-	export let dataList: any[] | null = [];
-	let tableHeaderRows: any, tablePageRows: any, _tableAttrs: any, _tableBodyAttrs: any;
-	let _hasNextPage: any, _hasPreviousPage: any, _pageIndex: any;
-	let createTicket: any = null;
-	let filterFiles: any = null;
-	let _flatColumns: any;
+	export let dataList: [] | null = [];
+	let tableHeaderRows, tablePageRows, _tableAttrs, _tableBodyAttrs;
+	let _hasNextPage, _hasPreviousPage, _pageIndex;
+	let createTicket: CreateTicket | null = null;
+	let filterFiles:FilterFile|null=null;
+	let _flatColumns;
 	export let count:number=0;
 	export let showAppStatus:boolean=true;
 	export let showType:boolean=true;
 	export let currentDataPage:number=0;
 	export let showRenew:boolean=false;
-	let _selectedDataIds: any;
+	let _selectedDataIds: RecordSetStore<string>;
 	let _hiddenColumnIds: Writable<string[]>;
-	let hidableCols: string[] = ['date', 'title', 'fileId', 'fileStatus', 'fileType', 'classOrType', 'status'];
-	let hideForId: Record<string, boolean> = {};
+	let hidableCols: string[] = ['date', 'title', 'fileId', 'fileStatus', 'fileType', 'trademarkClass', 'status'];
+	let hideForId: [] = [];
 	let isLoading=false;
 	let _filterValue;
-	let classColumnHeader = 'Class/Type';
-	$: if (typeof window !== 'undefined') {
-		const ft = $page.url.searchParams.get('fileType');
-		if (ft === '0') classColumnHeader = 'Patent Type';
-		else if (ft === '1') classColumnHeader = 'Design Type';
-		else if (ft === '2') classColumnHeader = 'Class';
-		else classColumnHeader = 'Class/Type';
-	}
 	$: {
 		$_hiddenColumnIds = Object.entries(hideForId)
 			.filter(([, hide]) => !hide)
@@ -89,10 +79,10 @@
 				cell: ({ row }, { pluginStates }) => {
 					const { getRowState } = pluginStates.select;
 					const { isSelected } = getRowState(row);
-				let  status=writable<boolean>($selectedFilesForAction?.includes((row as any).cells[7]?.render?.()?.toString())??false);
+					let  status=writable<boolean>($selectedFilesForAction?.includes(row.cells[7].value.toString())??false);
 					return createRender(DataTableCheckbox, {
 						checked: status,
-						id:(row as any).cells[7]?.render?.()
+						id:row.cells[7].value
 					});
 				},
 				plugins: {
@@ -127,9 +117,10 @@
 				header: 'Type'
 			}),
 			table.column({
-				accessor: 'classOrType',
-				header: classColumnHeader,
+				accessor: 'trademarkClass',
+				header: 'Class',
 				cell: ({ value }) => {
+					// Only show for trademark files
 					return value ? value : '';
 				}
 			}),
@@ -173,8 +164,8 @@
     _selectedDataIds = selectedDataIds;
     _hiddenColumnIds = hiddenColumnIds;
     _flatColumns = flatColumns;
-    const ids = _flatColumns.map((col: any) => col.id);
-    hideForId = Object.fromEntries(ids.map((id: any) => [id, true]));
+    const ids = _flatColumns.map((col) => col.id);
+    hideForId = Object.fromEntries(ids.map((id) => [id, true]));
     if (showAppStatus == false) {
       hidableCols = [...hidableCols.filter((x) => x !== "status")];
       hideForId["status"] = false;
@@ -186,11 +177,11 @@
     }
   }
   let currentUrl = writable<URL>($page.url);
-  let currentSearchData: Record<string, any> | undefined = undefined;
+  let currentSearchData = undefined;
   async function loadPage(
     counter: number,
     startIndex: number,
-    otherdata: Record<string, any> | undefined = undefined
+    otherdata = undefined
   ) {
     isLoading = true;
     const url = $currentUrl;
@@ -286,11 +277,6 @@
         fileStatus: curr.fileStatus ?? "-",
         title: curr.title ?? "-",
         fileType: fileTypeToString(curr.type),
-        classOrType: curr.type === 0
-          ? getPatentTypeLabel(curr.patentType ?? 0)
-          : curr.type === 1
-            ? (mapDesignTypeToString(curr.designType ?? 0) ?? "")
-            : (curr.trademarkClass ?? curr.tradeMarkClass ?? ""),
         id: curr.id,
         status:
           summaries.length > 1
@@ -312,7 +298,7 @@
   }
 
   function getAppStatus(cell: number) {
-    let applicationType: FormApplicationTypes | null = dataList?.[cell]?.appType ?? null;
+    let applicationType: FormApplicationTypes | null = dataList[cell]?.appType;
     return (
       applicationType !== null && applicationType !== FormApplicationTypes.None
     );
@@ -337,17 +323,16 @@
   async function showSelections() {
     let affectedFiles: AffectedFiles[] = [];
     for (const key in $_selectedDataIds) {
-      const idx = parseInt(key);
       affectedFiles.push({
-        fileID: dataList?.[idx]?.fileId,
+        fileID: dataList[key].fileId,
         applicant: null,
-        title: dataList?.[idx]?.title,
-        id: dataList?.[idx]?.id,
+        title: dataList[key].title,
+        id: dataList[key].id,
       });
     }
     if (createTicket === null) {
       createTicket = (await import("../home/components/CreateTicket.svelte"))
-        .default as any;
+        .default;
     }
     const handleClose = () => {
       showTicketCreation = false;
@@ -363,20 +348,20 @@
   let filterData = {};
   async function showFilter() {
     if (filterFiles === null) {
-      filterFiles = (await import("../home/FilterFile.svelte")).default as any;
+      filterFiles = (await import("../home/FilterFile.svelte")).default;
       const handleClose = () => {
         showFilterSheet = false;
       };
       filterData = {
         open: true,
         onclose: handleClose,
-        onSearchPressed: (data: any) => loadPage($selectedResultList, 0, data),
+        onSearchPressed: (data) => loadPage($selectedResultList, 0, data),
       };
     }
     showFilterSheet = true;
   }
   let newStatusReason = "";
-  let newStatus: string | undefined;
+  let newStatus;
   let isStatusUpdating = false;
   const userName = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
   async function changeStatusForAll() {
@@ -412,22 +397,21 @@
 </script>
 
 <Toaster />
-<Dialog.Root bind:open={newStatusSelector}>
+<Dialog.Root bind:open={newStatusSelector} class="overflow-y-auto">
   <Dialog.Content class="overflow-y-auto">
     <Dialog.Header>
       <Dialog.Title>Select New Status</Dialog.Title>
     </Dialog.Header>
     <div class="overflow-y-auto h-[480px]">
       {#each Object.keys(ApplicationStatuses).filter((x) => isNaN(parseInt(x)) === false) as status}
-        <button
-          type="button"
+        <div
           class="border rounded-md w-fit {newStatus === status
             ? 'bg-green-300'
             : ''} p-2 m-2"
           on:click={() => (newStatus = status)}
         >
           {mapStatusToString(parseInt(status))}
-        </button>
+        </div>
       {/each}
       <Textarea
         class="min-w-full min-h-48"
@@ -521,7 +505,7 @@
             <DropdownMenu.CheckboxItem
               bind:checked={hideForId[col.id]}
               onCheckedChange={(newv) => {
-                hideForId[col.id] = !!newv;
+                hideForId[col.id] = newv;
               }}
             >
               {col.header}
@@ -592,7 +576,7 @@
                         {#if getAppStatus(row.id)}
                           <div class="grid grid-cols-1">
                             <div class="border rounded bg-gray-500 p-0.5">
-                              <AppStatusTag value={dataList?.[row.id]?.appType} />
+                              <AppStatusTag value={dataList[row.id]?.appType} />
                             </div>
                             <div
                               class="border rounded-md p-0.5 w-fit"
@@ -609,7 +593,7 @@
                         {/if}
                       {:else if cell.id === "title"}
                         <div class="text-ellipsis line-clamp-2 w-56">
-                          <a href={`/dataview?id=${dataList?.[row.id]?.id}`}>
+                          <a href={`/dataview?id=${dataList[row.id]?.id}`}>
                             <Render of={cell.render()} />
                           </a>
                         </div>
@@ -619,7 +603,7 @@
                           >View</Button
                         >
                       {:else if cell.id === "fileId"}
-                        <a href={`/dataview?id=${dataList?.[row.id]?.id}`}
+                        <a href={`/dataview?id=${dataList[row.id]?.id}`}
                           >{cell.render()}</a
                         >
                       {:else if cell.id === "date"}

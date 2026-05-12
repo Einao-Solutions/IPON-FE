@@ -163,6 +163,7 @@
             UserRoles.SuperAdmin,
             UserRoles.TrademarkRegistrar,
             UserRoles.PatentDesignRegistrar,
+            UserRoles.EinaoFinance,
           ].includes(role),
         )
       ) {
@@ -188,7 +189,6 @@
           [
             UserRoles.SuperAdmin,
             UserRoles.TrademarkOpposition,
-            UserRoles.TrademarkRegistrar,
             UserRoles.Tech,
           ].includes(role),
         )

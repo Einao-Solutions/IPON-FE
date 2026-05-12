@@ -237,10 +237,10 @@
     <div class="flex items-center mb-6">
       <button
         on:click={() => goto(`/statistics`)}
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border border-gray-300 rounded-lg px-4 py-2"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
-        <span class="text-sm font-medium">Back to Statistics</span>
+        <span class="text-sm font-medium">Back</span>
       </button>
       <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">Operational Statistics</h1>
       <div class="w-[200px]"></div>

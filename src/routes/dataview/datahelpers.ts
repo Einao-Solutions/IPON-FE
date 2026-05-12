@@ -115,15 +115,15 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
     case ApplicationStatuses.AppealRequest:
       return "Appeal Requested";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
-      return "Awaiting Counter";
+      return "Awaiting Counter Statement";
     case ApplicationStatuses.Amendment:
       return "Amendment";
     case ApplicationStatuses.AwaitingRecordalProcess:
       return "Awaiting Recordal Process";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter Statement";
     case ApplicationStatuses.AwaitingCertificateConfirmation:
@@ -601,7 +601,7 @@ export function getLetterName(letter: number): string {
     case 17:
       return "Opposition Response Receipt";
     case 18:
-      return "Opposition Response Acknowledgement";
+      return "Counter Statement Acknowledgement";
     case 19:
       return "Opposition Resolution Receipt";
     case 20:
@@ -748,8 +748,40 @@ export function getLetterName(letter: number): string {
       return "Trademark CTC Acknowledgement";
     case 91:
       return "Trademark CTC Receipt";
+    case 93:
+      return "Statutory Declaration Acknowledgement";
 
     default:
       return "Unknown Document";
+  }
+}
+
+export function getNewStatusColour(obj: ApplicationStatuses | null): string {
+  switch (obj) {
+    case ApplicationStatuses.AwaitingPayment:
+      return "#8a00c2";
+    case ApplicationStatuses.AwaitingSearch:
+    case ApplicationStatuses.AwaitingExaminer:
+      return "#468a46";
+    case ApplicationStatuses.KivSearch:
+    case ApplicationStatuses.KivExaminer:
+      return "#cfcec3";
+    case ApplicationStatuses.FormalityFail:
+    case ApplicationStatuses.Re_conduct:
+    case ApplicationStatuses.Rejected:
+      return "#fe9797";
+    case ApplicationStatuses.Active:
+    case ApplicationStatuses.Approved:
+      return "#468a46";
+    case ApplicationStatuses.Publication:
+      return "#468a46";
+    case ApplicationStatuses.AwaitingRecordalProcess:
+      return "#29C5F6";
+    case ApplicationStatuses.AppealRequest:
+      return "#ede064ff";
+    case null:
+      return "";
+    default:
+      return "#cfcec3";
   }
 }

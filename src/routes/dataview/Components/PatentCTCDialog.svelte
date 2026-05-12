@@ -121,7 +121,7 @@
   >
     <Dialog.Header class="flex-shrink-0">
       <Dialog.Title class="text-2xl font-bold flex items-center gap-2">
-        <Icon icon="mdi:file-certificate" class="text-green-600" />
+        <Icon icon="mdi:file-certificate" class="text-blue-600" />
         Patent Certified True Copy (CTC) Details
       </Dialog.Title>
       <Dialog.Description>
@@ -131,7 +131,7 @@
 
     <div class="flex-1 overflow-auto p-4">
       {#if loading}
-        <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
+        <div class="flex items-center gap-2 text-blue-600 py-8 justify-center">
           <Icon
             icon="line-md:loading-loop"
             width="2em"
@@ -168,7 +168,7 @@
           <!-- Requested Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block">
-              <Icon icon="mdi:file-document-multiple" class="inline text-green-600 mr-2" />
+              <Icon icon="mdi:file-document-multiple" class="inline text-blue-600 mr-2" />
               Requested Certified True Copy Attachments:
             </Label>
             {#if ctcDetails.requestedAttachments && Array.isArray(ctcDetails.requestedAttachments) && ctcDetails.requestedAttachments.length > 0}
@@ -214,12 +214,12 @@
           </div>
 
           <!-- Summary Information -->
-          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="flex items-start gap-3">
-              <Icon icon="mdi:information" width="1.5em" height="1.5em" class="text-green-600 mt-0.5" />
+              <Icon icon="mdi:information" width="1.5em" height="1.5em" class="text-blue-600 mt-0.5" />
               <div>
-                <p class="font-semibold text-green-900">CTC Application Summary</p>
-                <p class="text-sm text-green-800 mt-1">
+                <p class="font-semibold text-blue-900">CTC Application Summary</p>
+                <p class="text-sm text-blue-800 mt-1">
                   This applicant has requested certified true copies of 
                   <strong>{ctcDetails.requestedAttachments?.length || 0}</strong>
                   attachment{ctcDetails.requestedAttachments?.length !== 1 ? 's' : ''} for file 
@@ -231,15 +231,14 @@
 
           <!-- Comment Section -->
           <div class="mb-4">
-             <Label for="decision-comment" class="block font-medium mb-1 flex items-center gap-2">
-              <Icon icon="mdi:comment-text-outline" class="text-green-600" />
+            <Label for="ctc-comment" class="block font-medium mb-1">
               Decision Comment: {#if !isReadOnly}<span class="text-red-500">*</span>{/if}
             </Label>
             <Textarea
               id="ctc-comment"
               bind:value={comment}
               rows={3}
-              class="w-full border rounded p-2 focus:ring-2 focus:ring-green-200"
+              class="w-full border rounded p-2 focus:ring-2 focus:ring-blue-200"
               placeholder="Enter your review comment and decision reason..."
               required
               disabled={isReadOnly}

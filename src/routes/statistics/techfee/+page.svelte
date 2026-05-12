@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { baseURL } from "$lib/helpers";
+  import { baseURL, UserRoles } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
@@ -337,6 +337,14 @@
   onMount(async () => {
     const user = $loggedInUser;
     if (!user) { goto("/auth"); return; }
+
+    // ✅ ONLY EinaoFinance — SuperAdmin cannot access
+    if (!user.userRoles?.includes(UserRoles.EinaoFinance)) {
+      toast.error("Access denied — EINAO Finance role required");
+      goto("/statistics");
+      return;
+    }
+
     registryType = $page.url.searchParams.get("registryType") ?? "";
     selectedMonth = MONTHS[new Date().getMonth()];
     await fetchSingle();
@@ -350,10 +358,10 @@
     <div class="flex items-center mb-6">
       <button
         on:click={() => goto(`/statistics?registry=${registryType}`)}
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border border-gray-300 rounded-lg px-4 py-2"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
-        <span class="text-sm font-medium">Back to Statistics</span>
+        <span class="text-sm font-medium">Back</span>
       </button>
       <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">Tech Fee Revenue Statistics</h1>
       <div class="w-[200px]"></div>
