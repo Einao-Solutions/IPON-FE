@@ -504,7 +504,7 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
-  const fileId = pararrr ?? parsed.ms.get("fileId");
+  const fileId = params.get("fileId");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
