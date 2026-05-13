@@ -49,11 +49,7 @@
     ) ?? false;
 
   async function fetchJournalData() {
-    if (
-      !journalSelectedQuarter ||
-      !journalSelectedYear ||
-      !journalSelectedType
-    ) {
+    if (!journalSelectedQuarter || !journalSelectedYear) {
       return;
     }
     const startDate = dayjs(journalSelectedYear.toString())
@@ -66,21 +62,11 @@
       .quarter(journalSelectedQuarter + 1)
       .format()
       .split("T")[0];
-    const fileType =
-      journalSelectedType == "Patent"
-        ? 0
-        : journalSelectedType == "Design"
-          ? 1
-          : journalSelectedType == "Trademark"
-            ? 2
-            : undefined;
-    if (fileType === undefined) {
-      return;
-    }
+
     journalIsFetching = true;
     try {
       const queryResult = await fetch(
-        `${baseURL}/api/publication/GetPublication?start=${startDate}&end=${endDate}&type=${fileType}`,
+        `${baseURL}/api/publication/GetPublication?start=${startDate}&end=${endDate}&type=${FileTypes.Trademark}`,
       );
       if (queryResult.ok) {
         const dataBlob = await queryResult.blob();
