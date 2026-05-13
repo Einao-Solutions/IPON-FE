@@ -24,15 +24,16 @@
 	let markclass = writable<number | undefined>(undefined);
 	let markType = writable<number | undefined>(undefined);
 	let classDescription = writable<string | undefined>(undefined);
+	let additionalDescription = writable<string | undefined>(undefined);
 	let markLogoDesc = writable<number | undefined>(undefined);
 	let isclassOpen: boolean = false;
 	let isLogoDescOpen: boolean = false;
 	let ismarkTypeOpen: boolean = false;
-	let showTitleError,
-		showClassError,
-		showTypeError,
-		showLogoError,
-		showDisclaimerError = false;
+	let showTitleError: boolean = false,
+		showClassError: boolean = false,
+		showTypeError: boolean = false,
+		showLogoError: boolean = false,
+		showDisclaimerError: boolean = false;
 	savePageData.subscribe((toSave) => {
 		if (toSave === 'basicTrade' && $applicationScreen === 0) {
 			if ($formsData === null) {
@@ -74,7 +75,7 @@
 							logo: $markLogoDesc
 						};
 					}
-					return [...forms];
+					return [...forms!];
 				});
 			}
 			pageSaveStatus.set(true);
@@ -102,9 +103,9 @@
 		}
 	});
 
-	let originalData={}
+	let originalData: any = {}
 	onMount(() => {
-		let parsedData = $formsData?.filter((x) => x.name == 'basic')[0]?.data || null;
+		let parsedData: any = $formsData?.filter((x) => x.name == 'basic')[0]?.data || null;
 		if ($applicationMode === 2) {
 			// creation mode
 			title.set(parsedData?.title ?? undefined);
@@ -116,19 +117,19 @@
 		}
 		if ($applicationMode===1){
 			originalData = parsedData || {
-				title: $applicationData.titleOfTradeMark ?? undefined,
-				disclaimer: $applicationData.trademarkDisclaimer ?? undefined,
-				markclass: $applicationData.trademarkClass ?? undefined,
-				description: $applicationData.trademarkClassDescription ?? undefined,
-				markType: $applicationData.trademarkType ?? undefined,
-				markLogoDesc: $applicationData.trademarkLogo ?? undefined
+				title: $applicationData?.titleOfTradeMark ?? undefined,
+				disclaimer: $applicationData?.trademarkDisclaimer ?? undefined,
+				markclass: $applicationData?.trademarkClass ?? undefined,
+				description: $applicationData?.trademarkClassDescription ?? undefined,
+				markType: $applicationData?.trademarkType ?? undefined,
+				markLogoDesc: $applicationData?.trademarkLogo ?? undefined
 			};
-			$title= parsedData?.title?? $applicationData.titleOfTradeMark ?? undefined
-			$disclaimer= parsedData?.disclaimer?? $applicationData.trademarkDisclaimer ?? undefined
-			$markclass= parsedData?.markclass?? $applicationData.trademarkClass ?? undefined
-			$classDescription= parsedData?.description?? $applicationData.trademarkClassDescription ?? undefined
-			$markType= parsedData?.markType?? $applicationData.trademarkType ?? undefined
-			$markLogoDesc= parsedData?.markLogoDesc?? $applicationData.trademarkLogo ?? undefined
+			$title= parsedData?.title?? $applicationData?.titleOfTradeMark ?? undefined
+			$disclaimer= parsedData?.disclaimer?? $applicationData?.trademarkDisclaimer ?? undefined
+			$markclass= parsedData?.markclass?? $applicationData?.trademarkClass ?? undefined
+			$classDescription= parsedData?.description?? $applicationData?.trademarkClassDescription ?? undefined
+			$markType= parsedData?.markType?? $applicationData?.trademarkType ?? undefined
+			$markLogoDesc= parsedData?.markLogoDesc?? $applicationData?.trademarkLogo ?? undefined
 
 		}
 	});

@@ -170,16 +170,17 @@ function validateEmail(): boolean {
 	});
 
 	function useDefault() {
-		if ($loggedInUser.defaultCorrespondence===undefined || $loggedInUser.defaultCorrespondence.name==="")
+		const user = $loggedInUser as any;
+		if (!user || user.defaultCorrespondence===undefined || user.defaultCorrespondence?.name==="")
 		{
 			toast.info("no correspondence configured, edit in profile", { position:'top-right' })
 		}
 		else {
-			name = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
-			address = $loggedInUser?.Address ?? "";
-			phoneNumber = $loggedInUser?.Phone ?? "";
-			email = $loggedInUser?.email ?? "";
-			state = $loggedInUser?.state ?? "";
+			name = user.firstName + " " + user.lastName;
+			address = user.address ?? "";
+			phoneNumber = user.phoneNumber ?? "";
+			email = user.email ?? "";
+			state = user.state ?? "";
 		}
 	}
 function ResetCorr()

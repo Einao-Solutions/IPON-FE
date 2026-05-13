@@ -6,16 +6,16 @@
 	import { goto } from '$app/navigation';
 	import { ApplicationStatuses, FilingType, FormApplicationTypes } from '$lib/helpers';
 	let loading: boolean = false;
-	$: viewComponent = null;
-	let basicPatentComponent = null,
-		basicTrademarkComponent=null,
-		inventorsComponent = null,
-		basicDesignComponent = null,
-		applicantsComponent = null,
-		correspondenceComponent = null,
-		priorityComponent = null,
-		attachmentComponent = null,
-		verificationComponent = null;
+	$: viewComponent = null as any;
+	let basicPatentComponent: any = null,
+		basicTrademarkComponent: any = null,
+		inventorsComponent: any = null,
+		basicDesignComponent: any = null,
+		applicantsComponent: any = null,
+		correspondenceComponent: any = null,
+		priorityComponent: any = null,
+		attachmentComponent: any = null,
+		verificationComponent: any = null;
 	$: screen = 0;
 	applicationScreen.subscribe(async (value) => {
 		viewComponent = null;
@@ -45,12 +45,12 @@
 						inventors:[],
 						correspondence:null,
 						patentType: null,
-						fileNumber: null,
+						fileId: null,
 						formApplicationType: FormApplicationTypes.NewApplication,
-						status: ApplicationStatuses.AwaitingPayment,
+						fileStatus: ApplicationStatuses.AwaitingPayment,
 						type: FilingType.Patent,
 						attachments:[]
-					}
+					} as any
 				);
 						}
 			loading=false;

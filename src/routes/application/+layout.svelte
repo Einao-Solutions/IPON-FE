@@ -159,7 +159,8 @@
 					if (res) {
 						// replace url
 						newDataApp.update((data) => {
-							const index = data.attachments.findIndex(x => x.name === name);
+							if (!data || !data.attachments) return data;
+							const index = data.attachments.findIndex((x: any) => x.name === name);
 							data.attachments[index].url = res;
 							return data;
 						})
@@ -168,12 +169,13 @@
 			}
 			adjustmentType.set(1);
 			localStorage.removeItem("revisions")
-			await goto(`/updatesmade?id=${$applicationData.id}`);
+			await goto(`/updatesmade?id=${$applicationData?.id}`);
 		}
 	}
 	let failedPages: string[] = [];
 	async function validateForms() {
 		validatedPages.update((pages) => {
+			pages = pages ?? [];
 			const addedPages = pages.map((x) => x.name);
 			const allSections = sections
 				.filter((x) => ['verification', 'priority'].includes(x.name) === false)
@@ -188,7 +190,7 @@
 		for (let i = 0; i < sections.length; i++) {
 			validatePage.set(sections[i].name);
 		}
-		failedPages = $validatedPages?.filter((x) => x.status == false).map((x) => x.name);
+		failedPages = $validatedPages?.filter((x) => x.status == false).map((x) => x.name) ?? [];
 		validatePage.set(null);
 		if (failedPages.length > 0) {
 			const all = failedPages.join('\n');
@@ -202,7 +204,7 @@
 	}
 
 	async function createFile() {
-		let data: PatentData;
+		let data: any;
 		var cookieUser = document.cookie
 			.split(';')
 			.find((x) => x.startsWith('user=') || x.startsWith(' user='));
@@ -282,7 +284,7 @@
 			
 		}
 		if ($newApplicationType === 2) {
-			const basicData = $formsData?.filter((x) => x.name === 'basic')[0]?.data ;
+			const basicData = $formsData?.filter((x) => x.name === 'basic')[0]?.data as any;
 			const allApplicants =
 				($formsData?.filter((x) => x.name === 'applicant')[0]?.data as Applicant[]) ?? [];
 			const correspondence = $formsData?.filter((x) => x.name === 'correspondence')[0]
@@ -310,7 +312,7 @@
 			};
 		}
 
-		var testing___ = { file: JSON.stringify({ ...data })};
+		var testing___: any = { file: JSON.stringify({ ...data })};
 		var attachmentsLists=[];
 		for (let i = 0; i < $appattachmentsData.length; i++) {
 			let attach = $appattachmentsData[i].data;
@@ -348,9 +350,9 @@
 			await goto('/payment?type=newapplication');
 		}
 	}
-	function arrayBufferToBase64(buffer) {
+	function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array) {
 		let binary = '';
-		const bytes = new Uint8Array(buffer);
+		const bytes = new Uint8Array(buffer as ArrayBuffer);
 		const len = bytes.byteLength;
 		for (let i = 0; i < len; i++) {
 			binary += String.fromCharCode(bytes[i]);
@@ -359,10 +361,10 @@
 	}
 
 
-	function toByteArray(file) {
-		return new Promise((resolve, reject) => {
+	function toByteArray(file: File | Blob) {
+		return new Promise<ArrayBuffer>((resolve, reject) => {
 			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
 			reader.onerror = reject;
 			reader.readAsArrayBuffer(file);
 		}).then((arrayBuffer) => new Uint8Array(arrayBuffer));

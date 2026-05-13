@@ -28,7 +28,7 @@
 	function addApplicant()
 	{
 	allApplicants.update((applicants)=>
-		[...applicants, {id:crypto.randomUUID(), phone:"",country:"",name:"",address:"", email:"", type:null}]);
+		[...applicants, {id:crypto.randomUUID(), phone:"",country:"",name:"",address:"", email:"", phonePrefix:""}]);
 	listofValidatedApplicants.update((valid)=>[...valid, {
 		phone:null,country:null,email:null,address:null, name:null,type:null}]);
 		listOfOpenCountries.update((countries)=>[...countries, false])
@@ -202,6 +202,10 @@
 			return [...applicants];
 		})
 	}
+	function onNameInput(event: Event, i: number) { UpdateApplicantName((event.target as HTMLInputElement).value, i); }
+	function onPhoneInput(event: Event, i: number) { UpdateApplicantPhone((event.target as HTMLInputElement).value, i); }
+	function onEmailInput(event: Event, i: number) { UpdateApplicantEmail((event.target as HTMLInputElement).value, i); }
+	function onAddressInput(event: Event, i: number) { UpdateApplicantAddress((event.target as HTMLInputElement).value, i); }
 	function EditorSave(){
 		if(isEditing)
 		{
@@ -249,7 +253,7 @@
 	}
 	function GetCountryImageLink(country:string)
 	{
-		let key= Object.keys(countriesMap).find(key => countriesMap[key] === country);
+		let key= Object.keys(countriesMap).find(key => (countriesMap as Record<string,string>)[key] === country);
 		return `https://flagcdn.com/20x15/${key}.png`;
 	}
 	function closeCountryAndFocusTrigger(triggerId: string, index:number) {
@@ -327,7 +331,7 @@
 								</Button> </Table.Cell>
 								<Table.Cell class="min-w-40" >
 									<Input
-												 value={applicant.name} on:input={(event)=>UpdateApplicantName(event.target?.value, i)}/>
+												 value={applicant.name} on:input={(e)=>onNameInput(e,i)}/>
 									{#if $listofValidatedApplicants[i].name!==true && $listofValidatedApplicants[i].name!==null }
 										<span style="color: darkred">name cannot be empty</span>
 									{/if}
@@ -376,19 +380,19 @@
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="min-w-40">
-									<Input value={applicant.phone} on:input={(event)=>UpdateApplicantPhone(event.target?.value, i)}/>
+									<Input value={applicant.phone} on:input={(e)=>onPhoneInput(e,i)}/>
 									{#if $listofValidatedApplicants[i].phone!==true && $listofValidatedApplicants [i].phone!==null }
 										<span style="color: red">enter phone number</span>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="min-w-40">
-									<Input value={applicant.email} on:input={(event)=>UpdateApplicantEmail(event.target?.value, i)}/>
+									<Input value={applicant.email} on:input={(e)=>onEmailInput(e,i)}/>
 									{#if $listofValidatedApplicants[i].email!==true && $listofValidatedApplicants [i].email!==null }
 										<span style="color: red">enter email address</span>
 									{/if}
 								</Table.Cell>
 								<Table.Cell class="min-w-40">
-									<Input value={applicant.address} on:input={(event)=>UpdateApplicantAddress(event.target?.value, i)}/>
+									<Input value={applicant.address} on:input={(e)=>onAddressInput(e,i)}/>
 									{#if $listofValidatedApplicants[i].address!==true && $listofValidatedApplicants [i].address!==null }
 										<span style="color: red">enter address</span>
 									{/if}

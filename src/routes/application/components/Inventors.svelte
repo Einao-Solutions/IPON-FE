@@ -29,9 +29,9 @@
 	let isEditing: boolean = true;
 	let showResetButton: boolean = false;
 	function addInventor() {
-		const inventor: Inventor = { country: '', id: crypto.randomUUID(), name: '', email:'', phone:"", address:"" };
+		const inventor: Inventor = { country: '', id: crypto.randomUUID(), name: '', email:'', phone:"", address:"", phonePrefix:"" };
 		listOfInventors.update((inventors) => [...inventors, inventor]);
-		listofValidated.update((valid) => [...valid, { address: null, country: null, name: null, phone:null, email:null }]);
+		listofValidated.update((valid) => [...valid, { address: null, country: null, name: null, phone:null, email:null, city:null }]);
 		listOfOpen.update((opener) => [...opener, false]);
 		isEditing = true;
 	}
@@ -168,7 +168,7 @@
 					address: null,
 					country: null,
 					name: null,
-					email:null, phone:null
+					email:null, phone:null, city:null
 				}))
 			);
 			listOfOpen.set(Array.from({ length: $listOfInventors.length }, () => false));
@@ -187,7 +187,7 @@
 				Array.from({ length: $listOfInventors.length }, () => ({
 					address: null,
 					country: null,
-					name: null,email:null, phone:null,
+					name: null,email:null, phone:null, city:null,
 				}))
 			);
 			listOfOpen.set(Array.from({ length: $listOfInventors.length }, () => false));
@@ -267,14 +267,14 @@
 			Array.from({ length: $listOfInventors.length }, () => ({
 				country: null,
 				name: null,
-				email:null, phone:null, address:null,
+				email:null, phone:null, address:null, city:null,
 			}))
 		);
 		listOfOpen.set(Array.from({ length: $listOfInventors.length }, () => false));
 	}
 
 	function GetCountryImageLink(country: string) {
-		let key = Object.keys(countriesMap).find((key) => countriesMap[key] === country);
+		let key = Object.keys(countriesMap).find((key) => (countriesMap as Record<string,string>)[key] === country);
 		return `https://flagcdn.com/20x15/${key}.png`;
 	}
 	function closeAndFocusTrigger(triggerId: string, index: number) {
@@ -325,6 +325,10 @@
 			return [...x];
 		});
 	}
+	function onNameInput(event: Event, i: number) { updateName((event.target as HTMLInputElement).value ?? '', i); }
+	function onPhoneInput(event: Event, i: number) { updatePhone((event.target as HTMLInputElement).value ?? '', i); }
+	function onEmailInput(event: Event, i: number) { updateEmail((event.target as HTMLInputElement).value ?? '', i); }
+	function onAddressInput(event: Event, i: number) { updateAddress((event.target as HTMLInputElement).value ?? '', i); }
 </script>
 
 <div class="flex-grow flex flex-col w-full h-full">
@@ -383,7 +387,7 @@
 								<Table.Cell class="min-w-40">
 									<Input
 										value={inventor.name}
-										on:input={(event) => updateName(event.target?.value ?? '', i)}
+										on:input={(e) => onNameInput(e, i)}
 									/>
 									{#if $listofValidated[i].name !== true && $listofValidated[i].name !== null}
 										<span style="color: darkred">cannot be empty</span>
@@ -452,7 +456,7 @@
 								<Table.Cell class="min-w-40">
 									<Input
 										value={inventor.phone}
-										on:input={(event) => updatePhone(event.target?.value ?? '', i)}
+										on:input={(e) => onPhoneInput(e, i)}
 									/>
 									{#if $listofValidated[i].phone !== true && $listofValidated[i].phone !== null}
 										<span style="color: red">enter phone number</span>
@@ -461,7 +465,7 @@
 								<Table.Cell class="min-w-40">
 									<Input
 										value={inventor.email}
-										on:input={(event) => updateEmail(event.target?.value ?? '', i)}
+										on:input={(e) => onEmailInput(e, i)}
 									/>
 									{#if $listofValidated[i].email !== true && $listofValidated[i].email !== null}
 										<span style="color: red">Enter email</span>
@@ -469,7 +473,7 @@
 								</Table.Cell>	<Table.Cell class="min-w-40">
 								<Input
 									value={inventor.address}
-									on:input={(event) => updateAddress(event.target?.value ?? '', i)}
+									on:input={(e) => onAddressInput(e, i)}
 								/>
 								{#if $listofValidated[i].address !== true && $listofValidated[i].address !== null}
 									<span style="color: red">enter address</span>

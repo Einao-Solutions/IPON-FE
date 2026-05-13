@@ -23,7 +23,8 @@
 	import {
 		mapPatentAttInToString,
 		mapPatentAttStrToInt, mapTradeAttInToString,
-		TrademarkAttachments
+		TrademarkAttachments,
+		PatentAttachments
 	} from '$lib/designutils';
 	import { toast } from 'svelte-sonner';
 	import { objsHasDiff } from '../../apphelper';
@@ -44,7 +45,7 @@
 	let showRequiredErrors = writable<string[]>([]);
 	let showSizeError = writable<boolean>(false);
 	let isLoading = true;
-	let isUploaded = {};
+	let isUploaded: Record<number, boolean> = {};
 	onMount(() => {
 		isLoading = true;
 		let data = $formsData?.find((x) => x.name === 'attachments');
@@ -76,14 +77,14 @@
 		} else if ($applicationMode === 1) {
 			// edit mode
 			const clone = JSON.parse(JSON.stringify($applicationData?.attachments));
-			const mapped = data ? (data.data as AttachmentType[]) : (clone as AttachmentType[]);
+			const mapped = data ? (data.data as AttachmentType[]) : (clone as any[]);
 			if (data) {
-				attachments = [...data.data];
+				attachments = [...(data.data as AttachmentType[])];
 			for (let i =0;i<attachments.length;i++) {
-				if (attachments[i].type===0){powLink=attachments[i].data[0] }
-				if (attachments[i].type===1){repLink=attachments[i].data[0] }
-				if (attachments[i].type===2){other1Link=attachments[i].data[0] }
-				if (attachments[i].type===3){other2Link=attachments[i].data[0] }
+				if (attachments[i].type===0){powLink=attachments[i].data[0]?.url }
+				if (attachments[i].type===1){repLink=attachments[i].data[0]?.url }
+				if (attachments[i].type===2){other1Link=attachments[i].data[0]?.url }
+				if (attachments[i].type===3){other2Link=attachments[i].data[0]?.url }
 
 						isUploaded[attachments[i].type]=true;
 			}
@@ -204,8 +205,8 @@
 			listofErrors.push('No attachments added');
 		} else {
 			if (!attc.find((x) => x.type === 1) &&
-				($formsData?.find((x)=>x.name==="basic")?.data?.logo===0 ||
-					$formsData?.find((x)=>x.name==="basic")?.data?.logo===2)) {
+				(($formsData?.find((x)=>x.name==="basic")?.data as any)?.logo===0 ||
+					($formsData?.find((x)=>x.name==="basic")?.data as any)?.logo===2)) {
 				listofErrors.push('trademark representation is required');
 				hasErrors = true;
 			}
@@ -252,7 +253,7 @@
 				return;
 			}
 			let createdUrl = URL.createObjectURL(file);
-			const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(x));
+			const attachmentName = Object.values(TrademarkAttachments).filter((x): x is string => isNaN(Number(x)));
 			if (attachments.find((x) => x.type === type)) {
 				attachments[attachments.findIndex((x) => x.type === type)].data.push({
 					url: createdUrl,
@@ -292,13 +293,13 @@
 		let index = $attachmentLoadingStatus.findIndex((x) => x.type === type);
 		if (index !== -1) {
 			return $attachmentLoadingStatus[index].status;
-		} else if (attachments.filter((x) => x.name === type)[0].fileName != null) {
+		} else if ((attachments.filter((x: any) => x.name === type)[0] as any)?.fileName != null) {
 			return false;
 		} else return null;
 	};
 
 	function removeAttachment(type: number) {
-		const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(x));
+		const attachmentName = Object.values(TrademarkAttachments).filter((x): x is string => isNaN(Number(x)));
 		//creation mode
 		appattachmentsData.update((data) => {
 			const ind = data.findIndex((x) => x.name === attachmentName[type].toString());
@@ -328,10 +329,11 @@
 	let content: string | null = null;
 	function viewAttachment(type: number) {
 		if ($applicationMode == 1) {
-			content = attachments.find((x) => x.type.toString() == type).data[0].url;
+			content = attachments.find((x) => x.type === type)?.data[0]?.url ?? null;
 		} else {
-			const attachmentName = Object.values(TrademarkAttachments).filter((x) => isNaN(x));
+			const attachmentName = Object.values(TrademarkAttachments).filter((x): x is string => isNaN(Number(x)));
 			const inde = $appattachmentsData.find((x) => x.name === attachmentName[type].toString());
+			if (!inde) return null;
 			content = URL.createObjectURL(inde.data[0]);
 			const link = document.createElement('a');
 			link.href = content;
@@ -347,7 +349,7 @@
 				parsed.push({ name: mapTradeAttInToString(type), url: [data[0].url] });
 			});
 			const sorted=parsed.sort((a,b)=>a.name>b.name?1:-1)
-			const originalSorted=$applicationData?.attachments.sort((a,b)=>a.name>b.name?1:-1);
+			const originalSorted=$applicationData?.attachments?.sort((a,b)=>a.name>b.name?1:-1) ?? [];
 			console.log(sorted, originalSorted)
 			if (objsHasDiff(sorted, originalSorted)) {
 				showResetButton = true;
@@ -378,11 +380,11 @@
 
 	function resetAttachments() {
 		const clone = JSON.parse(JSON.stringify($applicationData?.attachments));
-		const mapped = clone as AttachmentType[];
+		const mapped = clone as { name: string; url: string[] }[];
 		let datadd: AttachmentType[] = [];
 		mapped.forEach((x) => {
 			let urls: string[] = x.url;
-			let attchdata = [];
+			let attchdata: { fileName: string; url: string }[] = [];
 			urls.forEach((y) => {
 				attchdata.push({ fileName: y, url: y });
 			});
@@ -392,7 +394,7 @@
 		attachments.forEach((x) => (isUploaded[x.type] = true));
 	}
 	function getAttachmentName(current: PatentAttachments | string) {
-		return attachments.find((x) => x.type === current).data[0]?.fileName ?? 'uploaded';
+		return attachments.find((x) => x.type === current)?.data[0]?.fileName ?? 'uploaded';
 	}
 </script>
 

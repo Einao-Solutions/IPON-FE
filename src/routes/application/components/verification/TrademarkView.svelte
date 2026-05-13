@@ -7,36 +7,36 @@
 	import * as Table from "$lib/components/ui/table/index"
 	import { type AttachmentType, type CorrespondenceType, GetCountryImageLink } from '$lib/helpers';
 	import { mapTrademarkAttToString, mapTradeStringToInt, mapTradeStringToString } from '$lib/designutils';
-let basics:unknown
-	let applicants:[]
-	let correspondence:CorrespondenceType
+let basics: any
+	let applicants: any[] = []
+	let correspondence: CorrespondenceType | undefined
 	let isLoading:boolean|undefined=undefined;
 	let attachments:AttachmentType[]
 	onMount(()=>{
 		isLoading=true;
 		let allData = $formsData
 		basics= allData?.find(x=>x.name==="basic")?.data || undefined
-		applicants= allData?.find(x=>x.name==="applicant")?.data || undefined
-		correspondence= allData?.find(x=>x.name==="correspondence")?.data || undefined
+		applicants= (allData?.find(x=>x.name==="applicant")?.data as any[]) || []
+		correspondence= (allData?.find(x=>x.name==="correspondence")?.data as CorrespondenceType) || undefined
 		attachments = $formsData?.filter(x=>x.name==="attachments")[0]?.data as AttachmentType[]??undefined;
 		if ($applicationMode===1){
 			// edit mode
 			applicants=applicants??$applicationData?.applicants;
-			correspondence=correspondence??$applicationData?.correspondence;
-			attachments= attachments?? $applicationData?.attachments.map((val)=> ({
+			correspondence=correspondence??$applicationData?.correspondence ?? undefined;
+			attachments= attachments?? ($applicationData?.attachments?.map((val)=> ({
 				type:mapTradeStringToInt(val.name), data: [
 				{
 					url: val.url[0],
 					fileName: mapTradeStringToString(val.name)
 				}
-			]}));
+			]})) ?? []);
 			basics = basics?? {
-				title: $applicationData.titleOfTradeMark,
-				class: $applicationData.trademarkClass,
-				description: $applicationData.trademarkClassDescription,
-				type: $applicationData.trademarkType,
-				logo: $applicationData.trademarkLogo,
-				disclaimer: $applicationData.trademarkDisclaimer,
+				title: $applicationData?.titleOfTradeMark,
+				class: $applicationData?.trademarkClass,
+				description: $applicationData?.trademarkClassDescription,
+				type: $applicationData?.trademarkType,
+				logo: $applicationData?.trademarkLogo,
+				disclaimer: $applicationData?.trademarkDisclaimer,
 			}
 		}
 		isLoading=false;

@@ -45,7 +45,7 @@
 	let showSizeError = writable<boolean>(false);
 	let isLoading = true;
 	isPCT.subscribe((data) => {
-		if ($applicationMode===1 && $applicationData.patentType===2 && data===null){
+		if ($applicationMode===1 && $applicationData?.patentType===2 && data===null){
 			isPCT.set(true)
 		}
 		if (data===true) {
@@ -78,22 +78,22 @@
 					})
 						formsData.update((t)=>{
 							const attac=t?.filter((x) => x.name === 'attachments')[0]?.data as AttachmentType[]??[];
-							if (attac.length > 0) {
+							if (attac.length > 0 && t) {
 								const pctI=attac.findIndex(x=>x.type===PatentAttachments.pct)
 								if (pctI!==-1){
 									attac.splice(pctI, 1);
 									const attInde=t.findIndex(x=>x.name==="attachments");
 									t[attInde].data=attac;
 								}
-								return t;
 							}
+							return t;
 						})
 				}
 		}
 	});
 
 	hasPriority.subscribe((prio) => {
-		if ($applicationMode===1 && $applicationData.priorityInfo.length>=1 && prio===false){
+		if ($applicationMode===1 && ($applicationData?.priorityInfo?.length ?? 0)>=1 && prio===false){
 			hasPriority.set(true)
 		}
 		if (prio) {
@@ -127,20 +127,20 @@
 
 				formsData.update((t) => {
 					const attac = t?.filter((x) => x.name === 'attachments')[0]?.data as AttachmentType[] ?? [];
-					if (attac.length > 0) {
+					if (attac.length > 0 && t) {
 						const prioDoc = attac.findIndex(x => x.type === PatentAttachments.pdoc)
 						if (prioDoc !== -1) {
 							attac.splice(prioDoc, 1);
 							const attInde = t.findIndex(x => x.name === "attachments");
 							t[attInde].data = attac;
 						}
-						return t;
 					}
+					return t;
 				})
 			}
 		}
 	});
-	let isUploaded = {};
+	let isUploaded: Record<number, boolean> = {};
 	onMount(() => {
 		isLoading = true;
 		let data = $formsData?.find((x) => x.name === 'attachments');
@@ -160,18 +160,18 @@
 		} else if ($applicationMode === 1) {
 			// edit mode
 			const clone = JSON.parse(JSON.stringify($applicationData?.attachments));
-			const mapped = data ? (data.data as AttachmentType[]) : (clone as AttachmentType[]);
+			const mapped = data ? (data.data as AttachmentType[]) : (clone as any[]);
 			console.log(mapped)
 			if (data){
-				attachments=[...data.data];
+				attachments=[...(data.data as AttachmentType[])];
 				attachments.forEach(x => isUploaded[x.type] = true)
 			}
 			else {
 				console.log("going with else")
 			let datadd:AttachmentType[]=[];
-				mapped.forEach(x => {
+				mapped.forEach((x: any) => {
 					let urls: string[] = x.url;
-					let attchdata = []
+					let attchdata: { fileName: string; url: string }[] = []
 					urls.forEach(y => {
 						attchdata.push({ fileName: y, url: y })
 					});
@@ -311,25 +311,26 @@
 					return;
 				}
 				let createdUrl = URL.createObjectURL(input.files[i]);
-				const attachmentName = Object.values(PatentAttachments).filter((x) => isNaN(x))
+				const attachmentName = Object.values(PatentAttachments).filter((x): x is string => isNaN(Number(x)))
+				const files = input.files;
 				if (attachments.find((x) => x.type === type)) {
 					attachments[attachments.findIndex((x) => x.type === type)].data.push({
 						url: createdUrl,
-						fileName: input.files[i].name
+						fileName: files[i].name
 					});
 					appattachmentsData.update((data) => {
 						const inde = data.findIndex(x => x.name === attachmentName[type].toString());
-						data[inde].data.push(input.files[i] as File);
+						data[inde].data.push(files[i] as File);
 						return data;
 					})
 				} else {
 					appattachmentsData.update((data) => {
-						data.push({ name: attachmentName[type].toString(), data: [(input.files[i] as File)] });
+						data.push({ name: attachmentName[type].toString(), data: [(files[i] as File)] });
 						return data;
 					})
 					attachments.push({
 						type: type,
-						data: [{ url: createdUrl, fileName: input.files[i].name }]
+						data: [{ url: createdUrl, fileName: files[i].name }]
 					});
 				}
 
@@ -341,13 +342,13 @@
 		let index = $attachmentLoadingStatus.findIndex((x) => x.type === type);
 		if (index !== -1) {
 			return $attachmentLoadingStatus[index].status;
-		} else if (attachments.filter((x) => x.name === type)[0].fileName != null) {
+		} else if ((attachments.filter((x: any) => x.name === type)[0] as any)?.fileName != null) {
 			return false;
 		} else return null;
 	};
 
 	function removeAttachment(type: number) {
-		const attachmentName = Object.values(PatentAttachments).filter((x)=>isNaN(x))
+		const attachmentName = Object.values(PatentAttachments).filter((x): x is string => isNaN(Number(x)))
 			//creation mode
 		appattachmentsData.update((data)=>{
 			const ind=data.findIndex(x=>x.name===attachmentName[type].toString());
@@ -363,12 +364,13 @@
 	}
 	let showPreview = false;
 	let content: string | null = null;
-	function viewAttachment(type: string) {
+	function viewAttachment(type: number) {
 		if($applicationMode==1)
-		{content=attachments.find(x=>x.type.toString()==type).data[0].url;}
+		{content=attachments.find(x=>x.type===type)?.data[0]?.url ?? null;}
 		else {
-			const attachmentName = Object.values(PatentAttachments).filter((x) => isNaN(x))
+			const attachmentName = Object.values(PatentAttachments).filter((x): x is string => isNaN(Number(x)))
 			const inde = $appattachmentsData.find(x => x.name === attachmentName[type].toString());
+			if (!inde) return null;
 			content = URL.createObjectURL(inde.data[0]);
 			const link = document.createElement('a');
 			link.href = content;
@@ -414,11 +416,11 @@
 
 	function resetAttachments() {
 		const clone = JSON.parse(JSON.stringify($applicationData?.attachments));
-		const mapped = (clone as AttachmentType[]);
+		const mapped = (clone as { name: string; url: string[] }[]);
 		let datadd:AttachmentType[]=[];
 		mapped.forEach(x=>{
 			let urls:string[]=x.url;
-			let attchdata=[]
+			let attchdata: { fileName: string; url: string }[] = []
 			urls.forEach(y=>{attchdata.push({fileName:y, url:y})});
 			datadd.push({type: mapPatentAttStrToInt(x.name), data:attchdata });
 		})
@@ -426,8 +428,9 @@
 		attachments.forEach(x=>isUploaded[x.type]=true)
 	}
 	function getAttachmentName(current:PatentAttachments|string){
-			return attachments.find(x=>x.type===current).data[0]?.fileName??'uploaded'
+			return attachments.find(x=>x.type===current)?.data[0]?.fileName ?? 'uploaded'
 	}
+	const attachmentTypes: number[] = Object.values(PatentAttachments).filter((x): x is number => typeof x === 'number');
 </script>
 
 <AlertDialog.Root bind:open={$showSizeError}>
@@ -464,7 +467,7 @@
 			{/each}
 		</div>
 		{/if}
-	{#each Object.values(PatentAttachments).filter((x) => !isNaN(x)) as curr_att}
+	{#each attachmentTypes as curr_att}
 		{#if curr_att === 3 && $hasPriority === false}
 			<p></p>
 		{:else if curr_att === 5 && $isPCT === false}

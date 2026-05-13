@@ -42,7 +42,7 @@
 	function addPriority() {
 		allPriorities.update((priority) => [
 			...priority,
-			{ id: crypto.randomUUID(), number: '', country: '', date: undefined }
+			{ id: crypto.randomUUID(), number: '', country: '', date: '' }
 		]);
 		listofValidatedPriorities.update((valid) => [
 			...valid,
@@ -203,7 +203,7 @@
 		let listOfStatus: boolean[] = [];
 		for (let i = 0; i < $allPriorities.length; i++) {
 			$listofValidatedPriorities[i].number = $allPriorities[i].number !== '';
-			$listofValidatedPriorities[i].date = $allPriorities[i].date !== undefined;
+			$listofValidatedPriorities[i].date = $allPriorities[i].date !== undefined && $allPriorities[i].date !== '';
 			$listofValidatedPriorities[i].country = $allPriorities[i].country !== '';
 			listOfStatus.push(
 				$listofValidatedPriorities[i].number! &&
@@ -214,7 +214,7 @@
 		return listOfStatus.every((x) => x === true) || $allPriorities.length == 0;
 	}
 	function GetCountryImageLink(country: string) {
-		let key = Object.keys(countriesMap).find((key) => countriesMap[key] === country);
+		let key = Object.keys(countriesMap).find((key) => (countriesMap as Record<string,string>)[key] === country);
 		return `https://flagcdn.com/20x15/${key}.png`;
 	}
 	function closeCountryAndFocusTrigger(triggerId: string, index: number) {
@@ -255,14 +255,16 @@
 		});
 	}
 
-	function updateDate(index: number, date: string) {
+	function updateDate(index: number, date: DateValue | undefined) {
 		allPriorities.update((priorities) => {
 			let temp = { ...priorities[index] };
-			temp.date = date;
+			temp.date = date ? date.toString() : '';
 			priorities[index] = temp;
 			return [...priorities];
 		});
 	}
+	function onNumberInput(event: Event, i: number) { updateNumber(i, (event.target as HTMLInputElement).value); }
+	function asDateValue(d: string): DateValue | undefined { return (d as unknown) as DateValue | undefined; }
 </script>
 
 <div class="flex-grow flex flex-col w-full h-full gap-2">
@@ -323,7 +325,7 @@
 								<Table.Cell class="min-w-40">
 									<Input
 										value={priority.number}
-										on:input={(event) => updateNumber(i, event.target?.value)}
+										on:input={(e) => onNumberInput(e, i)}
 									/>
 									{#if $listofValidatedPriorities[i].number !== true && $listofValidatedPriorities[i].number !== null}
 										<span style="color: darkred">Number cannot be empty</span>
@@ -406,7 +408,7 @@
 										</Popover.Trigger>
 										<Popover.Content class="w-auto p-0">
 											<DatePickerCustom
-												value={priority.date}
+												value={asDateValue(priority.date)}
 												onValueChange={(event) => updateDate(i, event)}
 											/>
 										</Popover.Content>
