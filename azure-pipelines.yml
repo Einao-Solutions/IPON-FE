@@ -1,5 +1,5 @@
 trigger:
-- dev  # change to 'main' or your real branch if needed
+- development  # change to 'main' or your real branch if needed
 
 pool:
   name: 'IISPool'   # must match your agent pool name exactly
