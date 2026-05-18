@@ -116,7 +116,7 @@
                 </p>
                 <div class="mt-4" in:fade={{ duration: 300, delay: 300 }}>
                     <button
-                        class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
+                        class="bg-green-800 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200"
                         on:click={() => goto('/home/dashboard')}
                     >
                         Return to Dashboard

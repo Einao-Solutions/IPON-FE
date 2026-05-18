@@ -174,12 +174,12 @@
             <div class="mb-2 text-red-600 text-sm text-center">{error}</div>
         {/if}
         {#if success}
-            <div class="mb-2 text-green-600 text-sm text-center">{success}</div>
+            <div class="mb-2 text-green-800 text-sm text-center">{success}</div>
         {/if}
         <div class="flex">
             <button
                 type="submit"
-                class="px-6 py-2 bg-green-600 text-white rounded-lg font-semibold text-base hover:bg-green-700 transition"
+                class="px-6 py-2 bg-green-800 text-white rounded-lg font-semibold text-base hover:bg-green-700 transition"
                 disabled={isSubmitting}
             >
                 {isSubmitting ? 'Submitting...' : 'Submit'}

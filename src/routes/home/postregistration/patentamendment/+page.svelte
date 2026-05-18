@@ -1556,7 +1556,7 @@
             <Button
                 on:click={handleSubmit}
                 disabled={isProcessing || isLoading}
-                class="w-full md:w-auto bg-green-600"
+                class="w-full md:w-auto bg-green-800"
             >
                 {#if isProcessing}
                     <Icon icon="line-md:loading-loop" class="mr-2" />

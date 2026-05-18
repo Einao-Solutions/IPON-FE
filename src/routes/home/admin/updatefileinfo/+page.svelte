@@ -2560,10 +2560,10 @@
     class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
   >
     <div class="bg-white p-6 rounded shadow-md text-center w-full max-w-sm">
-      <h2 class="text-xl font-semibold text-green-600">Success!</h2>
+      <h2 class="text-xl font-semibold text-green-800">Success!</h2>
       <p class="mt-2">File updated successfully.</p>
       <button
-        class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        class="mt-4 bg-green-800 text-white px-4 py-2 rounded hover:bg-green-700"
         on:click={() => (showSuccessModal = false)}
       >
         Close

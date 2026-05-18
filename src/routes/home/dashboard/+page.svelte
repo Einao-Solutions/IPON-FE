@@ -704,7 +704,7 @@
           icon="mdi:file-plus-outline"
           width="2rem"
           height="2rem"
-          class="mr-3 text-green-600"
+          class="mr-3 text-green-800"
         />
         <div class="text-left">
           <p class="font-semibold">New Applications</p>
@@ -1271,7 +1271,7 @@
         Close
       </Button>
       <Button
-        class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500"
+        class="flex-1 bg-green-800 hover:bg-green-700 focus:ring-green-500"
         on:click={verifyRemitaPayment}
         disabled={verifyPaymentLoading}
       >
@@ -1514,7 +1514,7 @@
       <Button
         on:click={getDocuments}
         disabled={getDocLoading || !getDocFileNumber || !getDocPaymentId}
-        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+        class="px-4 py-2 bg-green-800 hover:bg-green-700 text-white disabled:opacity-50"
       >
         {#if getDocLoading}
           <Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
@@ -1620,10 +1620,10 @@
   {#if !isStaff}
     <div class="relative">
       <div
-        class="w-full bg-green-600 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
+        class="w-full bg-green-800 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
         <div class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold">
-          View your published marks under “Trademark Publication” in Trademark
+          View your accepted marks under “Trademark Publication” in Trademark
           Services. <b>◆</b> File opposition via the “Opposition” feature in
           Trademark Services or the “Oppose” button on the Trademark Publication
           list. <b>◆</b> Restore inactive trademarks using the “Restoration”
@@ -1656,7 +1656,7 @@
       <!-- Header Section -->
       <div class="mb-5 flex-shrink-0">
         <div class="flex items-center space-x-3 mb-1">
-          <!-- <div class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+          <!-- <div class="w-10 h-10 bg-gradient-to-br from-green-800 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
 						<Icon icon="mdi:shield-crown-outline" class="text-white text-xl" />
 					</div> -->
           <div>
@@ -1695,7 +1695,7 @@
                 >
                   <Icon
                     icon="mdi:scale-balance"
-                    class="text-2xl text-green-600 group-hover:text-green-700"
+                    class="text-2xl text-green-800 group-hover:text-green-700"
                   />
                 </div>
                 <h3
@@ -1716,7 +1716,7 @@
                 >
                   <Icon
                     icon="heroicons:arrow-right"
-                    class="text-green-600 text-sm"
+                    class="text-green-800 text-sm"
                   />
                 </div>
               </div>
@@ -1744,7 +1744,7 @@
                 >
                   <Icon
                     icon="mdi:lightbulb-outline"
-                    class="text-2xl text-green-600 group-hover:text-green-700"
+                    class="text-2xl text-green-800 group-hover:text-green-700"
                   />
                 </div>
                 <h3
@@ -1765,7 +1765,7 @@
                 >
                   <Icon
                     icon="heroicons:arrow-right"
-                    class="text-green-600 text-sm"
+                    class="text-green-800 text-sm"
                   />
                 </div>
               </div>
@@ -1793,7 +1793,7 @@
                 >
                   <Icon
                     icon="mdi:palette-outline"
-                    class="text-2xl text-green-600 group-hover:text-green-700"
+                    class="text-2xl text-green-800 group-hover:text-green-700"
                   />
                 </div>
                 <h3
@@ -1814,7 +1814,7 @@
                 >
                   <Icon
                     icon="heroicons:arrow-right"
-                    class="text-green-600 text-sm"
+                    class="text-green-800 text-sm"
                   />
                 </div>
               </div>
@@ -1864,7 +1864,7 @@
           <div class="mb-4">
             <div class="flex items-center space-x-3 mb-3">
               <!-- Optional: Icon for the statistics section (currently commented out) -->
-              <!-- <div class="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg flex items-center justify-center">
+              <!-- <div class="w-8 h-8 bg-gradient-to-br from-green-800 to-green-700 rounded-lg flex items-center justify-center">
 									<Icon icon="mdi:chart-line" class="text-white text-lg" />
 								</div> -->
               <div>

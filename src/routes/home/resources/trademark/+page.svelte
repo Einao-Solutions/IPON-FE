@@ -43,7 +43,7 @@
 		<div class="text-center space-y-6">
 			<!-- Icon -->
 			<div class="w-24 h-24 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-3xl flex items-center justify-center mx-auto shadow-lg">
-				<Icon icon="mdi:scale-balance" class="text-4xl text-green-600" />
+				<Icon icon="mdi:scale-balance" class="text-4xl text-green-800" />
 			</div>
 
 			<!-- Title -->
@@ -51,7 +51,7 @@
 
 			<!-- Coming Soon Badge -->
 			<div class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full border border-green-200">
-				<Icon icon="heroicons:clock" class="text-green-600 mr-2" />
+				<Icon icon="heroicons:clock" class="text-green-800 mr-2" />
 				<span class="text-green-700 font-semibold text-lg">Coming Soon</span>
 			</div>
 
@@ -68,15 +68,15 @@
 			<!-- Features Preview -->
 			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto">
 				<div class="bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-xl p-4 text-center">
-					<Icon icon="heroicons:document-text" class="text-2xl text-green-600 mx-auto mb-2" />
+					<Icon icon="heroicons:document-text" class="text-2xl text-green-800 mx-auto mb-2" />
 					<h3 class="font-semibold text-slate-700 text-sm">Registration Guides</h3>
 				</div>
 				<div class="bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-xl p-4 text-center">
-					<Icon icon="heroicons:play-circle" class="text-2xl text-green-600 mx-auto mb-2" />
+					<Icon icon="heroicons:play-circle" class="text-2xl text-green-800 mx-auto mb-2" />
 					<h3 class="font-semibold text-slate-700 text-sm">Video Tutorials</h3>
 				</div>
 				<div class="bg-white/60 backdrop-blur-sm border border-slate-200/60 rounded-xl p-4 text-center">
-					<Icon icon="heroicons:light-bulb" class="text-2xl text-green-600 mx-auto mb-2" />
+					<Icon icon="heroicons:light-bulb" class="text-2xl text-green-800 mx-auto mb-2" />
 					<h3 class="font-semibold text-slate-700 text-sm">Best Practices</h3>
 				</div>
 			</div>

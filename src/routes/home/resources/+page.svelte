@@ -75,7 +75,7 @@
 					<div class="relative z-10">
 						<div class="mb-5">
 							<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
-								<Icon icon="mdi:scale-balance" class="text-2xl text-green-600 group-hover:text-green-700" />
+								<Icon icon="mdi:scale-balance" class="text-2xl text-green-800 group-hover:text-green-700" />
 							</div>
 							<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Trademark</h3>
 							<p class="text-slate-600 text-sm leading-relaxed">Resources for brand identity protection</p>
@@ -83,7 +83,7 @@
 					<div class="flex items-center justify-between">
 						<span class="text-xs text-slate-500 font-medium">Coming soon</span>
 						<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-							<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+							<Icon icon="heroicons:arrow-right" class="text-green-800 text-sm" />
 						</div>
 					</div>
 					</div>
@@ -102,7 +102,7 @@
 					<div class="relative z-10">
 						<div class="mb-5">
 							<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
-								<Icon icon="mdi:lightbulb-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
+								<Icon icon="mdi:lightbulb-outline" class="text-2xl text-green-800 group-hover:text-green-700" />
 							</div>
 							<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Patent</h3>
 							<p class="text-slate-600 text-sm leading-relaxed">Resources for invention protection</p>
@@ -110,7 +110,7 @@
 					<div class="flex items-center justify-between">
 						<span class="text-xs text-slate-500 font-medium">Coming soon</span>
 						<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-							<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+							<Icon icon="heroicons:arrow-right" class="text-green-800 text-sm" />
 						</div>
 					</div>
 					</div>
@@ -129,7 +129,7 @@
 					<div class="relative z-10">
 						<div class="mb-5">
 							<div class="w-14 h-14 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-lg group-hover:shadow-xl">
-								<Icon icon="mdi:palette-outline" class="text-2xl text-green-600 group-hover:text-green-700" />
+								<Icon icon="mdi:palette-outline" class="text-2xl text-green-800 group-hover:text-green-700" />
 							</div>
 							<h3 class="text-xl font-bold mb-2 text-slate-800 group-hover:text-slate-900">Design</h3>
 							<p class="text-slate-600 text-sm leading-relaxed">Resources for creative design protection</p>
@@ -137,7 +137,7 @@
 					<div class="flex items-center justify-between">
 						<span class="text-xs text-slate-500 font-medium">Coming soon</span>
 						<div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors duration-300">
-							<Icon icon="heroicons:arrow-right" class="text-green-600 text-sm" />
+							<Icon icon="heroicons:arrow-right" class="text-green-800 text-sm" />
 						</div>
 					</div>
 					</div>

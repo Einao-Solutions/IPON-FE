@@ -13,8 +13,8 @@
 	import { goto } from '$app/navigation';
 	export let open: boolean = false;
 	export let onclose: () => void;
-	export let data;
-	export let onSearchPressed:()=>{ [key: string]: any};
+	export const data: unknown = undefined;
+	export let onSearchPressed: (otherData: { [key: string]: any }) => void;
 	let title: string | null = '';
 	let selectedFiles: FilingType[] = [];
 	let selectedStatuses: ApplicationStatuses[] = [];
@@ -46,7 +46,7 @@
 	let isSearching: boolean = false;
 	async function searchFiles() {
 		isSearching = true;
-		let otherData={}
+		let otherData: { [key: string]: any } = {}
 		if (title){
 			otherData.title=title
 		}

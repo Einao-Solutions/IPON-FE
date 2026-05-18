@@ -521,7 +521,7 @@
             <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
               <Icon
                 icon="lucide:paperclip"
-                class="w-4 h-4 text-green-600 dark:text-green-400"
+                class="w-4 h-4 text-green-800 dark:text-green-400"
               />
             </div>
             <Label
@@ -721,7 +721,7 @@
           <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
             <Icon
               icon="lucide:upload"
-              class="w-4 h-4 text-green-600 dark:text-green-400"
+              class="w-4 h-4 text-green-800 dark:text-green-400"
             />
           </div>
           Resolution Attachment
@@ -735,7 +735,7 @@
             <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
               <Icon
                 icon="lucide:paperclip"
-                class="w-4 h-4 text-green-600 dark:text-green-400"
+                class="w-4 h-4 text-green-800 dark:text-green-400"
               />
             </div>
             <Label

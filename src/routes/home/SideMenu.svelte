@@ -367,7 +367,7 @@
       case "low":
         return "bg-blue-500 text-white border-blue-600";
       case "feature":
-        return "bg-green-600 text-white border-green-600";
+        return "bg-green-800 text-white border-green-800";
       default:
         return "bg-gray-500 text-white border-gray-600";
     }
@@ -396,7 +396,7 @@
               : handleMenuClick(menu)}
         >
           <div
-            class={`flex items-center justify-between rounded-md py-2 px-3 ${activeMenu === menu.location ? "bg-green-600 text-white" : "hover:bg-gray-100"}`}
+            class={`flex items-center justify-between rounded-md py-2 px-3 ${activeMenu === menu.location ? "bg-green-800 text-white" : "hover:bg-gray-100"}`}
           >
             <div class="flex items-center space-x-3">
               <Icon

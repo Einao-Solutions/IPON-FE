@@ -197,7 +197,7 @@ async function handleSubmit() {
             <div class="mb-2 text-red-600 text-sm text-center">{error}</div>
         {/if}
         {#if success}
-            <div class="mb-2 text-green-600 text-sm text-center">{success}</div>
+            <div class="mb-2 text-green-800 text-sm text-center">{success}</div>
         {/if}
         <div class="flex">
             <button

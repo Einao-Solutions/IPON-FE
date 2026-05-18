@@ -152,7 +152,7 @@
 					</button>
 					<button
 						type="button"
-						class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+						class="flex-1 bg-green-800 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
 						disabled={isLoading}
 						on:click={handleSearch}
 					>

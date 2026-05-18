@@ -296,7 +296,7 @@
 									File Type
 								</label>
 								<div class="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-md text-gray-700 flex items-center shadow-sm">
-									<Icon icon={getFileTypeIcon(selectedfileType)} class="w-4 h-4 mr-2 text-green-600" />
+									<Icon icon={getFileTypeIcon(selectedfileType)} class="w-4 h-4 mr-2 text-green-800" />
 									{selectedfileType}
 								</div>
 							</div>
@@ -318,7 +318,7 @@
 					type="button"
 					on:click={handleSearch}
 					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium text-white bg-green-800 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
 				>
 					{#if isLoading}
 						<span class="inline-block mr-2">

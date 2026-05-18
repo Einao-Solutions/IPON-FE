@@ -84,7 +84,7 @@
 			{#if messageVisible}<h1 class="text-3xl font-bold text-gray-900 mt-2 mb-4" in:fly={{ y: 20, duration: 500 }}>Application Submitted</h1>{/if}
 			{#if subMessageVisible}
 				<p class="text-base font-medium text-gray-600 mb-8 max-w-xs mx-auto" in:fly={{ y: 15, duration: 500 }}>YOUR DESIGN ASSIGNMENT APPLICATION HAS BEEN RECEIVED AND IS RECEIVING DUE ATTENTION</p>
-				<div class="mt-4 space-x-3" in:fade={{ duration: 300, delay: 300 }}><button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200" on:click={goToDashboard}>Return to Dashboard</button></div>
+				<div class="mt-4 space-x-3" in:fade={{ duration: 300, delay: 300 }}><button class="bg-green-800 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200" on:click={goToDashboard}>Return to Dashboard</button></div>
 			{/if}
 		</div>
 	</main>

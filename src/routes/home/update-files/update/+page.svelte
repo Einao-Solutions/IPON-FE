@@ -450,7 +450,7 @@
 {#if showSuccessToast}
 	<div class="fixed inset-0 flex items-end justify-center z-50 pointer-events-none">
 		<div
-			class="mb-8 bg-green-600 text-white px-6 py-4 rounded shadow-lg flex items-center gap-2 pointer-events-auto animate-fade-in-up"
+			class="mb-8 bg-green-800 text-white px-6 py-4 rounded shadow-lg flex items-center gap-2 pointer-events-auto animate-fade-in-up"
 		>
 			<Icon icon="lucide:check-circle" width="1.5rem" height="1.5rem" />
 			<span>Clerical update submitted successfully!</span>
@@ -759,7 +759,7 @@
 						Please upload a PDF of the Power of Attorney (max 10MB).
 					</p>
 					{#if newData.PowerOfAttorney}
-						<div class="mt-2 flex items-center gap-2 text-green-600">
+						<div class="mt-2 flex items-center gap-2 text-green-800">
 							<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
 							<span class="text-sm">File uploaded: {newData.PowerOfAttorney.name}</span>
 						</div>
@@ -783,7 +783,7 @@
 					</p>
 
 					{#if newData.OtherAttachment}
-						<div class="mt-2 flex items-center gap-2 text-green-600">
+						<div class="mt-2 flex items-center gap-2 text-green-800">
 							<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
 							<span class="text-sm">File uploaded: {newData.OtherAttachment.name}</span>
 						</div>
@@ -980,7 +980,7 @@
 									Please upload the new representation (max 10MB).
 								</p>
 								{#if newData.Representation}
-									<div class="mt-2 flex items-center gap-2 text-green-600">
+									<div class="mt-2 flex items-center gap-2 text-green-800">
 										<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
 										<span class="text-sm">File uploaded: {newData.Representation.name}</span>
 									</div>
@@ -1022,7 +1022,7 @@
 								Please upload a PDF document supporting your request (max 10MB).
 							</p>
 							{#if newData.document}
-								<div class="mt-2 flex items-center gap-2 text-green-600">
+								<div class="mt-2 flex items-center gap-2 text-green-800">
 									<Icon icon="lucide:check-circle" width="1rem" height="1rem" />
 									<span class="text-sm">File uploaded: {newData.document.name}</span>
 								</div>
@@ -1038,7 +1038,7 @@
 					<!-- Submit Button -->
 					<button
 						on:click={handleSubmit}
-						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+						class="bg-green-800 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
 						disabled={isProcessing}
 					>
 						{#if isProcessing}
@@ -1071,7 +1071,7 @@
 					<!-- Pay Button -->
 					<button
 						on:click={handleSubmit}
-						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+						class="bg-green-800 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
 						disabled={isProcessing}
 					>
 						{#if isProcessing}

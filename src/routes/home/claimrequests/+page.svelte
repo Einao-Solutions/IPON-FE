@@ -133,10 +133,10 @@
         <div class="flex items-center">
           <div class="flex-1">
             <h3 class="text-lg font-semibold text-gray-700">Active Claims</h3>
-            <p class="text-3xl font-bold text-green-600">{activeClaims}</p>
+            <p class="text-3xl font-bold text-green-800">{activeClaims}</p>
           </div>
           <div class="p-3 bg-green-100 rounded-full">
-            <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-8 h-8 text-green-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
@@ -392,7 +392,7 @@
 									
 					<button 
 						on:click={() => migrate(selectedClaim?.fileNumber)}
-						class="ml-4 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md transition-colors duration-200"
+						class="ml-4 bg-green-800 hover:bg-green-700 text-white px-6 py-2 rounded-md transition-colors duration-200"
 					>
 						Migrate
 					</button>

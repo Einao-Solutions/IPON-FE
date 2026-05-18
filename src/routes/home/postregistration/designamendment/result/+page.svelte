@@ -137,7 +137,7 @@
 					YOUR DESIGN AMENDMENT APPLICATION HAS BEEN RECEIVED AND IS RECEIVING DUE ATTENTION
 				</p>
 				<div class="mt-4 space-x-3" in:fade={{ duration: 300, delay: 300 }}>
-					<button class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200" on:click={goToDashboard}>Return to Dashboard</button>
+					<button class="bg-green-800 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-md transition-colors duration-200" on:click={goToDashboard}>Return to Dashboard</button>
 				</div>
 			{/if}
 		</div>

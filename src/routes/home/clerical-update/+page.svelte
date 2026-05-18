@@ -208,9 +208,9 @@
 							<div class="w-full md:w-2/3">
 								<label class="block text-sm font-medium text-gray-700 mb-1">File Type</label>
 								<div class="flex items-center p-2 border border-gray-300 rounded-md bg-green-50">
-									<Icon icon={getFileTypeIcon(type)} class="text-green-600 mr-2" width="18" height="18" />
+									<Icon icon={getFileTypeIcon(type)} class="text-green-800 mr-2" width="18" height="18" />
 									<span class="text-gray-900 font-medium">{type}</span>
-									<!-- <span class="ml-auto text-sm text-green-600">(Auto-detected)</span> -->
+									<!-- <span class="ml-auto text-sm text-green-800">(Auto-detected)</span> -->
 								</div>
 							</div>
 						{/if}
@@ -231,7 +231,7 @@
 					type="button"
 					on:click={handleSearch}
 					disabled={isLoading}
-					class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
+					class="px-4 py-2 text-sm font-medium text-white bg-green-800 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:bg-green-400 disabled:cursor-not-allowed"
 				>
 					{#if isLoading}
 						<span class="inline-block mr-2">

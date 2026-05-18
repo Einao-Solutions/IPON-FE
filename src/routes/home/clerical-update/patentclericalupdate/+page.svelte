@@ -758,7 +758,7 @@
     class="fixed inset-0 flex items-end justify-center z-50 pointer-events-none"
   >
     <div
-      class="mb-8 bg-green-600 text-white px-6 py-4 rounded shadow-lg flex items-center gap-2 pointer-events-auto animate-fade-in-up"
+      class="mb-8 bg-green-800 text-white px-6 py-4 rounded shadow-lg flex items-center gap-2 pointer-events-auto animate-fade-in-up"
     >
       <Icon icon="lucide:check-circle" width="1.5rem" height="1.5rem" />
       <span>Clerical update submitted successfully!</span>
@@ -1889,7 +1889,7 @@
         {#if isWithdrawn}
           <button
             on:click={handleSubmit}
-            class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+            class="bg-green-800 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
             disabled={isProcessing}
           >
             {#if isProcessing}
@@ -1901,7 +1901,7 @@
         {:else if isReadyForPayment && !isPriorityInfoNotAllowed}
           <button
             on:click={handleSubmit}
-            class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+            class="bg-green-800 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
             disabled={isProcessing}
           >
             {#if isProcessing}

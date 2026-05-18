@@ -3,13 +3,12 @@
   import ministry from "$lib/assets/ministry.png";
   import cld from "$lib/assets/cld.png";
   import logo from "$lib/assets/logo.png";
-  import { page } from "$app/stores";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import Icon from "@iconify/svelte";
-  import { baseURL, UserRoles, type UsersType, UserTypes } from "$lib/helpers";
+  import { baseURL, type UsersType } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
@@ -30,7 +29,7 @@
     lastName: string;
     phoneNumber: string;
     accountType: number;
-    businessName: string | null; 
+    businessName: string | null;
   }
 
   interface AuthResponse {
@@ -57,19 +56,19 @@
   let resetEmail: string | undefined = undefined;
   let showPassword: boolean = false;
   let showConfirmPassword: boolean = false;
+  let acceptedTerms: boolean = false;
   onMount(async () => {
-    const url = $page.url;
     const token = getTokenFromCookie();
 
     if (token) {
       await goto("/home/dashboard");
     }
-
-    // const verify_user = url.searchParams.get("verify_user") ?? null;
-    // if (verify_user !== null) {
-    //   await verifyUser(verify_user);
-    // }
   });
+
+  function hideImage(e: Event) {
+    const target = e.currentTarget as HTMLImageElement | null;
+    if (target) target.style.display = "none";
+  }
 
   function getTokenFromCookie(): string | null {
     const cookies = document.cookie.split(";");
@@ -91,78 +90,6 @@
     // also persist user object as a cookie (encoded)
     const encoded = encodeURIComponent(JSON.stringify(userForStore));
     document.cookie = `user=${encoded}; path=/; max-age=${maxAge}; secure; samesite=strict`;
-  }
-
-  async function validateToken(token: string): Promise<boolean> {
-    try {
-      const response = await fetch(`${baseURL}/api/auth/validate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      return response.ok;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async function verifyUser(userId: string) {
-    currentScreen = 1;
-    try {
-      const response = await fetch(
-        `${baseURL}/api/auth/verify?userId=${userId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${$loggedInToken}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        email = data.email;
-        currentScreen = 0;
-        window.alert("Application Added to History Successfully!");
-        toast.success(
-          "Successfully verified account, please login to continue",
-          {
-            position: "top-right",
-          }
-        );
-      } else {
-        throw new Error("Verification failed");
-      }
-    } catch (error) {
-      toast.error("Verification failed. Please try again.", {
-        position: "top-right",
-      });
-      currentScreen = 0;
-    }
-  }
-
-  async function sendVerificationEmail(email: string, userId: string) {
-    try {
-      const response = await fetch(`${baseURL}/api/auth/send-verification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          userId,
-          verificationUrl: `${window.location.origin}/auth?verify_user=${userId}`,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to send verification email");
-      }
-    } catch (error) {
-      console.error("Error sending verification email:", error);
-      throw error;
-    }
   }
 
   function validatePassword(password: string): {
@@ -202,6 +129,14 @@
   }
 
   async function CreateUserAccount() {
+    if (!acceptedTerms) {
+      toast.error(
+        "Please accept the Terms of Use and Privacy Policy to continue",
+        { position: "top-right" },
+      );
+      return;
+    }
+
     if (!createUser.firstName || !createUser.lastName) {
       toast.error("Please provide both first and last name", {
         position: "top-right",
@@ -225,7 +160,7 @@
 
     const passwordValidation = validatePassword(createUser.password);
     if (!passwordValidation.valid) {
-      toast.error(passwordValidation.message, {
+      toast.error(passwordValidation.message ?? "Invalid password", {
         position: "top-right",
       });
       return;
@@ -269,8 +204,9 @@
           lastName: "",
           phoneNumber: "",
           accountType: 0,
-          businessName: ""
+          businessName: "",
         };
+        acceptedTerms = false;
       } else {
         const error = await response.json();
         toast.error(error.message || "Registration failed", {
@@ -370,9 +306,12 @@
     isLoading = true;
 
     try {
-      const response = await fetch(`${baseURL}/api/auth/ResetPasswordRequest?email=${encodeURIComponent(resetEmail)}`, {
-        method: "POST",
-      });
+      const response = await fetch(
+        `${baseURL}/api/auth/ResetPasswordRequest?email=${encodeURIComponent(resetEmail)}`,
+        {
+          method: "POST",
+        },
+      );
 
       if (response.ok) {
         toast.success("Password reset email sent", {
@@ -487,7 +426,7 @@
             src={ministry}
             alt="Nigerian Coat of Arms"
             class="h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105 md:h-24"
-            on:error={(e) => (e.currentTarget.style.display = "none")}
+            on:error={hideImage}
           />
           <div class="h-20 w-px bg-gray-300 md:h-24"></div>
           <img
@@ -495,7 +434,7 @@
             alt="Commercial Law Department"
             class="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105 md:h-20"
             loading="lazy"
-            on:error={(e) => (e.currentTarget.style.display = "none")}
+            on:error={hideImage}
           />
         </div>
         <div class="space-y-6 text-slate-700">
@@ -675,6 +614,17 @@
               >
                 Forgot your password?
               </Button>
+
+              <div class="text-center text-sm text-slate-600">
+                <a
+                  href="https://iponigeria.fmiti.gov.ng/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-green-700 hover:text-green-800 hover:underline font-medium"
+                >
+                  Privacy Policy
+                </a>
+              </div>
             </div>
           </div>
         {:else if currentScreen === 2}
@@ -719,16 +669,16 @@
                 </select>
               </div>
               {#if String(createUser.accountType) === "1"}
-  <div>
-    <Label class="text-slate-700">Company Name</Label>
-    <Input
-      bind:value={createUser.businessName}
-      placeholder="Enter company name"
-      class="mt-1"
-      disabled={isLoading}
-    />
-  </div>
-{/if}
+                <div>
+                  <Label class="text-slate-700">Company Name</Label>
+                  <Input
+                    bind:value={createUser.businessName}
+                    placeholder="Enter company name"
+                    class="mt-1"
+                    disabled={isLoading}
+                  />
+                </div>
+              {/if}
               <div>
                 <Label class="text-slate-700">Email</Label>
                 <Input
@@ -810,10 +760,40 @@
               </div>
             </div>
 
+            <div class="flex items-start gap-2">
+              <input
+                id="acceptTerms"
+                type="checkbox"
+                bind:checked={acceptedTerms}
+                disabled={isLoading}
+                class="mt-1 h-4 w-4 rounded border-slate-300 text-green-700 focus:ring-green-700"
+              />
+              <label for="acceptTerms" class="text-sm text-slate-600">
+                I agree to the
+                <a
+                  href="https://iponigeria.fmiti.gov.ng/terms-of-use"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-green-700 hover:text-green-800 hover:underline font-medium"
+                >
+                  Terms of Use
+                </a>
+                and
+                <a
+                  href="https://iponigeria.fmiti.gov.ng/privacy-policy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-green-700 hover:text-green-800 hover:underline font-medium"
+                >
+                  Privacy Policy
+                </a>.
+              </label>
+            </div>
+
             <Button
               class="w-full bg-green-700 hover:bg-green-800 text-white"
               on:click={CreateUserAccount}
-              disabled={isLoading}
+              disabled={isLoading || !acceptedTerms}
             >
               {#if isLoading}
                 <Icon

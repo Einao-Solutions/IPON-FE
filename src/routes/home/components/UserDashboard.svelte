@@ -130,7 +130,7 @@
 	 */
 	function getApplicationTypeIcon(appType: number) {
 		const uniformBgColor = "from-green-100 via-green-50 to-emerald-50";
-		const uniformColor = "text-green-600";
+		const uniformColor = "text-green-800";
 		
 		switch (appType) {
 			case 0: // NewApplication
@@ -249,7 +249,7 @@
 		<a href={getFileUrl("fileType=2&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 via-white to-green-50 border border-green-200/40 rounded-xl hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60 relative overflow-hidden">
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
-					<Icon icon="mdi:scale-balance" class="text-lg text-green-600 group-hover:text-green-700" />
+					<Icon icon="mdi:scale-balance" class="text-lg text-green-800 group-hover:text-green-700" />
 				</div>
 				<div>
 					<p class="font-semibold text-slate-800 group-hover:text-slate-900">Trademark Applications</p>
@@ -268,7 +268,7 @@
 		<a href={getFileUrl("fileType=0&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 via-white to-green-50 border border-green-200/40 rounded-xl hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60 relative overflow-hidden">
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
-					<Icon icon="mdi:lightbulb-outline" class="text-lg text-green-600 group-hover:text-green-700" />
+					<Icon icon="mdi:lightbulb-outline" class="text-lg text-green-800 group-hover:text-green-700" />
 				</div>
 				<div>
 					<p class="font-semibold text-slate-800 group-hover:text-slate-900">Patent Applications</p>
@@ -287,7 +287,7 @@
 		<a href={getFileUrl("fileType=1&titleType=specific")} class="group flex items-center justify-between p-4 bg-gradient-to-r from-green-50 via-white to-green-50 border border-green-200/40 rounded-xl hover:shadow-lg hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60 relative overflow-hidden">
 			<div class="flex items-center space-x-4">
 				<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
-					<Icon icon="mdi:palette-outline" class="text-lg text-green-600 group-hover:text-green-700" />
+					<Icon icon="mdi:palette-outline" class="text-lg text-green-800 group-hover:text-green-700" />
 				</div>
 				<div>
 					<p class="font-semibold text-slate-800 group-hover:text-slate-900">Design Applications</p>
@@ -384,7 +384,7 @@
 					<div class="flex items-center justify-between w-full px-3 py-2">
 						<div class="flex items-center space-x-3 flex-1">
 							<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-lg flex items-center justify-center shadow-sm border border-green-100">
-								<Icon icon="mdi:scale-balance" class="w-6 h-6 text-green-600" />
+								<Icon icon="mdi:scale-balance" class="w-6 h-6 text-green-800" />
 							</div>
 							<div class="flex-1 text-left">
 								<div class="flex items-center gap-2 mb-0.5">
@@ -395,7 +395,7 @@
 							</div>
 						</div>
 						<div class="flex-shrink-0 ml-2">
-							<svg class="w-5 h-5 text-green-600 transition-transform duration-200 group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<svg class="w-5 h-5 text-green-800 transition-transform duration-200 group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
 							</svg>
 						</div>
@@ -416,12 +416,12 @@
 											<div class="flex-1 text-left">
 												<div class="flex items-center gap-2">
 													<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
-													<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
+													<span class="bg-green-50 text-green-800 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 												</div>
 											</div>
 										</div>
 										<div class="flex-shrink-0 ml-1">
-											<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+											<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-800 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 										</div>
 									</div>
 								</Accordion.Trigger>
@@ -469,7 +469,7 @@
 				<div class="flex items-center justify-between w-full px-3 py-2">
 					<div class="flex items-center space-x-3 flex-1">
 						<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-lg flex items-center justify-center shadow-sm border border-green-100">
-							<Icon icon="mdi:scale-balance" class="w-6 h-6 text-green-600" />
+							<Icon icon="mdi:scale-balance" class="w-6 h-6 text-green-800" />
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
@@ -480,7 +480,7 @@
 						</div>
 					</div>
 					<div class="flex-shrink-0 ml-2">
-					<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+					<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-800 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 					</div>
 				</div>
 			</Accordion.Trigger>
@@ -499,12 +499,12 @@
 										<div class="flex-1 text-left">
 											<div class="flex items-center gap-2">
 												<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
-												<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
+												<span class="bg-green-50 text-green-800 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 											</div>
 										</div>
 									</div>
 									<div class="flex-shrink-0 ml-1">
-										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-800 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 									</div>
 								</div>
 							</Accordion.Trigger>
@@ -539,7 +539,7 @@
 				<div class="flex items-center justify-between w-full px-3 py-2">
 					<div class="flex items-center space-x-3 flex-1">
 						<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-lg flex items-center justify-center shadow-sm border border-green-100">
-							<Icon icon="mdi:lightbulb-outline" class="w-6 h-6 text-green-600" />
+							<Icon icon="mdi:lightbulb-outline" class="w-6 h-6 text-green-800" />
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
@@ -550,7 +550,7 @@
 						</div>
 					</div>
 					<div class="flex-shrink-0 ml-2">
-						<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+						<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-800 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 					</div>
 				</div>
 			</Accordion.Trigger>
@@ -569,12 +569,12 @@
 										<div class="flex-1 text-left">
 											<div class="flex items-center gap-2">
 												<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
-												<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
+												<span class="bg-green-50 text-green-800 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 											</div>
 										</div>
 									</div>
 									<div class="flex-shrink-0 ml-1">
-										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-800 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 									</div>
 								</div>
 							</Accordion.Trigger>
@@ -608,7 +608,7 @@
 				<div class="flex items-center justify-between w-full px-3 py-2">
 					<div class="flex items-center space-x-3 flex-1">
 						<div class="w-10 h-10 bg-gradient-to-br from-green-100 via-green-50 to-emerald-50 rounded-lg flex items-center justify-center shadow-sm border border-green-100">
-							<Icon icon="mdi:palette-outline" class="w-6 h-6 text-green-600" />
+							<Icon icon="mdi:palette-outline" class="w-6 h-6 text-green-800" />
 						</div>
 						<div class="flex-1 text-left">
 							<div class="flex items-center gap-2 mb-0.5">
@@ -619,7 +619,7 @@
 						</div>
 					</div>
 					<div class="flex-shrink-0 ml-2">
-					<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+					<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-800 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 					</div>
 				</div>
 			</Accordion.Trigger>
@@ -638,12 +638,12 @@
 										<div class="flex-1 text-left">
 											<div class="flex items-center gap-2">
 												<h5 class="font-semibold text-gray-800 text-sm">{mapTypeToString(parseInt(item.type))}</h5>
-												<span class="bg-green-50 text-green-600 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
+												<span class="bg-green-50 text-green-800 px-1 py-0.5 rounded text-xs font-medium">{item.items.length}</span>
 											</div>
 										</div>
 									</div>
 									<div class="flex-shrink-0 ml-1">
-										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-600 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
+										<Icon icon="heroicons:chevron-down" class="w-5 h-5 text-green-800 font-bold transition-transform duration-200 data-[state=open]:rotate-180" />
 									</div>
 								</div>
 							</Accordion.Trigger>

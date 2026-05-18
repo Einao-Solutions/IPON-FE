@@ -731,7 +731,7 @@
           <div
             class="w-10 h-10 bg-gradient-to-br from-green-100 to-green-50 rounded-xl flex items-center justify-center"
           >
-            <Icon icon={getIPIcon(ipType)} class="text-xl text-green-600" />
+            <Icon icon={getIPIcon(ipType)} class="text-xl text-green-800" />
           </div>
           <div>
             <h1 class="text-xl font-bold text-slate-800">
@@ -905,7 +905,7 @@
         Cancel
       </Button>
       <Button
-        class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500"
+        class="flex-1 bg-green-800 hover:bg-green-700 focus:ring-green-500"
         on:click={searchPayCert}
         disabled={payCertLoading}
       >
@@ -1008,7 +1008,7 @@
                   <td class="border-b px-4 py-2 text-center">
                     <Button
                       size="sm"
-                      class="bg-green-600 hover:bg-green-700 text-white"
+                      class="bg-green-800 hover:bg-green-700 text-white"
                       on:click={() => ShowCertificatePayment(result)}
                     >
                       <Icon icon="mdi:credit-card" class="mr-1" />
@@ -1202,7 +1202,7 @@
         Close
       </Button>
       <Button
-        class="flex-1 bg-green-600 hover:bg-green-700 focus:ring-green-500"
+        class="flex-1 bg-green-800 hover:bg-green-700 focus:ring-green-500"
         on:click={verifyRemitaPayment}
         disabled={verifyPaymentLoading}
       >
@@ -1308,7 +1308,7 @@
       <Button
         on:click={searchChangeOfAgent}
         disabled={changeAgentLoading || !changeAgentFileNumber}
-        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+        class="px-4 py-2 bg-green-800 hover:bg-green-700 text-white disabled:opacity-50"
       >
         {#if changeAgentLoading}
           <Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
@@ -1449,7 +1449,7 @@
       <Button
         on:click={getDocuments}
         disabled={getDocLoading || !getDocFileNumber || !getDocPaymentId}
-        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white disabled:opacity-50"
+        class="px-4 py-2 bg-green-800 hover:bg-green-700 text-white disabled:opacity-50"
       >
         {#if getDocLoading}
           <Icon icon="eos-icons:loading" class="w-4 h-4 mr-2" />
@@ -1500,7 +1500,7 @@
               : ipType === "patent"
                 ? "mdi:lightbulb-outline"
                 : "mdi:palette-outline"}
-            class="text-green-600 w-5 h-5"
+            class="text-green-800 w-5 h-5"
           />
           <span class="text-sm font-medium text-gray-700">
             File Type: {ipType === "trademark"
@@ -1557,7 +1557,7 @@
           </button>
           <button
             type="button"
-            class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+            class="flex-1 bg-green-800 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
             disabled={appealsLoading}
             on:click={searchFileAppeals}
           >
@@ -1671,7 +1671,7 @@
         <p class="text-gray-600 mb-2">Upload PDF documents for your appeal</p>
         <button
           type="button"
-          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
+          class="bg-green-800 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
           on:click={() => appealFileInput?.click()}
         >
           Choose Files

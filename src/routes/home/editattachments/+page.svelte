@@ -197,7 +197,7 @@ async function searchFile() {
         <h2 class="text-lg font-bold mb-2 text-green-700">Update Successful 🎉</h2>
         <p>{successModal}</p>
         <button
-          class="mt-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+          class="mt-4 px-4 py-2 bg-green-800 text-white rounded hover:bg-green-700"
           on:click={() => (successModal = null)}
         >
           Close
@@ -271,7 +271,7 @@ async function searchFile() {
       <!-- Submit button centered -->
       <div class="flex">
         <button
-          class="px-6 py-3 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition"
+          class="px-6 py-3 bg-green-800 text-white rounded-lg shadow hover:bg-green-700 transition"
           on:click={submitAttachments}
         >
           Submit Update

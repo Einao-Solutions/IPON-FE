@@ -107,7 +107,7 @@
 
     function getApplicationTypeIcon(appType: number) {
         const uniformBgColor = "from-green-100 via-green-50 to-emerald-50";
-        const uniformColor = "text-green-600";
+        const uniformColor = "text-green-800";
         switch (appType) {
             case 0: return { svg: '', color: uniformColor, bgColor: uniformBgColor };
             case 1: return { svg: '', color: uniformColor, bgColor: uniformBgColor };
@@ -196,29 +196,29 @@
                 <img src="{ministry}" alt="Ministry Logo" class="h-16 w-16 md:h-20 md:w-20 object-contain hover:scale-105 transition-transform duration-300" />
             </div>
             <div class="text-center flex-1">
-                <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-green-600 mb-1 leading-tight">
+                <h1 class="text-xl md:text-2xl lg:text-3xl font-bold text-green-800 mb-1 leading-tight">
                     Intellectual Property Office Nigeria
                 </h1>
-                <p class="text-green-600 font-semibold text-xs md:text-sm tracking-wide mb-2">
+                <p class="text-green-800 font-semibold text-xs md:text-sm tracking-wide mb-2">
                     Commercial Law Department
                 </p>
                 <h2 class="text-lg md:text-xl font-bold text-gray-700">{getRoleInfo().title}</h2>
-                <p class="text-green-600 text-xs md:text-sm">
+                <p class="text-green-800 text-xs md:text-sm">
                     Manage {getRoleInfo().title} Applications
                 </p>
             </div>
             <div class="flex-shrink-0">
                 {#if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Trademark}
                     <div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105">
-                        <Icon icon="mdi:scale-balance" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+                        <Icon icon="mdi:scale-balance" class="w-12 h-12 md:w-16 md:h-16 text-green-800" />
                     </div>
                 {:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Patent}
                     <div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105">
-                        <Icon icon="mdi:lightbulb-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+                        <Icon icon="mdi:lightbulb-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-800" />
                     </div>
                 {:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Design}
                     <div class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105">
-                        <Icon icon="mdi:palette-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-600" />
+                        <Icon icon="mdi:palette-outline" class="w-12 h-12 md:w-16 md:h-16 text-green-800" />
                     </div>
                 {/if}
             </div>
@@ -247,7 +247,7 @@
                                     </div>
                                 </div>
                                 <div class="flex-shrink-0 ml-2">
-                                    <svg class="w-5 h-5 text-green-600 transition-transform duration-200 group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg class="w-5 h-5 text-green-800 transition-transform duration-200 group-data-[state=open]:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
                                 </div>
@@ -287,7 +287,7 @@
                         <div class="flex items-center justify-between w-full px-3 py-2">
                             <div class="flex items-center space-x-3 flex-1">
                                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center shadow-sm border border-green-200">
-                                    <Icon icon="mdi:lightbulb-outline" class="w-6 h-6 text-green-600" />
+                                    <Icon icon="mdi:lightbulb-outline" class="w-6 h-6 text-green-800" />
                                 </div>
                                 <div class="flex-1 text-left">
                                     <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wide">Patent Registry Hub</h3>
@@ -401,7 +401,7 @@
                         <div class="flex items-center justify-between w-full px-3 py-2">
                             <div class="flex items-center space-x-3 flex-1">
                                 <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center shadow-sm border border-green-200">
-                                    <Icon icon="mdi:palette-outline" class="w-6 h-6 text-green-600" />
+                                    <Icon icon="mdi:palette-outline" class="w-6 h-6 text-green-800" />
                                 </div>
                                 <div class="flex-1 text-left">
                                     <h3 class="font-bold text-gray-800 text-sm uppercase tracking-wide">Design Registry Hub</h3>

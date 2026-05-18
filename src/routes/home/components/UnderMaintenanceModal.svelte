@@ -38,7 +38,7 @@
 
       <div class="mt-6 w-full">
         <Button
-          class="w-full bg-green-600 hover:bg-green-700"
+          class="w-full bg-green-800 hover:bg-green-700"
           on:click={() => (open = false)}
         >
           Got it

@@ -1,18 +1,15 @@
 <script lang="ts">
   import SideMenu from "./SideMenu.svelte";
   import { Input } from "$lib/components/ui/input";
+  import { Button } from "$lib/components/ui/button";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
-  import type { LayoutServerData } from "../../../.svelte-kit/types/src/routes/home/$types";
-  import { Button } from "$lib/components/ui/button";
   import FilterFile from "./FilterFile.svelte";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
-  import { baseURL } from "$lib/helpers";
-  
+
   $: userName = "";
-  export let data: LayoutServerData;
-  let filterFiles: FilterFile | null = null;
+  let filterFiles: any = null;
   let showFilterSheet: boolean = false;
   let searchTitle: string | null = null;
   let showUserMenu = false;
@@ -81,7 +78,7 @@
 
 <svelte:window on:click={handleClickOutside} />
 
-{#if showFilterSheet}
+{#if showFilterSheet && filterFiles}
   <svelte:component this={filterFiles} {...filterData} />
 {/if}
 
@@ -110,7 +107,7 @@
   <!-- Main Content Area -->
   <div class="lg:ml-64 w-full min-h-screen flex flex-col">
     <!-- Modern Header - STICKY -->
-    <header class="sticky top-0 z-20 flex-shrink-0 bg-white border-b border-slate-200/60 shadow-xl">
+    <header class="sticky top-0 z-20 flex-shrink-0 bg-white border-b border-slate-200/60">
       <div class="flex items-center justify-between px-4 sm:px-8 py-4 gap-4">
         <!-- Mobile hamburger button -->
         <Button 
@@ -156,7 +153,7 @@
               {userName}
             </span>
             <div
-              class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center text-white font-semibold text-sm shadow-md ring-2 ring-white transition-transform duration-200 group-hover:scale-105"
+              class="w-10 h-10 rounded-full bg-gradient-to-br from-green-500 to-green-800 flex items-center justify-center text-white font-semibold text-sm shadow-md ring-2 ring-white transition-transform duration-200 group-hover:scale-105"
             >
               {userName
                 ? userName

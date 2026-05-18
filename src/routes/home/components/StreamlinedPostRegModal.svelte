@@ -437,7 +437,7 @@
               : ipType === "patent"
                 ? "mdi:lightbulb-outline"
                 : "mdi:palette-outline"}
-            class="text-green-600 w-5 h-5"
+            class="text-green-800 w-5 h-5"
           />
           <span class="text-sm font-medium text-gray-700">
             File Type: {ipType === "trademark"
@@ -505,7 +505,7 @@
           </button>
           <button
             type="button"
-            class="flex-1 bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+            class="flex-1 bg-green-800 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
             disabled={isLoading}
             on:click={handleSearch}
           >

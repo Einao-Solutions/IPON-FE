@@ -407,7 +407,7 @@
 													href={attachment.url}
 													target="_blank"
 													rel="noopener"
-													class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
+													class="bg-green-800 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
 													on:click={(e) => e.stopPropagation()}
 												>
 													<Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
@@ -469,7 +469,7 @@
 				{#if baseCost !== null}
 					<button
 						on:click={handleSubmit}
-						class="bg-green-600 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed"
+						class="bg-green-800 text-white px-6 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center disabled:bg-gray-400 disabled:cursor-not-allowed"
 						disabled={isProcessing || selectedAttachmentIndices.length === 0}
 					>
 						{#if isProcessing}

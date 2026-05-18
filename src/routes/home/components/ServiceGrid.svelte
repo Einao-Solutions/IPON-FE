@@ -164,28 +164,28 @@
   function getIconColor(service: IPService): string {
     // Color mapping based on the screenshot
     const colorMap: Record<string, string> = {
-      'pre-registration': 'text-green-600',
-      'clerical-update': 'text-green-600',
-      'trademark-journal': 'text-green-600',
-      'status-search': 'text-green-600',
-      'availability-search': 'text-green-600',
-      'renewal': 'text-green-600',
-      'assignment': 'text-green-600',
-      'registered-user': 'text-green-600',
-      'merger': 'text-green-600',
-      'change-applicant-name': 'text-green-600',
-      'change-applicant-address': 'text-green-600',
-      'pay-certificate': 'text-green-600',
-      'verify-payment': 'text-green-600',
-      'change-agent': 'text-green-600',
-      'print-documents': 'text-green-600',
-      'update-file': 'text-green-600',
-      'update-publication-status': 'text-green-600',
-      'withdrawal': 'text-green-600',
-      'claim-files': 'text-green-600',
-      'appeal': 'text-green-600'
+      'pre-registration': 'text-green-800',
+      'clerical-update': 'text-green-800',
+      'trademark-journal': 'text-green-800',
+      'status-search': 'text-green-800',
+      'availability-search': 'text-green-800',
+      'renewal': 'text-green-800',
+      'assignment': 'text-green-800',
+      'registered-user': 'text-green-800',
+      'merger': 'text-green-800',
+      'change-applicant-name': 'text-green-800',
+      'change-applicant-address': 'text-green-800',
+      'pay-certificate': 'text-green-800',
+      'verify-payment': 'text-green-800',
+      'change-agent': 'text-green-800',
+      'print-documents': 'text-green-800',
+      'update-file': 'text-green-800',
+      'update-publication-status': 'text-green-800',
+      'withdrawal': 'text-green-800',
+      'claim-files': 'text-green-800',
+      'appeal': 'text-green-800'
     };
-    return colorMap[service.id] || 'text-green-600';
+    return colorMap[service.id] || 'text-green-800';
   }
 </script>
 
@@ -209,11 +209,11 @@
             <div class="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Maintenance</div>
           {:else if service.price}
             <div class="text-right">
-              <div class="text-sm font-semibold text-green-600">{service.price}</div>
-              <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
+              <div class="text-sm font-semibold text-green-800">{service.price}</div>
+              <div class="text-xs text-green-800 bg-green-50 px-2 py-1 rounded-full">Available</div>
             </div>
           {:else}
-            <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
+            <div class="text-xs text-green-800 bg-green-50 px-2 py-1 rounded-full">Available</div>
           {/if}
         </div>
         
@@ -253,10 +253,10 @@
             {:else}
               {#if service.price}
                 <div class="text-right">
-                  <div class="text-sm font-semibold text-green-600">{service.price}</div>
+                  <div class="text-sm font-semibold text-green-800">{service.price}</div>
                 </div>
               {/if}
-              <div class="text-xs text-green-600 bg-green-50 px-2 py-1 rounded-full">Available</div>
+              <div class="text-xs text-green-800 bg-green-50 px-2 py-1 rounded-full">Available</div>
             {/if}
           </div>
         </div>
