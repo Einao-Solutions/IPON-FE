@@ -358,15 +358,8 @@
 </script>
 
 <div
-  class="w-64 h-screen bg-white shadow-xl flex flex-col border-r border-slate-200/60"
+  class="w-64 h-full bg-white shadow-xl flex flex-col border-r border-slate-200/60"
 >
-  <!-- Logo -->
-  <div class="flex justify-center py-6 border-b border-slate-200/60">
-    <div class="bg-gradient-to-br p-3 rounded-xl shadow-lg">
-      <img src="/logo.png" alt="logo" class="h-12 w-12" />
-    </div>
-  </div>
-
   <!-- Menu items -->
   <div class="flex-1 overflow-y-auto py-2">
     {#each menus as menu}

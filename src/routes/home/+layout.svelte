@@ -82,37 +82,15 @@
   <svelte:component this={filterFiles} {...filterData} />
 {/if}
 
-<div class="flex min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100">
-  <!-- Desktop Sidebar Navigation -->
-  <nav class="hidden lg:flex fixed left-0 top-0 h-screen w-64 bg-white/80 backdrop-blur-xl border-r border-slate-200/60 shadow-sm z-30">
-    <SideMenu />
-  </nav>
-
-  <!-- Mobile Sidebar Overlay -->
-  {#if isMobileSidebarOpen}
-    <div 
-      class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" 
-      on:click={closeMobileSidebar}
-      on:keydown={(e) => e.key === 'Escape' && closeMobileSidebar()}
-      role="button"
-      tabindex="0"
-    ></div>
-  {/if}
-
-  <!-- Mobile Sidebar -->
-  <nav class="lg:hidden fixed left-0 top-0 h-full w-64 bg-white/90 backdrop-blur-xl border-r border-slate-200/60 shadow-lg z-50 transform transition-transform duration-300 {isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}">
-    <SideMenu />
-  </nav>
-
-  <!-- Main Content Area -->
-  <div class="lg:ml-64 w-full min-h-screen flex flex-col">
-    <!-- Modern Header - STICKY -->
-    <header class="sticky top-0 z-20 flex-shrink-0 bg-white border-b border-slate-200/60">
-      <div class="flex items-center justify-between px-4 sm:px-8 py-4 gap-4">
-        <!-- Mobile hamburger button -->
-        <Button 
-          variant="ghost" 
-          size="sm" 
+<div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100">
+  <!-- Modern Header - STICKY, FULL WIDTH (above sidebar) -->
+  <header class="sticky top-0 z-40 flex-shrink-0 bg-white border-b border-slate-200/60">
+    <div class="flex items-center justify-between px-4 sm:px-6 py-3 gap-4">
+      <!-- Left: hamburger + coat of arms -->
+      <div class="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="sm"
           class="lg:hidden p-2 hover:bg-slate-100 rounded-lg"
           on:click={toggleMobileSidebar}
         >
@@ -120,6 +98,10 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </Button>
+        <a href="/home/dashboard" class="flex items-center gap-2">
+          <img src="/ministry.png" alt="logo" class="h-10 w-auto" />
+        </a>
+      </div>
 
         <!-- Search Bar with Icon -->
         <div class="relative flex-1 max-w-md group">
@@ -208,11 +190,38 @@
             </div>
           {/if}
         </div>
-      </div>
-    </header>
+    </div>
+  </header>
+
+  <!-- Body: sidebar + main content (below header) -->
+  <div class="flex flex-1 min-h-0">
+    <!-- Desktop Sidebar Navigation -->
+    <nav class="hidden lg:block sticky top-[64px] self-start h-[calc(100vh-64px)] w-64 z-30">
+      <SideMenu />
+    </nav>
+
+    <!-- Mobile Sidebar Overlay -->
+    {#if isMobileSidebarOpen}
+      <div
+        class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        on:click={closeMobileSidebar}
+        on:keydown={(e) => e.key === 'Escape' && closeMobileSidebar()}
+        role="button"
+        tabindex="0"
+      ></div>
+    {/if}
+
+    <!-- Mobile Sidebar -->
+    <nav
+      class="lg:hidden fixed left-0 top-[64px] h-[calc(100vh-64px)] w-64 shadow-lg z-50 transform transition-transform duration-300 {isMobileSidebarOpen
+        ? 'translate-x-0'
+        : '-translate-x-full'}"
+    >
+      <SideMenu />
+    </nav>
 
     <!-- Main Content -->
-    <main class="flex-1">
+    <main class="flex-1 min-w-0">
       <slot />
     </main>
   </div>
