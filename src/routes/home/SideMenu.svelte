@@ -15,8 +15,8 @@
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Select from "$lib/components/ui/select/index.js";
-  import dayjs from 'dayjs';
-  import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+  import dayjs from "dayjs";
+  import quarterOfYear from "dayjs/plugin/quarterOfYear";
   import { User } from "lucide-svelte";
   dayjs.extend(quarterOfYear);
 
@@ -31,29 +31,55 @@
   let showJournalModal: boolean = false;
   let journalCurrentYear: number = dayjs().year();
   let journalIsFetching: boolean = false;
-  let journalSelectedType: undefined | string;
+  let journalSelectedType: undefined | string = "Trademark";
   let journalSelectedYear: number;
   let journalSelectedQuarter: number;
-  let journalAllYears: number[] = Array(journalCurrentYear + 1 - 2020).fill(0).map((_, i) => 2020 + i);
+  let journalAllYears: number[] = Array(journalCurrentYear + 1 - 2020)
+    .fill(0)
+    .map((_, i) => 2020 + i);
   let journalQuarters = [1, 2, 3, 4];
+  $: freePublication =
+    $loggedInUser?.userRoles?.some((role) =>
+      [
+        UserRoles.SuperAdmin,
+        UserRoles.Tech,
+        UserRoles.HeadOfUnit,
+        UserRoles.TrademarkRegistrar,
+      ].includes(role),
+    ) ?? false;
 
   async function fetchJournalData() {
-    if (!journalSelectedQuarter || !journalSelectedYear || !journalSelectedType) { return; }
-    const startDate = dayjs(journalSelectedYear.toString()).set('date', 1).quarter(journalSelectedQuarter).format().split("T")[0];
-    const endDate = dayjs(journalSelectedYear.toString()).set('date', 1).quarter(journalSelectedQuarter + 1).format().split("T")[0];
-    const fileType = journalSelectedType == "Patent" ? 0 : journalSelectedType == "Design" ? 1 : journalSelectedType == "Trademark" ? 2 : undefined;
-    if (fileType === undefined) { return; }
+    if (!journalSelectedQuarter || !journalSelectedYear) {
+      return;
+    }
+    const startDate = dayjs(journalSelectedYear.toString())
+      .set("date", 1)
+      .quarter(journalSelectedQuarter)
+      .format()
+      .split("T")[0];
+    const endDate = dayjs(journalSelectedYear.toString())
+      .set("date", 1)
+      .quarter(journalSelectedQuarter + 1)
+      .format()
+      .split("T")[0];
+
     journalIsFetching = true;
     try {
-      const queryResult = await fetch(`${baseURL}/api/publication/GetPublication?start=${startDate}&end=${endDate}&type=${fileType}`);
+      const queryResult = await fetch(
+        `${baseURL}/api/publication/GetPublication?start=${startDate}&end=${endDate}&type=${FileTypes.Trademark}`,
+      );
       if (queryResult.ok) {
         const dataBlob = await queryResult.blob();
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = URL.createObjectURL(dataBlob);
-        link.download = 'journal.pdf';
+        link.download = "journal.pdf";
         link.click();
       } else {
-        console.error('Failed to fetch publication', queryResult.status, await queryResult.text());
+        console.error(
+          "Failed to fetch publication",
+          queryResult.status,
+          await queryResult.text(),
+        );
       }
     } catch (e) {
       console.error(e);
@@ -93,7 +119,11 @@
       location: "Publications",
       name: "Publications",
       submenus: [
-        { icon: "mdi:book-open-page-variant", name: "Journal", location: "journal" },
+        {
+          icon: "mdi:book-open-page-variant",
+          name: "Journal",
+          location: "journal",
+        },
         {
           icon: "mdi:file-document-multiple-outline",
           name: "Publications",
@@ -163,6 +193,7 @@
             UserRoles.SuperAdmin,
             UserRoles.TrademarkRegistrar,
             UserRoles.PatentDesignRegistrar,
+            UserRoles.EinaoFinance,
           ].includes(role),
         )
       ) {
@@ -172,12 +203,12 @@
         !$loggedInUser.userRoles.some((role) =>
           [
             UserRoles.HeadOfUnit,
-            UserRoles.Finance,
             UserRoles.PermSec,
             UserRoles.Minister,
             UserRoles.Tech,
             UserRoles.SuperAdmin,
             UserRoles.TrademarkRegistrar,
+            UserRoles.User,
           ].includes(role),
         )
       ) {
@@ -188,7 +219,6 @@
           [
             UserRoles.SuperAdmin,
             UserRoles.TrademarkOpposition,
-            UserRoles.TrademarkRegistrar,
             UserRoles.Tech,
           ].includes(role),
         )
@@ -197,7 +227,16 @@
       }
 
       // Show Publications only for super admin
-      if (!$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)) {
+      if (
+        !$loggedInUser.userRoles.some((role) =>
+          [
+            UserRoles.SuperAdmin,
+            UserRoles.HeadOfUnit,
+            UserRoles.User,
+            UserRoles.Staff,
+          ].includes(role),
+        )
+      ) {
         menus = menus.filter((x) => x.location !== "Publications");
       }
 
@@ -519,56 +558,144 @@
 
 <!-- Journal Modal -->
 <Dialog.Root bind:open={showJournalModal}>
-  <Dialog.Content>
-    <Dialog.Header>
-      <Dialog.Title>Select year and Quarter</Dialog.Title>
-    </Dialog.Header>
-    <div class="flex flex-col justify-between space-y-5 items-center">
-      <Select.Root portal={null} onSelectedChange={handleJournalYearChange}>
-        <Select.Trigger class="w-[180px]">
-          <Select.Value placeholder="Select the year" />
-        </Select.Trigger>
-        <Select.Content>
-          <Select.Group>
-            <Select.Label>Years</Select.Label>
-            {#each journalAllYears as year}
-              <Select.Item value={year} label={year.toString()}>{year}</Select.Item>
-            {/each}
-          </Select.Group>
-        </Select.Content>
-        <Select.Input name="journalSelectedYear" bind:value={journalSelectedYear} />
-      </Select.Root>
-      <Select.Root portal={null} onSelectedChange={handleJournalQuarterChange}>
-        <Select.Trigger class="w-[180px]">
-          <Select.Value placeholder="Select the Quarter" />
-        </Select.Trigger>
-        <Select.Content>
-          <Select.Group>
-            <Select.Label>Quarters</Select.Label>
-            {#each journalQuarters as quarter}
-              <Select.Item value={quarter} label={`Q${quarter}`}>{`Q${quarter}`}</Select.Item>
-            {/each}
-          </Select.Group>
-        </Select.Content>
-        <Select.Input name="journalSelectedQuarter" bind:value={journalSelectedQuarter} />
-      </Select.Root>
-      <Select.Root portal={null} onSelectedChange={handleJournalTypeChange}>
-        <Select.Trigger class="w-[180px]">
-          <Select.Value placeholder="Select the Type" />
-        </Select.Trigger>
-        <Select.Content>
-          <Select.Group>
-            <Select.Label>Type</Select.Label>
-            {#each Object.keys(FileTypes).filter(s => isNaN(Number(s))) as type}
-              <Select.Item value={type} label={type}>{type}</Select.Item>
-            {/each}
-          </Select.Group>
-        </Select.Content>
-        <Select.Input name="journalSelectedType" bind:value={journalSelectedType} />
-      </Select.Root>
-      <Button on:click={fetchJournalData} class="w-[180px]" disabled={journalIsFetching}>
-        <Icon class={journalIsFetching ? '' : 'hidden'} icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
-        Fetch</Button>
+  <Dialog.Content class="sm:max-w-lg p-0 bg-transparent border-0 shadow-none">
+    <div class="bg-white rounded-2xl border border-gray-200 p-8">
+      <!-- Header -->
+      <div class="flex items-center gap-3 mb-6">
+        <div class="bg-green-100 p-3 rounded-xl">
+          <Icon
+            icon="mdi:book-open-page-variant"
+            class="w-6 h-6 text-green-700"
+            width="24"
+            height="24"
+          />
+        </div>
+        <h3 class="text-xl font-bold text-gray-800">Download Journal</h3>
+      </div>
+
+      <!-- Year -->
+      <label
+        for="journal-year"
+        class="block text-sm font-medium text-gray-700 mb-2"
+      >
+        Select Year
+      </label>
+      <div class="relative mb-5">
+        <Select.Root onSelectedChange={handleJournalYearChange}>
+          <Select.Trigger
+            id="journal-year"
+            class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent cursor-pointer h-auto"
+          >
+            <Select.Value placeholder="-- Choose a year --" />
+          </Select.Trigger>
+          <Select.Content class="max-h-60 overflow-y-auto">
+            <Select.Group>
+              <Select.Label>Years</Select.Label>
+              {#each journalAllYears as year}
+                <Select.Item value={year} label={year.toString()}
+                  >{year}</Select.Item
+                >
+              {/each}
+            </Select.Group>
+          </Select.Content>
+          <Select.Input
+            name="journalSelectedYear"
+            bind:value={journalSelectedYear}
+          />
+        </Select.Root>
+      </div>
+
+      <!-- Quarter -->
+      <label
+        for="journal-quarter"
+        class="block text-sm font-medium text-gray-700 mb-2"
+      >
+        Select Quarter
+      </label>
+      <div class="relative mb-5">
+        <Select.Root onSelectedChange={handleJournalQuarterChange}>
+          <Select.Trigger
+            id="journal-quarter"
+            class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent cursor-pointer h-auto"
+          >
+            <Select.Value placeholder="-- Choose a quarter --" />
+          </Select.Trigger>
+          <Select.Content class="max-h-60 overflow-y-auto">
+            <Select.Group>
+              <Select.Label>Quarters</Select.Label>
+              {#each journalQuarters as quarter}
+                <Select.Item value={quarter} label={`Q${quarter}`}
+                  >{`Q${quarter}`}</Select.Item
+                >
+              {/each}
+            </Select.Group>
+          </Select.Content>
+          <Select.Input
+            name="journalSelectedQuarter"
+            bind:value={journalSelectedQuarter}
+          />
+        </Select.Root>
+      </div>
+
+      {#if journalSelectedYear && journalSelectedQuarter}
+        <div class="space-y-4">
+          {#if freePublication}
+            <div
+              class="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-xl mb-4"
+            >
+              <Icon
+                icon="mdi:book-open-page-variant"
+                class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0"
+                width="20"
+                height="20"
+              />
+              <p class="text-sm text-gray-700 leading-relaxed">
+                Download the {journalSelectedType} Journal for Q{journalSelectedQuarter}
+                {journalSelectedYear}.
+              </p>
+            </div>
+            <button
+              type="button"
+              on:click={fetchJournalData}
+              disabled={journalIsFetching}
+              class="flex items-center justify-center gap-2 w-full px-5 py-3 bg-green-700 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors duration-200"
+            >
+              {#if journalIsFetching}
+                <Icon icon="line-md:loading-loop" width="18" height="18" />
+              {:else}
+                <Icon icon="mdi:download" width="18" height="18" />
+              {/if}
+              {journalIsFetching ? "Fetching..." : "Download Journal"}
+            </button>
+          {:else}
+            <button
+              type="button"
+              on:click={fetchJournalData}
+              disabled={true}
+              class="flex items-center justify-center gap-2 w-full px-5 py-3 bg-green-700 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors duration-200"
+            >
+              Pay
+            </button>
+            <div
+              class="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-4"
+            >
+              <Icon
+                icon="mdi:alert"
+                class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0"
+                width="20"
+                height="20"
+              />
+              <p class="text-sm text-yellow-800 leading-relaxed">
+                This journal is not yet available for download.
+              </p>
+            </div>
+          {/if}
+        </div>
+      {:else}
+        <div class="text-center py-4 text-sm text-gray-400">
+          Select year and quarter above to download the journal.
+        </div>
+      {/if}
     </div>
   </Dialog.Content>
 </Dialog.Root>
