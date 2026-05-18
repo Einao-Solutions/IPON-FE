@@ -12,10 +12,10 @@
   import { Button } from "$lib/components/ui/button";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import {
-    mapStatusToString,
     mapDateToString,
     mapTypeToString,
   } from "../../../../routes/home/components/dashboardutils";
+  import { mapStatusToString } from "$lib/designutils";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { Value } from "$lib/components/ui/select";
   import ApplicationsHistory from "../../../dataview/ApplicationsHistory.svelte";
@@ -320,6 +320,11 @@
         console.error("Error converting file to base64:", error);
       }
     }
+  };
+
+  const onAttachmentFileChange = (event: Event, attachmentName: string) => {
+    const input = event.currentTarget as HTMLInputElement | null;
+    if (input?.files) handleAttachmentUpload(input.files, attachmentName);
   };
 
   // Remove existing attachment URL
@@ -2133,14 +2138,11 @@
                         >Add New Files:</label
                       >
                       <input
+                        id="patent-attachment-{index}-new-files"
                         type="file"
                         multiple
                         class="input"
-                        on:change={(e) =>
-                          handleAttachmentUpload(
-                            e.target.files,
-                            attachment.name
-                          )}
+                        on:change={(e) => onAttachmentFileChange(e, attachment.name)}
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                       />
                     </div>
@@ -2249,8 +2251,8 @@
 
                     <!-- Existing URLs -->
                     <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-600"
-                        >Existing Files:</label
+                      <span class="text-xs font-medium text-gray-600"
+                        >Existing Files:</span
                       >
                       {#each attachment.url as link, linkIndex}
                         <div class="flex items-center gap-2">
@@ -2312,14 +2314,11 @@
                         >Add New Files:</label
                       >
                       <input
+                        id="trademark-attachment-{index}-new-files"
                         type="file"
                         multiple
                         class="input"
-                        on:change={(e) =>
-                          handleAttachmentUpload(
-                            e.target.files,
-                            attachment.name
-                          )}
+                        on:change={(e) => onAttachmentFileChange(e, attachment.name)}
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                       />
                     </div>
@@ -2428,8 +2427,8 @@
 
                     <!-- Existing URLs -->
                     <div class="space-y-2">
-                      <label class="text-xs font-medium text-gray-600"
-                        >Existing Files:</label
+                      <span class="text-xs font-medium text-gray-600"
+                        >Existing Files:</span
                       >
                       {#each attachment.url as link, linkIndex}
                         <div class="flex items-center gap-2">
@@ -2491,14 +2490,11 @@
                         >Add New Files:</label
                       >
                       <input
+                        id="design-attachment-{index}-new-files"
                         type="file"
                         multiple
                         class="input"
-                        on:change={(e) =>
-                          handleAttachmentUpload(
-                            e.target.files,
-                            attachment.name
-                          )}
+                        on:change={(e) => onAttachmentFileChange(e, attachment.name)}
                         accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
                       />
                     </div>

@@ -361,7 +361,7 @@
   class="w-64 h-full bg-white shadow-xl flex flex-col border-r border-slate-200/60"
 >
   <!-- Menu items -->
-  <div class="flex-1 overflow-y-auto py-2">
+  <div class="flex-1 overflow-y-auto pt-6 pb-2">
     {#each menus as menu}
       <div class="mb-1">
         <button

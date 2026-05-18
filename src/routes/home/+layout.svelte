@@ -195,15 +195,15 @@
 
   <!-- Body: sidebar + main content (below header) -->
   <div class="flex flex-1 min-h-0">
-    <!-- Desktop Sidebar Navigation -->
-    <nav class="hidden lg:block sticky top-[64px] self-start h-[calc(100vh-64px)] w-64 z-30">
+    <!-- Desktop Sidebar Navigation (fixed, doesn't scroll with page) -->
+    <nav class="hidden lg:block fixed left-0 top-[64px] h-[calc(100dvh-64px)] w-64 z-30">
       <SideMenu />
     </nav>
 
-    <!-- Mobile Sidebar Overlay -->
+    <!-- Mobile Sidebar Overlay (covers entire viewport incl. header) -->
     {#if isMobileSidebarOpen}
       <div
-        class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
         on:click={closeMobileSidebar}
         on:keydown={(e) => e.key === 'Escape' && closeMobileSidebar()}
         role="button"
@@ -211,9 +211,9 @@
       ></div>
     {/if}
 
-    <!-- Mobile Sidebar -->
+    <!-- Mobile Sidebar (overlays header too) -->
     <nav
-      class="lg:hidden fixed left-0 top-[64px] h-[calc(100vh-64px)] w-64 shadow-lg z-50 transform transition-transform duration-300 {isMobileSidebarOpen
+      class="lg:hidden fixed left-0 top-0 h-[100dvh] w-64 shadow-lg z-[60] transform transition-transform duration-300 {isMobileSidebarOpen
         ? 'translate-x-0'
         : '-translate-x-full'}"
     >
@@ -221,7 +221,7 @@
     </nav>
 
     <!-- Main Content -->
-    <main class="flex-1 min-w-0">
+    <main class="flex-1 min-w-0 lg:ml-64">
       <slot />
     </main>
   </div>
