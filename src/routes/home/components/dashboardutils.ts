@@ -37,21 +37,38 @@ export function DataMapper(
   }
   switch (datatype) {
     case FileStatsData.totalPatents:
-      return data.find((x) => x.type === "totalPatents")?.count ?? 0;
+      return (
+        data.find((x) => (x.type as unknown) === "totalPatents")?.count ?? 0
+      );
     case FileStatsData.totalDesigns:
-      return data.find((x) => x.type === "totalDesigns")?.count ?? 0;
+      return (
+        data.find((x) => (x.type as unknown) === "totalDesigns")?.count ?? 0
+      );
     case FileStatsData.renewalDue:
-      return data.find((x) => x.type === "renewalDue")?.count ?? 0;
+      return (
+        data.find((x) => (x.type as unknown) === "renewalDue")?.count ?? 0
+      );
     case FileStatsData.totalConventional:
-      return data.find((x) => x.type === "totalConventional")?.count ?? 0;
+      return (
+        data.find((x) => (x.type as unknown) === "totalConventional")
+          ?.count ?? 0
+      );
     case FileStatsData.totalTextTile:
-      return data.find((x) => x.type === "totalTextile")?.count ?? 0;
+      return (
+        data.find((x) => (x.type as unknown) === "totalTextile")?.count ?? 0
+      );
     case FileStatsData.totalNonTextile:
-      return data.find((x) => x.type === "totalNonTextile")?.count ?? 0;
+      return (
+        data.find((x) => (x.type as unknown) === "totalNonTextile")?.count ??
+        0
+      );
     case FileStatsData.totalNonConventional:
-      return data.find((x) => x.type === "totalNonConventional")?.count ?? 0;
+      return (
+        data.find((x) => (x.type as unknown) === "totalNonConventional")
+          ?.count ?? 0
+      );
     case FileStatsData.totalPct:
-      return data.find((x) => x.type === "totalPct")?.count ?? 0;
+      return data.find((x) => (x.type as unknown) === "totalPct")?.count ?? 0;
     case FileStatsData.newPatent:
       return (
         data.find(

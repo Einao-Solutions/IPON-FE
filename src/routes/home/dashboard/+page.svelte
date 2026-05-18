@@ -1840,12 +1840,7 @@
             </div>
           </div>
         </div>
-        <!-- this div  -->
-        <div
-          class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
-        >
-          <UserDashboard user={$loggedInUser} showOnlyTotals={true} />
-        </div>
+        <UserDashboard user={$loggedInUser} showOnlyTotals={true} />
 
         <!-- 
 					DETAILED STATISTICS SECTION
@@ -1885,18 +1880,14 @@
 							- Contains the UserDashboard component with showOnlyStatistics=true
 							- This prop tells UserDashboard to render only the detailed statistics accordions
 						-->
-          <div
-            class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
-          >
-            <!-- 
+          <!-- 
 								UserDashboard Component (Statistics Mode):
 								- user={$loggedInUser}: Passes the logged-in user data
 								- showOnlyStatistics={true}: Flag to render only the detailed statistics view
 								- This will show accordion sections for Patents, Designs, and Trademarks
 								- Each accordion contains application types and status breakdowns for the user's own applications
 							-->
-            <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
-          </div>
+          <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
         </div>
       </div>
     </div>
@@ -1938,15 +1929,13 @@
 	- UserDashboard: Already rendered above for regular users, agents, tech, and superadmin
 -->
 {#if !isLoading && isStaff}
-  <div class="rounded-md p-2 mt-4 bg-accent">
-    <!-- 
-			Render StaffDashboard for staff roles:
-			- Will show role-specific sections based on user's actual roles
-			- Uses isPatentRelated(), isDesignRelated(), isTradeMarkRelated() functions
-			- Provides specialized workflow for IP officers
-		-->
-    <svelte:component this={typecomponent} {...data} />
-  </div>
+  <!-- 
+		Render StaffDashboard for staff roles:
+		- Will show role-specific sections based on user's actual roles
+		- Uses isPatentRelated(), isDesignRelated(), isTradeMarkRelated() functions
+		- Provides specialized workflow for IP officers
+	-->
+  <svelte:component this={typecomponent} {...data} />
 {:else if !isLoading && isStaff}
   <p>Loading staff dashboard...</p>
 {/if}

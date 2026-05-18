@@ -212,7 +212,7 @@
     </header>
 
     <!-- Main Content -->
-    <main class="flex-1 overflow-y-auto px-4 sm:px-8 py-6">
+    <main class="flex-1">
       <slot />
     </main>
   </div>
