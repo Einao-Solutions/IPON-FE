@@ -32,38 +32,40 @@
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import * as Table from "$lib/components/ui/table"
 	import * as Pagination from "$lib/components/ui/pagination"
-	let tableHeaderRows, tablePageRows, _tableAttrs, _tableBodyAttrs;
-	let _hasNextPage, _hasPreviousPage, _pageIndex;
-	let ticketMessages: TicketMessagesView | null = null;
-	let createTicket:CreateTicket|null = null;
-	let ticketFilter:SupportFilter|null=null;
-	let _flatColumns;
-	let _selectedDataIds: RecordSetStore<string>;
+	let tableHeaderRows: any, tablePageRows: any, _tableAttrs: any, _tableBodyAttrs: any;
+	let _hasNextPage: any, _hasPreviousPage: any, _pageIndex: any;
+	let ticketMessages: any = null;
+	let createTicket: any = null;
+	let ticketFilter: any = null;
+	let _flatColumns: any;
+	let _selectedDataIds: Writable<Record<string, boolean>>;
 	let _hiddenColumnIds: Writable<string[]>;
 	let hidableCols: string[] = ['date', 'title', 'creator', 'status'];
-	let hideForId: [] = [];
-	let ticketLoading:boolean=false;
-	let _filterValue;
+	let hideForId: Record<string, boolean> = {};
+	let ticketLoading: boolean = false;
+	let _filterValue: any;
 	$: {
 		$_hiddenColumnIds = Object.entries(hideForId)
 			.filter(([, hide]) => !hide)
 			.map(([id]) => id);
 	}
-	export let data: PageServerData;
-	let isAdmin: boolean | null = null;
-	let groupedData={}
+	export const data: PageServerData | undefined = undefined;
+	let isAdmin: boolean = false;
+	let groupedData: Record<string, number> = {};
 	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
-	onMount(async()=>{
+	onMount(async () => {
 		await decodeUser()
-		isAdmin = $loggedInUser.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)
-		ticketLoading=true;
+		isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin) ?? false
+		ticketLoading = true;
 		await getTickets()
-		ticketLoading=false;
+		ticketLoading = false;
 	})
 
 	async function getStats() {
 		const userId = $loggedInUser?.id;
-		const url=$loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)?`${baseURL}/api/tickets/GetStats`:`${baseURL}/api/tickets/GetStats?userId=${userId}`;
+		const url = $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)
+			? `${baseURL}/api/tickets/GetStats`
+			: `${baseURL}/api/tickets/GetStats?userId=${userId}`;
 		let response = await fetch(url, {
 			method: 'GET'
 		})
@@ -84,20 +86,20 @@
 			var user = cookieUser.trimStart();
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-			isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Tech)
+			isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Tech) ?? false
 		}
-		if ($loggedInUser===null){
+		if ($loggedInUser === null) {
 			return;
 		}
 		else {
-			if ($ticketsSummary===null) {
+			if ($ticketsSummary === null) {
 				getStats()
-				const userId = $loggedInUser.creatorId;
-				let body={
-					creatorId:  userId
+				const userId = ($loggedInUser as any).creatorId;
+				let body: Record<string, any> = {
+					creatorId: userId
 				}
-				if($loggedInUser.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)){
-					body={
+				if ($loggedInUser.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)) {
+					body = {
 						creatorId: 'null'
 					}
 				}
@@ -116,9 +118,9 @@
 		}
 	}
 	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
-	$:{
+	$: {
 		let tickets = $ticketsSummary
-		const table = createTable(writable(tickets ?? []), {
+		const table = createTable(writable<any[]>((tickets as any) ?? []), {
 			page: addPagination({ initialPageSize: selectedResultList }),
 			filter: addTableFilter({
 				fn: ({ filterValue, value }) => value.toLowerCase().includes(filterValue.toLowerCase())
@@ -197,8 +199,8 @@
 		_hiddenColumnIds = hiddenColumnIds;
 
 		_flatColumns = flatColumns;
-		const ids = _flatColumns.map((col) => col.id);
-		hideForId = Object.fromEntries(ids.map((id) => [id, true]));
+		const ids: string[] = (_flatColumns as any[]).map((col: any) => col.id);
+		hideForId = Object.fromEntries(ids.map((id: string) => [id, true]));
 		if (isAdmin===false){
 			const creatorIndex=hidableCols.findIndex(x=>x==='creator')
 			if(creatorIndex!==-1){
@@ -207,8 +209,16 @@
 		hideForId['creator']=false;
 		}
 	}
+	function spreadAttrs(value: unknown): Record<string, unknown> {
+		return (value ?? {}) as Record<string, unknown>;
+	}
+	function creatorNameFor(id: string): string {
+		return ($ticketsSummary as any)?.[id]?.creator?.name ?? '';
+	}
 	function getTicketStatus(ticket: TicketSummary) {
-		return ticket.status == TicketStates.closed? `Closed by ${ticket.resolution.StaffName}`: ticket.status.toString();
+		return ticket.status == TicketStates.closed
+			? `Closed by ${ticket.resolution?.StaffName ?? ''}`
+			: ticket.status.toString();
 	}
 	let showResultLengthList: boolean = false;
 	let selectedResultList: number = 10;
@@ -231,7 +241,7 @@
 
 	async function showTicket(id:string) {
 
-		id=$ticketsSummary [id].ticketId
+		id=($ticketsSummary as any)?.[id]?.ticketId
 		let messages: TicketInfo =await loadTicket(id);
 		if (ticketMessages === null) {
 			ticketMessages = (await import('./TicketMessagesView.svelte')).default;
@@ -277,8 +287,8 @@
 	}
 	async function getSpecific(type:number|null){
 		ticketLoading=true;
-		const userId = $loggedInUser?.creatorId;
-		let body={
+		const userId = ($loggedInUser as any)?.creatorId;
+		let body: Record<string, any> = {
 			creatorId: $loggedInUser?.userRoles.includes(UserRoles.Tech)==false ? userId : 'null',
 		}
 		if (type!=null){
@@ -302,7 +312,7 @@
 		const selected=$_selectedDataIds;
 		let closeIdds:string[]=[]
 		for (const selectedKey in selected) {
-			const id=$ticketsSummary[selectedKey].ticketId
+			const id=($ticketsSummary as any)?.[selectedKey]?.ticketId
 			closeIdds.push(id)
 		}
 		const response=await fetch(`${baseURL}/api/tickets/CloseTicket`, {
@@ -322,9 +332,10 @@
 				for (const selectedKey in selected) {
 					ticketsSummary.update((data)=>{
 						if (data!==null) {
-							data[selectedKey].status = 2
+							(data as any)[selectedKey].status = 2
 							return [...data]
 						}
+						return data
 					})
 				}
 				toast.success("Ticket(s) closed successfully",{
@@ -336,6 +347,7 @@
 </script>
 
 <Toaster />
+<div class="p-4">
 <div class="mt-4">
 	<div class="sm:flex gap-4 justify-end">
 		<Button on:click={()=>createNewTicket()}>+ Create new Ticket</Button>
@@ -423,7 +435,7 @@
 						<DropdownMenu.CheckboxItem
 							bind:checked={hideForId[col.id]}
 							onCheckedChange={(newv) => {
-								hideForId[col.id] = newv;
+								hideForId[col.id] = newv === true;
 							}}
 						>
 							{col.header}
@@ -439,14 +451,14 @@
 		</div>
 		{:else}
 	<div class="rounded-md border">
-		<Table.Root {...$_tableAttrs}>
+		<Table.Root {...spreadAttrs($_tableAttrs)}>
 			<Table.Header>
 				{#each $tableHeaderRows as headerRow}
 					<Subscribe rowAttrs={headerRow.attrs()}>
 						<Table.Row>
 							{#each headerRow.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()}>
-									<Table.Head {...attrs} class="[&:has([role=checkbox])]:pl-3">
+									<Table.Head {...spreadAttrs(attrs)} class="[&:has([role=checkbox])]:pl-3">
 										<Render of={cell.render()} />
 									</Table.Head>
 								</Subscribe>
@@ -455,19 +467,19 @@
 					</Subscribe>
 				{/each}
 			</Table.Header>
-			<Table.Body {...$_tableBodyAttrs}>
+			<Table.Body {...spreadAttrs($_tableBodyAttrs)}>
 				{#each $tablePageRows as row (row.id)}
 					<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
-						<Table.Row {...rowAttrs} data-state={$_selectedDataIds[row.id] && 'selected'}>
+						<Table.Row {...spreadAttrs(rowAttrs)} data-state={$_selectedDataIds[row.id] && 'selected'}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
-									<Table.Cell {...attrs}>
+									<Table.Cell {...spreadAttrs(attrs)}>
 										{#if cell.id === 'status'}
 												<TicketTag state="{parseInt(cell.render())}" />
 <!--												<Render of={mapTicketStateToString(cell.render())} />-->
 											{:else if cell.id==='creator'}
 											<a class="line-clamp-2" href="{faker.internet.url()}">
-											<Render of="{$ticketsSummary[row.id].creator.name}" />
+											<Render of="{creatorNameFor(row.id)}" />
 											</a>
 											{:else if cell.id==="lastInteraction"}
 												<Render of={mapDateToString(cell.render())} />
@@ -507,7 +519,7 @@
 							<Pagination.Ellipsis />
 						</Pagination.Item>
 					{:else}
-						<Pagination.Item isVisible={currentPage == page.value}>
+						<Pagination.Item>
 							<Pagination.Link
 								{page}
 								isActive={currentPage == page.value}
@@ -525,4 +537,5 @@
 		</Pagination.Root>
 	</div>
 	{/if}
+</div>
 </div>

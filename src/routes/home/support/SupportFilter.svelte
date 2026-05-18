@@ -36,6 +36,9 @@
 
 	function onSubmitted()
 	{}
+	const ticketStateValues: TicketStates[] = Object.values(TicketStates).filter(
+		(v): v is TicketStates => typeof v === 'number'
+	);
 	export let open:boolean=false;
 </script>
 
@@ -99,9 +102,9 @@
 							{#each statusList as affected}
 								<div class="flex gap-1 items-center p-0.5 border w-fit rounded-md" style="font-size: 12px">
 									<p>{affected}</p>
-									<div class="w-6 flex h-6 items-center justify-center border rounded-md" on:click={()=>removeSelected(affected)}>
+									<button type="button" class="w-6 flex h-6 items-center justify-center border rounded-md" on:click={()=>removeSelected(affected)}>
 										<Icon class="w-5 h-5 p-0" icon="material-symbols-light:cancel-outline" />
-									</div>
+									</button>
 								</div>
 							{/each}
 						{:else }
@@ -116,9 +119,9 @@
 					<Command.Input placeholder="Select multiple..." />
 					<Command.Empty>No file found.</Command.Empty>
 					<Command.Group>
-						{#each Object.values(TicketStates) as ticketstate}
+						{#each ticketStateValues as ticketstate}
 							<Command.Item
-								value={ticketstate}
+								value={String(ticketstate)}
 								onSelect={() => {
 									if(statusList && statusList.includes(ticketstate)===false)
 								{statusList.push(ticketstate);}
@@ -127,8 +130,8 @@
 									}
 								statusList=[...statusList];
             }}>
-									<p>{ticketstate}</p>
-							</Command.Item>
+								<p>{ticketstate}</p>
+						</Command.Item>
 						{/each}
 					</Command.Group>
 				</Command.Root>

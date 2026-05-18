@@ -100,7 +100,7 @@
 		}
 	}
 
-	function arrayBufferToBase64(buffer) {
+	function arrayBufferToBase64(buffer: ArrayBuffer | Uint8Array) {
 		let binary = '';
 		const bytes = new Uint8Array(buffer);
 		const len = bytes.byteLength;
@@ -110,10 +110,10 @@
 		return window.btoa(binary);
 	}
 
-	function toByteArray(file) {
-		return new Promise((resolve, reject) => {
+	function toByteArray(file: File) {
+		return new Promise<ArrayBuffer>((resolve, reject) => {
 			const reader = new FileReader();
-			reader.onload = () => resolve(reader.result);
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
 			reader.onerror = reject;
 			reader.readAsArrayBuffer(file);
 		}).then((arrayBuffer) => new Uint8Array(arrayBuffer));
@@ -203,8 +203,8 @@
 					<div class="flex justify-center w-full items-center">
 						<p>Ticket closed, comments can't be added</p>
 					</div>
-					<p class="mt-2">Closed by {data.resolution.staffName}</p>
-					<p class="text-sm font-light">{mapDateToString(data.resolution.date)}</p>
+					<p class="mt-2">Closed by {data.resolution?.staffName ?? ''}</p>
+					<p class="text-sm font-light">{data.resolution ? mapDateToString(data.resolution.date) : ''}</p>
 				</div>
 			{/if}
 		</Sheet.Footer>

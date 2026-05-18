@@ -112,17 +112,40 @@
     isActive: false,
   };
 
-  let menus = [
+  type MenuItem = {
+    icon: string;
+    location: string;
+    name?: string;
+    roles?: UserRoles[]; // undefined = visible to everyone
+    submenus?: MenuItem[];
+  };
+
+  let menus: MenuItem[] = [
     { icon: "radix-icons:dashboard", location: "Dashboard" },
     {
       icon: "mdi:file-document-multiple-outline",
       location: "Publications",
       name: "Publications",
+      roles: [
+        UserRoles.SuperAdmin,
+        UserRoles.HeadOfUnit,
+        UserRoles.User,
+        UserRoles.Staff,
+      ],
       submenus: [
         {
           icon: "mdi:book-open-page-variant",
           name: "Journal",
           location: "journal",
+          roles: [
+            UserRoles.HeadOfUnit,
+            UserRoles.PermSec,
+            UserRoles.Minister,
+            UserRoles.Tech,
+            UserRoles.SuperAdmin,
+            UserRoles.TrademarkRegistrar,
+            UserRoles.User,
+          ],
         },
         {
           icon: "mdi:file-document-multiple-outline",
@@ -131,17 +154,26 @@
         },
       ],
     },
-    { icon: "mdi:book-open-variant", location: "Resources" },
+    {
+      icon: "mdi:book-open-variant",
+      location: "Resources",
+      roles: [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin],
+    },
     { icon: "mdi:help-circle-outline", location: "Support" },
-    { icon: "mdi:gavel", location: "Opposition" },
-    { icon: "mdi:chart-line", location: "Finance" },
-    { icon: "mdi:chart-bar", location: "Statistics" },
-    { icon: "mdi:chart-box-outline", location: "Performance" },
-    { icon: "mdi:account-group-outline", location: "Users" },
-    // {
-    //   icon: "mdi:cog-outline",
-    //   location: "Admin",
-    // },
+    {
+      icon: "mdi:gavel",
+      location: "Opposition",
+      roles: [
+        UserRoles.SuperAdmin,
+        UserRoles.TrademarkOpposition,
+        UserRoles.Tech,
+      ],
+    },
+    {
+      icon: "mdi:account-group-outline",
+      location: "Users",
+      roles: [UserRoles.Tech, UserRoles.SuperAdmin],
+    },
     {
       icon: "mdi:account-circle-outline",
       name: "Profile",
@@ -151,13 +183,27 @@
       icon: "mdi:shield-crown-outline",
       name: "Super Admin",
       location: "admin",
+      roles: [UserRoles.SuperAdmin, UserRoles.Tech],
     },
     {
       icon: "mdi:file-plus",
       name: "Claim Requests",
       location: "ClaimRequests",
+      roles: [UserRoles.SuperAdmin, UserRoles.Tech],
     },
   ];
+
+  function hasAccess(item: MenuItem, userRoles: UserRoles[]): boolean {
+    return !item.roles || item.roles.some((r) => userRoles.includes(r));
+  }
+
+  function filterMenus(items: MenuItem[], userRoles: UserRoles[]): MenuItem[] {
+    return items
+      .filter((m) => hasAccess(m, userRoles))
+      .map((m) =>
+        m.submenus ? { ...m, submenus: filterMenus(m.submenus, userRoles) } : m,
+      );
+  }
 
   onMount(async () => {
     await decodeUser();
@@ -165,109 +211,7 @@
     loadClaimRequestsCount();
     loadOppositionsCount();
     if ($loggedInUser) {
-      // Filter menus based on roles
-      if (
-        !$loggedInUser.userRoles.includes(UserRoles.Tech) &&
-        !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)
-      ) {
-        menus = menus.filter(
-          (x) => x.location !== "Performance" && x.location !== "Users",
-        );
-      }
-
-      if (
-        !$loggedInUser.userRoles.includes(UserRoles.Finance) &&
-        !$loggedInUser.userRoles.includes(UserRoles.SuperAdmin)
-      ) {
-        menus = menus.filter((x) => x.location !== "Finance");
-      }
-
-      // Show Statistics only for specific high-level roles
-      if (
-        !$loggedInUser.userRoles.some((role) =>
-          [
-            UserRoles.Finance,
-            UserRoles.PermSec,
-            UserRoles.Minister,
-            UserRoles.Tech,
-            UserRoles.SuperAdmin,
-            UserRoles.TrademarkRegistrar,
-            UserRoles.PatentDesignRegistrar,
-            UserRoles.EinaoFinance,
-          ].includes(role),
-        )
-      ) {
-        menus = menus.filter((x) => x.location !== "Statistics");
-      }
-      if (
-        !$loggedInUser.userRoles.some((role) =>
-          [
-            UserRoles.HeadOfUnit,
-            UserRoles.PermSec,
-            UserRoles.Minister,
-            UserRoles.Tech,
-            UserRoles.SuperAdmin,
-            UserRoles.TrademarkRegistrar,
-            UserRoles.User,
-          ].includes(role),
-        )
-      ) {
-        menus = menus.filter((x) => x.location !== "journal");
-      }
-      if (
-        !$loggedInUser.userRoles.some((role) =>
-          [
-            UserRoles.SuperAdmin,
-            UserRoles.TrademarkOpposition,
-            UserRoles.Tech,
-          ].includes(role),
-        )
-      ) {
-        menus = menus.filter((x) => x.location !== "Opposition");
-      }
-
-      // Show Publications only for super admin
-      if (
-        !$loggedInUser.userRoles.some((role) =>
-          [
-            UserRoles.SuperAdmin,
-            UserRoles.HeadOfUnit,
-            UserRoles.User,
-            UserRoles.Staff,
-          ].includes(role),
-        )
-      ) {
-        menus = menus.filter((x) => x.location !== "Publications");
-      }
-
-      if (
-        !$loggedInUser.userRoles.some((role) =>
-          [UserRoles.SuperAdmin, UserRoles.Tech].includes(role),
-        )
-      ) {
-        menus = menus.filter((x) => x.location !== "AdminPanel");
-        menus = menus.filter((x) => x.location !== "ClaimRequests");
-        menus = menus.filter((x) => x.location !== "admin"); // Hide Super Admin menu
-      }
-
-      // Show Resources only for agents (User role), tech team, and superadmin
-      const canSeeResources = $loggedInUser.userRoles.some((role) =>
-        [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin].includes(role),
-      );
-
-      if (!canSeeResources) {
-        menus = menus.filter((x) => x.location !== "Resources");
-      }
-
-      // For regular users, keep the Admin dropdown with Profile only
-      if ($loggedInUser.userRoles.includes(UserRoles.User)) {
-        const adminMenu = menus.find((m) => m.location === "Admin");
-        if (adminMenu) {
-          // Keep only Profile submenu for regular users
-          adminMenu.submenus =
-            adminMenu.submenus?.filter((s) => s.location === "profile") || [];
-        }
-      }
+      menus = filterMenus(menus, $loggedInUser.userRoles);
     }
 
     // Set initial active menu based on current route
