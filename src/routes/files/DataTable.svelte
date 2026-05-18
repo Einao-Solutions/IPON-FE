@@ -379,6 +379,9 @@
   let newStatus: string | undefined;
   let isStatusUpdating = false;
   const userName = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
+  function spreadAttrs(value: unknown): Record<string, unknown> {
+    return (value ?? {}) as Record<string, unknown>;
+  }
   async function changeStatusForAll() {
     if (isStatusUpdating) return;
     if (newStatus === undefined) return;
@@ -559,7 +562,7 @@
                     props={cell.props()}
                   >
                     <Table.Head
-                      {...attrs}
+                      {...spreadAttrs(attrs)}
                       class="[&:has([role=checkbox])]:pl-3"
                     >
                       {#if cell.id === "title"}
@@ -580,12 +583,12 @@
           {#each $tablePageRows as row (row.id)}
             <Subscribe rowAttrs={row.attrs()} let:rowAttrs>
               <Table.Row
-                {...rowAttrs}
+                {...spreadAttrs(rowAttrs)}
                 data-state={$_selectedDataIds[row.id] && "selected"}
               >
                 {#each row.cells as cell (cell.id)}
                   <Subscribe attrs={cell.attrs()} let:attrs>
-                    <Table.Cell {...attrs}>
+                    <Table.Cell {...spreadAttrs(attrs)}>
                       {#if cell.id === "fileStatus"}
                         <AppStatusTag value={parseInt(cell.render())} />
                       {:else if cell.id === "status"}
@@ -660,7 +663,7 @@
               <Pagination.Ellipsis />
             </Pagination.Item>
           {:else}
-            <Pagination.Item isVisible={currentPage === page.value}>
+            <Pagination.Item>
               <Pagination.Link
                 {page}
                 isActive={$_pageIndex + 1 === page.value}

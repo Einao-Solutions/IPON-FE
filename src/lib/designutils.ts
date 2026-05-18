@@ -1,5 +1,7 @@
 import { ApplicationStatuses } from "./helpers";
-export function mapStatusToString(status: ApplicationStatuses | number): string {
+export function mapStatusToString(
+  status: ApplicationStatuses | number,
+): string {
   switch (status) {
     case ApplicationStatuses.Active:
       return "Active";
