@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { mapStatusToString } from '../../../../routes/home/components/dashboardutils';
+	import { mapStatusToString } from '$lib/designutils';
 	import { getStatusColour } from '$lib/helpers';
 
 	export let showIcon:boolean=false;

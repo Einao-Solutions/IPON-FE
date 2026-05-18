@@ -413,10 +413,12 @@ export enum ApplicationStatuses {
   RequestWithdrawal = 29,
   NewOpposition = 30,
   AwaitingCounter = 31,
-  Amendment = 32,
-  AwaitingRenewalConfirmation = 33,
-  PendingRenewal = 34,
-  Value,
+  AwaitingApproval = 32,
+  StatutoryDeclaration = 33,
+  AwaitingRenewalConfirmation = 34,
+  PendingRenewal = 35,
+  AwaitingOfficeProcess = 36,
+  Abandoned = 37,
 }
 export enum PatentTypes {
   Conventional = 0,
@@ -574,13 +576,19 @@ export function getStatusColour(status: ApplicationStatuses | null): string {
       return "#ede064";
     case ApplicationStatuses.AwaitingCounter:
       return "rgb(253, 224, 71)";
-    case ApplicationStatuses.Amendment:
+    case ApplicationStatuses.AwaitingApproval:
       return "#29C5F6";
+    case ApplicationStatuses.StatutoryDeclaration:
+      return "#9B870C";
     case ApplicationStatuses.AwaitingRenewalConfirmation:
       return "rgb(253, 224, 71)";
     case ApplicationStatuses.Inactive:
       return "#fa6d6d";
     case ApplicationStatuses.PendingRenewal:
+      return "#fa6d6d";
+    case ApplicationStatuses.AwaitingOfficeProcess:
+      return "#9B870C";
+    case ApplicationStatuses.Abandoned:
       return "#fa6d6d";
     case null:
       return "";

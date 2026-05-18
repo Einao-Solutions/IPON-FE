@@ -118,8 +118,8 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "New Opposition";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter";
-    case ApplicationStatuses.Amendment:
-      return "Amendment";
+    case ApplicationStatuses.AwaitingApproval:
+      return "Awaiting Approval";
     case ApplicationStatuses.AwaitingRecordalProcess:
       return "Awaiting Recordal Process";
     case ApplicationStatuses.NewOpposition:

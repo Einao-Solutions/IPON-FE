@@ -1,4 +1,5 @@
 import type { FileStatsType } from "$lib/helpers";
+import { mapStatusToString } from "$lib/designutils";
 
 export enum FileStatsData {
   totalPatents,
@@ -480,83 +481,6 @@ export function mapTypeToString(type: number) {
       return "Trademark Reclassification";
     case 23:
       return "Restoration";
-    default:
-      return "";
-  }
-}
-
-export function mapStatusToString(status: number) {
-  switch (status) {
-    case 0:
-      return "Active";
-    case 1:
-      return "Inactive";
-    case 2:
-      return "Awaiting Payment";
-    case 3:
-      return "Awaiting Search";
-    case 4:
-      return "Awaiting Examiner";
-    case 5:
-      return "Rejected By Examiner";
-    case 6:
-      return "Re_conduct";
-    case 7:
-      return "Formality Fail";
-    case 8:
-      return "Kiv Search";
-    case 9:
-      return "Kiv Examiner";
-    case 10:
-      return "Approved";
-    case 11:
-      return "Rejected";
-    case 12:
-      return "None";
-    case 13:
-      return "Auto-Approved";
-    case 14:
-      return "Publication";
-    case 15:
-      return "Opposition";
-    case 16:
-      return "Awaiting Counter";
-    case 17:
-      return "Awaiting Staff";
-    case 18:
-      return "Awaiting Resolution";
-    case 19:
-      return "Resolved";
-    case 20:
-      return "Awaiting Certification";
-    case 21:
-      return "Awaiting Confirmation";
-    case 22:
-      return "Awaiting Save";
-    case 23:
-      return "Awaiting Certificate Confirmation";
-    case 24:
-      return "Withdrawn";
-    case 25:
-      return "Awaiting Certificate Payment";
-    case 26:
-      return "Awaiting Recordal Process";
-    case 27:
-      return "Appeal Requested";
-    case 28:
-      return "Awaiting Status Update";
-    case 29:
-      return "Request Withdrawal";
-    case 30:
-      return "New Opposition";
-    case 31:
-      return "Awaiting Counter";
-    case 32:
-      return "Awaiting Approval";
-    case 33:
-      return "Awaiting Renewal Confirmation";
-    case 34:
-      return "Pending Renewal";
     default:
       return "";
   }

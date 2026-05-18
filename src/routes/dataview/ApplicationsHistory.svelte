@@ -1767,7 +1767,7 @@
 
       <!-- Decision Reason -->
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-        {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
+        {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.AwaitingApproval)}
           <div class="mt-4 pt-4 border-t border-slate-200">
             <Label
               for="approval-reason"
@@ -1797,7 +1797,7 @@
       class="border-t border-slate-200 px-6 py-3 flex flex-wrap gap-2 justify-end"
     >
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-        {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.Amendment)}
+        {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.AwaitingApproval)}
           <Button
             on:click={() => {
               if (!reason || reason.trim().length < 10) {

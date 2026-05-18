@@ -1,6 +1,7 @@
 <script lang="ts">
 	// select the thing you want to assign to, the search for it. The form comes up
-	import { fileTypeToString, mapStatusToString } from '../../components/dashboardutils';
+	import { fileTypeToString } from '../../components/dashboardutils';
+	import { mapStatusToString } from '$lib/designutils';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { Label } from '$lib/components/ui/label';

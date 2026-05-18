@@ -1,3 +1,87 @@
+import { ApplicationStatuses } from "./helpers";
+export function mapStatusToString(status: ApplicationStatuses | number): string {
+  switch (status) {
+    case ApplicationStatuses.Active:
+      return "Active";
+    case ApplicationStatuses.Inactive:
+      return "Inactive";
+    case ApplicationStatuses.AwaitingPayment:
+      return "Awaiting Payment";
+    case ApplicationStatuses.AwaitingSearch:
+      return "Awaiting Search";
+    case ApplicationStatuses.AwaitingExaminer:
+      return "Awaiting Examiner";
+    case ApplicationStatuses.RejectedByExaminer:
+      return "Rejected By Examiner";
+    case ApplicationStatuses.Re_conduct:
+      return "Re-conduct";
+    case ApplicationStatuses.FormalityFail:
+      return "Formality Fail";
+    case ApplicationStatuses.KivSearch:
+      return "Kiv Search";
+    case ApplicationStatuses.KivExaminer:
+      return "Kiv Examiner";
+    case ApplicationStatuses.Approved:
+      return "Approved";
+    case ApplicationStatuses.Rejected:
+      return "Rejected";
+    case ApplicationStatuses.None:
+      return "None";
+    case ApplicationStatuses.AutoApproved:
+      return "Auto-Approved";
+    case ApplicationStatuses.Publication:
+      return "Publication";
+    case ApplicationStatuses.Opposition:
+      return "Opposition";
+    case ApplicationStatuses.AwaitingResponse:
+      return "Awaiting Response";
+    case ApplicationStatuses.AwaitingOppositionStaff:
+      return "Awaiting Staff";
+    case ApplicationStatuses.AwaitingResolution:
+      return "Awaiting Resolution";
+    case ApplicationStatuses.Resolved:
+      return "Resolved";
+    case ApplicationStatuses.AwaitingCertification:
+      return "Awaiting Certification";
+    case ApplicationStatuses.AwaitingConfirmation:
+      return "Awaiting Confirmation";
+    case ApplicationStatuses.AwaitingSave:
+      return "Awaiting Save";
+    case ApplicationStatuses.AwaitingCertificateConfirmation:
+      return "Awaiting Certificate Confirmation";
+    case ApplicationStatuses.Withdrawn:
+      return "Withdrawn";
+    case ApplicationStatuses.AwaitingCertificatePayment:
+      return "Awaiting Certificate Payment";
+    case ApplicationStatuses.AwaitingRecordalProcess:
+      return "Awaiting Recordal Process";
+    case ApplicationStatuses.AppealRequest:
+      return "Appeal Requested";
+    case ApplicationStatuses.AwaitingStatusUpdate:
+      return "Awaiting Status Update";
+    case ApplicationStatuses.RequestWithdrawal:
+      return "Request Withdrawal";
+    case ApplicationStatuses.NewOpposition:
+      return "New Opposition";
+    case ApplicationStatuses.AwaitingCounter:
+      return "Awaiting Counter";
+    case ApplicationStatuses.AwaitingApproval:
+      return "Awaiting Approval";
+    case ApplicationStatuses.StatutoryDeclaration:
+      return "Statutory Declaration";
+    case ApplicationStatuses.AwaitingRenewalConfirmation:
+      return "Awaiting Renewal Confirmation";
+    case ApplicationStatuses.PendingRenewal:
+      return "Pending Renewal";
+    case ApplicationStatuses.AwaitingOfficeProcess:
+      return "Awaiting Office Process";
+    case ApplicationStatuses.Abandoned:
+      return "Abandoned";
+    default:
+      return "";
+  }
+}
+
 export function mapDesignTypeToString(index: number) {
   switch (index) {
     case 0:
@@ -193,71 +277,21 @@ export function mapPatentAttStrToInt(index: string) {
   }
 }
 
-export function mapStatusStringToStatus(status: string) {
+export function mapStatusStringToStatus(status: string): number | undefined {
+  // Accept the enum key directly (e.g. "AwaitingConfirmation").
+  if (status in ApplicationStatuses) {
+    const value = (ApplicationStatuses as Record<string, unknown>)[status];
+    if (typeof value === "number") return value;
+  }
+  // Backward-compat aliases for previously used keys.
   switch (status) {
-    case "Active":
-      return 0;
     case "Expired":
-      return 1;
-    case "AwaitingPayment":
-      return 2;
-    case "AwaitingSearch":
-      return 3;
-    case "AwaitingExaminer":
-      return 4;
-    case "RejectedByExaminer":
-      return 5;
-    case "Re_conduct":
-      return 6;
-    case "FormalityFail":
-      return 7;
-    case "KivSearch":
-      return 8;
-    case "KivExaminer":
-      return 9;
-    case "Approved":
-      return 10;
-    case "Rejected":
-      return 11;
-    case "None":
-      return 12;
-    case "AutoApproved":
-      return 13;
-    case "Publication":
-      return 14;
-    case "Opposition":
-      return 15;
-    case "AwaitingResponse":
-      return 16;
-    case "AwaitingOppositionStaff":
-      return 17;
-    case "AwaitingResolution":
-      return 18;
-    case "Resolved":
-      return 19;
-    case "AwaitingCertification":
-      return 20;
-    case "AwaitingConfirmation":
-      return 1;
-    case "AwaitingCertificatePayment":
-      return 25;
-    case "AwaitingRecordalProcess":
-      return 26;
-    case "AppealRequest":
-      return 27;
+      return ApplicationStatuses.Inactive;
     case "AwaitingStatusUpddate":
-      return 28;
-    case "RequestWithdrawal":
-      return 29;
-    case "NewOpposition":
-      return 30;
-    case "AwaitingCounter":
-      return 31;
-    case "AwaitingApproval":
-      return 32;
-    case "AwaitingRenewalConfirmation":
-      return 33;
-    case "PendingRenewal":
-      return 34;
+      return ApplicationStatuses.AwaitingStatusUpdate;
+    case "Amendment":
+      return ApplicationStatuses.AwaitingApproval;
+    default:
+      return undefined;
   }
 }

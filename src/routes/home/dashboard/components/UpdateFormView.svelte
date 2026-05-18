@@ -3,7 +3,7 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { ApplicationStatuses, baseURL, UserRoles } from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
-	import { mapStatusToString } from '../../components/dashboardutils';
+	import { mapStatusToString } from '$lib/designutils';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import Icon from '@iconify/svelte';

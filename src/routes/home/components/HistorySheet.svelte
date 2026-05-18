@@ -3,7 +3,8 @@
     import { type DataHistory, getStatusColour } from '$lib/helpers';
     import Icon from '@iconify/svelte';
     import { Button } from '$lib/components/ui/button';
-    import { mapDateToString, mapStatusToString } from './dashboardutils';
+    import { mapDateToString } from './dashboardutils';
+    import { mapStatusToString } from '$lib/designutils';
     import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
     export let title:string;
     export let description:string;

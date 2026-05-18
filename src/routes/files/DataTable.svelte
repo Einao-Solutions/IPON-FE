@@ -3,7 +3,7 @@
 	import { type Writable, writable } from 'svelte/store';
 	import * as Dialog from "$lib/components/ui/dialog"
 	import { Textarea } from '$lib/components/ui/textarea';
-	import { mapStatusToString } from '../home/components/dashboardutils';
+	import { mapStatusToString } from '$lib/designutils';
 	import { mapDesignTypeToString } from '$lib/designutils';
 	import {
 		type AffectedFiles, ApplicationStatuses,
