@@ -170,6 +170,17 @@
       ],
     },
     {
+      icon: "mdi:chart-bar",
+      location: "statistics",
+      name: "Statistics",
+      roles: [
+        UserRoles.SuperAdmin,
+        UserRoles.PermSec,
+        UserRoles.Minister,
+        UserRoles.Tech,
+      ],
+    },
+    {
       icon: "mdi:account-group-outline",
       location: "Users",
       roles: [UserRoles.Tech, UserRoles.SuperAdmin],
@@ -258,7 +269,7 @@
       activeMenu = menu.location;
       activeSubmenu = null;
       // Route Statistics to /statistics instead of /home/statistics
-      if (menu.location === "Statistics") {
+      if (menu.location.toLowerCase() === "statistics") {
         goto(`/statistics`);
       } else {
         goto(`/home/${menu.location.trim().toLowerCase()}`);
