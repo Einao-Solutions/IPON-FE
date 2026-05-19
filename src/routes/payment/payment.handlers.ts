@@ -311,14 +311,14 @@ async function tradecertificate(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
-  const data = localStorage.getItem("formData");
+  const data = localStorage.getItem("AppData");
   const parsed = data ? JSON.parse(data) : null;
   const fileNumber = localStorage.getItem("fileId");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  ctx.state.setTitle("Payment");
-  ctx.state.setFileNumber(parsed?.FileId ?? fileNumber);
+  ctx.state.setTitle("Payment for Certificate");
+  ctx.state.setFileNumber(parsed?.fileId ?? fileNumber);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(

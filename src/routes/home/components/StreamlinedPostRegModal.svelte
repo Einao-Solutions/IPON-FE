@@ -132,6 +132,7 @@
           ApplicationStatuses.Publication,
           ApplicationStatuses.AwaitingCertification,
           ApplicationStatuses.AwaitingCertificateConfirmation,
+          ApplicationStatuses.PendingRenewal, // Allow Pending Renewal for renewal service
           ApplicationStatuses.Active,
         ];
 
@@ -485,7 +486,7 @@
             This service is only available for Active patent files.
           {:else if ["renewal"].includes(serviceId)}
             Renewal is only available for registered {ipType} files with status 'Active'
-            or 'Inactive', 90 days before the due date.
+            90 days before the due date, or 'Pending Renewal'.
           {:else if ["restoration"].includes(serviceId)}
             Restoration is only available for Inactive {ipType} files
           {:else}
