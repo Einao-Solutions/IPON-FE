@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
- export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "http://localhost:5044";
+//  export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -488,6 +488,8 @@ export enum UserRoles {
   TrademarkStaff,
   PatentStaff,
   DesignStaff,
+  TrademarkSupport,
+  PatentDesignSupport,
 }
 
 export enum FilingType {
@@ -983,6 +985,10 @@ export function mapRoleToString(type: UserRoles) {
       return "Patent Staff";
     case UserRoles.DesignStaff:
       return "Design Staff";
+    case UserRoles.TrademarkSupport:
+      return "Trademark Support";
+    case UserRoles.PatentDesignSupport:
+      return "Patent/Design Support";
     default:
       return "Unknown";
   }

@@ -48,6 +48,7 @@
 >
 	<div
 		use:motion
+		role="presentation"
 		on:mousemove={handleMouseMove}
 		on:mouseenter={() => (visible = true)}
 		on:mouseleave={() => (visible = false)}
