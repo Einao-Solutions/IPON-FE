@@ -194,15 +194,6 @@ export const trademarkServices: IPService[] = [
     category: "agent",
     price: "₦2,000",
   },
-  // {
-  //   id: "update-file",
-  //   name: "EDIT/UPDATE FILE IN AWAITING SEARCH",
-  //   description: "Update file information for files in awaiting search status",
-  //   icon: "mdi:update",
-  //   route: "/home/update-files",
-  //   category: "filing",
-  //   price: "",
-  // },
   {
     id: "update-publication-status",
     name: "UPDATE PUBLICATION STATUS",
@@ -314,6 +305,15 @@ export const trademarkServices: IPService[] = [
     route: "/opposition",
     category: "filing",
     price: "₦11,500",
+  },
+  {
+    id: "amendment",
+    name: "AMENDMENT",
+    description: "Amend files in opposition",
+    icon: "mdi:file-edit-outline",
+    route: "/home/amendment",
+    category: "filing",
+    price: "₦3,500",
   },
   {
     id: "restoration",
@@ -519,7 +519,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
-   // maintenance: true,
+    // maintenance: true,
   },
   {
     id: "patent-mortgage",
@@ -529,7 +529,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
-   // maintenance: true,
+    // maintenance: true,
   },
   {
     id: "patent-merger",
@@ -539,7 +539,7 @@ export const patentServices: IPService[] = [
     route: "modal", // Will open modal first
     category: "filing",
     price: "",
-   //maintenance: true,
+    //maintenance: true,
   },
 ];
 

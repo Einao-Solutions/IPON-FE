@@ -287,6 +287,64 @@
     );
   }
 
+  // Pair old/new fields by stripping prefixes (e.g. "assignor"/"assignee" or "old"/"new").
+  // Keys starting with leftPrefix are the "left" (previous) side; keys starting with
+  // rightPrefix (if provided) are the "right" (new) side. Unprefixed keys default to
+  // the right side. Matching is done by normalizing the remaining base name.
+  // Additionally, any key ending in "2" (e.g. "applicantName2") is also treated as
+  // the previous/old value for its unsuffixed counterpart (e.g. "applicantName").
+  function pairOldNew(
+    data: any,
+    leftPrefix: string,
+    rightPrefix: string = "",
+  ): { field: string; left: any; right: any }[] {
+    if (!data) return [];
+    const entries = Object.entries(data).filter(
+      ([k, v]) => v != null && v !== "" && !isHiddenKey(k),
+    );
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const order: string[] = [];
+    const map = new Map<
+      string,
+      { field: string; left: any; right: any }
+    >();
+    for (const [k, v] of entries) {
+      const lower = k.toLowerCase();
+      const startsWithLeft =
+        leftPrefix.length > 0 && lower.startsWith(leftPrefix.toLowerCase());
+      const startsWithRight =
+        rightPrefix.length > 0 && lower.startsWith(rightPrefix.toLowerCase());
+      const endsWith2 = /2$/.test(k);
+      let base = k;
+      let isLeft = false;
+      if (startsWithLeft) {
+        base = k.slice(leftPrefix.length);
+        isLeft = true;
+      } else if (startsWithRight) {
+        base = k.slice(rightPrefix.length);
+        isLeft = false;
+      } else if (endsWith2) {
+        base = k.replace(/2$/, "");
+        isLeft = true;
+      }
+      const cleaned = base.replace(/^[_\s]+/, "");
+      const id = normalize(cleaned);
+      if (!id) continue;
+      if (!map.has(id)) {
+        map.set(id, {
+          field: formatFieldName(cleaned),
+          left: undefined,
+          right: undefined,
+        });
+        order.push(id);
+      }
+      const row = map.get(id)!;
+      if (isLeft) row.left = v;
+      else row.right = v;
+    }
+    return order.map((id) => map.get(id)!);
+  }
+
   // ======================
   // History Functions
   // ======================
@@ -581,7 +639,7 @@
         userId: $loggedInUser?.id,
       };
 
-      const res = await fetch(`${baseURL}/api/files/approve-amendment`, {
+      const res = await fetch(`${baseURL}/api/opposition/TreatAmendment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1413,230 +1471,65 @@
         </div>
       {:else if recordalData}
         <div class="space-y-0">
-          {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
-            <!-- Assignment: Assignee -->
+          {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment || selectedApplication?.applicationType === FormApplicationTypes.Merger || selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment || [7, 9, 36, 10].includes(selectedApplication?.applicationType ?? -1)}
+            {@const isAssignment =
+              selectedApplication?.applicationType ===
+              FormApplicationTypes.Assignment}
+            {@const leftPrefix = isAssignment ? "assignor" : "old"}
+            {@const rightPrefix = isAssignment ? "assignee" : "new"}
+            {@const leftLabel = isAssignment ? "Assignor (Previous)" : "Previous"}
+            {@const rightLabel = isAssignment ? "Assignee (New)" : "New"}
+            {@const rows = pairOldNew(recordalData, leftPrefix, rightPrefix)}
+            {@const hasAnyLeft = rows.some((r) => r.left !== undefined)}
             <section>
-              <table class="w-full text-sm">
+              <table class="w-full text-sm border border-slate-200 rounded">
                 <thead>
-                  <tr class="border-b border-slate-200">
+                  <tr class="border-b border-slate-200 bg-slate-50">
                     <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
+                      class="text-left px-3 py-2 font-semibold text-slate-900 text-xs w-1/4"
                       >Field</th
                     >
+                    {#if hasAnyLeft}
+                      <th
+                        class="text-left px-3 py-2 font-semibold text-slate-900 text-xs w-3/8 border-l border-slate-200"
+                        >{leftLabel}</th
+                      >
+                    {/if}
                     <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Assignee Details</th
+                      class="text-left px-3 py-2 font-semibold text-slate-900 text-xs border-l border-slate-200"
+                      >{hasAnyLeft ? rightLabel : "Details"}</th
                     >
                   </tr>
                 </thead>
                 <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => !k
-                        .toLowerCase()
-                        .startsWith("assignor")) as [key, value]}
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
+                  {#each rows as row}
+                    <tr class="border-b border-slate-200 hover:bg-slate-50 align-top">
                       <td
                         class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
+                        >{row.field}</td
                       >
-                      <td class="px-3 py-2 text-slate-800">
-                        {#if Array.isArray(value)}
+                      {#if hasAnyLeft}
+                        <td class="px-3 py-2 text-slate-800 border-l border-slate-200 {row.left !== undefined && row.right !== undefined && JSON.stringify(row.left) !== JSON.stringify(row.right) ? 'bg-amber-50' : ''}">
+                          {#if Array.isArray(row.left)}
+                            <div class="space-y-0.5">
+                              {#each row.left as item}<div>{item}</div>{/each}
+                            </div>
+                          {:else if row.left === undefined}
+                            <span class="text-slate-400 italic">—</span>
+                          {:else}
+                            {row.left}
+                          {/if}
+                        </td>
+                      {/if}
+                      <td class="px-3 py-2 text-slate-800 border-l border-slate-200 {hasAnyLeft && row.left !== undefined && row.right !== undefined && JSON.stringify(row.left) !== JSON.stringify(row.right) ? 'bg-emerald-50 font-medium' : ''}">
+                        {#if Array.isArray(row.right)}
                           <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
+                            {#each row.right as item}<div>{item}</div>{/each}
                           </div>
-                        {:else}{value}{/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </section>
-            <section>
-              <table class="w-full text-sm mt-4">
-                <thead>
-                  <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Assignor Details</th
-                    >
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => k
-                      .toLowerCase()
-                      .startsWith("assignor")) as [key, value]}
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key, "assignor")}</td
-                      >
-                      <td class="px-3 py-2 text-slate-800">
-                        {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
-                        {:else}{value}{/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </section>
-          {:else if selectedApplication?.applicationType === FormApplicationTypes.Merger}
-            <!-- Merger: New -->
-            <section>
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >New Information</th
-                    >
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => !k
-                        .toLowerCase()
-                        .startsWith("old")) as [key, value]}
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
-                      >
-                      <td class="px-3 py-2 text-slate-800">
-                        {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
-                        {:else}{value}{/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </section>
-            <!-- Merger: Existing -->
-            <section>
-              <table class="w-full text-sm mt-4">
-                <thead>
-                  <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Existing Information</th
-                    >
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each getRecordalEntries(recordalData, (k) => k
-                      .toLowerCase()
-                      .startsWith("old")) as [key, value]}
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key, "old")}</td
-                      >
-                      <td class="px-3 py-2 text-slate-800">
-                        {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
-                        {:else}{value}{/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </section>
-          {:else if [7, 9, 36, 10].includes(selectedApplication?.applicationType ?? -1)}
-            <!-- Change of Name / Address / Registered User / Reclassification -->
-            <section>
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Details</th
-                    >
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each getRecordalEntries(recordalData, () => true) as [key, value]}
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
-                      >
-                      <td class="px-3 py-2 text-slate-800">
-                        {#if Array.isArray(value)}
-                          <div class="space-y-0.5">
-                            {#each value as item}<div>{item}</div>{/each}
-                          </div>
-                        {:else}{value}{/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </section>
-          {:else if selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment}
-            <!-- Clerical Update / Amendment -->
-            <section>
-              <table class="w-full text-sm">
-                <thead>
-                  <tr class="border-b border-slate-200">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Field</th
-                    >
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 bg-white text-xs"
-                      >Value</th
-                    >
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each Object.entries(recordalData).filter(([key, value]) => value != null && !["id", "isApproved", "documentUrl"].includes(key)) as [key, value]}
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{formatFieldName(key)}</td
-                      >
-                      <td class="px-3 py-2 text-slate-800">
-                        {#if typeof value === "string" && value.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)}
-                          <img
-                            src={value}
-                            alt={key}
-                            class="max-w-xs h-auto rounded"
-                            style="max-height: 150px; object-fit: contain;"
-                          />
-                        {:else if key.endsWith("Url") && typeof value === "string" && value}
-                          <Button
-                            on:click={() =>
-                              window.open(String(value), "_blank")}
-                            variant="outline"
-                            size="sm"
-                            class="flex items-center gap-1 text-xs"
-                          >
-                            <Icon icon="mdi:open-in-new" width="0.9em" />
-                            Open
-                          </Button>
+                        {:else if row.right === undefined}
+                          <span class="text-slate-400 italic">—</span>
                         {:else}
-                          {value}
+                          {row.right}
                         {/if}
                       </td>
                     </tr>

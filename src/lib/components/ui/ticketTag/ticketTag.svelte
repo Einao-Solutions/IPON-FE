@@ -4,25 +4,19 @@
 	export let state:TicketStates
 
 	function getBgColor() {
-		switch (state) {
+		switch (Number(state)) {
 			case TicketStates.awaitingStaff:
 				return 'bg-blue-400';
 			case TicketStates.closed:
 				return 'bg-green-400';
 			case TicketStates.awaitingUser:
 				return 'bg-yellow-400';
-		}
-	}
-	function getTextColor() {
-		switch (state) {
-			case TicketStates.awaitingStaff:
-				return 'text-blue-950';
-			case TicketStates.closed:
-				return 'text-green-950';
-			case TicketStates.awaitingUser:
-				return 'text-yellow-950';
+			default:
+				return 'bg-gray-400';
 		}
 	}
 </script>
 
-<div class="p-2 w-fit m-2 text-sm rounded-md border {getTextColor()} {getBgColor()} ">{mapTicketStateToString(state)}</div>
+<div class="px-1.5 py-1 rounded-md w-fit text-xs font-medium text-black {getBgColor()}">
+	{mapTicketStateToString(state)}
+</div>

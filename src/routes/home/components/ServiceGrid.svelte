@@ -120,7 +120,7 @@
       let route = resolveServiceRoute(service, ipType);
       
       // Add IP context to context-aware routes
-      if ((service.id === 'post-registration' || service.id === 'file-withdrawal' || service.id === 'update-files' || service.id === 'clerical-update') && ipType) {
+      if ((service.id === 'post-registration' || service.id === 'file-withdrawal' || service.id === 'update-files' || service.id === 'clerical-update' || service.id === 'amendment') && ipType) {
         route += `?ipType=${ipType}`;
       }
       

@@ -48,6 +48,10 @@
 
     // Only call updateStatus if it's a tm certificate payment
     switch (paymentType) {
+      case "amendment":
+        console.log("Processing amendment payment");
+        success = await updateManual(data, false);
+        break;
       case "clerical":
         console.log("Processing clerical payment");
         success = await updateManual(data, false);
