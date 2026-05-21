@@ -488,6 +488,8 @@ export enum UserRoles {
   TrademarkStaff,
   PatentStaff,
   DesignStaff,
+  TrademarkSupport,
+  PatentDesignSupport,
 }
 
 export enum FilingType {
@@ -983,6 +985,10 @@ export function mapRoleToString(type: UserRoles) {
       return "Patent Staff";
     case UserRoles.DesignStaff:
       return "Design Staff";
+    case UserRoles.TrademarkSupport:
+      return "Trademark Support";
+    case UserRoles.PatentDesignSupport:
+      return "Patent/Design Support";
     default:
       return "Unknown";
   }

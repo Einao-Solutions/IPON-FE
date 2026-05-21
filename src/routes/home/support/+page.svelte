@@ -53,9 +53,14 @@
 	let isAdmin: boolean = false;
 	let groupedData: Record<string, number> = {};
 	const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
+	const SUPPORT_STAFF_ROLES = [UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkSupport, UserRoles.PatentDesignSupport];
+	function hasSupportStaffRole(): boolean {
+		const roles = $loggedInUser?.userRoles;
+		return !!roles && SUPPORT_STAFF_ROLES.some((r) => roles.includes(r));
+	}
 	onMount(async () => {
 		await decodeUser()
-		isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin) ?? false
+		isAdmin = hasSupportStaffRole();
 		ticketLoading = true;
 		await getTickets()
 		ticketLoading = false;
@@ -63,7 +68,7 @@
 
 	async function getStats() {
 		const userId = $loggedInUser?.id;
-		const url = $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)
+		const url = hasSupportStaffRole()
 			? `${baseURL}/api/tickets/GetStats`
 			: `${baseURL}/api/tickets/GetStats?userId=${userId}`;
 		let response = await fetch(url, {
@@ -86,7 +91,7 @@
 			var user = cookieUser.trimStart();
 			user = user.slice(5);
 			loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-			isAdmin = $loggedInUser?.userRoles.includes(UserRoles.Tech) ?? false
+			isAdmin = hasSupportStaffRole();
 		}
 		if ($loggedInUser === null) {
 			return;
@@ -98,7 +103,7 @@
 				let body: Record<string, any> = {
 					creatorId: userId
 				}
-				if ($loggedInUser.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)) {
+				if (hasSupportStaffRole()) {
 					body = {
 						creatorId: 'null'
 					}
@@ -289,7 +294,7 @@
 		ticketLoading=true;
 		const userId = ($loggedInUser as any)?.creatorId;
 		let body: Record<string, any> = {
-			creatorId: $loggedInUser?.userRoles.includes(UserRoles.Tech)==false ? userId : 'null',
+			creatorId: hasSupportStaffRole() ? 'null' : userId,
 		}
 		if (type!=null){
 			body['status']=type
@@ -368,20 +373,47 @@
 		<Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
 	</div>
 	{:else}
-	<div class="flex space-x-2">
-<Button variant="outline" on:click={()=>getSpecific(null)} class=" bg-gray-400 border rounded-md p-2 m-2">Total Tickets {
-	$ticketStats.total
-}</Button>
-<Button on:click={()=>getSpecific(1)} class="border border-blue-950  bg-blue-400 rounded-md p-2 m-2">Awaiting staff  {
-	$ticketStats.staff
-}</Button>
-<Button on:click={()=>getSpecific(0)} class="border border-yellow-950 bg-yellow-400 text-yellow-950 rounded-md p-2 m-2">Awaiting user  {
-	$ticketStats.user
-}</Button>
-
-<Button on:click={()=>getSpecific(2)} class="border border-green-950 text-green-950 bg-green-400 rounded-md p-2 m-2">Closed  {
-	$ticketStats.closed
-}</Button>
+	<div class="flex flex-wrap gap-2 m-2">
+		<button
+			type="button"
+			on:click={() => getSpecific(null)}
+			class="inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md w-fit text-xs font-medium bg-gray-400 text-black"
+		>
+			Total Tickets
+			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black/80 text-white text-[10px] font-semibold leading-none">
+				{$ticketStats.total ?? 0}
+			</span>
+		</button>
+		<button
+			type="button"
+			on:click={() => getSpecific(1)}
+			class="inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md w-fit text-xs font-medium bg-blue-400 text-black"
+		>
+			Awaiting Staff
+			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-950 text-white text-[10px] font-semibold leading-none">
+				{$ticketStats.staff ?? 0}
+			</span>
+		</button>
+		<button
+			type="button"
+			on:click={() => getSpecific(0)}
+			class="inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md w-fit text-xs font-medium bg-yellow-400 text-black"
+		>
+			Awaiting User
+			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-yellow-950 text-white text-[10px] font-semibold leading-none">
+				{$ticketStats.user ?? 0}
+			</span>
+		</button>
+		<button
+			type="button"
+			on:click={() => getSpecific(2)}
+			class="inline-flex items-center gap-1.5 px-1.5 py-1 rounded-md w-fit text-xs font-medium bg-green-400 text-black"
+		>
+			Closed
+			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-green-950 text-white text-[10px] font-semibold leading-none">
+				{$ticketStats.closed ?? 0}
+			</span>
+		</button>
 	</div>
 	{/if}
 <div>

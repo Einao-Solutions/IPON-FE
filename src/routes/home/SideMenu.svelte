@@ -281,8 +281,13 @@
     if ($loggedInUser === null) return;
     notificationsLoading = true;
 
-    let showSupportTickets = $loggedInUser.userRoles?.includes(
-      UserRoles.Tech || UserRoles.SuperAdmin,
+    let showSupportTickets = $loggedInUser.userRoles?.some((role) =>
+      [
+        UserRoles.Tech,
+        UserRoles.SuperAdmin,
+        UserRoles.TrademarkSupport,
+        UserRoles.PatentDesignSupport,
+      ].includes(role),
     );
     let showAllOpposition = $loggedInUser.userRoles?.some((role) =>
       [
