@@ -118,93 +118,143 @@
 			reader.readAsArrayBuffer(file);
 		}).then((arrayBuffer) => new Uint8Array(arrayBuffer));
 	}
+
+	function formatStaffName(fullName: string | undefined | null): string {
+		if (!fullName) return '';
+		const parts = fullName.trim().split(/\s+/);
+		if (parts.length === 1) return parts[0];
+		const first = parts[0];
+		const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+		return `${first} ${lastInitial}.`;
+	}
 </script>
 
 <Sheet.Root bind:open>
-	<Sheet.Content class="overflow-y-auto">
-		<div class="grid gap-4 sm:grid-cols-3 grid-cols-2 border rounded-md m-1 p-1">
-			<div>
-				<Label for="creator">Created by</Label>
-				<div id="creator" class="border rounded-md flex">
-					<p class="text-sm">{data.creatorName}</p>
+	<Sheet.Content class="overflow-y-auto w-full sm:max-w-xl p-0 flex flex-col bg-slate-50">
+		<!-- Header -->
+		<header class="px-5 pt-5 pb-4 border-b bg-white sticky top-0 z-10">
+			<div class="flex items-start justify-between gap-3">
+				<div class="min-w-0">
+					<p class="text-xs uppercase tracking-wide text-muted-foreground">Ticket</p>
+					<h2 class="text-lg font-semibold leading-snug line-clamp-2 mt-0.5">{data.title}</h2>
 				</div>
-			</div>
-			<div>
-				<Label for="status">Status</Label>
 				<TicketTag state={data.status} />
 			</div>
-			<div>
-				<Label for="creationdate">Date Created</Label>
-				<div id="creationdate" class="border rounded-md flex">
-					<p class="text-sm">{mapDateToString(data.created)}</p>
+
+			<dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+				<div class="flex flex-col">
+					<dt class="text-xs text-muted-foreground">Created by</dt>
+					<dd class="font-medium truncate">{data.creatorName}</dd>
 				</div>
-			</div>
-		</div>
-		<div>
-			<Label for="title">Title</Label>
-			<div id="title">
-				<p class="p-2 border rounded-md">{data.title}</p>
-			</div>
-		</div>
-		{#if data.affectedFiles}
-			<Label>Affected Files</Label>
-			<div class="grid grid-cols-2 text-sm">
-				{#each data.affectedFiles as file}
-					<a class="p-1 m-1 border rounded-md" href="/dataview?id={file.id}">{file.fileNumber}</a>
-				{/each}
-			</div>
-		{/if}
-		<!--		<ScrollArea class="p-1 h-1/2 border rounded-md w-full">-->
-		{#each data.correspondences as message}
-			<div
-				class="p-2 m-2 rounded-md {message.senderId === data.creatorId
-					? 'bg-green-300'
-					: 'bg-gray-300'} {message.senderId === data.creatorId ? 'justify-end' : 'justify-start'}"
-			>
-				<div class="content"> {@html message.message}</div>
-				<p class="mt-2 opacity-60 text-sm">{mapDateToString(message.dateAdded)}</p>
-				<div class="flex justify-between">
-					<p class="opacity-50 text-sm">{message.senderName}</p>
-					{#if message.attachment}
-						<a target="_blank" href={message.attachment}>
-							<Icon icon="typcn:attachment-outline" width="1.2rem" height="1.2rem" />
-						</a>
-					{/if}
+				<div class="flex flex-col">
+					<dt class="text-xs text-muted-foreground">Date created</dt>
+					<dd class="font-medium truncate">{mapDateToString(data.created)}</dd>
 				</div>
-			</div>
-		{/each}
-		<Sheet.Footer>
-			{#if data.status !== TicketStates.closed}
-				<div>
-					<Textarea class="min-h-16 mt-2" placeholder="Enter text" bind:value={newText} />
-					<div class="flex gap-2 mt-1 items-center">
-						<p class="opacity-50 text-sm">attachment (optional)</p>
-						<Input
-							id="picture"
-							type="file"
-							class="mt-3"
-							accept=".pdf, .jpg, .png, .jpeg"
-							multiple={false}
-							on:change={(event) => fileChanged(event)}
-						/>
-						<Button on:click={() => addCorrespondence()}>
-							<Icon
-								class={isUploading ? '' : 'hidden'}
-								icon="line-md:loading-loop"
-								width="1.2rem"
-								height="1.2rem"
-							/>
-							<p>Send</p></Button
+			</dl>
+
+			{#if data.affectedFiles && data.affectedFiles.length > 0}
+				<div class="mt-4">
+					<p class="text-xs text-muted-foreground mb-1.5">Affected files</p>
+					<div class="flex flex-wrap gap-1.5">
+						{#each data.affectedFiles as file}
+							<a
+								class="px-2 py-0.5 text-xs rounded-full border bg-slate-100 hover:bg-slate-200 transition-colors"
+								href="/dataview?id={file.id}"
+							>
+								{file.fileNumber}
+							</a>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</header>
+
+		<!-- Conversation -->
+		<div class="flex-1 px-4 py-4 space-y-3">
+			{#each data.correspondences as message}
+				{@const isCreator = message.senderId === data.creatorId}
+				<div class="flex {isCreator ? 'justify-end' : 'justify-start'}">
+					<div class="max-w-[85%] flex flex-col {isCreator ? 'items-end' : 'items-start'}">
+						<div class="flex items-center gap-2 mb-1 px-1 text-xs text-muted-foreground">
+							<span class="font-medium text-foreground/80">
+								{isCreator ? message.senderName : formatStaffName(message.senderName)}
+							</span>
+							<span aria-hidden="true">·</span>
+							<span>{mapDateToString(message.dateAdded)}</span>
+						</div>
+						<div
+							class="px-3 py-2 rounded-2xl shadow-sm text-sm leading-relaxed break-words
+								{isCreator
+									? 'bg-emerald-100 text-emerald-950 rounded-br-sm'
+									: 'bg-white border text-slate-800 rounded-bl-sm'}"
 						>
+							<div class="content prose prose-sm max-w-none">{@html message.message}</div>
+							{#if message.attachment}
+								<a
+									target="_blank"
+									rel="noopener"
+									href={message.attachment}
+									class="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:underline"
+								>
+									<Icon icon="typcn:attachment-outline" width="1rem" height="1rem" />
+									View attachment
+								</a>
+							{/if}
+						</div>
+					</div>
+				</div>
+			{/each}
+		</div>
+
+		<!-- Composer / Footer -->
+		<Sheet.Footer class="border-t bg-white p-4 sticky bottom-0">
+			{#if data.status !== TicketStates.closed}
+				<div class="w-full space-y-2">
+					<Textarea
+						class="min-h-20 resize-none"
+						placeholder="Type your reply…"
+						bind:value={newText}
+					/>
+					<div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between">
+						<div class="flex items-center gap-2 min-w-0">
+							<Label for="picture" class="text-xs text-muted-foreground whitespace-nowrap">
+								Attachment (optional)
+							</Label>
+							<Input
+								id="picture"
+								type="file"
+								class="h-9 text-xs"
+								accept=".pdf, .jpg, .png, .jpeg"
+								multiple={false}
+								on:change={(event) => fileChanged(event)}
+							/>
+						</div>
+						<Button
+							class="sm:w-auto w-full"
+							disabled={isUploading || (!newText && !selectedFile)}
+							on:click={() => addCorrespondence()}
+						>
+							{#if isUploading}
+								<Icon icon="line-md:loading-loop" width="1.1rem" height="1.1rem" class="mr-2" />
+								Sending
+							{:else}
+								<Icon icon="lucide:send" width="1rem" height="1rem" class="mr-2" />
+								Send
+							{/if}
+						</Button>
 					</div>
 				</div>
 			{:else}
-				<div class="flex flex-col w-full">
-					<div class="flex justify-center w-full items-center">
-						<p>Ticket closed, comments can't be added</p>
-					</div>
-					<p class="mt-2">Closed by {data.resolution?.staffName ?? ''}</p>
-					<p class="text-sm font-light">{data.resolution ? mapDateToString(data.resolution.date) : ''}</p>
+				<div class="w-full rounded-md border border-dashed bg-slate-50 p-4 text-center">
+					<p class="text-sm font-medium text-slate-700">
+						Ticket closed — comments can't be added
+					</p>
+					<p class="text-xs text-muted-foreground mt-1">
+						Closed by {data.resolution?.staffName ?? ''}
+						{#if data.resolution}
+							· {mapDateToString(data.resolution.date)}
+						{/if}
+					</p>
 				</div>
 			{/if}
 		</Sheet.Footer>

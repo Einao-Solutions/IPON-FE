@@ -123,9 +123,20 @@
 		}
 	}
 	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
+	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 0: 1, 2: 2 };
 	$: {
 		let tickets = $ticketsSummary
-		const table = createTable(writable<any[]>((tickets as any) ?? []), {
+		const sortedTickets = Array.isArray(tickets)
+			? [...tickets].sort((a: any, b: any) => {
+				const statusA = STATUS_SORT_ORDER[a?.status] ?? 99;
+				const statusB = STATUS_SORT_ORDER[b?.status] ?? 99;
+				if (statusA !== statusB) return statusA - statusB;
+				const dateA = a?.lastInteraction ? new Date(a.lastInteraction).getTime() : 0;
+				const dateB = b?.lastInteraction ? new Date(b.lastInteraction).getTime() : 0;
+				return dateA - dateB;
+			})
+			: tickets;
+		const table = createTable(writable<any[]>((sortedTickets as any) ?? []), {
 			page: addPagination({ initialPageSize: selectedResultList }),
 			filter: addTableFilter({
 				fn: ({ filterValue, value }) => value.toLowerCase().includes(filterValue.toLowerCase())

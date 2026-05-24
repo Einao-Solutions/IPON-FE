@@ -313,7 +313,7 @@ export const trademarkServices: IPService[] = [
     icon: "mdi:file-edit-outline",
     route: "/home/amendment",
     category: "filing",
-    price: "₦3,500",
+    price: "₦4,000",
   },
   {
     id: "restoration",
