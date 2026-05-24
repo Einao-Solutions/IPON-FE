@@ -94,6 +94,10 @@
         header: "Date",
       }),
       table.column({
+        accessor: "fileId",
+        header: "File Number",
+      }),
+      table.column({
         accessor: "title",
         header: "Title",
       }),
@@ -110,7 +114,7 @@
         header: "Payment ID",
       }),
       table.column({
-        accessor: "fileId",
+        accessor: "fileCreatorId",
         header: "View File",
       }),
       table.column({
@@ -177,14 +181,15 @@
       let curr = _data[i];
       data.push({
         "s/n": _data.indexOf(curr) + 1,
-        id: curr.fileNumber,
-        title: curr.fileTitle,
+        id: curr.id,
+        title: curr.title,
         creatorId: curr.creatorId,
         fileCreatorId: curr.fileCreatorId,
-        fileId: curr.fileNumber,
-        date: curr.oppositionDate,
+        fileId: curr.fileId,
+        date: curr.date,
         name: curr.name,
         currentStatus: curr.status,
+        paymentId: curr.paymentId,
       });
     }
     dataList = data;
@@ -220,6 +225,9 @@
     if (type === "resolution") {
       description = "Resolution statement regarding -" + selectedTitle + "-";
     }
+    if (type === "withdrawal") {
+      description = "Withdrawal of opposition regarding -" + selectedTitle + "-";
+    }
 
     const response = await fetch(`${baseURL}/api/opposition/generate`, {
       method: "POST",
@@ -247,6 +255,7 @@
   let currentView = 0;
   let selectedTitle: string = "";
   let selectedID: string = "";
+  let selectedCreatorId: string = "";
   let opposition : OppositionHistoryType;
   let oppositionHistory = null;
   async function raiseOppositionView(row = []) {
@@ -262,17 +271,20 @@
       return;
     }
 
-    // const toastId = toast.loading("Fetching Opposition", {
-    //   description: "Please wait...",
-    //   duration: Infinity,
-    // });
-
     try {
       showRaiseOpposition = true;
 
-      const response = await fetch(
-        `${baseURL}/api/opposition/get?id=${oppositionID}`,
-      );
+      const fileNumber = row.find((x) => x.id === "fileId")?.value;
+      let url = `${baseURL}/api/opposition/getOppositionDetail`;
+      
+      // Prefer fileNumber (gets current opposition), fall back to oppositionId if needed
+      if (fileNumber) {
+        url += `?fileNumber=${fileNumber}`;
+      } else {
+        url += `?oppositionId=${oppositionID}`;
+      }
+
+      const response = await fetch(url);
 
       if (!response.ok) {
         throw new Error("Failed to fetch opposition");
@@ -284,20 +296,48 @@
         throw new Error("No data returned");
       }
 
-      opposition = data;
-      currentView = 11;
+      console.log('Opposition API response:', JSON.stringify(data, null, 2));
 
-      //   toast.success("Opposition Loaded", {
-      //     description: "Details retrieved successfully.",
-      //     id: toastId,
-      //     duration: 3000,
-      //   });
+      // Transform API response to match template field names
+      // Backend returns { success, data: [...] } or { opposition: {...} } or direct object
+      const opp = Array.isArray(data.data) ? data.data[0] : (data.opposition ?? data);
+      opposition = {
+        id: opp.id,
+        OppositionDate: opp.oppositionDate ?? opp.dateOpposed ?? opp.date,
+        Status: opp.oppositionStatus ?? opp.status,
+        Name: opp.name ?? opp.opposerName,
+        Email: opp.email ?? opp.opposerEmail,
+        Phone: opp.phone ?? opp.opposerPhone ?? "",
+        Address: opp.address ?? opp.opposerAddress ?? "",
+        SupportingDocs: opp.supportingDocs || [],
+        OppositionText: opp.oppositionText ?? opp.reason ?? "",
+        CounterStatements: (opp.counterStatements || []).map((cs) => ({
+          id: cs.id,
+          filedBy: cs.filedBy,
+          dateFiled: cs.dateFiled ?? cs.submittedDate,
+          statement: cs.statement ?? cs.text ?? "",
+          attachments: cs.attachments || [],
+        })),
+        StatutoryDeclarations: (opp.statutoryDeclarations || []).map((sd) => ({
+          id: sd.id,
+          filedBy: sd.filedBy,
+          dateFiled: sd.dateFiled ?? sd.submittedDate,
+          statement: sd.statement ?? sd.text ?? "",
+          attachments: sd.attachments || [],
+        })),
+        FileNumber: opp.fileNumber,
+        FileName: opp.fileName ?? opp.title,
+        PaymentId: opp.paymentId,
+        decision: opp.decision ?? null,
+        resolutionStatement: opp.resolutionStatement ?? null,
+        resolvedBy: opp.resolvedBy ?? null,
+      };
+      selectedCreatorId = opp.creatorId ?? opp.creatorID ?? "";
+      currentView = 11;
     } catch (err) {
       console.error("Error loading opposition:", err);
-
       showRaiseOpposition = false;
       currentView = 0;
-
       toast.error("Error", {
         description: err.message || "Failed to load opposition.",
       });
@@ -314,6 +354,47 @@
       currentView = 10;
     }
     showRaiseOpposition = true;
+  }
+
+  async function counterStatementSearch(row: []) {
+    currentView = -1;
+    const fileNumber = row.find((x) => x.id === "title")?.value;
+
+    if (!fileNumber) {
+      toast.error("Invalid selection", {
+        description: "Could not determine file number.",
+        duration: 4000,
+      });
+      return;
+    }
+
+    try {
+      isLoading = true;
+      const response = await fetch(
+        `${baseURL}/api/opposition/csSearchFile?fileNumber=${fileNumber}`,
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch counter statement file");
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to fetch file details");
+      }
+
+      // Store the file data for the counter statement form
+      sessionStorage.setItem("counterStatementFile", JSON.stringify(data.data));
+      goto("/opposition?step=counter&fileNumber=" + fileNumber);
+    } catch (err) {
+      console.error("Error fetching counter statement file:", err);
+      toast.error("Error", {
+        description: err.message || "Failed to load counter statement file.",
+      });
+    } finally {
+      isLoading = false;
+    }
   }
   async function viewOppositionHistory(row: []) {
     currentView = -1;
@@ -377,8 +458,17 @@
   function canResolve(row: []) {
     return (
       ($loggedInUser.userRoles.includes(UserRoles.Tech) ||
+        $loggedInUser.userRoles.includes(UserRoles.SuperAdmin) ||
         $loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
       parseInt(row.find((x) => x.id === "currentStatus").value) === 17
+    );
+  }
+  function isAwaitingOfficeProcess(row: []) {
+    return (
+      ($loggedInUser.userRoles.includes(UserRoles.Tech) ||
+        $loggedInUser.userRoles.includes(UserRoles.SuperAdmin) ||
+        $loggedInUser.userRoles.includes(UserRoles.TrademarkOpposition)) &&
+      parseInt(row.find((x) => x.id === "currentStatus").value) === 36
     );
   }
   function canUploadResponse(row: []) {
@@ -521,7 +611,7 @@
             <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
               <Icon
                 icon="lucide:paperclip"
-                class="w-4 h-4 text-green-800 dark:text-green-400"
+                class="w-4 h-4 text-green-600 dark:text-green-400"
               />
             </div>
             <Label
@@ -576,11 +666,107 @@
           <div>
             <p class="text-sm text-gray-500">Opposition Date</p>
             <p class="text-lg font-semibold">
-              {mapDateToString(opposition.OppositionDate)}
+              {opposition.OppositionDate ? mapDateToString(opposition.OppositionDate) : '—'}
             </p>
           </div>
-          <AppStatusTag value={opposition.Status} />
+          <div>
+            {#if opposition.Status === 2}
+              <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+                Awaiting Payment
+              </span>
+            {:else if opposition.Status === 30 || opposition.Status === 29}
+              <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+                Awaiting Counter Statement
+              </span>
+            {:else if opposition.Status === 31}
+              <span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
+                Awaiting Counter Statement
+              </span>
+            {:else if opposition.Status === 33}
+              <span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">
+                Awaiting Statutory Declaration
+              </span>
+            {:else if opposition.Status === 36}
+              <span class="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">
+                Awaiting Office Process
+              </span>
+            {:else if opposition.Status === 37}
+              <span class="inline-block px-3 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
+                Abandoned
+              </span>
+            {:else if opposition.Status === 17}
+              <span class="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
+                Awaiting Resolution
+              </span>
+            {:else if opposition.Status === 19}
+              <span class="inline-block px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
+                Resolved
+              </span>
+            {:else}
+              <span class="inline-block px-3 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
+                <AppStatusTag value={opposition.Status} />
+              </span>
+            {/if}
+          </div>
         </div>
+
+        <!-- Deadline Countdown -->
+        {#if opposition.Status === 30 || opposition.Status === 29 || opposition.Status === 31}
+          {@const deadlineDate = opposition.applicantNotifiedDate ? new Date(new Date(opposition.applicantNotifiedDate).getTime() + 30 * 24 * 60 * 60 * 1000) : null}
+          {@const daysRemaining = deadlineDate ? Math.ceil((deadlineDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) : null}
+          {#if daysRemaining !== null}
+            <div class="p-3 rounded-lg border {daysRemaining <= 5 ? 'bg-red-50 border-red-200' : daysRemaining <= 15 ? 'bg-amber-50 border-amber-200' : 'bg-blue-50 border-blue-200'}">
+              <p class="text-sm font-medium {daysRemaining <= 5 ? 'text-red-700' : daysRemaining <= 15 ? 'text-amber-700' : 'text-blue-700'} flex items-center gap-2">
+                <Icon icon="lucide:clock" class="w-4 h-4" />
+                {#if daysRemaining > 0}
+                  {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining to file Counter Statement
+                {:else}
+                  Counter Statement deadline has expired
+                {/if}
+              </p>
+            </div>
+          {/if}
+        {:else if opposition.Status === 33}
+          {@const sdDeadlineDate = opposition.counterStatementDate ? new Date(new Date(opposition.counterStatementDate).getTime() + 30 * 24 * 60 * 60 * 1000) : null}
+          {@const sdDaysRemaining = sdDeadlineDate ? Math.ceil((sdDeadlineDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000)) : null}
+          {#if sdDaysRemaining !== null}
+            <div class="p-3 rounded-lg border {sdDaysRemaining <= 5 ? 'bg-red-50 border-red-200' : sdDaysRemaining <= 15 ? 'bg-amber-50 border-amber-200' : 'bg-orange-50 border-orange-200'}">
+              <p class="text-sm font-medium {sdDaysRemaining <= 5 ? 'text-red-700' : sdDaysRemaining <= 15 ? 'text-amber-700' : 'text-orange-700'} flex items-center gap-2">
+                <Icon icon="lucide:clock" class="w-4 h-4" />
+                {#if sdDaysRemaining > 0}
+                  {sdDaysRemaining} day{sdDaysRemaining !== 1 ? 's' : ''} remaining to file Statutory Declaration
+                {:else}
+                  Statutory Declaration deadline has expired
+                {/if}
+              </p>
+            </div>
+          {/if}
+        {/if}
+
+        <!-- File Info -->
+        {#if opposition.FileNumber || opposition.FileName}
+          <div>
+            <h3 class="text-md font-semibold mb-3 text-gray-700">File Information</h3>
+            <div class="border rounded-lg overflow-hidden">
+              <table class="w-full text-sm">
+                <tbody>
+                  {#if opposition.FileNumber}
+                    <tr class="border-b">
+                      <td class="bg-gray-50 font-medium p-3 w-1/3">File Number</td>
+                      <td class="p-3">{opposition.FileNumber}</td>
+                    </tr>
+                  {/if}
+                  {#if opposition.FileName}
+                    <tr>
+                      <td class="bg-gray-50 font-medium p-3 w-1/3">File Title</td>
+                      <td class="p-3">{opposition.FileName}</td>
+                    </tr>
+                  {/if}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {/if}
 
         <!-- Opposer Info Table -->
         <div>
@@ -612,46 +798,254 @@
           </div>
         </div>
 
-        <!-- Attachments Table -->
-        <div>
-          <h3 class="text-md font-semibold mb-3 text-gray-700">Attachments</h3>
-
-          <div class="border rounded-lg overflow-hidden">
-            <table class="w-full text-sm">
-              <thead class="bg-gray-50 text-left">
-                <tr>
-                  <th class="p-3 font-medium">Document</th>
-                  <th class="p-3 font-medium text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#if opposition.SupportingDocs.length > 0}
-                  {#each opposition.SupportingDocs as doc}
-                    <tr class="border-t hover:bg-gray-50">
-                      <td class="p-3">
-                        <div class="flex items-center gap-2">
-                          <Icon
-                            icon="lucide:file-text"
-                            class="w-4 h-4 text-red-500"
-                          />
-                          Opposition Document
-                        </div>
-                      </td>
-                      <td class="p-3 text-right">
-                        <a
-                          href={doc}
-                          target="_blank"
-                          class="text-blue-600 hover:underline font-medium"
-                        >
-                          View
-                        </a>
-                      </td>
-                    </tr>
-                  {/each}
-                {/if}
-              </tbody>
-            </table>
+        <!-- Opposition Reason -->
+        {#if opposition.OppositionText}
+          <div>
+            <h3 class="text-md font-semibold mb-3 text-gray-700">Grounds for Opposition</h3>
+            <div class="border rounded-lg p-4 bg-gray-50 text-sm text-gray-800 whitespace-pre-wrap">
+              {opposition.OppositionText}
+            </div>
           </div>
+        {/if}
+
+        <!-- Opposer Supporting Documents -->
+        {#if opposition.SupportingDocs && opposition.SupportingDocs.length > 0}
+          <div>
+            <h3 class="text-md font-semibold mb-3 text-blue-700 flex items-center gap-2">
+              <Icon icon="lucide:file-check" class="w-4 h-4" />
+              Opposer's Supporting Documents
+            </h3>
+            <div class="space-y-2">
+              {#each opposition.SupportingDocs as doc, idx}
+                <a
+                  href={doc}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <Icon icon="mdi:file-document" class="w-5 h-5 text-blue-600" />
+                    <span class="text-sm font-medium text-blue-900">Document {idx + 1}</span>
+                  </div>
+                  <div class="flex items-center gap-1 text-blue-600">
+                    <span class="text-xs">View / Download</span>
+                    <Icon icon="mdi:download" class="w-4 h-4" />
+                  </div>
+                </a>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Counter Statement Section -->
+        {#if opposition.CounterStatements && opposition.CounterStatements.length > 0}
+          <div>
+            <h3 class="text-md font-semibold mb-3 text-green-700 flex items-center gap-2">
+              <Icon icon="lucide:reply" class="w-4 h-4" />
+              Counter Statement
+            </h3>
+            <div class="border border-green-200 rounded-lg overflow-hidden bg-green-50/30">
+              {#each opposition.CounterStatements as cs, i}
+                <div class="p-4 {i > 0 ? 'border-t border-green-200' : ''}">
+                  {#if cs.filedBy}
+                    <p class="text-sm"><span class="font-medium text-gray-600">Filed By:</span> {cs.filedBy}</p>
+                  {/if}
+                  {#if cs.dateFiled}
+                    <p class="text-sm mt-1"><span class="font-medium text-gray-600">Date Filed:</span> {mapDateToString(cs.dateFiled)}</p>
+                  {/if}
+                  {#if cs.statement}
+                    <p class="text-sm mt-2 text-gray-800 whitespace-pre-wrap">{cs.statement}</p>
+                  {/if}
+                  {#if cs.attachments && cs.attachments.length > 0}
+                    <div class="mt-3 space-y-1.5">
+                      <p class="text-xs font-medium text-green-700">Attached Documents:</p>
+                      {#each cs.attachments as attachment, aidx}
+                        <a
+                          href={attachment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="flex items-center justify-between p-2 bg-green-50 border border-green-200 rounded-md hover:bg-green-100 transition-colors"
+                        >
+                          <div class="flex items-center gap-2">
+                            <Icon icon="mdi:file-document" class="w-4 h-4 text-green-600" />
+                            <span class="text-xs font-medium text-green-900">Document {aidx + 1}</span>
+                          </div>
+                          <div class="flex items-center gap-1 text-green-600">
+                            <span class="text-xs">View / Download</span>
+                            <Icon icon="mdi:download" class="w-3.5 h-3.5" />
+                          </div>
+                        </a>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Statutory Declarations Section -->
+        {#if opposition.StatutoryDeclarations && opposition.StatutoryDeclarations.length > 0}
+          <div>
+            <h3 class="text-md font-semibold mb-3 text-purple-700 flex items-center gap-2">
+              <Icon icon="lucide:file-text" class="w-4 h-4" />
+              Statutory Declarations
+            </h3>
+            <div class="border border-purple-200 rounded-lg overflow-hidden bg-purple-50/30">
+              {#each opposition.StatutoryDeclarations as sd, i}
+                <div class="p-4 {i > 0 ? 'border-t border-purple-200' : ''}">
+                  <div class="flex items-center gap-2 mb-2">
+                    {#if sd.role === 'applicant'}
+                      <span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Applicant</span>
+                    {:else if sd.role === 'opposer'}
+                      <span class="inline-block px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">Opposer</span>
+                    {/if}
+                  </div>
+                  {#if sd.filedBy}
+                    <p class="text-sm"><span class="font-medium text-gray-600">Filed By:</span> {sd.filedBy}</p>
+                  {/if}
+                  {#if sd.dateFiled}
+                    <p class="text-sm mt-1"><span class="font-medium text-gray-600">Date Filed:</span> {mapDateToString(sd.dateFiled)}</p>
+                  {/if}
+                  {#if sd.statement}
+                    <p class="text-sm mt-2 text-gray-800 whitespace-pre-wrap">{sd.statement}</p>
+                  {/if}
+                  {#if sd.attachments && sd.attachments.length > 0}
+                    <div class="mt-3 space-y-1.5">
+                      <p class="text-xs font-medium text-purple-700">Attached Documents:</p>
+                      {#each sd.attachments as attachment, aidx}
+                        <a
+                          href={attachment}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="flex items-center justify-between p-2 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100 transition-colors"
+                        >
+                          <div class="flex items-center gap-2">
+                            <Icon icon="mdi:file-document" class="w-4 h-4 text-purple-600" />
+                            <span class="text-xs font-medium text-purple-900">Document {aidx + 1}</span>
+                          </div>
+                          <div class="flex items-center gap-1 text-purple-600">
+                            <span class="text-xs">View / Download</span>
+                            <Icon icon="mdi:download" class="w-3.5 h-3.5" />
+                          </div>
+                        </a>
+                      {/each}
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Resolution Info (shown if already resolved) -->
+        {#if opposition.Status === 19 && opposition.decision}
+          <div class="border rounded-lg overflow-hidden {opposition.decision === 'upheld' ? 'border-blue-200 bg-blue-50/30' : opposition.decision === 'abandoned' ? 'border-red-200 bg-red-50/30' : 'border-orange-200 bg-orange-50/30'}">
+            <div class="p-4">
+              <h3 class="text-md font-semibold mb-2 {opposition.decision === 'upheld' ? 'text-blue-700' : opposition.decision === 'abandoned' ? 'text-red-700' : 'text-orange-700'} flex items-center gap-2">
+                <Icon icon={opposition.decision === 'upheld' ? 'lucide:check-circle' : 'lucide:x-circle'} class="w-4 h-4" />
+                Opposition {opposition.decision === 'upheld' ? 'Upheld' : opposition.decision === 'abandoned' ? 'Abandoned' : 'Declined'}
+              </h3>
+              {#if opposition.decision === 'abandoned'}
+                <p class="text-sm text-red-700">This application was abandoned because no counter statement was filed within 30 days.</p>
+              {/if}
+              {#if opposition.resolvedBy}
+                <p class="text-sm"><span class="font-medium text-gray-600">Resolved By:</span> {opposition.resolvedBy}</p>
+              {/if}
+              {#if opposition.resolutionStatement}
+                <p class="text-sm mt-2 text-gray-800 whitespace-pre-wrap">{opposition.resolutionStatement}</p>
+              {/if}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Abandoned notice for status 37 -->
+        {#if opposition.Status === 37}
+          <div class="border rounded-lg overflow-hidden border-red-200 bg-red-50/30">
+            <div class="p-4">
+              <h3 class="text-md font-semibold mb-2 text-red-700 flex items-center gap-2">
+                <Icon icon="lucide:alert-triangle" class="w-4 h-4" />
+                Application Abandoned
+              </h3>
+              <p class="text-sm text-red-700">This application was abandoned because no counter statement was filed within 30 days.</p>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 pt-6 border-t">
+          <!-- Counter Statement button - visible when awaiting counter -->
+          {#if opposition.Status === 31}
+            <button
+              on:click={async () => {
+                const fileNumber = opposition.FileNumber ?? opposition.fileNumber ?? "";
+                
+                if (!fileNumber || fileNumber === "undefined") {
+                  toast.error("File number not available", {
+                    description: "Could not retrieve the file number for this opposition.",
+                  });
+                  return;
+                }
+                
+                sessionStorage.setItem('counterStatementOppositionId', opposition.id);
+                sessionStorage.setItem('counterStatementFileNumber', fileNumber);
+                
+                goto(`/opposition/?step=counterstatement&fileNumber=${encodeURIComponent(fileNumber)}`);
+              }}
+              class="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-md font-medium transition-colors"
+            >
+              <Icon icon="lucide:reply" class="w-4 h-4" />
+              Counter Statement
+            </button>
+          {/if}
+
+          <!-- Uphold / Decline buttons - visible to TrademarkOpposition/Tech/SuperAdmin after counter statement filed -->
+          {#if (opposition.Status === 33 || opposition.Status === 36 || opposition.Status === 17) && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkOpposition) || $loggedInUser?.userRoles?.includes(UserRoles.Tech) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+            <button
+              on:click={() => {
+                selectedID = opposition.id ?? "";
+                selectedTitle = opposition.FileName ?? opposition.FileNumber ?? "";
+                resolvedText = "";
+                currentView = 20;
+              }}
+              class="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-md font-medium transition-colors"
+            >
+              <Icon icon="lucide:x-circle" class="w-4 h-4" />
+              Decline Opposition
+            </button>
+            <button
+              on:click={() => {
+                selectedID = opposition.id ?? "";
+                selectedTitle = opposition.FileName ?? opposition.FileNumber ?? "";
+                resolvedText = "";
+                currentView = 21;
+              }}
+              class="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-md font-medium transition-colors"
+            >
+              <Icon icon="lucide:check-circle" class="w-4 h-4" />
+              Uphold Opposition
+            </button>
+          {/if}
+
+          <!-- Withdraw Opposition - visible to the opposer when status is Statutory Declaration -->
+          {#if opposition.Status === 33 && $loggedInUser?.id === selectedCreatorId}
+            <button
+              on:click={() => {
+                selectedID = opposition.id ?? "";
+                selectedTitle = opposition.FileName ?? opposition.FileNumber ?? "";
+                name = opposition.Name ?? "";
+                email = opposition.Email ?? "";
+                number = opposition.Phone ?? "";
+                address = opposition.Address ?? "";
+                removeAttachment();
+                currentView = 22;
+              }}
+              class="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-md font-medium transition-colors"
+            >
+              <Icon icon="lucide:undo-2" class="w-4 h-4" />
+              Withdraw Opposition
+            </button>
+          {/if}
         </div>
       </div>
     {:else if currentView === 12}
@@ -721,7 +1115,7 @@
           <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
             <Icon
               icon="lucide:upload"
-              class="w-4 h-4 text-green-800 dark:text-green-400"
+              class="w-4 h-4 text-green-600 dark:text-green-400"
             />
           </div>
           Resolution Attachment
@@ -735,7 +1129,7 @@
             <div class="bg-green-100 dark:bg-green-900/30 p-1.5 rounded-lg">
               <Icon
                 icon="lucide:paperclip"
-                class="w-4 h-4 text-green-800 dark:text-green-400"
+                class="w-4 h-4 text-green-600 dark:text-green-400"
               />
             </div>
             <Label
@@ -837,6 +1231,12 @@
                 `&name=${name}&address=${address}&number=${number}&email=${email}` +
                 `&fileUrl=${fileURL}&rrr=${rrr}&cost=${amount}`;
             }
+            if (paymentType === "withdrawal") {
+              go_url =
+                `/payment?type=oppositionWithdrawal&oppositionId=${selectedID}&title=Withdrawal of opposition regarding -${selectedTitle}-` +
+                `&name=${name}&address=${address}&number=${number}&email=${email}` +
+                `&fileUrl=${fileURL}&rrr=${rrr}&cost=${amount}`;
+            }
             goto(go_url);
           }}>Proceed to Payment</Button
         >
@@ -885,6 +1285,197 @@
           {/if}
         </Button>
       </div>
+    {:else if currentView === 20}
+      <!-- Decline Opposition -->
+      <Dialog.Header>
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-red-100 dark:bg-red-900/30 p-1.5 rounded-lg">
+            <Icon icon="lucide:x-circle" class="w-4 h-4 text-red-600 dark:text-red-400" />
+          </div>
+          Decline Opposition
+        </Dialog.Title>
+      </Dialog.Header>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-gray-600">
+          This will decline the opposition and the trademark application will proceed.
+        </p>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm space-y-3">
+          <Label class="text-sm font-medium text-slate-600 dark:text-slate-300">Reason for Declining</Label>
+          <Textarea placeholder="Enter the reason for declining this opposition..." bind:value={resolvedText} class="min-h-28" />
+        </div>
+        <div class="flex gap-3">
+          <Button variant="outline" on:click={() => { currentView = 11; }} class="flex-1">Back</Button>
+          <Button
+            on:click={async () => {
+              isResolving = true;
+              const res = await fetch(`${baseURL}/api/opposition/resolve`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  applicationId: selectedID,
+                  statement: resolvedText,
+                  decision: 'declined',
+                  newStatus: 19,
+                  currentStatus: opposition.Status,
+                  reason: resolvedText || 'Opposition declined',
+                  userName: $loggedInUser?.name ?? '',
+                  userId: $loggedInUser?.id ?? '',
+                }),
+              });
+              if (res.ok) {
+                toast.success('Opposition declined successfully', { position: 'top-right' });
+                showRaiseOpposition = false;
+                currentView = 0;
+                loadPage($selectedResultList, $selectedResultList * currentDataPage);
+              } else {
+                const err = await res.json().catch(() => ({}));
+                toast.error(err.message || 'Failed to decline opposition');
+              }
+              isResolving = false;
+            }}
+            disabled={isResolving}
+            class="flex-1 bg-red-600 hover:bg-red-700"
+          >
+            {#if isResolving}
+              <div class="flex items-center justify-center gap-2">
+                <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+                Processing...
+              </div>
+            {:else}
+              Confirm Decline
+            {/if}
+          </Button>
+        </div>
+      </div>
+    {:else if currentView === 21}
+      <!-- Uphold Opposition -->
+      <Dialog.Header>
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-blue-100 dark:bg-blue-900/30 p-1.5 rounded-lg">
+            <Icon icon="lucide:check-circle" class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          Uphold Opposition
+        </Dialog.Title>
+      </Dialog.Header>
+      <div class="p-6 space-y-4">
+        <p class="text-sm text-gray-600">
+          This will uphold the opposition. The trademark application may be refused or require further action.
+        </p>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm space-y-3">
+          <Label class="text-sm font-medium text-slate-600 dark:text-slate-300">Reason for Upholding</Label>
+          <Textarea placeholder="Enter the reason for upholding this opposition..." bind:value={resolvedText} class="min-h-28" />
+        </div>
+        <div class="flex gap-3">
+          <Button variant="outline" on:click={() => { currentView = 11; }} class="flex-1">Back</Button>
+          <Button
+            on:click={async () => {
+              isResolving = true;
+              const res = await fetch(`${baseURL}/api/opposition/resolve`, {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                  applicationId: selectedID,
+                  statement: resolvedText,
+                  decision: 'upheld',
+                  newStatus: 19,
+                  currentStatus: opposition.Status,
+                  reason: resolvedText || 'Opposition upheld',
+                  userName: $loggedInUser?.name ?? '',
+                  userId: $loggedInUser?.id ?? '',
+                }),
+              });
+              if (res.ok) {
+                toast.success('Opposition upheld successfully', { position: 'top-right' });
+                showRaiseOpposition = false;
+                currentView = 0;
+                loadPage($selectedResultList, $selectedResultList * currentDataPage);
+              } else {
+                const err = await res.json().catch(() => ({}));
+                toast.error(err.message || 'Failed to uphold opposition');
+              }
+              isResolving = false;
+            }}
+            disabled={isResolving}
+            class="flex-1 bg-blue-600 hover:bg-blue-700"
+          >
+            {#if isResolving}
+              <div class="flex items-center justify-center gap-2">
+                <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+                Processing...
+              </div>
+            {:else}
+              Confirm Uphold
+            {/if}
+          </Button>
+        </div>
+      </div>
+    {:else if currentView === 22}
+      <!-- Withdraw Opposition -->
+      <Dialog.Header>
+        <Dialog.Title class="flex items-center gap-2">
+          <div class="bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-lg">
+            <Icon icon="lucide:undo-2" class="w-4 h-4 text-orange-600 dark:text-orange-400" />
+          </div>
+          Withdraw Opposition
+        </Dialog.Title>
+      </Dialog.Header>
+      <div class="p-6 space-y-5">
+        <p class="text-sm text-gray-600">
+          You are about to withdraw your opposition against <span class="font-semibold">{selectedTitle}</span>. Please provide a reason and supporting document.
+        </p>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="space-y-1.5">
+              <Label for="w_name" class="text-sm font-medium text-slate-600 dark:text-slate-300">Full Name</Label>
+              <Input id="w_name" placeholder="Enter your full name" bind:value={name} />
+            </div>
+            <div class="space-y-1.5">
+              <Label for="w_email" class="text-sm font-medium text-slate-600 dark:text-slate-300">Email Address</Label>
+              <Input id="w_email" placeholder="Enter your email" bind:value={email} />
+            </div>
+            <div class="space-y-1.5">
+              <Label for="w_number" class="text-sm font-medium text-slate-600 dark:text-slate-300">Phone Number</Label>
+              <Input id="w_number" placeholder="Enter phone number" bind:value={number} />
+            </div>
+            <div class="space-y-1.5 md:col-span-2">
+              <Label for="w_address" class="text-sm font-medium text-slate-600 dark:text-slate-300">Address</Label>
+              <Input id="w_address" placeholder="Enter your address" bind:value={address} />
+            </div>
+          </div>
+          <div class="space-y-1.5">
+            <Label class="text-sm font-medium text-slate-600 dark:text-slate-300">Reason for Withdrawal</Label>
+            <Textarea placeholder="State your reason for withdrawing this opposition..." bind:value={resolvedText} class="min-h-28" />
+          </div>
+        </div>
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-sm">
+          <div class="flex items-center space-x-3 mb-3">
+            <div class="bg-orange-100 dark:bg-orange-900/30 p-1.5 rounded-lg">
+              <Icon icon="lucide:paperclip" class="w-4 h-4 text-orange-600 dark:text-orange-400" />
+            </div>
+            <Label for="attachmentWithdrawal" class="text-sm font-medium text-slate-600 dark:text-slate-300">Supporting Document (PDF only)</Label>
+          </div>
+          <Input id="attachmentWithdrawal" type="file" accept=".pdf" on:change={(event) => fileChanged(event)} />
+        </div>
+      </div>
+      <Dialog.Footer class="gap-2 pt-2">
+        <Button variant="outline" on:click={() => { currentView = 11; }}>Back</Button>
+        <Button
+          class="bg-orange-600 hover:bg-orange-700"
+          on:click={async () => {
+            if (!resolvedText.trim()) {
+              toast.error("Please enter a reason for withdrawal.");
+              return;
+            }
+            if (!requiredFile) {
+              toast.error("Please attach a supporting document.");
+              return;
+            }
+            await generateRRR("withdrawal");
+          }}
+        >
+          Proceed to Payment
+        </Button>
+      </Dialog.Footer>
     {/if}
   </Dialog.Content>
 </Dialog.Root>
@@ -1032,6 +1623,13 @@
                                 Mark as resolved
                               </DropdownMenu.Item>
                             {/if}
+                            {#if isAwaitingOfficeProcess(row.cells)}
+                              <DropdownMenu.Item
+                                on:click={() => raiseOppositionView(row.cells)}
+                              >
+                                View Counter Statement
+                              </DropdownMenu.Item>
+                            {/if}
                             <DropdownMenu.Item
                               on:click={() => viewOppositionHistory(row.cells)}
                             >
@@ -1039,15 +1637,34 @@
                             </DropdownMenu.Item>
                           </DropdownMenu.Content>
                         </DropdownMenu.Root>
-                      {:else if cell.id === "fileId"}
+                      {:else if cell.id === "fileCreatorId"}
                         <Button
-                          on:click={() => goto(`/dataview?id=${cell.render()}`)}
+                          on:click={async () => {
+                            const fileNumber = row.cells.find((c) => c.id === "fileId")?.render();
+                            try {
+                              const res = await fetch(`${baseURL}/api/files/GetFileIdByFileNumber?fileNumber=${encodeURIComponent(fileNumber)}`);
+                              if (res.ok) {
+                                const data = await res.json();
+                                if (data?.id) {
+                                  goto(`/dataview?id=${data.id}`);
+                                  return;
+                                }
+                              }
+                              toast.error("Could not find file", { description: fileNumber, position: "top-right" });
+                            } catch (e) {
+                              toast.error("Error looking up file", { position: "top-right" });
+                            }
+                          }}
                         >
                           View trademark
                         </Button>
                       {:else if cell.id === "date"}
                         <div class="w-24">
                           <Render of={mapDateToString(cell.render())} />
+                        </div>
+                      {:else if cell.id === "fileId"}
+                        <div class="w-32 whitespace-nowrap">
+                          <Render of={cell.render()} />
                         </div>
                       {:else if cell.id === "currentStatus"}
                         <div class="w-24">

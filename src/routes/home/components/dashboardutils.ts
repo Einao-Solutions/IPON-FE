@@ -1,5 +1,4 @@
 import type { FileStatsType } from "$lib/helpers";
-import { mapStatusToString } from "$lib/designutils";
 
 export enum FileStatsData {
   totalPatents,
@@ -37,38 +36,21 @@ export function DataMapper(
   }
   switch (datatype) {
     case FileStatsData.totalPatents:
-      return (
-        data.find((x) => (x.type as unknown) === "totalPatents")?.count ?? 0
-      );
+      return data.find((x) => x.type === "totalPatents")?.count ?? 0;
     case FileStatsData.totalDesigns:
-      return (
-        data.find((x) => (x.type as unknown) === "totalDesigns")?.count ?? 0
-      );
+      return data.find((x) => x.type === "totalDesigns")?.count ?? 0;
     case FileStatsData.renewalDue:
-      return (
-        data.find((x) => (x.type as unknown) === "renewalDue")?.count ?? 0
-      );
+      return data.find((x) => x.type === "renewalDue")?.count ?? 0;
     case FileStatsData.totalConventional:
-      return (
-        data.find((x) => (x.type as unknown) === "totalConventional")
-          ?.count ?? 0
-      );
+      return data.find((x) => x.type === "totalConventional")?.count ?? 0;
     case FileStatsData.totalTextTile:
-      return (
-        data.find((x) => (x.type as unknown) === "totalTextile")?.count ?? 0
-      );
+      return data.find((x) => x.type === "totalTextile")?.count ?? 0;
     case FileStatsData.totalNonTextile:
-      return (
-        data.find((x) => (x.type as unknown) === "totalNonTextile")?.count ??
-        0
-      );
+      return data.find((x) => x.type === "totalNonTextile")?.count ?? 0;
     case FileStatsData.totalNonConventional:
-      return (
-        data.find((x) => (x.type as unknown) === "totalNonConventional")
-          ?.count ?? 0
-      );
+      return data.find((x) => x.type === "totalNonConventional")?.count ?? 0;
     case FileStatsData.totalPct:
-      return data.find((x) => (x.type as unknown) === "totalPct")?.count ?? 0;
+      return data.find((x) => x.type === "totalPct")?.count ?? 0;
     case FileStatsData.newPatent:
       return (
         data.find(
@@ -483,7 +465,7 @@ export function mapTypeToString(type: number) {
     case 15:
       return "Withdrawal Request";
     case 16:
-      return "New Opposition";
+      return "Opposed";
     case 17:
       return "Amendment";
     case 18:
@@ -498,6 +480,97 @@ export function mapTypeToString(type: number) {
       return "Trademark Reclassification";
     case 23:
       return "Restoration";
+    case 24:
+      return "Counter Statement";
+    case 25:
+      return "Statutory Declaration";
+    default:
+      return "";
+  }
+}
+
+export function mapStatusToString(status: number) {
+  switch (status) {
+    case 0:
+      return "Active";
+    case 1:
+      return "Inactive";
+    case 2:
+      return "Awaiting Payment";
+    case 3:
+      return "Awaiting Search";
+    case 4:
+      return "Awaiting Examiner";
+    case 5:
+      return "Rejected By Examiner";
+    case 6:
+      return "Re_conduct";
+    case 7:
+      return "Formality Fail";
+    case 8:
+      return "Kiv Search";
+    case 9:
+      return "Kiv Examiner";
+    case 10:
+      return "Approved";
+    case 11:
+      return "Rejected";
+    case 12:
+      return "None";
+    case 13:
+      return "Auto-Approved";
+    case 14:
+      return "Publication";
+    case 15:
+      return "Opposition";
+    case 16:
+      return "Awaiting Counter Statement";
+    case 17:
+      return "Awaiting Staff";
+    case 18:
+      return "Awaiting Resolution";
+    case 19:
+      return "Resolved";
+    case 20:
+      return "Awaiting Certification";
+    case 21:
+      return "Awaiting Confirmation";
+    case 22:
+      return "Awaiting Save";
+    case 23:
+      return "Awaiting Certificate Confirmation";
+    case 24:
+      return "Withdrawn";
+    case 25:
+      return "Awaiting Certificate Payment";
+    case 26:
+      return "Awaiting Recordal Process";
+    case 27:
+      return "Appeal Requested";
+    case 28:
+      return "Awaiting Status Update";
+    case 29:
+      return "Request Withdrawal";
+    case 30:
+      return "Opposed";
+    case 31:
+      return "Awaiting Counter Statement";
+    case 32:
+      return "Awaiting Approval";
+    case 33:
+      return "Awaiting Statutory Declaration";
+    case 34:
+      return "Awaiting Renewal Confirmation";
+    case 35:
+      return "Pending Renewal";
+    case 36:
+      return "Awaiting Office Process";
+    case 37:
+      return "Abandoned";
+    case 38:
+      return "Withdrawal Requested";
+    case 39:
+      return "Withdrawal Approved";
     default:
       return "";
   }
@@ -557,6 +630,55 @@ export function mapPatentTypeToString(data: number) {
       return "Non Conventional";
     case 2:
       return "PCT";
+    default:
+      return "";
+  }
+}
+
+export function mapStatusToColor(status: string) {
+  switch (status) {
+    case "Active":
+      return "green";
+    case "Inactive":
+      return "red";
+    case "Awaiting Payment":
+      return "purple";
+    case "Awaiting Certificate Payment":
+      return "purple";
+    case "Awaiting Search":
+      return "yellow";
+    case "Awaiting Examiner":
+      return "yellow";
+    case "Rejected By Examiner":
+      return "red";
+    case "RejectedBySearch":
+      return "red";
+    case "Re_conduct":
+      return "red";
+    case "Formality Fail":
+      return "red";
+    case "Kiv Search":
+      return "gray";
+    case "Kiv Examiner":
+      return "gray";
+    case "Approved":
+      return "green";
+    case "Rejected":
+      return "red";
+    case "Awaiting Recordal Process":
+      return "blue";
+    case "Appeal Requested":
+      return "yellow";
+    case "None":
+      return "";
+    case "Auto-Approved":
+      return "green";
+    case "Awaiting Status Update":
+      return "yellow";
+    case "Request Withdrawal":
+      return "orange";
+    case "Opposed":
+      return "yellow";
     default:
       return "";
   }

@@ -27,6 +27,8 @@ export interface PaymentContext {
     setApplicationId: (v: string | null) => void;
     setFileTitle: (v: string | null) => void;
     setResponseUrl: (v: string | null) => void;
+    isLateRenewal: (v: boolean) =>  void;
+    setPenaltyFee: (v: string) => void;
     setRenewalMeta: (meta: {
       missedYearsCount?: number;
       lateYearsCount?: number;
@@ -95,9 +97,11 @@ export const paymentHandlers: Record<
   designmortgage,
   designctc,
   designamendment,
-  amendment,
   patentRenewal,
-  restoration
+  restoration,
+  counterstatement,
+  statutorydeclaration,
+  oppositionwithdrawal
 };
 
 /* ======================================================
@@ -240,7 +244,7 @@ async function opposition(ctx: PaymentContext): Promise<void> {
   ctx.state.setTitle(`Opposition of ${info.fileTitle}`);
   ctx.state.setCost(info.cost);
   ctx.state.setPaymentId(info.paymentId);
-  ctx.state.setFileNumber(info.fileId);
+  ctx.state.setFileNumber(info.fileNumber ?? info.fileId);
   ctx.state.setFileApplicant(opp.name);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/opposition/paid?rrr=${info.paymentId}`,
@@ -312,14 +316,14 @@ async function tradecertificate(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
-  const data = localStorage.getItem("AppData");
+  const data = localStorage.getItem("formData");
   const parsed = data ? JSON.parse(data) : null;
   const fileNumber = localStorage.getItem("fileId");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  ctx.state.setTitle("Payment for Certificate");
-  ctx.state.setFileNumber(parsed?.fileId ?? fileNumber);
+  ctx.state.setTitle("Payment");
+  ctx.state.setFileNumber(parsed?.FileId ?? fileNumber);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(
@@ -391,6 +395,8 @@ async function trademarkRenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(parsed?.fileId ?? null);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
+  ctx.state.isLateRenewal(parsed.isLateRenewal ?? false);
+  ctx.state.setPenaltyFee(parsed.lateRenewalCost ?? "")
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
@@ -499,7 +505,7 @@ async function patentassignment(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
   const cost = params.get("amount");
   const rrr = params.get("rrr");
-  const fileId = pararrr ?? parsed.ms.get("fileId");
+  const fileId = params.get("fileId");
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 
@@ -790,32 +796,78 @@ async function designamendment(ctx: PaymentContext): Promise<void> {
   );
 }
 
-/* ---------------- TRADEMARK AMENDMENT (OPPOSITION) ---------------- */
-
-async function amendment(ctx: PaymentContext): Promise<void> {
-  const raw = localStorage.getItem("amendmentFormData");
-  const parsed = raw ? JSON.parse(raw) : null;
+async function counterstatement(ctx: PaymentContext): Promise<void> {
   const params = ctx.page.url.searchParams;
-
-  if (!parsed) throw new Error("Missing amendment data");
-
-  const cost = params.get("amount");
   const rrr = params.get("rrr");
+  const amount = params.get("amount");
+  const fileId = params.get("fileId");
 
-  if (!cost || !rrr) throw new Error("Missing payment details");
+  if (!rrr || !amount) throw new Error("Missing counter statement payment data");
 
-  ctx.state.setTitle("Trademark Amendment");
-  ctx.state.setCost(cost);
+  // Read invoice data saved by handleCSSubmit
+  const raw = sessionStorage.getItem("counterStatementPayload");
+  const payload = raw ? JSON.parse(raw) : null;
+
+  const applicantName = params.get("name") ?? payload?.applicantName ?? null;
+  const fileNumber = params.get("fileNumber") ?? payload?.fileNumber ?? fileId;
+
+  ctx.state.setTitle("Counter Statement");
+  ctx.state.setCost(amount);
   ctx.state.setPaymentId(rrr);
-  ctx.state.setFileNumber(parsed.FileId ?? null);
-  ctx.state.setFileApplicant(parsed.ApplicantName ?? "");
-  ctx.state.setFileType(
-    parsed.FileType !== undefined && parsed.FileType !== null
-      ? String(parsed.FileType)
-      : null,
-  );
-  ctx.state.setFileTitle(parsed.FileTitle ?? null);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setFileTitle(payload?.fileTitle ?? null);
+  ctx.state.setFileApplicant(applicantName);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/payment/paid?rrr=${rrr}&paymentType=amendment`,
+    `https://${ctx.page.url.host}/counterstatement/paid?rrr=${rrr}`,
+  );
+}
+
+async function statutorydeclaration(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const rrr = params.get("rrr");
+  const amount = params.get("amount");
+  const fileId = params.get("fileId");
+
+  if (!rrr || !amount) throw new Error("Missing statutory declaration payment data");
+
+  const raw = sessionStorage.getItem("statutoryDeclarationPayload");
+  const payload = raw ? JSON.parse(raw) : null;
+
+  const applicantName = params.get("name") ?? payload?.applicantName ?? null;
+  const fileNumber = params.get("fileNumber") ?? payload?.fileNumber ?? fileId;
+
+  ctx.state.setTitle("Statutory Declaration");
+  ctx.state.setCost(amount);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setFileTitle(payload?.fileTitle ?? null);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/statutorydeclaration/paid?rrr=${rrr}`,
+  );
+}
+
+async function oppositionwithdrawal(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const rrr = params.get("rrr");
+  const amount = params.get("amount");
+  const fileId = params.get("fileId");
+
+  if (!rrr || !amount) throw new Error("Missing opposition withdrawal payment data");
+
+  const raw = sessionStorage.getItem("oppositionWithdrawalPayload");
+  const payload = raw ? JSON.parse(raw) : null;
+
+  const applicantName = params.get("name") ?? payload?.applicantName ?? null;
+  const fileNumber = params.get("fileNumber") ?? payload?.fileNumber ?? fileId;
+
+  ctx.state.setTitle("Opposition Withdrawal");
+  ctx.state.setCost(amount);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setFileTitle(payload?.fileTitle ?? null);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/oppositionwithdrawal/paid?rrr=${rrr}`,
   );
 }
