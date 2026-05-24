@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
 	import { baseURL, UserRoles } from '$lib/helpers';
 	import { loggedInToken, loggedInUser } from '$lib/store';
@@ -20,8 +21,12 @@
 	let showOppositionDetail = false;
 	let oppositionDetailLoading = false;
 
-	onMount(() => {
-		loadOppositions();
+	onMount(async () => {
+		await loadOppositions();
+		const oppositionId = $page.url.searchParams.get('oppositionId');
+		if (oppositionId) {
+			viewOppositionDetail('', oppositionId);
+		}
 	});
 
 	async function loadOppositions() {
@@ -213,15 +218,19 @@
 												<DropdownMenu.Item on:click={() => viewOppositionDetail(row.fileId || '', row.id)}>
 													View Opposition
 												</DropdownMenu.Item>
+												{#if row.status !== 2}
 												<DropdownMenu.Separator />
 												<DropdownMenu.Label>Print</DropdownMenu.Label>
 												<DropdownMenu.Separator />
 												<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?letterType=16&oppositionId=${row.id}`)}>
 													Opposition Acknowledgement Letter
 												</DropdownMenu.Item>
+												{#if row.status !== 30 && row.status !== 29 && row.status !== 31}
 												<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?fileId=${row.fileId}&letterType=93&applicationId=${row.id}`)}>
 													Statutory Declaration Acknowledgement
 												</DropdownMenu.Item>
+												{/if}
+												{/if}
 											</DropdownMenu.Content>
 										</DropdownMenu.Root>
 									{:else}
@@ -436,14 +445,14 @@
 					</div>
 				{/if}
 
-				<!-- File Statutory Declaration Button -->
-				{#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd) => sd.role === 'applicant'))}
+				<!-- File Statutory Declaration Button (Opposer) -->
+				{#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd) => sd.role === 'opposer'))}
 					<div class="mt-8 pt-6 border-t border-slate-200">
 						<Button
 							on:click={() => {
 								const fileNumber = selectedOpposition.fileNumber;
 								const oppId = selectedOpposition.id;
-								window.location.href = `/opposition?step=statutorydeclaration&role=applicant&fileNumber=${fileNumber}&oppositionId=${oppId}`;
+								window.location.href = `/opposition?step=statutorydeclaration&role=opposer&fileNumber=${fileNumber}&oppositionId=${oppId}`;
 							}}
 							class="w-full bg-orange-600 hover:bg-orange-700 text-white"
 						>

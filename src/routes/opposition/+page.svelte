@@ -161,10 +161,16 @@
       const urlOppositionId = $page.url.searchParams.get("oppositionId");
       const urlRole = $page.url.searchParams.get("role") ?? "opposer";
       sdRole = urlRole;
-      if (urlOppositionId) {
+      if (urlRole === "applicant" && urlFileNumber) {
+        // Applicant side: search by file number
+        sdSearchInput = urlFileNumber;
+        currentStep = "sd-search";
+        handleSDSearchWithId(urlFileNumber);
+      } else if (urlOppositionId) {
+        // Opposer side: search by opposition ID
         sdSearchInput = urlOppositionId;
         currentStep = "sd-search";
-        handleSDSearchWithId(urlOppositionId);
+        handleSDSearchWithId(urlOppositionId, urlFileNumber ?? undefined);
       } else if (urlFileNumber) {
         sdSearchInput = urlFileNumber;
         currentStep = "sd-search";
@@ -243,47 +249,55 @@
     }
   }
 
-  async function handleSDSearchWithId(input: string) {
+  async function handleSDSearchWithId(input: string, fallbackFileNumber?: string) {
     sdIsLoading = true;
     toast.loading("Fetching Opposition Details", { description: "Please hold on...", duration: 1000 });
     try {
-      // Try oppositionId first
-      let queryParam = `oppositionId=${encodeURIComponent(input.toLowerCase())}`;
-      let response = await fetch(
-        `${baseURL}/api/opposition/getOppositionDetail?${queryParam}`,
+      // Try oppositionId first — pass as-is, backend strips "OPP-" prefix automatically
+      const oppResponse = await fetch(
+        `${baseURL}/api/opposition/getOppositionDetail?oppositionId=${encodeURIComponent(input.trim())}`,
         { method: "GET", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${$loggedInToken}` } }
       );
-      if (!response.ok) {
-        // Fallback to fileNumber
-        response = await fetch(
-          `${baseURL}/api/opposition/getOppositionDetail?fileNumber=${encodeURIComponent(input.trim())}`,
+
+      let d: any = null;
+
+      if (oppResponse.ok) {
+        // Handle multiple response shapes: { opposition: {...} } or { data: [...] } or raw object
+        const result = await oppResponse.json();
+        const raw = result.opposition ?? result.data ?? result;
+        d = Array.isArray(raw) ? raw[0] : raw;
+      }
+
+      // If oppositionId lookup failed or returned no data, fallback to fileNumber
+      if (!d) {
+        const fnLookup = fallbackFileNumber ?? input;
+        const fnResponse = await fetch(
+          `${baseURL}/api/opposition/getOppositionDetail?fileNumber=${encodeURIComponent(fnLookup.trim())}`,
           { method: "GET", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${$loggedInToken}` } }
         );
-      }
-      if (response.ok) {
-        const result = await response.json();
-        const raw = result.opposition ?? result.data ?? result;
-        const d = Array.isArray(raw) ? raw[0] : raw;
-        if (d) {
-          sdFileInfo = {
-            fileNumber: d.fileNumber ?? "",
-            fileTitle: d.fileName ?? d.fileTitle ?? d.title ?? "",
-            applicantName: d.fileOwner ?? d.applicantName ?? "",
-            opposerName: d.opposerName ?? d.name ?? "",
-            class: d.trademarkClass?.toString() ?? d.class?.toString() ?? "",
-            representationUrl: d.representationUrl && d.representationUrl !== "null" ? d.representationUrl : "",
-            paymentId: d.paymentId ?? "",
-            cost: d.cost ?? "",
-            fileId: d.fileId ?? "",
-            oppositionId: d.id ?? d.oppositionId ?? input,
-            status: d.status ?? d.oppositionStatus ?? "",
-          };
-          sdOppositions = [];
-          currentStep = "sd-form";
-        } else {
-          toast.error("Opposition not found.");
-          currentStep = "sd-search";
+        if (fnResponse.ok) {
+          const result = await fnResponse.json();
+          const raw = result.opposition ?? result.data ?? result;
+          d = Array.isArray(raw) ? raw[0] : raw;
         }
+      }
+
+      if (d) {
+        sdFileInfo = {
+          fileNumber: d.fileNumber ?? "",
+          fileTitle: d.fileName ?? d.fileTitle ?? d.title ?? "",
+          applicantName: d.fileOwner ?? d.applicantName ?? "",
+          opposerName: d.name ?? d.opposerName ?? "",
+          class: d.trademarkClass?.toString() ?? d.class?.toString() ?? "",
+          representationUrl: d.representationUrl && d.representationUrl !== "null" ? d.representationUrl : "",
+          paymentId: d.paymentId ?? "",
+          cost: d.cost ?? "",
+          fileId: d.fileId ?? "",
+          oppositionId: d.id ?? d.oppositionId ?? input,
+          status: d.status ?? d.oppositionStatus ?? "",
+        };
+        sdOppositions = [];
+        currentStep = "sd-form";
       } else {
         toast.error("Opposition not found.");
         currentStep = "sd-search";
@@ -878,12 +892,33 @@
     withdrawalIsLoading = true;
     toast.loading("Fetching Opposition Information", { description: "Please hold on...", duration: 1000 });
     try {
-      let url = `${baseURL}/api/opposition/getOppositionDetail?oppositionId=${encodeURIComponent(idOrNumber)}`;
-      let response = await fetch(url, { headers: { Authorization: `Bearer ${$loggedInToken}` } });
-      if (!response.ok) {
-        url = `${baseURL}/api/opposition/getOppositionDetail?fileNumber=${encodeURIComponent(idOrNumber)}`;
-        response = await fetch(url, { headers: { Authorization: `Bearer ${$loggedInToken}` } });
+      let input = idOrNumber.trim();
+      const upperInput = input.toUpperCase();
+      const isOppositionId = upperInput.startsWith("OPP-") || (!input.includes("/") && !upperInput.includes("TM") && !upperInput.includes("NG"));
+
+      // Strip "OPP-" prefix if present and lowercase — same as SD handler
+      if (upperInput.startsWith("OPP-")) {
+        input = input.substring(4).toLowerCase();
       }
+
+      let queryParam = isOppositionId
+        ? `oppositionId=${encodeURIComponent(input)}`
+        : `fileNumber=${encodeURIComponent(input)}`;
+
+      let response = await fetch(
+        `${baseURL}/api/opposition/getOppositionDetail?${queryParam}`,
+        { headers: { Authorization: `Bearer ${$loggedInToken}` } }
+      );
+
+      // If oppositionId search failed, retry with fileNumber
+      if (!response.ok && queryParam.startsWith("oppositionId")) {
+        queryParam = `fileNumber=${encodeURIComponent(idOrNumber.trim())}`;
+        response = await fetch(
+          `${baseURL}/api/opposition/getOppositionDetail?${queryParam}`,
+          { headers: { Authorization: `Bearer ${$loggedInToken}` } }
+        );
+      }
+
       if (!response.ok) { toast.error("Opposition not found."); return; }
       const body = await response.json();
       const data = body.opposition ?? body.data ?? body;
@@ -947,7 +982,11 @@
       submitData.append("UserId", $loggedInUser?.id ?? "");
       if (withdrawalLetter) { submitData.append("WithdrawalLetter", withdrawalLetter); }
       for (const file of withdrawalAttachments) { submitData.append("SupportingDocs", file); }
-      const response = await fetch(`${baseURL}/api/opposition/NewOppositionWithdrawal`, { method: "POST", body: submitData });
+      const response = await fetch(`${baseURL}/api/opposition/NewOppositionWithdrawal`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${$loggedInToken}` },
+        body: submitData
+      });
       const result = await response.json();
       if (response.ok && result.success !== false) {
         const d = result.data ?? result;
