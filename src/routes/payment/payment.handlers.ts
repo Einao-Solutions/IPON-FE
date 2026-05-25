@@ -99,6 +99,7 @@ export const paymentHandlers: Record<
   designamendment,
   patentRenewal,
   restoration,
+  amendment,
   counterstatement,
   statutorydeclaration,
   oppositionwithdrawal
@@ -793,6 +794,36 @@ async function designamendment(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(fileId);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/home/postregistration/designamendment/result?rrr=${rrr}&fileType=1&fileNumber=${fileId || ""}&applicant=${encodeURIComponent(applicantName)}`,
+  );
+}
+
+/* ---------------- TRADEMARK AMENDMENT (OPPOSITION) ---------------- */
+
+async function amendment(ctx: PaymentContext): Promise<void> {
+  const raw = localStorage.getItem("amendmentFormData");
+  const parsed = raw ? JSON.parse(raw) : null;
+  const params = ctx.page.url.searchParams;
+
+  if (!parsed) throw new Error("Missing amendment data");
+
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+
+  if (!cost || !rrr) throw new Error("Missing payment details");
+
+  ctx.state.setTitle("Trademark Amendment");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(parsed.FileId ?? null);
+  ctx.state.setFileApplicant(parsed.ApplicantName ?? "");
+  ctx.state.setFileType(
+    parsed.FileType !== undefined && parsed.FileType !== null
+      ? String(parsed.FileType)
+      : null,
+  );
+  ctx.state.setFileTitle(parsed.FileTitle ?? null);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/payment/paid?rrr=${rrr}&paymentType=amendment`,
   );
 }
 

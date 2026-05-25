@@ -4,7 +4,7 @@
   import cldLogo from "$lib/assets/cld.png";
   import ministry from "$lib/assets/ministry.png";
   import { baseURL } from "$lib/helpers";
-  import { mapStatusToString } from "../home/components/dashboardutils";
+  import { mapStatusToString } from "$lib/designutils";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { countriesMap } from "$lib/constants";
   import { goto } from "$app/navigation";
