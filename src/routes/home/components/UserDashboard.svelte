@@ -301,6 +301,24 @@
 				</div>
 			</div>
 		</a>
+
+		<!-- Other Applications Total -->
+		<a href="/home/other-applications" class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden">
+			<div class="flex items-center space-x-4">
+				<div class="w-10 h-10 bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+					<Icon icon="mdi:gavel" class="text-lg text-orange-700 group-hover:text-orange-600" />
+				</div>
+				<div>
+					<p class="font-semibold text-slate-800 group-hover:text-slate-900">Other Applications</p>
+					<p class="text-xs text-slate-500">Filed oppositions and related applications</p>
+				</div>
+			</div>
+			<div class="text-right">
+				<div class="flex items-center justify-end mt-1">
+					<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-orange-500 text-sm transition-colors duration-300" />
+				</div>
+			</div>
+		</a>
 	</div>
 	{/if}
 	
@@ -672,6 +690,23 @@
 			</Accordion.Content>
 		</Accordion.Item>	
 	</Accordion.Root>
+	<!-- Other Applications Link -->
+	<a href="/home/other-applications" class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden mt-4">
+		<div class="flex items-center space-x-4">
+			<div class="w-10 h-10 bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-sm">
+				<Icon icon="mdi:gavel" class="text-lg text-orange-700 group-hover:text-orange-600" />
+			</div>
+			<div>
+				<p class="font-semibold text-slate-800 group-hover:text-slate-900">Other Applications</p>
+				<p class="text-xs text-slate-500">Filed oppositions and related applications</p>
+			</div>
+		</div>
+		<div class="text-right">
+			<div class="flex items-center justify-end mt-1">
+				<Icon icon="heroicons:arrow-right" class="text-slate-400 group-hover:text-orange-500 text-sm transition-colors duration-300" />
+			</div>
+		</div>
+	</a>
 	<!-- End of detailed statistics view -->
 	{/if}
 {/if}
