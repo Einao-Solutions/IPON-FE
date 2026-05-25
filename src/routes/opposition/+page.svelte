@@ -1126,6 +1126,24 @@
             </div>
           </button>
 
+          <!-- Amendment -->
+          <button
+            on:click={() => goto('/home/amendment')}
+            class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-base font-semibold text-gray-900 group-hover:text-green-700">
+                  Amendment
+                </p>
+                <p class="text-sm text-gray-500 mt-1">
+                  Amend a file currently in opposition
+                </p>
+              </div>
+              <span class="text-gray-400 group-hover:text-green-600 text-xl">→</span>
+            </div>
+          </button>
+
           <!-- Opposition Withdrawal -->
           <button
             on:click={() => (currentStep = "withdrawal-search")}

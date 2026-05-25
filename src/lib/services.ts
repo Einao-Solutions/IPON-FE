@@ -307,15 +307,6 @@ export const trademarkServices: IPService[] = [
     price: "₦11,500",
   },
   {
-    id: "amendment",
-    name: "AMENDMENT",
-    description: "Amend files in opposition",
-    icon: "mdi:file-edit-outline",
-    route: "/home/amendment",
-    category: "filing",
-    price: "₦4,000",
-  },
-  {
     id: "restoration",
     name: "RESTORATION",
     description: "Restore 'Inactive' files before renewal",
