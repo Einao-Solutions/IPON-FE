@@ -319,7 +319,9 @@
 			const maxSize = 10 * 1024 * 1024; // 10MB
 			const validFiles = newFiles.filter((file) => {
 				if (file.size > maxSize) {
-					toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`);
+					toast.error(`File "${file.name}" is too large. Maximum size is 10MB.`, {
+						position: 'top-right'
+					});
 					return false;
 				}
 				return true;
@@ -340,14 +342,16 @@
 		);
 
 		if (missingFields.length > 0) {
-			toast.error(`Please fill in all correspondence details: ${missingFields.join(', ')}`);
+			toast.error(`Please fill in all correspondence details: ${missingFields.join(', ')}`, {
+				position: 'top-right'
+			});
 			return false;
 		}
 
 		// Basic email validation
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		if (!emailRegex.test(correspondenceDetails.email)) {
-			toast.error('Please enter a valid email address');
+			toast.error('Please enter a valid email address', { position: 'top-right' });
 			return false;
 		}
 
@@ -373,7 +377,9 @@
 			formData.append('markInfo', JSON.stringify(markData));
 
 			if (!markData) {
-				toast.error('Mark information is missing. Please try again.');
+				toast.error('Mark information is missing. Please try again.', {
+					position: 'top-right'
+				});
 				isSubmittingClaim = false;
 				return;
 			}
@@ -390,7 +396,9 @@
 				formData.append(`attachments`, file);
 			});
 			if (attachmentFiles.length === 0) {
-				toast.error('Please upload at least one supporting document.');
+				toast.error('Please upload at least one supporting document.', {
+					position: 'top-right'
+				});
 				error = 'Please upload at least one supporting document.';
 				isSubmittingClaim = false;
 				return;
@@ -403,25 +411,32 @@
 
 			if (response.ok) {
 				const result = await response.json();
-				toast.success('Claim submitted successfully!');
-				alert('File claim submitted. We will review your submission and get back to you.');
+				toast.success('Claim submitted successfully!', {
+					description: 'We will review your submission and get back to you.',
+					position: 'top-right'
+				});
 				closeClaimDialog();
 				// Optionally refresh the results or navigate to another page
 			} else {
 				const errorData = await response
 					.json()
 					.catch(() => ({ message: 'Failed to submit claim' }));
-				toast.error(errorData.message || 'Failed to submit claim');
+				toast.error(errorData.message || 'Failed to submit claim', {
+					position: 'top-right'
+				});
 			}
 		} catch (err) {
 			console.error('Error submitting claim:', err);
-			toast.error('An error occurred while submitting the claim');
+			toast.error('An error occurred while submitting the claim', {
+				position: 'top-right'
+			});
 		} finally {
 			isSubmittingClaim = false;
 		}
 	}
 </script>
 
+<Toaster />
 <div class="space-y-4 m-4 p-2">
 	<div class="flex items-center justify-between">
 		<Button variant="outline" on:click={goBack} class="flex items-center gap-2">
@@ -465,8 +480,16 @@
 			</div>
 		</div>
 	{:else if error}
-		<div class="bg-red-50 text-red-600 p-4 rounded-md text-center">
-			<p>{error}</p>
+		<div class="bg-red-50 border border-red-200 p-6 rounded-md flex flex-col items-center text-center gap-3">
+			<Icon icon="lucide:alert-triangle" width="2rem" height="2rem" class="text-red-500" />
+			<div class="space-y-1">
+				<h3 class="text-base font-semibold text-red-700">Something went wrong</h3>
+				<!-- <p class="text-sm text-red-600">{error}</p> -->
+			</div>
+			<Button variant="outline" on:click={() => window.location.reload()} class="mt-1">
+				<Icon icon="lucide:refresh-cw" width="1rem" height="1rem" class="mr-2" />
+				Try Again
+			</Button>
 		</div>
 	{:else if results.length === 0}
 		<div class="bg-yellow-50 p-8 rounded-md text-center">
@@ -500,7 +523,7 @@
 							<Table.Cell>{result.fileNumber}</Table.Cell>
 							<Table.Cell>{result.title}</Table.Cell>
 							<Table.Cell>
-								{result.markType === 1 ? 'Foreign' : 'Local'}
+								{String(result.markType) === '1' ? 'Foreign' : 'Local'}
 							</Table.Cell>
 
 							<Table.Cell>{result.class}</Table.Cell>
@@ -605,7 +628,7 @@
 						</div>
 						<div>
 							<p class="font-medium">Payment Date</p>
-							<p>{new Date(paymentDetails.paymentDate).toLocaleDateString()}</p>
+							<p>{paymentDetails.paymentDate ? new Date(paymentDetails.paymentDate).toLocaleDateString() : 'N/A'}</p>
 						</div>
 						{#if paymentDetails.applicantName && paymentDetails.applicantName !== 'N/A'}
 							<div class="col-span-2">
