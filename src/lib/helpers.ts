@@ -296,6 +296,8 @@ export enum FormApplicationTypes {
   Mortgage = 20,
   CertifiedTrueCopy = 21,
   Reclassification = 36,
+  CounterStatement = 24,
+  StatutoryDeclaration = 25,
 }
 
 export enum ApplicationLetters {

@@ -131,7 +131,11 @@ const config = {
         "/home/postregistration/trademarkctc",
         "/home/postregistration/trademarkctc/result",
         "/statistics/techfee",
-        "/cookie-policy"
+        "/cookie-policy",
+        "/counterstatement/paid",
+        "/statutorydeclaration/paid",
+        "/oppositionwithdrawal/paid",
+        "/home/other-applications"
       ],
     },
   },
