@@ -137,7 +137,10 @@
         ];
 
         const isStatusAllowed = allowedStatuses.includes(fileStatus);
-
+        if (fileStatus === ApplicationStatuses.Inactive) {
+          error = `Your file is currently Inactive, Please file for restoration.`;
+          return;
+        }
         if (!isStatusAllowed) {
           error = `${serviceName} is only available for files with status: Publication, Awaiting Certification, Awaiting Certificate Confirmation, or Active. Current file status: ${file?.statusText || "Unknown"}`;
           return;

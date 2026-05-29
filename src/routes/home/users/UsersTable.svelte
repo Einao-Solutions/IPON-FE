@@ -289,7 +289,7 @@
     />
   </div>
 {:else}
-  <div class="space-y-4">
+  <div class="space-y-4 p-4 md:p-6">
     <div class="flex items-center gap-3">
       <div class="relative flex-1">
         <Search
