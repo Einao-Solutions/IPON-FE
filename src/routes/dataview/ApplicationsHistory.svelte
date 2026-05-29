@@ -90,7 +90,7 @@
   let paymentDate = "";
   let status = "";
   let validateRRR = "";
-  let paymentDesc = "";
+  let paymentDescription = "";
   let show_updating: boolean = false;
   let manualUpdate: ApplicationHistoryType | null = null;
   let showManualUpdate = false;
@@ -440,7 +440,7 @@
       if (!response.ok) throw new Error("Payment check failed");
 
       const result = await response.json();
-      ({ amount, paymentDate, status, paymentDesc } = result);
+      ({ amount, paymentDate, status, paymentDesc: paymentDescription } = result);
       remita_confirmation = "verify_update";
 
       if (status === "00") {
@@ -1315,92 +1315,137 @@
 
 <Toaster />
 <AlertDialog.Root bind:open={showAlertDialog}>
-  <AlertDialog.Content>
-    <AlertDialog.Header>
-      <AlertDialog.Title>Payment Confirmation</AlertDialog.Title>
-      <AlertDialog.Description>Response From Remita</AlertDialog.Description>
+  <AlertDialog.Content class="max-w-md p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-xl">
+    <!-- Header -->
+    <div class="px-6 pt-6 pb-4 border-b border-slate-100">
+      <AlertDialog.Header class="space-y-1">
+        <AlertDialog.Title class="text-lg font-semibold text-slate-900 tracking-tight">
+          Payment Confirmation
+        </AlertDialog.Title>
+        <!-- <AlertDialog.Description class="text-xs text-slate-500">
+          Response from Remita
+        </AlertDialog.Description> -->
+      </AlertDialog.Header>
+    </div>
 
-      <div class="pt-4 mx-auto text-center">
-        {#if remita_confirmation === "checking"}
-          <div class="flex flex-col items-center justify-center py-4">
+    <!-- Body -->
+    <div class="px-6 py-5">
+      {#if remita_confirmation === "checking"}
+        <div class="flex flex-col items-center justify-center py-8 gap-3">
+          <div class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center">
             <Icon
               icon="line-md:loading-loop"
-              width="2rem"
-              height="2rem"
-              class="animate-spin"
+              width="1.75rem"
+              height="1.75rem"
+              class="text-slate-600 animate-spin"
             />
-            <p class="mt-2">Verifying payment status...</p>
           </div>
-        {:else if remita_confirmation === "success"}
-          <div class="space-y-4 py-2">
-            <div class="text-green-600">
-              <Icon
-                icon="clarity:success-standard-line"
-                width="2rem"
-                height="2rem"
-                class="mx-auto"
-              />
-              <p class="font-bold mt-2">Successfully updated application</p>
-            </div>
-            <Button on:click={() => (showAlertDialog = false)} class="w-full"
-              >Close</Button
+          <p class="text-sm text-slate-600">Verifying payment status…</p>
+        </div>
+      {:else if remita_confirmation === "success"}
+        <div class="flex flex-col items-center text-center py-6 gap-4">
+          <div class="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center ring-4 ring-emerald-100/60">
+            <Icon
+              icon="clarity:success-standard-line"
+              width="1.75rem"
+              height="1.75rem"
+              class="text-emerald-600"
+            />
+          </div>
+          <div class="space-y-1">
+            <p class="text-base font-semibold text-slate-900">Application updated</p>
+            <p class="text-xs text-slate-500">The payment has been confirmed successfully.</p>
+          </div>
+          <Button
+            on:click={() => (showAlertDialog = false)}
+            class="w-full mt-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg h-10"
+          >
+            Close
+          </Button>
+        </div>
+      {:else if remita_confirmation === "verify_update"}
+        <div class="space-y-5">
+          <!-- Status banner -->
+          <div
+            class="flex items-center gap-3 rounded-xl px-4 py-3 border {status === '00'
+              ? 'bg-emerald-50/60 border-emerald-100'
+              : 'bg-amber-50/60 border-amber-100'}"
+          >
+            <div
+              class="h-9 w-9 rounded-full flex items-center justify-center {status === '00'
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-100 text-amber-700'}"
             >
-          </div>
-        {:else if remita_confirmation === "verify_update"}
-          <div class="space-y-3">
-            <h3 class="font-semibold text-lg">Payment Information</h3>
-
-            <div class="grid grid-cols-2 gap-2 text-sm">
-              <span class="font-medium">Amount Paid:</span>
-              <span>₦{amount}</span>
-
-              <span class="font-medium">Payment Date:</span>
-              <span>{paymentDate || "N/A"}</span>
-
-              <span class="font-medium">Payment Status:</span>
-              <span
-                class={status === "00" ? "text-green-600" : "text-yellow-600"}
+              <Icon
+                icon={status === "00"
+                  ? "mdi:check-circle-outline"
+                  : "mdi:clock-outline"}
+                width="1.25rem"
+                height="1.25rem"
+              />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-xs font-medium text-slate-500">Payment Status</p>
+              <p
+                class="text-sm font-semibold {status === '00'
+                  ? 'text-emerald-700'
+                  : 'text-amber-700'}"
               >
                 {status === "00" ? "Successful" : "Pending"}
-              </span>
-
-              <span class="font-medium">Description:</span>
-              <span>{paymentDesc || "No description"}</span>
+              </p>
             </div>
-
-            <div class="flex gap-2 pt-3">
-              {#if showManualUpdate}
-                <Button
-                  on:click={updateManual}
-                  class="flex-1 bg-green-600 hover:bg-green-700"
-                >
-                  Confirm Payment
-                </Button>
-              {/if}
-              {#if $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin)}
-                {#if updateCert}
-                  <Button
-                    on:click={() =>
-                      updateCertPaymentStatus(validateRRR, fileData.fileId)}
-                    class="flex-1 bg-green-600 hover:bg-green-700"
-                  >
-                    Update Certificate Status
-                  </Button>
-                {/if}
-              {/if}
-
-              <Button
-                on:click={() => (showAlertDialog = false)}
-                class="flex-1"
-                variant={showManualUpdate ? "outline" : "default"}
-              >
-                {showManualUpdate ? "Cancel" : "Close"}
-              </Button>
+            <div class="text-right">
+              <p class="text-xs text-slate-500">Amount</p>
+              <p class="text-sm font-semibold text-slate-900">₦{amount ?? ""}</p>
             </div>
           </div>
-        {/if}
-      </div>
-    </AlertDialog.Header>
+
+          <!-- Details -->
+          <dl class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5">
+              <dt class="text-xs font-medium text-slate-500">Payment Date</dt>
+              <dd class="text-sm text-slate-900">{paymentDate || ""}</dd>
+            </div>
+            <div class="flex items-start justify-between gap-4 px-4 py-2.5">
+              <dt class="text-xs font-medium text-slate-500">Description</dt>
+              <dd class="text-sm text-slate-900 text-right break-words max-w-[60%]">
+                {paymentDescription || ""}
+              </dd>
+            </div>
+          </dl>
+
+          <!-- Actions -->
+          <div class="flex flex-col-reverse sm:flex-row gap-2 pt-1">
+            <Button
+              on:click={() => (showAlertDialog = false)}
+              variant="outline"
+              class="flex-1 h-10 rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              {showManualUpdate || updateCert ? "Cancel" : "Close"}
+            </Button>
+            {#if showManualUpdate}
+              <Button
+                on:click={updateManual}
+                class="flex-1 h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Icon icon="mdi:check" class="mr-1.5" width="1em" />
+                Confirm Payment
+              </Button>
+            {/if}
+            {#if $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin) && updateCert}
+              <Button
+                on:click={() =>
+                  updateCertPaymentStatus(validateRRR, fileData.fileId)}
+                class="flex-1 h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white"
+              >
+                <Icon icon="mdi:certificate-outline" class="mr-1.5" width="1em" />
+                Update Certificate
+              </Button>
+            {/if}
+          </div>
+        </div>
+      {/if}
+    </div>
   </AlertDialog.Content>
 </AlertDialog.Root>
 
