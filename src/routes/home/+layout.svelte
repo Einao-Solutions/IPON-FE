@@ -5,6 +5,7 @@
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
   import FilterFile from "./FilterFile.svelte";
+  import NotificationBell from "./NotificationBell.svelte";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
 
@@ -132,8 +133,14 @@
           />
         </div>
 
-        <!-- User Menu -->
-        <div class="relative user-menu-container">
+     
+        <!-- Right cluster: bell + user menu -->
+        <div class="flex items-center gap-1">
+          <!-- Notifications Bell -->
+          <NotificationBell />
+
+          <!-- User Menu -->
+          <div class="relative user-menu-container">
           <button
             on:click|stopPropagation={toggleUserMenu}
             class="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 transition-all duration-200 group"
@@ -197,7 +204,9 @@
               </ul>
             </div>
           {/if}
+          </div>
         </div>
+
     </div>
   </header>
 
