@@ -1,29 +1,26 @@
 <script lang="ts">
-  import { fade } from "svelte/transition";
-  import { Button } from "$lib/components/ui/button";
   import Icon from "@iconify/svelte";
-  import * as Card from "$lib/components/ui/card";
   import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
   import FileNumberSearch from "./components/FileNumberSearch.svelte";
   import ApplicationSearchResults from "./components/ApplicationSearchResults.svelte";
-  import { baseURL, FormApplicationTypes } from "$lib/helpers";
+  import { baseURL } from "$lib/helpers";
   import UserSearch from "./components/UserSearch.svelte";
   import UserSearchResults from "./components/UserSearchResults.svelte";
+  import CreateNotification from "./components/CreateNotification.svelte";
   import { Toaster, toast } from "svelte-sonner";
-  import { he } from "@faker-js/faker";
-  import { loggedInToken, loggedInUser } from "$lib/store";
+  import { loggedInToken } from "$lib/store";
 
   let showSearchDialog = false;
   let showUserSearch = false;
   let showUserResults = false;
   let showResultsDialog = false;
+  let showCreateNotification = false;
   let searchLoading = false;
   let userSearchLoading = false;
   let resetLoading = false;
   let resetSuccess = false;
   let resetError = "";
-  let applications = [];
+  let applications: any[] = [];
   let currentFileNumber = "";
   let foundUser: {
     email: string;
@@ -68,6 +65,7 @@
       }));
     } catch (error) {
       console.error("Error searching applications:", error);
+      return [];
     }
   }
   async function searchUserByEmail(email: string) {
@@ -124,7 +122,7 @@
     showUserSearch = true;
   }
 
-  async function handleUserSearch(event) {
+  async function handleUserSearch(event: CustomEvent<{ email: string }>) {
     const { email } = event.detail;
     userSearchLoading = true;
 
@@ -141,7 +139,7 @@
     }
   }
 
-  async function handleResetPassword(event) {
+  async function handleResetPassword(event: CustomEvent<{ email: string }>) {
     const { email } = event.detail;
     resetLoading = true;
     resetError = "";
@@ -162,7 +160,7 @@
     resetSuccess = false;
     resetError = "";
   }
-  async function handleSearch(event) {
+  async function handleSearch(event: CustomEvent<{ fileNumber: string }>) {
     const { fileNumber } = event.detail;
     currentFileNumber = fileNumber;
     searchLoading = true;
@@ -189,7 +187,7 @@
     currentFileNumber = "";
   }
 
-  function handleSelectApplication(event) {
+  function handleSelectApplication(event: CustomEvent<{ application: any }>) {
     const { application } = event.detail;
     console.log("Selected application:", application);
     // Handle application selection - maybe navigate to edit page
@@ -202,85 +200,81 @@
 </svelte:head>
 <Toaster />
 <div class="container mx-auto p-6 space-y-6">
+  <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Super Admin</h1>
+      <h1 class="text-2xl font-bold text-slate-900">Super Admin</h1>
+      <p class="text-sm text-slate-500 mt-1">
+        Administrative tools and account management
+      </p>
     </div>
 
     <button
       on:click={() => goto("/home/dashboard")}
-      class="border rounded p-2 text-white bg-black hover:bg-gray-600 transition-colors"
+      class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
     >
+      <Icon icon="mdi:arrow-left" width="1rem" height="1rem" />
       Back
     </button>
   </div>
 
-  <div
-    class="border rounded-md justify-between p-3 grid xl:grid-cols-5 lg:grid-cols-5 md:grid-cols-2 grid-cols-1 gap-3"
-  >
-    <button
-      on:click={() => goto("/home/admin/updatefileinfo")}
-      class="flex items-center bg-white space-x-3 p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[100px]"
-    >
-      <Icon icon="mdi:file" width="2em" height="2em" class="text-green-800" />
-      <div class="space-y-1">
-        <Card.Title class="text-sm font-semibold">UPDATE FILE INFO</Card.Title>
-        <Card.Description class="text-xs"
-          >Update File Information</Card.Description
+  <!-- Action cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    {#each [
+      {
+        icon: "mdi:file-document-edit-outline",
+        title: "Update File Info",
+        description: "Update file information",
+        action: () => goto("/home/admin/updatefileinfo"),
+      },
+      {
+        icon: "mdi:cash-sync",
+        title: "Update Payment ID",
+        description: "Update payment ID for application",
+        action: handleOpenSearch,
+      },
+      {
+        icon: "mdi:history",
+        title: "View File History",
+        description: "View all file update logs",
+        action: () => goto("/home/admin/fileupdatehistory"),
+      },
+      {
+        icon: "mdi:lock-reset",
+        title: "Reset Password",
+        description: "Reset account password",
+        action: searchUser,
+      },
+      {
+        icon: "mdi:bell-plus-outline",
+        title: "Create Notification",
+        description: "Send a notification to users",
+        action: () => (showCreateNotification = true),
+      },
+    ] as item}
+      <button
+        on:click={item.action}
+        class="group relative flex flex-col items-start gap-3 p-5 bg-white border border-slate-200 rounded-xl hover:border-green-400 hover:shadow-md transition-all duration-200 text-left"
+      >
+        <div
+          class="flex items-center justify-center w-11 h-11 rounded-lg bg-green-50 text-green-700 group-hover:bg-green-100 transition-colors"
         >
-      </div>
-    </button>
-    <button
-      on:click={handleOpenSearch}
-      class="flex items-center bg-white space-x-3 p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[100px]"
-    >
-      <Icon
-        icon="mdi:file-edit-outline"
-        width="2rem"
-        height="2rem"
-        class="text-green-800"
-      />
-      <div class="space-y-1">
-        <Card.Title class="text-sm font-semibold">UPDATE PAYMENT ID</Card.Title>
-        <Card.Description class="text-xs"
-          >Update Payment ID for application</Card.Description
-        >
-      </div>
-    </button>
-    <button
-      on:click={() => goto("/home/admin/fileupdatehistory")}
-      class="flex items-center bg-white space-x-3 p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[100px]"
-    >
-      <Icon
-        icon="mdi:history"
-        width="2rem"
-        height="2rem"
-        class="text-green-800"
-      />
-      <div class="space-y-1">
-        <Card.Title class="text-sm font-semibold">VIEW FILE HISTORY</Card.Title>
-        <Card.Description class="text-xs"
-          >View all file update logs</Card.Description
-        >
-      </div>
-    </button>
-    <button
-      on:click={searchUser}
-      class="flex items-center bg-white space-x-3 p-3 border rounded-md hover:bg-accent hover:cursor-pointer transition-colors min-h-[100px]"
-    >
-      <Icon
-        icon="mdi:lock-reset"
-        width="2rem"
-        height="2rem"
-        class="text-green-800"
-      />
-      <div class="space-y-1">
-        <Card.Title class="text-sm font-semibold">RESET PASSWORD</Card.Title>
-        <Card.Description class="text-xs"
-          >Reset Account Password</Card.Description
-        >
-      </div>
-    </button>
+          <Icon icon={item.icon} width="1.5rem" height="1.5rem" />
+        </div>
+        <div class="space-y-1">
+          <h3 class="text-sm font-semibold text-slate-900 uppercase tracking-wide">
+            {item.title}
+          </h3>
+          <p class="text-xs text-slate-500">{item.description}</p>
+        </div>
+        <Icon
+          icon="mdi:arrow-top-right"
+          width="1rem"
+          height="1rem"
+          class="absolute top-4 right-4 text-slate-300 group-hover:text-green-600 transition-colors"
+        />
+      </button>
+    {/each}
   </div>
 </div>
 
@@ -315,3 +309,6 @@
   on:select={handleSelectApplication}
   on:close={handleCloseResults}
 />
+
+<!-- Create Notification Dialog -->
+<CreateNotification bind:open={showCreateNotification} />

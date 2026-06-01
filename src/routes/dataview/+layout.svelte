@@ -48,6 +48,7 @@
   import { onMount } from "svelte";
   import dayjs from "dayjs";
   import ApplicationsHistory from "./ApplicationsHistory.svelte";
+  import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { comment } from "postcss";
   //   import { aw } from "vitest/dist/chunks/reporters.nr4dxCkA.js";
   let canUpdate: boolean = false;
@@ -368,139 +369,213 @@
 
 <Toaster />
 <Dialog.Root bind:open={treatApplicationDialog} onOpenChange={resetForm}>
-  <Dialog.Content class="max-w-fit">
-    <Dialog.Header>
-      <Dialog.Title>Treat Application</Dialog.Title>
-      <Dialog.Description>Select new status</Dialog.Description>
-    </Dialog.Header>
-    <br />
-    {#if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingSearch}
-      <Button on:click={searchAvailability}
-        >{#if isLoading}
-          <span class="inline-block mr-2">
-            <svg
-              class="animate-spin h-4 w-4 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                class="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                stroke-width="4"
-              ></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-          </span>
-          Searching...
-        {:else}
-          Availability Search
-        {/if}</Button
-      >
-    {/if}
-    {#if selectedApplication?.currentStatus === ApplicationStatuses.Publication && $loggedInUser?.userRoles?.some( (x) => [UserRoles.Tech, UserRoles.TrademarkOpposition, UserRoles.SuperAdmin].includes(x), )}
-      <Button
-        class="bg-red-600 hover:bg-red-700 text-white"
-        disabled={!$newStatusReason || isSaving}
-        on:click={() => {opposeFile(fileData.fileId,$newStatusReason ?? "")
-        }}
-      >
-        Oppose
-      </Button>
-    {/if}
-    {#if selectedApplication?.currentStatus === ApplicationStatuses.Publication && $loggedInUser?.userRoles?.some( (x) => [UserRoles.Tech, UserRoles.TrademarkExaminer, UserRoles.SuperAdmin].includes(x), )}
-      <Button
-        class="bg-green-600 hover:bg-green-700 text-white"
-        disabled={!$newStatusReason || isSaving}
-        on:click={() => {publishFile(fileData.fileId, $newStatusReason ?? null)
-        }}
-      >
-        Publish
-      </Button>
-    {/if}
-    <div class="gap-2 flex">
-      {#each getStatuses(currentStatus, $applicationData?.type ?? 0) as status}
-        <button
-          on:click={() => (selectedStatus = status)}
-          style="background-color: {selectedStatus === status
-            ? getStatusColour(status)
-            : 'transparent'} "
-          class="border rounded-md flex p-2 flex-grow items-center hover:bg-accent hover:cursor-pointer {selectedStatus ===
-          status
-            ? ''
-            : 'bg-none'}  "
+  <Dialog.Content
+    class="w-11/12 max-w-xl p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-xl bg-white"
+  >
+    <!-- Header -->
+    <div class="px-6 pt-6 pb-4 border-b border-slate-100">
+      <Dialog.Header class="space-y-1">
+        <Dialog.Title
+          class="text-lg font-semibold text-slate-900 tracking-tight"
         >
-          <p>{mapStatusOptionToString(status)}</p>
-        </button>
-      {/each}
+          Treat Application
+        </Dialog.Title>
+        <Dialog.Description class="text-xs text-slate-500">
+          Choose a new status and provide a reason for the change.
+        </Dialog.Description>
+      </Dialog.Header>
     </div>
-    <br />
-    <Textarea
-      class="min-h-[120px]"
-      placeholder="Enter reason"
-      bind:value={$newStatusReason}
-    />
-    <Dialog.Footer class="sm:flex gap-3">
+
+    <!-- Body -->
+    <div class="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
+      {#if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingSearch}
+        <Button
+          on:click={searchAvailability}
+          class="w-full h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white"
+        >
+          {#if isLoading}
+            <Icon
+              icon="line-md:loading-loop"
+              width="1.1em"
+              height="1.1em"
+              class="mr-2 animate-spin"
+            />
+            Searching…
+          {:else}
+            <Icon icon="mdi:magnify" width="1.1em" class="mr-2" />
+            Availability Search
+          {/if}
+        </Button>
+      {/if}
+
+      {#if selectedApplication?.currentStatus === ApplicationStatuses.Publication}
+        <div class="flex flex-col sm:flex-row gap-2">
+          {#if $loggedInUser?.userRoles?.some( (x) => [UserRoles.Tech, UserRoles.TrademarkOpposition, UserRoles.SuperAdmin].includes(x), )}
+            <Button
+              class="flex-1 h-10 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+              disabled={!$newStatusReason || isSaving}
+              on:click={() =>
+                opposeFile(fileData.fileId, $newStatusReason ?? "")}
+            >
+              <Icon icon="mdi:gavel" class="mr-1.5" width="1em" />
+              Oppose
+            </Button>
+          {/if}
+          {#if $loggedInUser?.userRoles?.some( (x) => [UserRoles.Tech, UserRoles.TrademarkExaminer, UserRoles.SuperAdmin].includes(x), )}
+            <Button
+              class="flex-1 h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={!$newStatusReason || isSaving}
+              on:click={() =>
+                publishFile(fileData.fileId, $newStatusReason ?? null)}
+            >
+              <Icon icon="mdi:check-decagram-outline" class="mr-1.5" width="1em" />
+              Publish
+            </Button>
+          {/if}
+        </div>
+      {/if}
+
+      <!-- Status selection -->
+      {#if getStatuses(currentStatus, $applicationData?.type ?? 0).length > 0}
+        <div class="space-y-2">
+          <p class="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+            New Status
+          </p>
+          <div class="flex flex-wrap gap-2">
+            {#each getStatuses(currentStatus, $applicationData?.type ?? 0) as status}
+              {@const isSelected = selectedStatus === status}
+              <button
+                type="button"
+                on:click={() => (selectedStatus = status)}
+                style={isSelected
+                  ? `background-color: ${getStatusColour(status)}; border-color: ${getStatusColour(status)};`
+                  : ""}
+                class="px-3 py-1.5 rounded-full text-xs font-medium border transition-all
+                  {isSelected
+                    ? 'text-white shadow-sm'
+                    : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300'}"
+              >
+                {mapStatusOptionToString(status)}
+              </button>
+            {/each}
+          </div>
+        </div>
+      {/if}
+
+      <!-- Reason -->
+      <div class="space-y-2">
+        <p class="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+          Reason
+        </p>
+        <Textarea
+          class="min-h-[120px] rounded-lg border-slate-200 focus-visible:ring-slate-400 text-sm"
+          placeholder="Enter a brief reason for this status change…"
+          bind:value={$newStatusReason}
+        />
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div
+      class="px-6 py-3 border-t border-slate-100 bg-slate-50/60 flex flex-col-reverse sm:flex-row sm:justify-end gap-2"
+    >
       <Button
         variant="outline"
+        class="h-10 rounded-lg border-slate-200 text-slate-700 hover:bg-white"
         on:click={() => {
           treatApplicationDialog = false;
           resetForm();
-        }}>Cancel</Button
+        }}
       >
+        Cancel
+      </Button>
       {#if selectedApplication?.currentStatus !== ApplicationStatuses.Publication}
         <Button
           disabled={!validateForm()}
+          class="h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50"
           on:click={() => (treatConfirmationDialog = true)}
         >
           Continue
+          <Icon icon="mdi:arrow-right" class="ml-1.5" width="1em" />
         </Button>
       {/if}
-    </Dialog.Footer>
+    </div>
   </Dialog.Content>
 </Dialog.Root>
+
 <Dialog.Root bind:open={treatConfirmationDialog}>
-  <Dialog.Content class="min-w-fit mx-1.5">
-    <Dialog.Header>
-      <Dialog.Title>Confirmation</Dialog.Title>
-      <Dialog.Description>Select new status</Dialog.Description>
-    </Dialog.Header>
-    <br />
-    <p>
-      Are you sure you want to update the status to
-      <span
-        class="border w-fit p-1 rounded-md"
-        style="background-color: {getStatusColour(selectedStatus)}"
+  <Dialog.Content
+    class="w-11/12 max-w-md p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-xl bg-white"
+  >
+    <!-- Header -->
+    <div class="px-6 pt-6 pb-4 border-b border-slate-100">
+      <Dialog.Header class="space-y-1">
+        <Dialog.Title
+          class="text-lg font-semibold text-slate-900 tracking-tight"
+        >
+          Confirm Status Change
+        </Dialog.Title>
+        <Dialog.Description class="text-xs text-slate-500">
+          This action will update the application status.
+        </Dialog.Description>
+      </Dialog.Header>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-5">
+      <div
+        class="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3"
       >
-        {mapStatusOptionToString(selectedStatus)}
-      </span> ?
-    </p>
-    <br />
-    <Dialog.Footer class="sm:flex gap-3">
+        <div
+          class="h-9 w-9 rounded-full bg-white border border-slate-200 flex items-center justify-center shrink-0"
+        >
+          <Icon
+            icon="mdi:swap-horizontal"
+            width="1.25rem"
+            class="text-slate-600"
+          />
+        </div>
+        <div class="flex-1 min-w-0 space-y-1.5">
+          <p class="text-sm text-slate-700">
+            Update the status to:
+          </p>
+          {#if selectedStatus !== null}
+            <AppStatusTag value={selectedStatus} />
+          {/if}
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div
+      class="px-6 py-3 border-t border-slate-100 bg-slate-50/60 flex flex-col-reverse sm:flex-row sm:justify-end gap-2"
+    >
       <Button
         variant="outline"
-        on:click={() => {
-          treatConfirmationDialog = false;
-        }}>Cancel</Button
+        class="h-10 rounded-lg border-slate-200 text-slate-700 hover:bg-white"
+        on:click={() => (treatConfirmationDialog = false)}
       >
-      <Button disabled={isSaving} on:click={() => saveNewStatus()}>
-        <Icon
-          class={isSaving ? "" : "hidden"}
-          icon="line-md:loading-twotone-loop"
-          width="1.2rem"
-          height="1.2rem"
-        />
-
-        Continue
+        Cancel
       </Button>
-    </Dialog.Footer>
+      <Button
+        disabled={isSaving}
+        class="h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50"
+        on:click={() => saveNewStatus()}
+      >
+        {#if isSaving}
+          <Icon
+            icon="line-md:loading-twotone-loop"
+            width="1.1em"
+            height="1.1em"
+            class="mr-1.5"
+          />
+          Saving…
+        {:else}
+          <Icon icon="mdi:check" class="mr-1.5" width="1em" />
+          Confirm
+        {/if}
+      </Button>
+    </div>
   </Dialog.Content>
 </Dialog.Root>
 <div class="flex flex-col h-screen">

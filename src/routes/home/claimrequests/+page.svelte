@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { Toaster } from '$lib/components/ui/sonner';
+	import { toast } from 'svelte-sonner';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import {
 		adjustmentType,
@@ -75,11 +77,11 @@
 				method: 'POST'
 			});
 			if (!response.ok) throw new Error('Migration failed');
-			alert('Migration successful!');
+			toast.success('Migration successful!', { position: 'top-right' });
 			closeModal();
 			fetchAllClaims(); // Refresh the claims list
 		} catch (err) {
-			alert('Migration failed. Please try again.');
+			toast.error('Migration failed. Please try again.', { position: 'top-right' });
 			console.error('Error during migration:', err);
 		}
 	}
@@ -90,7 +92,10 @@
 
 	// Stats calculations
 	$: totalClaims = claims.length;
-	$: activeStatuses = ['Active', 'Pending', 'Approved']; // Adjust based on your actual statuses
+	$: activeStatuses = [
+		ApplicationStatuses.Active,
+		ApplicationStatuses.AwaitingApproval
+	] as number[];
 	$: activeClaims = claims.filter((c) => activeStatuses.includes(c.fileStatus)).length;
 	$: recentClaims = claims.filter((c) => {
 		const claimDate = new Date(c.requestDate);
@@ -100,6 +105,7 @@
 	}).length;
 </script>
 
+<Toaster />
 <div class="min-h-screen bg-gray-50 p-6">
 	<div class="max-w-7xl mx-auto">
 		<!-- Header -->
