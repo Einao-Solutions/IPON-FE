@@ -79,7 +79,7 @@
       return;
     }
     if (Number(audience) === NotificationAudience.User && !recipientId.trim()) {
-      formError = "Recipient ID is required when targeting a single user";
+      formError = "Recipient Email is required when targeting a single user";
       return;
     }
 
@@ -189,7 +189,7 @@
 
       <div class="space-y-1.5 sm:col-span-3">
         <Label for="recipientId">
-          Recipient ID
+          Recipient Email
           <span class="text-xs text-slate-400 font-normal">
             (required when audience is a single user)
           </span>
@@ -197,7 +197,7 @@
         <Input
           id="recipientId"
           bind:value={recipientId}
-          placeholder="User ID (leave blank for broadcast)"
+          placeholder="User Email (leave blank for broadcast)"
           disabled={loading}
         />
       </div>

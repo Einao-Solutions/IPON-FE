@@ -62,7 +62,7 @@ function authHeaders(): HeadersInit {
 
 function currentUserId(): string | null {
   const user = get(loggedInUser);
-  return user?.id ?? null;
+  return user?.email ??  null;
 }
 
 const ENDPOINT = `${baseURL}/api/notifications`;
