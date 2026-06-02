@@ -156,13 +156,13 @@
             >
             <td class="px-4 py-3 text-center relative">
               <div class="flex items-center justify-center gap-2">
-                <button
+                <!-- <button
                   on:click={() => raiseOpposition(row)}
                   class="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs font-medium transition-colors"
                   title="Raise Opposition"
                 >
                   Oppose
-                </button>
+                </button> -->
                 <div class="relative">
                   <button
                     on:click={() => toggleDropdown(row.fileId)}
@@ -189,7 +189,7 @@
                           View File Details
                         </button>
                       {/if}
-                      <button
+                      <!-- <button
                         on:click={() => raiseOpposition(row)}
                         class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
                       >
@@ -199,7 +199,7 @@
                           height="1rem"
                         />
                         Raise Opposition
-                      </button>
+                      </button> -->
                     </div>
                   {/if}
                 </div>
