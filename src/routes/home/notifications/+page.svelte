@@ -17,6 +17,7 @@
 
   type Filter = "all" | "unread" | "read";
   let filter: Filter = "all";
+  const filters: Filter[] = ["all", "unread", "read"];
 
   onMount(async () => {
     await Promise.all([fetchNotifications(), fetchUnreadCount()]);
@@ -92,7 +93,7 @@
   </div>
 
   <div class="flex items-center gap-2 mb-4">
-    {#each ["all", "unread", "read"] as f}
+    {#each filters as f}
       <button
         type="button"
         on:click={() => (filter = f)}
