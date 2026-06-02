@@ -305,6 +305,7 @@ export const trademarkServices: IPService[] = [
     route: "/opposition",
     category: "filing",
     price: "₦11,500",
+    maintenance: true,
   },
   {
     id: "restoration",
