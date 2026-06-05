@@ -295,7 +295,8 @@ export enum FormApplicationTypes {
   License = 19,
   Mortgage = 20,
   CertifiedTrueCopy = 21,
-  Reclassification = 36,
+  Reclassification = 22,
+  Restoration = 23,
   CounterStatement = 24,
   StatutoryDeclaration = 25,
 }
