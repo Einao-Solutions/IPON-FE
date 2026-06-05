@@ -1,22 +1,41 @@
 <script lang="ts">
   import { onMount } from "svelte";
 
-  const COOKIE_NAME = "cookie_consent";
-  const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
+  const STORAGE_KEY = "cookie_consent";
+  // Retain user choice for 6 months (common practice under ePrivacy guidance)
+  const CONSENT_TTL_MS = 1000 * 60 * 60 * 24 * 180;
+
+  type ConsentRecord = {
+    value: "accepted" | "rejected";
+    timestamp: number;
+  };
 
   let visible = false;
 
-  function readConsent(): string | null {
-    if (typeof document === "undefined") return null;
-    const match = document.cookie
-      .split(";")
-      .map((c) => c.trim())
-      .find((c) => c.startsWith(`${COOKIE_NAME}=`));
-    return match ? decodeURIComponent(match.split("=")[1]) : null;
+  function readConsent(): ConsentRecord | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as ConsentRecord;
+      if (!parsed?.value || typeof parsed.timestamp !== "number") return null;
+      if (Date.now() - parsed.timestamp > CONSENT_TTL_MS) {
+        window.localStorage.removeItem(STORAGE_KEY);
+        return null;
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
   }
 
   function setConsent(value: "accepted" | "rejected") {
-    document.cookie = `${COOKIE_NAME}=${value}; path=/; max-age=${ONE_YEAR_SECONDS}; SameSite=Lax`;
+    try {
+      const record: ConsentRecord = { value, timestamp: Date.now() };
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
+    } catch {
+      // ignore storage errors (e.g. privacy mode / quota)
+    }
     visible = false;
   }
 
