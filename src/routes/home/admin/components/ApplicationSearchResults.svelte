@@ -5,7 +5,7 @@
   import {
     mapDateToStringNoDate,
     mapTypeToString,
-  } from "../../components/dashboardUtils";
+  } from "../../components/dashboardutils";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import Icon from "@iconify/svelte";
   import * as Dialog from "$lib/components/ui/dialog";
