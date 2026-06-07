@@ -59,9 +59,9 @@
 			sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
 
 			try {
-				applicantName = $loggedInUser.name;
+				applicantName = $loggedInUser?.name ?? null;
 				// console.log('applicantName', applicantName);
-				applicantEmail = $loggedInUser.email;
+				applicantEmail = $loggedInUser?.email ?? null;
 				// console.log('applicantEmail', applicantEmail);
 
 				await goto(`/home/claim-files/search/`);
