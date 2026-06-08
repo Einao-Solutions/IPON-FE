@@ -26,6 +26,7 @@
   let activeSubmenu: string | null = null;
   let claimRequestsCount = 0;
   let oppsCount = 0;
+  let ipoSupportCount = 0;
   let showSystemNotifications = false;
   // Journal modal state
   let showJournalModal: boolean = false;
@@ -160,6 +161,7 @@
       roles: [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin],
     },
     { icon: "mdi:help-circle-outline", location: "Support" },
+    { icon: "mdi:headset", location: "iposupport", name: "IPO Support" },
     {
       icon: "mdi:gavel",
       location: "Opposition",
@@ -221,6 +223,7 @@
     loadNotifications();
     loadClaimRequestsCount();
     loadOppositionsCount();
+    loadIpoSupportCount();
     if ($loggedInUser) {
       menus = filterMenus(menus, $loggedInUser.userRoles);
     }
@@ -346,6 +349,34 @@
       console.error("Error fetching claim requests count:", error);
     }
   }
+  async function loadIpoSupportCount() {
+    try {
+      const roles = $loggedInUser?.userRoles ?? [];
+      let url: string;
+      if (roles.includes(UserRoles.TrademarkSupport)) {
+        url = `${baseURL}/api/tickets/GetStats?category=0`;
+      } else if (roles.includes(UserRoles.PatentDesignSupport)) {
+        url = `${baseURL}/api/tickets/GetStats?category=1`;
+      } else if (roles.includes(UserRoles.Tech) || roles.includes(UserRoles.SuperAdmin)) {
+        url = `${baseURL}/api/tickets/GetStats`;
+      } else {
+        const userId = ($loggedInUser as any)?.creatorId;
+        url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
+      }
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        const isStaff = roles.includes(UserRoles.Tech) ||
+          roles.includes(UserRoles.TrademarkSupport) ||
+          roles.includes(UserRoles.PatentDesignSupport) ||
+          roles.includes(UserRoles.SuperAdmin);
+        ipoSupportCount = isStaff ? (data?.staff ?? 0) : (data?.user ?? 0);
+      }
+    } catch {
+      ipoSupportCount = 0;
+    }
+  }
+
   async function loadOppositionsCount() {
     try {
       const response = await fetch(`${baseURL}/api/opposition/count`);
@@ -415,11 +446,18 @@
                   {oppsCount}
                 </span>
               {/if}
-              {#if menu.location === "ClaimRequests" && claimRequestsCount > 0}
+              {#if menu.location === 'ClaimRequests' && claimRequestsCount > 0}
                 <span
                   class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
                 >
                   {claimRequestsCount}
+                </span>
+              {/if}
+              {#if menu.location === 'iposupport'}
+                <span
+                  class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
+                >
+                  {ipoSupportCount}
                 </span>
               {/if}
               {#if menu.submenus}
