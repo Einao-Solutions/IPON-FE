@@ -62,7 +62,12 @@
 		currentView = 'loading';
 		
 		try {
-			const response = await fetch(`${baseURL}/api/users/SearchNameId?nameId=${name_id}`);
+			const params = new URLSearchParams({ nameId: name_id });
+			// If the input looks like an email, also pass it as the email param
+			if (name_id.includes('@')) {
+				params.set('email', name_id);
+			}
+			const response = await fetch(`${baseURL}/api/users/SearchNameId?${params.toString()}`);
 			if (response.ok) {
 				matchesList = await response.json();
 				currentView = matchesList.length > 0 ? 'result' : 'no_results';
@@ -180,23 +185,23 @@
 						Transfer File Ownership
 					</Dialog.Title>
 					<Dialog.Description class="text-muted-foreground">
-						Search for the new owner by name or ID to begin the transfer process
+						Search for the new agent by name, ID or email address to begin the transfer process
 					</Dialog.Description>
 				</div>
 				
 				<div class="space-y-4">
 					<div class="space-y-2">
-						<Label for="search-input" class="text-sm font-medium">Search Owner</Label>
-						<div class="relative">
-							<Icon 
-								icon="ph:magnifying-glass" 
-								class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" 
-								width="1.2rem" 
-								height="1.2rem" 
-							/>
-							<Input 
-								id="search-input"
-								placeholder="Enter name or ID (min 3 characters)" 
+					<Label for="search-input" class="text-sm font-medium">Search Agent</Label>
+					<div class="relative">
+						<Icon 
+							icon="ph:magnifying-glass" 
+							class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" 
+							width="1.2rem" 
+							height="1.2rem" 
+						/>
+						<Input 
+							id="search-input"
+							placeholder="Enter name, ID or email address (min 3 characters)" 
 								bind:value={name_id} 
 								class="pl-10 h-11"
 								disabled={isSearching}
