@@ -135,7 +135,8 @@ const config = {
         "/counterstatement/paid",
         "/statutorydeclaration/paid",
         "/oppositionwithdrawal/paid",
-        "/home/other-applications"
+        "/home/other-applications",
+        "/home/iposupport"
       ],
     },
   },
