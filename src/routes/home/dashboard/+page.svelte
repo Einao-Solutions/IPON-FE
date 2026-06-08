@@ -363,6 +363,8 @@
   let changeAgentFileNumber: string;
   let changeAgentLoading = false;
   let changeAgentSearched = false;
+  let changeAgentPoaFile: File | null = null;
+  let changeAgentPoaInput: HTMLInputElement;
   async function getDocuments() {
     getDocError = null;
     getDocResult = null;
@@ -1288,7 +1290,7 @@
 
 <!-- Change of Agent Dialog -->
 <Dialog.Root bind:open={showChangeOfAgentDialog}>
-  <Dialog.Content class="max-w-[500px]">
+  <Dialog.Content class="max-w-[680px] max-h-[90vh] overflow-y-auto">
     <Dialog.Header>
       <Dialog.Title class="text-xl font-semibold">Change of Agent</Dialog.Title>
       <Dialog.Description class="text-gray-600">
@@ -1299,9 +1301,7 @@
     <div class="mt-6 space-y-4">
       <div class="space-y-2">
         <!-- svelte-ignore a11y-label-has-associated-control -->
-        <label class="block text-sm font-medium text-gray-700"
-          >File Number</label
-        >
+        <label class="block text-sm font-medium text-gray-700">File Number</label>
         <input
           type="text"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -1322,33 +1322,122 @@
 
     <!-- Search Result -->
     {#if changeAgentResult && Array.isArray(changeAgentResult) && changeAgentResult.length > 0}
-      <div class="mt-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-3">File Details:</h3>
-        <div class="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-2">
-          <p>
-            <span class="font-semibold">File Number:</span>
-            {changeAgentResult[0].fileId}
-          </p>
-          <p>
-            <span class="font-semibold">Type:</span>
-            {fileTypeToString(changeAgentResult[0].fileTypes)}
-          </p>
-          <p>
-            <span class="font-semibold">Title:</span>
-            {changeAgentResult[0].titleOfTradeMark}
-          </p>
-          <p>
-            <span class="font-semibold">Applicant:</span>
-            {changeAgentResult[0].fileApplicant}
-          </p>
-          <p>
-            <span class="font-semibold">Correspondence:</span>
-            {changeAgentResult[0].fileApplicant}
-          </p>
-          <Button class="mt-2" on:click={async () => await showOwnershipForm()}
-            >Update</Button
-          >
+      {@const file = changeAgentResult[0]}
+      <div class="mt-6 space-y-5">
+
+        <!-- File Summary -->
+        <div>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">File Info</h3>
+          <div class="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-1 text-sm">
+            <p><span class="font-semibold text-gray-700">File Number:</span> {file.fileId}</p>
+            <p><span class="font-semibold text-gray-700">Type:</span> {fileTypeToString(file.fileTypes)}</p>
+            {#if file.titleOfTradeMark}
+              <p><span class="font-semibold text-gray-700">Title of Trade Mark:</span> {file.titleOfTradeMark}</p>
+            {/if}
+            {#if file.titleOfDesign}
+              <p><span class="font-semibold text-gray-700">Title of Design:</span> {file.titleOfDesign}</p>
+            {/if}
+            {#if file.titleOfInvention}
+              <p><span class="font-semibold text-gray-700">Title of Invention:</span> {file.titleOfInvention}</p>
+            {/if}
+            {#if file.fileStatus !== undefined}
+              <p><span class="font-semibold text-gray-700">Status:</span> {file.fileStatus}</p>
+            {/if}
+          </div>
         </div>
+
+        <!-- Applicant Details -->
+        {#if file.applicants && Array.isArray(file.applicants) && file.applicants.length > 0}
+          <div>
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
+              Applicant{file.applicants.length > 1 ? "s" : ""} ({file.applicants.length})
+            </h3>
+            {#each file.applicants as applicant, i}
+              <div class="p-4 bg-blue-50 border border-blue-200 rounded-md space-y-1 text-sm {i > 0 ? 'mt-2' : ''}">
+                {#if file.applicants.length > 1}
+                  <p class="font-semibold text-blue-800 mb-1">Applicant {i + 1}</p>
+                {/if}
+                {#if applicant.name}<p><span class="font-semibold text-gray-700">Name:</span> {applicant.name}</p>{/if}
+                {#if applicant.address}<p><span class="font-semibold text-gray-700">Address:</span> {applicant.address}</p>{/if}
+                {#if applicant.email}<p><span class="font-semibold text-gray-700">Email:</span> {applicant.email}</p>{/if}
+                {#if applicant.phone}<p><span class="font-semibold text-gray-700">Phone:</span> {applicant.phonePrefix ? applicant.phonePrefix + " " : ""}{applicant.phone}</p>{/if}
+                {#if applicant.country}<p><span class="font-semibold text-gray-700">Country / Nationality:</span> {applicant.country}</p>{/if}
+                {#if applicant.state}<p><span class="font-semibold text-gray-700">State:</span> {applicant.state}</p>{/if}
+              </div>
+            {/each}
+          </div>
+        {:else if file.fileApplicant}
+          <div>
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Applicant</h3>
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm">
+              <p>{file.fileApplicant}</p>
+            </div>
+          </div>
+        {/if}
+
+        <!-- Correspondence Details -->
+        {#if file.correspondence}
+          {@const corr = file.correspondence}
+          <div>
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Correspondence</h3>
+            <div class="p-4 bg-green-50 border border-green-200 rounded-md space-y-1 text-sm">
+              {#if corr.name}<p><span class="font-semibold text-gray-700">Name:</span> {corr.name}</p>{/if}
+              {#if corr.address}<p><span class="font-semibold text-gray-700">Address:</span> {corr.address}</p>{/if}
+              {#if corr.email}<p><span class="font-semibold text-gray-700">Email:</span> {corr.email}</p>{/if}
+              {#if corr.phone}<p><span class="font-semibold text-gray-700">Phone:</span> {corr.phone}</p>{/if}
+              {#if corr.nationality}<p><span class="font-semibold text-gray-700">Nationality:</span> {corr.nationality}</p>{/if}
+              {#if corr.state}<p><span class="font-semibold text-gray-700">State:</span> {corr.state}</p>{/if}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Power of Attorney Upload -->
+        <div>
+          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Power of Attorney</h3>
+          <div class="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-md">
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+              class="hidden"
+              bind:this={changeAgentPoaInput}
+              on:change={() => {
+                changeAgentPoaFile = changeAgentPoaInput.files?.[0] ?? null;
+              }}
+            />
+            {#if changeAgentPoaFile}
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 text-sm text-green-700">
+                  <Icon icon="lucide:file-check" class="w-4 h-4" />
+                  <span class="truncate max-w-[280px]">{changeAgentPoaFile.name}</span>
+                </div>
+                <button
+                  type="button"
+                  class="text-red-500 hover:text-red-700 text-xs"
+                  on:click={() => {
+                    changeAgentPoaFile = null;
+                    if (changeAgentPoaInput) changeAgentPoaInput.value = "";
+                  }}
+                >Remove</button>
+              </div>
+            {:else}
+              <button
+                type="button"
+                class="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                on:click={() => changeAgentPoaInput.click()}
+              >
+                <Icon icon="lucide:upload" class="w-4 h-4" />
+                Attach Power of Attorney document
+              </button>
+              <p class="text-xs text-gray-400 mt-1">Accepted: PDF, DOC, DOCX, JPG, PNG</p>
+            {/if}
+          </div>
+        </div>
+
+        <!-- Update Button -->
+        <Button class="w-full bg-blue-600 hover:bg-blue-700 text-white" on:click={async () => await showOwnershipForm()}>
+          <Icon icon="lucide:user-check" class="w-4 h-4 mr-2" />
+          Proceed to Change Agent
+        </Button>
       </div>
     {:else if changeAgentSearched}
       <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -1369,6 +1458,7 @@
           changeAgentResult = [];
           changeAgentError = null;
           changeAgentSearched = false;
+          changeAgentPoaFile = null;
         }}
         class="px-4 py-2"
       >
