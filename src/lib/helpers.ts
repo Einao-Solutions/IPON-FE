@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-export const baseURL = "http://localhost:5044";
-// export const baseURL = "https://backend.einaotest.com";
+// export const baseURL = "http://localhost:5044";
+export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -710,8 +710,59 @@ export enum TicketStates {
   closed = 2,
 }
 
+export enum TicketCategory {
+  TrademarkRegistry = 0,
+  PatentDesignRegistry = 1,
+  TechnicalSupport = 2,
+}
+
+export enum TicketType {
+  RegistryProcessInquiry = 0,
+  ApplicationStatus = 1,
+  FollowUp = 2,
+  AccountAccess = 3,
+  PaymentIssue = 4,
+  Others = 5,
+}
+
+export enum ApplicationType {
+  NewRegistration = 0,
+  ClericalUpdate = 1,
+  Opposition = 2,
+  Certificate = 3,
+  Recordals = 4,
+  Withdrawal = 5,
+  Appeal = 6,
+}
+
+export enum TrademarkRecordalType {
+  ChangeOfName = 0,
+  ChangeOfAddress = 1,
+  Assignment = 2,
+  Merger = 3,
+  RegisteredUser = 4,
+  Reclassification = 5,
+  Amendment = 6,
+  Renewal = 7,
+}
+
+export enum PatentDesignRecordalType {
+  ChangeOfPatentTitle = 0,
+  Assignment = 1,
+  Merger = 2,
+  License = 3,
+  Mortgage = 4,
+  Amendment = 5,
+  Renewal = 6,
+}
+
 export type TicketSummary = {
   id: string;
+  ticketId?: string;
+  ticketNumber?: string;
+  category?: TicketCategory;
+  isEscalated?: boolean;
+  escalatedFromCategory?: TicketCategory;
   creator: {
     id: string;
     name: string;
@@ -729,6 +780,15 @@ export type TicketSummary = {
 
 export type TicketInfo = {
   id: string;
+  ticketNumber?: string;
+  category?: TicketCategory;
+  ticketType?: TicketType;
+  applicationType?: ApplicationType;
+  recordalType?: number;
+  fileNumber?: string;
+  isEscalated?: boolean;
+  escalatedFromCategory?: TicketCategory;
+  escalatedAt?: string;
   title: string;
   creatorId: string;
   creatorName: string;
