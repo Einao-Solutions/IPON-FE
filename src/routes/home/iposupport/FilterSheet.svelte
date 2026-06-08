@@ -74,10 +74,19 @@
 	}
 
 	// ── Apply / Clear ─────────────────────────────────────────────────────────────
-	function onSubmitted() {
+function onSubmitted() {
 		const params: Record<string, any> = {};
 
-		if (ticketNumber.trim()) params.ticketNumber = ticketNumber.trim();
+		// Fast-path: if user entered a ticket number, only send that.
+		// This avoids extra filters/pagination interactions and makes the backend return quickly.
+		const tn = ticketNumber.trim();
+		if (tn) {
+			params.ticketNumber = tn;
+			onFilter(params);
+			open = false;
+			return;
+		}
+
 		if (fileNumber.trim()) params.fileNumber = fileNumber.trim();
 		if (selectedCategories.length === 1) params.category = selectedCategories[0];
 		if (selectedApplicationTypes.length === 1) params.applicationType = selectedApplicationTypes[0];

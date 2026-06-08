@@ -7,7 +7,7 @@ UserRoles,
 TicketCategory
 } from '$lib/helpers';
 import { Textarea } from '$lib/components/ui/textarea';
-import * as Sheet from '$lib/components/ui/sheet';
+
 import * as AlertDialog from '$lib/components/ui/alert-dialog';
 import { Button } from '$lib/components/ui/button';
 import { Input } from '$lib/components/ui/input';
@@ -47,9 +47,26 @@ $: escalationTargets = isTechSupport
 ? [{ value: TicketCategory.TechnicalSupport, label: 'Technical Support' }]
 : [];
 
+
+
+let _lastEscalateDialogOpen = false;
+
 $: if (escalationTargets.length > 0) {
-selectedEscalationTarget = escalationTargets[0].value;
+	const availableValues = new Set(escalationTargets.map((t) => t.value));
+	const dialogJustOpened = showEscalateDialog && !_lastEscalateDialogOpen;
+	
+	// Set default only when the dialog first opens (prevents selection from snapping back
+	// while user is interacting).
+	if (dialogJustOpened) {
+		selectedEscalationTarget = escalationTargets[0].value;
+	} else if (!availableValues.has(selectedEscalationTarget)) {
+		selectedEscalationTarget = escalationTargets[0].value;
+	}
+
+	_lastEscalateDialogOpen = showEscalateDialog;
 }
+
+
 
 $: dataExt = data as any;
 $: ticketCategory = dataExt?.category ?? null;
@@ -59,8 +76,11 @@ $: ticketEscalatedFromCategory = dataExt?.escalatedFromCategory ?? null;
 $: canEscalate =
 (isRegistrySupport || isTechSupport) &&
 data?.status !== TicketStates.closed &&
-!ticketIsEscalated &&
-escalationTargets.length > 0;
+escalationTargets.length > 0 &&
+// Tech is allowed to escalate again even if the ticket was escalated before,
+// so long as the user has an escalation target available.
+// For registry support roles, keep the original “only if not escalated” behavior.
+(isTechSupport || !ticketIsEscalated);
 
 $: userInitials = (() => {
 const parts = (name ?? '').trim().split(' ').filter(Boolean);
@@ -76,7 +96,12 @@ if (parts.length === 1) return parts[0][0].toUpperCase();
 return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-async function escalateTicket() {
+async function confirmAndEscalateTicket() {
+// Confirm with user before performing escalation
+if (!window.confirm(`Confirm escalation to: ${escalationTargets.find((t) => t.value === selectedEscalationTarget)?.label ?? 'the selected team'}?`)) {
+	return;
+}
+
 isEscalating = true;
 const target = escalationTargets.find((t) => t.value === selectedEscalationTarget);
 const autoMessage = `This ticket has been escalated to ${target?.label ?? 'the appropriate team'} for further assistance.`;
@@ -182,9 +207,10 @@ return mapDateToString(dateStr);
 }
 
 function statusColor(s: number): string {
+// Keep colors consistent with TicketTag
 if (s === 0) return 'bg-yellow-400';
-if (s === 1) return 'bg-blue-500';
-return 'bg-green-600';
+if (s === 1) return 'bg-blue-400';
+return 'bg-green-400';
 }
 </script>
 
@@ -207,7 +233,14 @@ Escalate this ticket to <strong>{escalationTargets[0]?.label}</strong>?
 <div class="flex flex-col gap-2 py-2">
 {#each escalationTargets as target}
 <label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-slate-50 border-2 transition-colors {selectedEscalationTarget === target.value ? 'border-green-600 bg-green-50' : 'border-slate-200'}">
-<input type="radio" name="escalation-target" value={target.value} bind:group={selectedEscalationTarget} class="accent-green-700" />
+<input
+	type="radio"
+	name="escalation-target"
+	value={target.value}
+	bind:group={selectedEscalationTarget}
+	class="accent-green-700"
+	aria-label={target.label}
+/>
 <span class="text-sm font-medium">{target.label}</span>
 </label>
 {/each}
@@ -215,7 +248,7 @@ Escalate this ticket to <strong>{escalationTargets[0]?.label}</strong>?
 {/if}
 <AlertDialog.Footer>
 <AlertDialog.Cancel on:click={() => (showEscalateDialog = false)}>Cancel</AlertDialog.Cancel>
-<Button disabled={isEscalating} on:click={escalateTicket} class="bg-orange-600 hover:bg-orange-700 text-white">
+<Button disabled={isEscalating} on:click={confirmAndEscalateTicket} class="bg-red-600 hover:bg-red-700 text-white">
 {#if isEscalating}<Icon icon="eos-icons:loading" width="1rem" height="1rem" class="mr-2" />{/if}
 Escalate
 </Button>
@@ -223,17 +256,30 @@ Escalate
 </AlertDialog.Content>
 </AlertDialog.Root>
 
-<Sheet.Root bind:open closeOnOutsideClick={false} onOpenChange={(val) => { if (!val) onExit(); }}>
-<Sheet.Content class="!p-0 w-full sm:max-w-3xl flex flex-col overflow-hidden bg-slate-50 [&>button:last-child]:hidden">
+{#if open}
+<div
+	class="fixed inset-0 z-50 flex items-center justify-center bg-black/35 backdrop-blur-sm p-4"
+	role="dialog"
+	aria-modal="true"
+>
 
-<!-- ── Top bar ─────────────────────────────────────────────────── -->
+	<div
+		class="w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden bg-slate-50 flex flex-col"
+	>
+
+
+		<!-- ── Top bar ─────────────────────────────────────────────────── -->
+
 <div class="flex items-center justify-between px-3 py-3 bg-white border-b flex-shrink-0">
 <div class="flex items-center gap-3 min-w-0">
-<Sheet.Close asChild let:builder>
-  <button use:builder.action {...builder} class="flex-shrink-0 rounded-md p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition-colors" aria-label="Close">
-    <Icon icon="mdi:close" width="1rem" height="1rem" />
-  </button>
-</Sheet.Close>
+<button
+	class="flex-shrink-0 rounded-md p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition-colors"
+	aria-label="Close"
+	on:click={onExit}
+>
+	<Icon icon="mdi:close" width="1rem" height="1rem" />
+</button>
+
 <div class="flex-shrink-0 w-2 h-2 rounded-full {statusColor(data?.status ?? 2)}"></div>
 <p class="text-xs font-mono text-slate-500 flex-shrink-0">
 {dataExt?.ticketNumber ?? '#—'}
@@ -242,9 +288,14 @@ Escalate
 </div>
 <div class="flex items-center gap-2 flex-shrink-0 ml-3">
 {#if canEscalate}
-<Button variant="outline" size="sm" class="border-orange-300 text-orange-600 hover:bg-orange-50 h-8 text-xs" on:click={() => (showEscalateDialog = true)}>
-<Icon icon="mdi:arrow-up-circle-outline" width="0.9rem" height="0.9rem" class="mr-1" />
-Escalate
+<Button
+	variant="outline"
+	size="sm"
+	class="border-red-500 text-red-600 hover:bg-red-50 h-8 text-xs"
+	on:click={() => (showEscalateDialog = true)}
+>
+	<Icon icon="mdi:arrow-up-circle-outline" width="0.9rem" height="0.9rem" class="mr-1" />
+	Escalate
 </Button>
 {/if}
 <TicketTag state={data?.status ?? 2} />
@@ -252,10 +303,10 @@ Escalate
 </div>
 
 <!-- ── Two-panel body ──────────────────────────────────────────── -->
-<div class="flex flex-1 overflow-hidden">
+<div class="flex flex-1 min-h-0 overflow-hidden">
 
 <!-- LEFT: meta panel -->
-<aside class="w-56 flex-shrink-0 border-r bg-white overflow-y-auto flex flex-col">
+<aside class="w-56 flex-shrink-0 border-r bg-white overflow-y-auto flex flex-col max-h-[80vh]">
 <!-- Creator -->
 <div class="px-4 pt-5 pb-4 border-b">
 <div class="flex items-center gap-3">
@@ -295,8 +346,8 @@ Escalate
 <div>
 <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Escalation</p>
 <div class="flex items-center gap-1.5">
-<Icon icon="mdi:arrow-up-circle" width="0.9rem" height="0.9rem" class="text-orange-500 flex-shrink-0" />
-<p class="text-xs text-orange-600 font-medium">
+<Icon icon="mdi:arrow-up-circle" width="0.9rem" height="0.9rem" class="text-red-500 flex-shrink-0" />
+<p class="text-xs text-red-600 font-medium">
 Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ticketEscalatedFromCategory)}` : ''}
 </p>
 </div>
@@ -318,7 +369,7 @@ Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ti
 </div>
 
 <!-- Timeline mini -->
-<div class="px-4 py-4 border-t">
+<div class="px-4 py-4 border-t flex-shrink-0 overflow-y-auto max-h-52">
 <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-3">Timeline</p>
 <div class="relative pl-4">
 <div class="absolute left-1.5 top-0 bottom-0 w-px bg-slate-200"></div>
@@ -339,8 +390,8 @@ Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ti
 
 {#if ticketIsEscalated}
 <div class="relative mb-3">
-<div class="absolute -left-[13px] top-0.5 w-2 h-2 rounded-full bg-orange-500 ring-2 ring-white"></div>
-<p class="text-[10px] font-medium text-orange-600">Escalated</p>
+<div class="absolute -left-[13px] top-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white"></div>
+<p class="text-[10px] font-medium text-red-600">Escalated</p>
 <p class="text-[10px] text-slate-400">{dataExt?.escalatedAt ? relativeTime(dataExt.escalatedAt) : ''}</p>
 </div>
 {/if}
@@ -368,9 +419,9 @@ Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ti
 <!-- System / escalation message -->
 <div class="flex items-center justify-center gap-2">
 <div class="h-px flex-1 bg-slate-200"></div>
-<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-100 border border-orange-200">
-<Icon icon="mdi:arrow-up-circle" width="0.75rem" height="0.75rem" class="text-orange-500" />
-<span class="text-[10px] font-medium text-orange-700">{message.message}</span>
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 border border-red-200">
+<Icon icon="mdi:arrow-up-circle" width="0.75rem" height="0.75rem" class="text-red-500" />
+<span class="text-[10px] font-medium text-red-700">{message.message}</span>
 </div>
 <div class="h-px flex-1 bg-slate-200"></div>
 </div>
@@ -463,5 +514,8 @@ Ticket closed by <strong>{data.resolution?.staffName ?? '—'}</strong>
 </div>
 </div>
 </div>
-</Sheet.Content>
-</Sheet.Root>
+
+	</div>
+</div>
+{/if}
+

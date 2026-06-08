@@ -652,6 +652,7 @@
   <svelte:component this={assignForm} {...assignData} />
 {/if}
 <Toaster />
+
 {#if showOwnership && ownershipForm}
   <svelte:component this={ownershipForm} {...ownershipData} />
 {/if}
@@ -1907,6 +1908,29 @@
 			</ul>
 		</div>
 		-->
+{/if}
+
+{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkSupport) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignSupport)}
+  <div class="min-h-[60vh] flex items-center justify-center p-6">
+    <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div class="flex items-center gap-3 mb-4">
+        <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+          <Icon icon="mdi:scale-balance" class="text-green-700" width="1.2rem" height="1.2rem" />
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900">IP Support Dashboard</h2>
+          <p class="text-sm text-slate-600">Open your tickets and actions</p>
+        </div>
+      </div>
+
+      <Button
+        class="w-full bg-green-800 hover:bg-green-700 text-white"
+        on:click={() => goto('/home/iposupport')}
+      >
+        Go to IPO Support
+      </Button>
+    </div>
+  </div>
 {/if}
 
 <!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->

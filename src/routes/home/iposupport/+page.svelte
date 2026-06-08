@@ -376,11 +376,15 @@
 			onFilter: async (params: Record<string, any>) => {
 				ticketLoading = true;
 				ipoTicketsSummary.set(null);
-				const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(params)
-				});
+const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							...params,
+							amount: selectedResultList,
+							startIndex: 0
+						})
+					});
 				if (response.ok) {
 					ipoTicketsSummary.set(await response.json());
 				}
@@ -481,10 +485,13 @@
 	<!-- Header -->
 	<div class="mb-4 flex items-center justify-end">
 		<div class="flex gap-2">
+			<!-- Filter button temporarily removed -->
+			<!--
 			<Button variant="outline" on:click={showFilterSheet}>
 				<Icon icon="mdi:filter-outline" width="1rem" height="1rem" class="mr-1" />
 				Filter
 			</Button>
+			-->
 			<Button on:click={createNewTicket}>+ Create new Ticket</Button>
 		</div>
 	</div>
@@ -531,14 +538,14 @@
 		</button>
 		<!-- Awaiting Staff -->
 		{#if _isTechUser}
-		<button type="button" on:click={() => getSpecific(1, null)}
-			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-				{activeStatusFilter === 1 && activeCategoryPillFilter === null ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}">
-			Awaiting Staff
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-950/30 text-[10px] font-semibold">
-				{$ipoTicketStats.staff ?? 0}
-			</span>
-		</button>
+		<button type="button" on:click={() => getSpecific(1, TicketCategory.TechnicalSupport)}
+					class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+						{activeStatusFilter === 1 && activeCategoryPillFilter === TicketCategory.TechnicalSupport ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}">
+					Awaiting Staff
+					<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-950/30 text-[10px] font-semibold">
+						{$ipoTicketStats.staff ?? 0}
+					</span>
+				</button>
 		{:else}
 		<button type="button" on:click={() => getSpecific(1)}
 			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
@@ -571,16 +578,16 @@
 		{#if _isTechUser}
 		<div class="w-px bg-slate-200 mx-1 self-stretch"></div>
 		<button type="button" on:click={() => getSpecific(null, TicketCategory.TrademarkRegistry)}
-			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-				{activeCategoryPillFilter === TicketCategory.TrademarkRegistry && activeStatusFilter === null ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-800 hover:bg-purple-200'}">
+class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+						{activeCategoryPillFilter === TicketCategory.TrademarkRegistry && activeStatusFilter === null ? 'bg-green-700 text-white' : 'bg-green-100 text-green-800 hover:bg-green-200'}">
 			Trademark Tickets
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-purple-950/30 text-[10px] font-semibold">
+<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-green-950/30 text-[10px] font-semibold">
 				{trademarkPillCount}
 			</span>
 		</button>
 		<button type="button" on:click={() => getSpecific(null, TicketCategory.PatentDesignRegistry)}
-			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-				{activeCategoryPillFilter === TicketCategory.PatentDesignRegistry && activeStatusFilter === null ? 'bg-orange-600 text-white' : 'bg-orange-100 text-orange-800 hover:bg-orange-200'}">
+class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+						{activeCategoryPillFilter === TicketCategory.PatentDesignRegistry && activeStatusFilter === null ? 'bg-green-700 text-white' : 'bg-green-100 text-green-800 hover:bg-green-200'}">
 			Patent & Design Tickets
 			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-orange-950/30 text-[10px] font-semibold">
 				{patentPillCount}
