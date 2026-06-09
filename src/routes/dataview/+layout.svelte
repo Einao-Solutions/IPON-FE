@@ -64,7 +64,8 @@
   let isSaving: boolean = false;
   let isDataLoading: boolean = true;
   let isLoading = false;
-  export let data: LayoutServerData;
+  export const data: LayoutServerData = undefined as unknown as LayoutServerData;
+  void data;
   function resetForm() {
     selectedStatus = null;
     newStatusReason.set(null);
@@ -78,10 +79,26 @@
     );
   };
 
+  $: renewalApplications = (
+    (fileData?.applicationHistory ?? []) as ApplicationHistoryType[]
+  ).filter((x) => x.applicationType === 1);
+
+  function canTreatRenewal(renewal: ApplicationHistoryType): boolean {
+    return CanTreatApplication(
+      $loggedInUser?.userRoles ?? [],
+      fileData.type,
+      (renewal.currentStatus ?? 0) as ApplicationStatuses,
+      [],
+    );
+  }
+
   function getDates() {
     return fileData?.applicationHistory
-      ?.filter((y) => y.applicationType == 0 || y.applicationType == 1)
-      .map((x) => x.expiryDate);
+      ?.filter(
+        (y: ApplicationHistoryType) =>
+          y.applicationType == 0 || y.applicationType == 1,
+      )
+      .map((x: ApplicationHistoryType) => x.expiryDate);
   }
   async function saveNewStatus() {
     isSaving = true;
@@ -90,7 +107,7 @@
       afterStatus: selectedStatus,
       message: $newStatusReason,
       user: $loggedInUser?.firstName + " " + $loggedInUser?.lastName,
-      userId: $loggedInUser?.creatorId,
+      userId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
       applicationType: selectedApplication?.applicationType,
       fileId: fileData?.id,
       applicationId: selectedApplication?.id,
@@ -119,11 +136,11 @@
       selectedStatus = null;
       const loggeduser = $loggedInUser?.id.toString() ?? "";
       const userRoles = $loggedInUser?.userRoles ?? [];
-      const filingType = $applicationData?.type;
-      const appStatus = $applicationData?.fileStatus;
+      const filingType = ($applicationData?.type ?? FilingType.Trademark) as FilingType;
+      const appStatus = $applicationData?.fileStatus as ApplicationStatuses;
       canUpdate = CanUpdateApplication(
         loggeduser,
-        $applicationData.creatorAccount,
+        $applicationData?.creatorAccount ?? "",
         userRoles,
         appStatus,
       );
@@ -131,7 +148,9 @@
         userRoles,
         filingType,
         appStatus,
-        fileData.applicationHistory.map((x) => x.currentStatus),
+        fileData.applicationHistory.map(
+          (x: ApplicationHistoryType) => x.currentStatus,
+        ),
       );
     }
   }
@@ -140,12 +159,12 @@
     newApplicationType.set(fileData.type);
     applicationMode.set(1);
     if (fileData.priorityInfo) {
-      (fileData as PatentData)?.priorityInfo.forEach((x) => {
+      (fileData as PatentData)?.priorityInfo?.forEach((x) => {
         console.log(x.date);
         if (x.date.includes("/")) {
           x.date = dayjs(x.date, "M/D/YYYY").format("YYYY-MM-DD");
         } else {
-          x.date = parseDate(x.date);
+          (x as unknown as { date: DateValue }).date = parseDate(x.date);
         }
       });
     }
@@ -164,9 +183,9 @@
     getDates();
     console.log(
       fileData.applicationHistory.filter(
-        (x) =>
-          [0, 1].includes(x.applicationType) &&
-          ![0, 1].includes(x.currentStatus),
+        (x: ApplicationHistoryType) =>
+          [0, 1].includes(x.applicationType ?? -1) &&
+          ![0, 1].includes(x.currentStatus ?? -1),
       ),
     );
   });
@@ -201,14 +220,16 @@
       userRoles,
       filingType,
       appStatus,
-      fileData.applicationHistory.map((x) => x.currentStatus),
+      fileData.applicationHistory.map(
+        (x: ApplicationHistoryType) => x.currentStatus,
+      ),
     );
     currentStatus = appStatus;
     isDataLoading = false;
   }
 
   async function gotoPrevious() {
-    const currentID = $currentUrl.searchParams.get("id");
+    const currentID = $currentUrl.searchParams.get("id") ?? "";
     let currentIndex: number = $listOfIds.indexOf(currentID);
     if (currentIndex != 0) {
       currentIndex -= 1;
@@ -232,7 +253,7 @@
   }
 
   async function gotoNext() {
-    const currentID = $currentUrl.searchParams.get("id");
+    const currentID = $currentUrl.searchParams.get("id") ?? "";
     let currentIndex: number = $listOfIds.indexOf(currentID);
     currentIndex += 1;
     // if we are close to the end of the list, at 9,load next 10,
@@ -276,7 +297,7 @@
       );
       return;
     }
-    currentStatus = data.currentStatus;
+    currentStatus = data.currentStatus as ApplicationStatuses;
     selectedApplication = data;
     treatApplicationDialog = true;
   }
@@ -607,18 +628,13 @@
                 >Treat New Application</DropdownMenu.Item
               >
             {/if}
-            <!-- {#if  }
-						<DropdownMenu.Item on:click={() => treatApplication(fileData.applicationHistory[0])}
-								>Treat Rejected Application</DropdownMenu.Item
-							>
-						{/if} -->
-            <!-- {#each fileData.applicationHistory.filter(x=>x.applicationType===1) as renewal, i}
-							{#if CanTreatApplication($loggedInUser.userRoles, fileData.type, renewal.currentStatus, [])}
-								<DropdownMenu.Item on:click={() => treatApplication(renewal)}
-									>Treat Renewal Application {i+1}</DropdownMenu.Item
-								>
-							{/if}
-						{/each} -->
+            {#each renewalApplications as renewal, i}
+              {#if canTreatRenewal(renewal)}
+                <DropdownMenu.Item on:click={() => treatApplication(renewal)}
+                  >Treat Renewal Application {i + 1}</DropdownMenu.Item
+                >
+              {/if}
+            {/each}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       {/if}
