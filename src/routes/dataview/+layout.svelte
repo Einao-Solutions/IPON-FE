@@ -1,5 +1,4 @@
 <script lang="ts">
-
   import { Button } from "$lib/components/ui/button/index";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index";
@@ -64,7 +63,8 @@
   let isSaving: boolean = false;
   let isDataLoading: boolean = true;
   let isLoading = false;
-  export const data: LayoutServerData = undefined as unknown as LayoutServerData;
+  export const data: LayoutServerData =
+    undefined as unknown as LayoutServerData;
   void data;
   function resetForm() {
     selectedStatus = null;
@@ -82,7 +82,8 @@
   $: renewalApplications = (
     (fileData?.applicationHistory ?? []) as ApplicationHistoryType[]
   ).filter((x) => x.applicationType === 1);
-
+  $: applications = (fileData?.applicationHistory ??
+    []) as ApplicationHistoryType[];
   function canTreatRenewal(renewal: ApplicationHistoryType): boolean {
     return CanTreatApplication(
       $loggedInUser?.userRoles ?? [],
@@ -136,7 +137,8 @@
       selectedStatus = null;
       const loggeduser = $loggedInUser?.id.toString() ?? "";
       const userRoles = $loggedInUser?.userRoles ?? [];
-      const filingType = ($applicationData?.type ?? FilingType.Trademark) as FilingType;
+      const filingType = ($applicationData?.type ??
+        FilingType.Trademark) as FilingType;
       const appStatus = $applicationData?.fileStatus as ApplicationStatuses;
       canUpdate = CanUpdateApplication(
         loggeduser,
@@ -334,7 +336,7 @@
 
     window.open(`/availabilitysearch`, "_blank");
   }
-  async function opposeFile(fileNumber:string, reason:string) {
+  async function opposeFile(fileNumber: string, reason: string) {
     console.log("opposing file", fileNumber, reason);
     isSaving = true;
     const response = await fetch(`${baseURL}/api/opposition/StaffOpposition`, {
@@ -449,7 +451,11 @@
               on:click={() =>
                 publishFile(fileData.fileId, $newStatusReason ?? null)}
             >
-              <Icon icon="mdi:check-decagram-outline" class="mr-1.5" width="1em" />
+              <Icon
+                icon="mdi:check-decagram-outline"
+                class="mr-1.5"
+                width="1em"
+              />
               Publish
             </Button>
           {/if}
@@ -459,7 +465,9 @@
       <!-- Status selection -->
       {#if getStatuses(currentStatus, $applicationData?.type ?? 0).length > 0}
         <div class="space-y-2">
-          <p class="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+          <p
+            class="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+          >
             New Status
           </p>
           <div class="flex flex-wrap gap-2">
@@ -473,8 +481,8 @@
                   : ""}
                 class="px-3 py-1.5 rounded-full text-xs font-medium border transition-all
                   {isSelected
-                    ? 'text-white shadow-sm'
-                    : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300'}"
+                  ? 'text-white shadow-sm'
+                  : 'border-slate-200 text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300'}"
               >
                 {mapStatusOptionToString(status)}
               </button>
@@ -557,9 +565,7 @@
           />
         </div>
         <div class="flex-1 min-w-0 space-y-1.5">
-          <p class="text-sm text-slate-700">
-            Update the status to:
-          </p>
+          <p class="text-sm text-slate-700">Update the status to:</p>
           {#if selectedStatus !== null}
             <AppStatusTag value={selectedStatus} />
           {/if}
@@ -615,7 +621,7 @@
     </div>
     <div class="flex justify-between p-4 basis-1/12">
       <Button on:click={() => gotoPrevious()}>Previous</Button>
-      {#if $loggedInUser?.userRoles?.some( (x) => [UserRoles.Staff, UserRoles.Tech].includes(x), )}
+      {#if $loggedInUser?.userRoles?.some( (x) => [UserRoles.Staff, UserRoles.Tech, UserRoles.SuperAdmin].includes(x), )}
         <DropdownMenu.Root>
           <DropdownMenu.Trigger>
             <Button>Treat Applications</Button>
@@ -634,6 +640,11 @@
                   >Treat Renewal Application {i + 1}</DropdownMenu.Item
                 >
               {/if}
+            {/each}
+            {#each applications as app, i}
+              <DropdownMenu.Item on:click={() => treatApplication(app)}
+                >Change Status</DropdownMenu.Item
+              >
             {/each}
           </DropdownMenu.Content>
         </DropdownMenu.Root>
