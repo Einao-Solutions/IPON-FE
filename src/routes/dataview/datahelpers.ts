@@ -55,6 +55,9 @@ export function getStatuses(
   ) {
     return [ApplicationStatuses.Active, ApplicationStatuses.Rejected];
   }
+  if (currentStatus === ApplicationStatuses.Inactive) {
+    return [ApplicationStatuses.Publication, ApplicationStatuses.Active];
+  }
 
   if (
     [
@@ -105,6 +108,7 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
     case ApplicationStatuses.Re_conduct:
       return "Re-conduct Search";
     case ApplicationStatuses.Active:
+      return "Active";
     case ApplicationStatuses.Approved:
       return "Approve";
     case ApplicationStatuses.Rejected:
@@ -518,6 +522,15 @@ export function CanTreatApplication(
         ].includes(x),
       );
     }
+  }
+  if (type === FilingType.Trademark) {
+    hasRole = userRoles.some((x) =>
+      [UserRoles.SuperAdmin, UserRoles.TrademarkRegistrar].includes(x),
+    );
+  } else {
+    hasRole = userRoles.some((x) =>
+      [UserRoles.SuperAdmin, UserRoles.PatentDesignRegistrar].includes(x),
+    );
   }
   return hasRole;
 }
