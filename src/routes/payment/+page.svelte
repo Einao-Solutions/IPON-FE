@@ -41,6 +41,7 @@
   let missedYearsCount = 0;
   let lateYearsCount = 0;
   let isLateRenewal = false;
+  let isRenewalEligible = false;
   let lateRenewalCost = "";
   let serviceFee = "";
 
@@ -111,6 +112,9 @@
           setApplicationId: (v) => (applicationId = v),
           setFileTitle: (v) => (fileTitle = v),
           setResponseUrl: (v) => (responseurl = v),
+          isLateRenewal: (v) => (isLateRenewal = v),
+          isRenewalEligible: (v) => (isRenewalEligible = v),
+          setPenaltyFee: (v) => (lateRenewalCost = v),
           setRenewalMeta: (meta) => {
             missedYearsCount = meta.missedYearsCount ?? 0;
             lateYearsCount = meta.lateYearsCount ?? 0;

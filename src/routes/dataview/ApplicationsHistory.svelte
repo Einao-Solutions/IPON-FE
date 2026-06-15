@@ -442,7 +442,36 @@
       const response = await fetch(`${baseURL}/api/payments/check?id=${id}`);
       if (!response.ok) throw new Error("Payment check failed");
 
-      const result = await response.json();
+      const text = await response.text();
+      if (!text) {
+        showToast("error", "No payment information returned");
+        remita_confirmation = "verify_update";
+        amount = "";
+        paymentDate = "";
+        status = "";
+        paymentDescription = "";
+        showManualUpdate = false;
+        updateCert = false;
+        showCancel = true;
+        return;
+      }
+
+      let result: any;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        showToast("error", "Invalid response from payment service");
+        remita_confirmation = "verify_update";
+        amount = "";
+        paymentDate = "";
+        status = "";
+        paymentDescription = "";
+        showManualUpdate = false;
+        updateCert = false;
+        showCancel = true;
+        return;
+      }
+
       ({
         amount,
         paymentDate,
