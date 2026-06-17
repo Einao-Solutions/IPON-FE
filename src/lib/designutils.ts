@@ -64,7 +64,7 @@ export function mapStatusToString(
     case ApplicationStatuses.RequestWithdrawal:
       return "Request Withdrawal";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter";
     case ApplicationStatuses.AwaitingApproval:
