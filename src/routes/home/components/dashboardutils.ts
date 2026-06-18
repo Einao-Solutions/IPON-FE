@@ -483,7 +483,7 @@ export function mapTypeToString(type: number) {
     case 15:
       return "Withdrawal Request";
     case 16:
-      return "New Opposition";
+      return "Opposed";
     case 17:
       return "Amendment";
     case 18:

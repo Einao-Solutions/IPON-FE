@@ -298,41 +298,75 @@
 
       console.log('Opposition API response:', JSON.stringify(data, null, 2));
 
-      // Transform API response to match template field names
-      // Backend returns { success, data: [...] } or { opposition: {...} } or direct object
-      const opp = Array.isArray(data.data) ? data.data[0] : (data.opposition ?? data);
-      opposition = {
-        id: opp.id,
-        OppositionDate: opp.oppositionDate ?? opp.dateOpposed ?? opp.date,
-        Status: opp.oppositionStatus ?? opp.status,
-        Name: opp.name ?? opp.opposerName,
-        Email: opp.email ?? opp.opposerEmail,
-        Phone: opp.phone ?? opp.opposerPhone ?? "",
-        Address: opp.address ?? opp.opposerAddress ?? "",
-        SupportingDocs: opp.supportingDocs || [],
-        OppositionText: opp.oppositionText ?? opp.reason ?? "",
-        CounterStatements: (opp.counterStatements || []).map((cs) => ({
-          id: cs.id,
-          filedBy: cs.filedBy,
-          dateFiled: cs.dateFiled ?? cs.submittedDate,
-          statement: cs.statement ?? cs.text ?? "",
-          attachments: cs.attachments || [],
-        })),
-        StatutoryDeclarations: (opp.statutoryDeclarations || []).map((sd) => ({
-          id: sd.id,
-          filedBy: sd.filedBy,
-          dateFiled: sd.dateFiled ?? sd.submittedDate,
-          statement: sd.statement ?? sd.text ?? "",
-          attachments: sd.attachments || [],
-        })),
-        FileNumber: opp.fileNumber,
-        FileName: opp.fileName ?? opp.title,
-        PaymentId: opp.paymentId,
-        decision: opp.decision ?? null,
-        resolutionStatement: opp.resolutionStatement ?? null,
-        resolvedBy: opp.resolvedBy ?? null,
+      // Transform API response to match template field names.
+      // Backend may return one of:
+      //   { success, data: [...] } | { opposition: {...} } | { Opposition: {...} } | direct object
+      // and fields may be camelCase OR PascalCase. Be tolerant of both.
+      const root =
+        (Array.isArray(data.data) ? data.data[0] : data.data) ??
+        data.opposition ??
+        data.Opposition ??
+        data;
+      const opp = root ?? {};
+      // pick first defined value from any of the candidate keys
+      const pick = (...keys: string[]) => {
+        for (const k of keys) {
+          if (opp[k] !== undefined && opp[k] !== null) return opp[k];
+        }
+        return undefined;
       };
-      selectedCreatorId = opp.creatorId ?? opp.creatorID ?? "";
+      const counterStatementsRaw =
+        pick("counterStatements", "CounterStatements") ?? [];
+      const statutoryDeclarationsRaw =
+        pick("statutoryDeclarations", "StatutoryDeclarations") ?? [];
+      const supportingDocsRaw =
+        pick("supportingDocs", "SupportingDocs", "supportingDocuments", "SupportingDocuments") ?? [];
+
+      opposition = {
+        id: pick("id", "Id", "ID", "oppositionId", "OppositionId"),
+        OppositionDate: pick(
+          "oppositionDate", "OppositionDate",
+          "dateOpposed", "DateOpposed",
+          "date", "Date",
+          "createdAt", "CreatedAt",
+        ),
+        Status: pick("oppositionStatus", "OppositionStatus", "status", "Status", "currentStatus", "CurrentStatus"),
+        Name: pick("name", "Name", "opposerName", "OpposerName", "fullName", "FullName") ?? "",
+        Email: pick("email", "Email", "opposerEmail", "OpposerEmail") ?? "",
+        Phone: pick("phone", "Phone", "opposerPhone", "OpposerPhone", "phoneNumber", "PhoneNumber") ?? "",
+        Address: pick("address", "Address", "opposerAddress", "OpposerAddress") ?? "",
+        SupportingDocs: supportingDocsRaw,
+        OppositionText: pick(
+          "oppositionText", "OppositionText",
+          "reason", "Reason",
+          "grounds", "Grounds",
+          "statement", "Statement",
+        ) ?? "",
+        CounterStatements: (counterStatementsRaw || []).map((cs: any) => ({
+          id: cs.id ?? cs.Id,
+          filedBy: cs.filedBy ?? cs.FiledBy,
+          dateFiled: cs.dateFiled ?? cs.DateFiled ?? cs.submittedDate ?? cs.SubmittedDate ?? cs.date ?? cs.Date,
+          statement: cs.statement ?? cs.Statement ?? cs.text ?? cs.Text ?? cs.content ?? cs.Content ?? "",
+          attachments: cs.attachments ?? cs.Attachments ?? cs.documents ?? cs.Documents ?? [],
+        })),
+        StatutoryDeclarations: (statutoryDeclarationsRaw || []).map((sd: any) => ({
+          id: sd.id ?? sd.Id,
+          filedBy: sd.filedBy ?? sd.FiledBy,
+          dateFiled: sd.dateFiled ?? sd.DateFiled ?? sd.submittedDate ?? sd.SubmittedDate ?? sd.date ?? sd.Date,
+          statement: sd.statement ?? sd.Statement ?? sd.text ?? sd.Text ?? sd.content ?? sd.Content ?? "",
+          attachments: sd.attachments ?? sd.Attachments ?? sd.documents ?? sd.Documents ?? [],
+          role: sd.role ?? sd.Role,
+        })),
+        FileNumber: pick("fileNumber", "FileNumber", "fileId", "FileId"),
+        FileName: pick("fileName", "FileName", "title", "Title", "fileTitle", "FileTitle"),
+        PaymentId: pick("paymentId", "PaymentId", "rrr", "RRR"),
+        decision: pick("decision", "Decision") ?? null,
+        resolutionStatement: pick("resolutionStatement", "ResolutionStatement", "resolution", "Resolution") ?? null,
+        resolvedBy: pick("resolvedBy", "ResolvedBy") ?? null,
+        applicantNotifiedDate: pick("applicantNotifiedDate", "ApplicantNotifiedDate"),
+        counterStatementDate: pick("counterStatementDate", "CounterStatementDate"),
+      };
+      selectedCreatorId = pick("creatorId", "CreatorId", "creatorID", "CreatorID") ?? "";
       currentView = 11;
     } catch (err) {
       console.error("Error loading opposition:", err);

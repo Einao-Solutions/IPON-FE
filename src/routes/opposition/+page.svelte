@@ -176,6 +176,17 @@
         currentStep = "sd-search";
         handleSDSearchWithId(urlFileNumber);
       }
+    } else if (urlStep === "withdrawal") {
+      // Auto-trigger opposition withdrawal — pre-fill and search immediately
+      const urlOppositionId = $page.url.searchParams.get("oppositionId");
+      const lookup = urlOppositionId || urlFileNumber;
+      if (lookup && lookup !== "undefined") {
+        withdrawalSearchInput = lookup;
+        currentStep = "withdrawal-search";
+        handleWithdrawalSearchWithId(lookup);
+      } else {
+        currentStep = "withdrawal-search";
+      }
     } else if (urlFileId) {
       // auto trigger search with fileId — skip landing, go straight to search
       currentStep = "search";
