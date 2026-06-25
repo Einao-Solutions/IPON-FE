@@ -56,6 +56,40 @@
 	function isTechSupport(): boolean {
 		return hasRole(UserRoles.Tech);
 	}
+	function hasAnyRole(roles: UserRoles[]): boolean {
+		return roles.some((role) => hasRole(role));
+	}
+	const UNIT_OFFICER_ROLES = [
+		UserRoles.TrademarkSearch,
+		UserRoles.TrademarkExaminer,
+		UserRoles.TrademarkOpposition,
+		UserRoles.TrademarkAcceptance,
+		UserRoles.TrademarkCertification,
+		UserRoles.TrademarkPublication,
+		UserRoles.TrademarkRegistrar,
+		UserRoles.PatentSearch,
+		UserRoles.PatentExaminer,
+		UserRoles.PatentCertification,
+		UserRoles.AppealExaminer,
+		UserRoles.DesignSearch,
+		UserRoles.DesignExaminer,
+		UserRoles.DesignCertification,
+		UserRoles.TrademarkStaff,
+		UserRoles.PatentStaff,
+		UserRoles.DesignStaff
+	];
+	function isStrictSupportOfficer(): boolean {
+		return isTrademarkSupport() || isPatentDesignSupport();
+	}
+	function isUnitOfficer(): boolean {
+		return hasAnyRole(UNIT_OFFICER_ROLES);
+	}
+	function shouldCreateTechnicalTicketOnly(): boolean {
+		return isStrictSupportOfficer() || isUnitOfficer();
+	}
+	function canAccessIpoSupport(): boolean {
+		return hasRole(UserRoles.User) || isTechSupport() || isStrictSupportOfficer() || isUnitOfficer();
+	}
 	// ── Tab system ────────────────────────────────────────────────────────────────
 	type TabDef = {
 		id: string;
@@ -67,7 +101,11 @@
 
 	function getTabsForRole(): TabDef[] {
 		if (isTechSupport()) {
-			return [{ id: 'all', label: 'All Tickets', category: null, isEscalation: false }];
+			return [
+				{ id: 'tech', label: 'Technical Support', category: TicketCategory.TechnicalSupport, isEscalation: false },
+				{ id: 'tm', label: 'Trademark Registry', category: TicketCategory.TrademarkRegistry, isEscalation: false },
+				{ id: 'pd', label: 'Patent & Design Registry', category: TicketCategory.PatentDesignRegistry, isEscalation: false }
+			];
 		}
 		if (isTrademarkSupport()) {
 			return [{ id: 'tm', label: 'Trademark Registry', category: TicketCategory.TrademarkRegistry, isEscalation: false }];
@@ -224,35 +262,32 @@
 	}
 
 	// ── Fetch ─────────────────────────────────────────────────────────────────────
-	let techCategoryStats: Record<string, number> = {};
-	let tmCategoryStats: Record<string, number> = {};
-	let pdCategoryStats: Record<string, number> = {};
+	function getActiveTabCategory(): TicketCategory | null {
+		return tabs.find((tab) => tab.id === activeTabId)?.category ?? null;
+	}
+
+	function getStatsUrl(category: TicketCategory | null): string {
+		const userId = ($loggedInUser as any)?.creatorId;
+		if (isTechSupport()) {
+			return category === null
+				? `${baseURL}/api/tickets/GetStats`
+				: `${baseURL}/api/tickets/GetStats?category=${category}`;
+		}
+		if (isTrademarkSupport()) {
+			return `${baseURL}/api/tickets/GetStats?category=${TicketCategory.TrademarkRegistry}`;
+		}
+		if (isPatentDesignSupport()) {
+			return `${baseURL}/api/tickets/GetStats?category=${TicketCategory.PatentDesignRegistry}`;
+		}
+		return `${baseURL}/api/tickets/GetStats?userId=${userId}`;
+	}
 
 	async function getStats() {
-		const userId = ($loggedInUser as any)?.creatorId;
-		let url: string;
-		if (isTechSupport()) {
-			url = `${baseURL}/api/tickets/GetStats`;
-		} else if (isTrademarkSupport()) {
-			url = `${baseURL}/api/tickets/GetStats?category=${TicketCategory.TrademarkRegistry}`;
-		} else if (isPatentDesignSupport()) {
-			url = `${baseURL}/api/tickets/GetStats?category=${TicketCategory.PatentDesignRegistry}`;
-		} else {
-			url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
-		}
+		const activeCategory = getActiveTabCategory();
+		const url = getStatsUrl(activeCategory);
 		const response = await fetch(url, { method: 'GET' });
 		if (response.ok) {
 			ipoTicketStats.set(await response.json());
-		}
-
-		// For Tech: also fetch per-category breakdowns for the extra pills
-		if (isTechSupport()) {
-			const [tmRes, pdRes] = await Promise.all([
-				fetch(`${baseURL}/api/tickets/GetStats?category=${TicketCategory.TrademarkRegistry}`),
-				fetch(`${baseURL}/api/tickets/GetStats?category=${TicketCategory.PatentDesignRegistry}`)
-			]);
-			if (tmRes.ok) tmCategoryStats = await tmRes.json();
-			if (pdRes.ok) pdCategoryStats = await pdRes.json();
 		}
 	}
 
@@ -275,6 +310,8 @@
 
 		if (isTechSupport()) {
 			body.creatorId = 'null';
+			const tabCategory = getActiveTabCategory();
+			if (tabCategory !== null) body.category = tabCategory;
 			if (activeCategoryPillFilter !== null) body.category = activeCategoryPillFilter;
 			if (activeStatusFilter !== null) body.status = activeStatusFilter;
 		} else if (isTrademarkSupport()) {
@@ -313,8 +350,11 @@
 
 	async function onTabChange(tabId: string) {
 		activeTabId = tabId;
+		activeStatusFilter = isTechSupport() || isAdmin ? 1 : null;
+		activeCategoryPillFilter = null;
 		ipoTicketsSummary.set(null);
 		ticketLoading = true;
+		await getStats();
 		await fetchTabTickets(tabId);
 		ticketLoading = false;
 	}
@@ -323,6 +363,7 @@
 		activeStatusFilter = status;
 		activeCategoryPillFilter = categoryOverride !== undefined ? (categoryOverride ?? null) : null;
 		ticketLoading = true;
+		await getStats();
 		await fetchTabTickets(activeTabId);
 		ticketLoading = false;
 	}
@@ -361,7 +402,9 @@
 		}
 		ticketData = {
 			onExit: () => { showTicketCreation = false; },
-			open: true
+			open: true,
+			technicalOnly: shouldCreateTechnicalTicketOnly(),
+			requireFileNumber: shouldCreateTechnicalTicketOnly()
 		};
 		showTicketCreation = true;
 	}
@@ -435,10 +478,6 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 	}
 
 	// ── Pill counts (computed from loaded data) ───────────────────────────────────
-	$: trademarkPillCount = tmCategoryStats?.total ?? 0;
-	$: patentPillCount = pdCategoryStats?.total ?? 0;
-	$: _isTechUser = $loggedInUser?.userRoles?.includes(UserRoles.Tech) ?? false;
-
 	function ticketTypeFor(rowId: string): string {
 		const type = ($ipoTicketsSummary as any)?.[rowId]?.ticketType;
 		if (type === undefined || type === null) return '—';
@@ -452,6 +491,11 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 	// ── Mount ─────────────────────────────────────────────────────────────────────
 	onMount(async () => {
 		await decodeUser();
+		if (!$loggedInUser) return;
+		if (!canAccessIpoSupport()) {
+			await goto('/home/dashboard');
+			return;
+		}
 		isAdmin = hasSupportStaffRole();
 		tabs = getTabsForRole();
 		activeTabId = tabs.length > 0 ? tabs[0].id : '';
@@ -537,16 +581,6 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			</span>
 		</button>
 		<!-- Awaiting Staff -->
-		{#if _isTechUser}
-		<button type="button" on:click={() => getSpecific(1, TicketCategory.TechnicalSupport)}
-					class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-						{activeStatusFilter === 1 && activeCategoryPillFilter === TicketCategory.TechnicalSupport ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}">
-					Awaiting Staff
-					<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-950/30 text-[10px] font-semibold">
-						{$ipoTicketStats.staff ?? 0}
-					</span>
-				</button>
-		{:else}
 		<button type="button" on:click={() => getSpecific(1)}
 			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
 				{activeStatusFilter === 1 && activeCategoryPillFilter === null ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}">
@@ -555,7 +589,6 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				{$ipoTicketStats.staff ?? 0}
 			</span>
 		</button>
-		{/if}
 		<!-- Awaiting User -->
 		<button type="button" on:click={() => getSpecific(0)}
 			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
@@ -574,26 +607,6 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				{$ipoTicketStats.closed ?? 0}
 			</span>
 		</button>
-		<!-- Tech-only category pills -->
-		{#if _isTechUser}
-		<div class="w-px bg-slate-200 mx-1 self-stretch"></div>
-		<button type="button" on:click={() => getSpecific(null, TicketCategory.TrademarkRegistry)}
-class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-						{activeCategoryPillFilter === TicketCategory.TrademarkRegistry && activeStatusFilter === null ? 'bg-green-700 text-white' : 'bg-green-100 text-green-800 hover:bg-green-200'}">
-			Trademark Tickets
-<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-green-950/30 text-[10px] font-semibold">
-				{trademarkPillCount}
-			</span>
-		</button>
-		<button type="button" on:click={() => getSpecific(null, TicketCategory.PatentDesignRegistry)}
-class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-						{activeCategoryPillFilter === TicketCategory.PatentDesignRegistry && activeStatusFilter === null ? 'bg-green-700 text-white' : 'bg-green-100 text-green-800 hover:bg-green-200'}">
-			Patent & Design Tickets
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-orange-950/30 text-[10px] font-semibold">
-				{patentPillCount}
-			</span>
-		</button>
-		{/if}
 	</div>
 
 	{#if ticketLoading}
