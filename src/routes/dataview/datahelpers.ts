@@ -524,11 +524,11 @@ export function CanTreatApplication(
     }
   }
   if (type === FilingType.Trademark) {
-    hasRole = userRoles.some((x) =>
+    hasRole ||= userRoles.some((x) =>
       [UserRoles.SuperAdmin, UserRoles.TrademarkRegistrar].includes(x),
     );
   } else {
-    hasRole = userRoles.some((x) =>
+    hasRole ||= userRoles.some((x) =>
       [UserRoles.SuperAdmin, UserRoles.PatentDesignRegistrar].includes(x),
     );
   }

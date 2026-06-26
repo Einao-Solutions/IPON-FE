@@ -641,11 +641,11 @@
                 >
               {/if}
             {/each}
-            {#each applications as app, i}
+            <!-- {#each applications as app, i}
               <DropdownMenu.Item on:click={() => treatApplication(app)}
                 >Change Status</DropdownMenu.Item
               >
-            {/each}
+            {/each} -->
           </DropdownMenu.Content>
         </DropdownMenu.Root>
       {/if}
