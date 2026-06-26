@@ -166,6 +166,8 @@
       if (currentUser.lastUpdatedAt == null) {
         showNoticeModal = true;
       }
+      showNoticeModal = true;
+
     }
     data = {
       user: $loggedInUser,
@@ -1539,17 +1541,17 @@
       class="relative w-full max-w-[700px] bg-white rounded-xl shadow-2xl overflow-hidden"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="profile-update-title"
+      aria-labelledby="maintenance-notice-title"
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:account-edit" class="w-6 h-6 text-gray-700" />
+          <Icon icon="mdi:wrench-outline" class="w-6 h-6 text-gray-700" />
           <h2
-            id="profile-update-title"
+            id="maintenance-notice-title"
             class="text-xl md:text-2xl font-semibold"
           >
-            Profile Update Required
+            System Maintenance Notice
           </h2>
         </div>
 
@@ -1564,32 +1566,22 @@
 
       <!-- Content -->
       <div class="px-6 py-5 space-y-4 text-gray-700">
-        <p class="text-sm md:text-base">Dear Esteemed Customer,</p>
+        <p class="text-sm md:text-base">Dear Valued User,</p>
 
         <p class="text-sm md:text-base">
-          To improve service delivery and ensure uninterrupted access to all
-          platform features, we kindly request that you review and update your
-          profile information.
+          We are currently carrying out an essential system update to improve
+          the performance, security, and reliability of the portal.
         </p>
 
         <p class="text-sm md:text-base">
-          Keeping your details accurate helps us process filings, payments,
-          notifications, and official communications more efficiently.
+          As a result, portal services are temporarily downgraded. Our
+          technical team is working diligently to restore normal service as
+          quickly as possible.
         </p>
 
-        <!-- <div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
-          <p class="text-sm md:text-base font-medium text-blue-900">
-            Please confirm or update the following:
-          </p>
-          <ul class="mt-2 list-disc pl-6 text-sm md:text-base text-blue-800 space-y-1">
-            <li>Contact information</li>
-            <li>Organization / Applicant details</li>
-            <li>Address and communication preferences</li>
-          </ul>
-        </div> -->
-
         <p class="text-sm md:text-base">
-          This process only takes a few minutes and helps us serve you better.
+          We apologize for any inconvenience this may cause and appreciate your
+          patience and understanding.
         </p>
       </div>
 
@@ -1598,16 +1590,7 @@
         class="px-6 py-4 border-t flex flex-col sm:flex-row gap-3 sm:justify-end"
       >
         <Button variant="outline" on:click={closeNotice}>
-          Remind Me Later
-        </Button>
-
-        <Button
-          on:click={() => {
-            closeNotice();
-            window.location.href = "/home/profile";
-          }}
-        >
-          Update Profile
+          Close
         </Button>
       </div>
     </div>
