@@ -6,7 +6,7 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
+//export const baseURL = "http://localhost:5044";
 export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
@@ -761,8 +761,14 @@ export type TicketSummary = {
   ticketId?: string;
   ticketNumber?: string;
   category?: TicketCategory;
+  registryCategory?: TicketCategory;
+  ticketType?: TicketType;
+  fileNumber?: string;
+  applicationType?: ApplicationType;
+  recordalType?: number;
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
+  raisedByRegistryStaff?: boolean;
   creator: {
     id: string;
     name: string;
@@ -782,10 +788,12 @@ export type TicketInfo = {
   id: string;
   ticketNumber?: string;
   category?: TicketCategory;
+  registryCategory?: TicketCategory;
   ticketType?: TicketType;
   applicationType?: ApplicationType;
   recordalType?: number;
   fileNumber?: string;
+  raisedByRegistryStaff?: boolean;
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
   escalatedAt?: string;
