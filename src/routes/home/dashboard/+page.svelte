@@ -1546,12 +1546,12 @@
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:wrench-outline" class="w-6 h-6 text-gray-700" />
+          <Icon icon="mdi:check-circle-outline" class="w-6 h-6 text-green-700" />
           <h2
             id="maintenance-notice-title"
             class="text-xl md:text-2xl font-semibold"
           >
-            System Maintenance Notice
+            System Restoration Notice
           </h2>
         </div>
 
@@ -1569,19 +1569,18 @@
         <p class="text-sm md:text-base">Dear Valued User,</p>
 
         <p class="text-sm md:text-base">
-          We are currently carrying out an essential system update to improve
-          the performance, security, and reliability of the portal.
+          We are pleased to inform you that the system update has been completed
+          and all portal services have been fully restored.
         </p>
 
         <p class="text-sm md:text-base">
-          As a result, portal services are temporarily downgraded. Our
-          technical team is working diligently to restore normal service as
-          quickly as possible.
+          You can now enjoy improved performance, enhanced security, and greater
+          reliability across the portal. 
         </p>
 
         <p class="text-sm md:text-base">
-          We apologize for any inconvenience this may cause and appreciate your
-          patience and understanding.
+          Thank you for your patience and understanding during the maintenance
+          period.
         </p>
       </div>
 
