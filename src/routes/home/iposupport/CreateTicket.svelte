@@ -354,12 +354,14 @@ creatorName: userName,
 status: 1,
 category: selectedCategory,
 ticketType: selectedTicketType,
+raisedByRegistryStaff: isRegistryTechnicalFlow,
 correspondences: [
 attachmenturl == null
 ? { message: reason, senderId: $loggedInUser?.creatorId, senderName: userName }
 : { attachment: attachmenturl[0], message: reason, senderId: $loggedInUser?.creatorId, senderName: userName }
 ]
 };
+if (isRegistryTechnicalFlow && officerRegistryCategory !== null) body.registryCategory = officerRegistryCategory;
 if (selectedApplicationType !== null) body.applicationType = selectedApplicationType;
 if (selectedRecordalType !== null) body.recordalType = selectedRecordalType;
 if (fileNumber.trim()) body.fileNumber = fileNumber.trim();
