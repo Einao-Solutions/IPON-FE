@@ -19,6 +19,7 @@
 	import DataTableCheckbox from './data-table-checkbox.svelte';
 	import TicketTag from '$lib/components/ui/ticketTag/ticketTag.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { ChevronsUpDown } from 'lucide-svelte';
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import { onMount } from 'svelte';
@@ -157,6 +158,8 @@
 	let ticketInfo: any = {};
 	let ticketData: any = {};
 	let filterData: any = {};
+	let searchQuery: string = '';
+	let activeSearchTerm: string = '';
 
 	$: showTechSpecialQueues = isTechSupport() && activeTabId === 'tech';
 
@@ -342,14 +345,61 @@
 		return Array.isArray(data) ? data : [];
 	}
 
-	async function getStats() {
-		const tickets = await fetchTicketSummaries(getTicketSummaryBody(null));
-		ipoTicketStats.set({
+	function summarizeTickets(tickets: any[]) {
+		return {
 			total: tickets.length,
 			staff: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingStaff).length,
 			user: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingUser).length,
 			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length
+		};
+	}
+
+	function getSearchField(term: string): Record<string, string> {
+		return /^TKT[-\w]*/i.test(term) ? { ticketNumber: term } : { fileNumber: term };
+	}
+
+	function getSearchRequest(): Record<string, any> | null {
+		const term = activeSearchTerm.trim();
+		if (!term) return null;
+		const searchField = getSearchField(term);
+		const userId = ($loggedInUser as any)?.creatorId;
+
+		return {
+			...searchField,
+			requesterId: userId,
+			isTech: isTechSupport(),
+			supportRegistryCategory: isTrademarkSupport()
+				? TicketCategory.TrademarkRegistry
+				: isPatentDesignSupport()
+				? TicketCategory.PatentDesignRegistry
+				: null,
+			isRegistryOfficer: isUnitOfficer()
+		};
+	}
+
+	async function fetchSearchTickets(status: number | null = activeStatusFilter): Promise<any[]> {
+		const body = getSearchRequest();
+		if (body === null) return [];
+		const response = await fetch(`${baseURL}/api/tickets/Search`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body)
 		});
+		if (!response.ok) return [];
+		const data = await response.json();
+		const tickets = Array.isArray(data) ? data : [];
+		return status === null ? tickets : tickets.filter((ticket) => ticket?.status === status);
+	}
+
+	async function refreshSearchResults(status: number | null = activeStatusFilter) {
+		const allMatches = await fetchSearchTickets(null);
+		ipoTicketStats.set(summarizeTickets(allMatches));
+		ipoTicketsSummary.set(sortTicketSummaries(await fetchSearchTickets(status)));
+	}
+
+	async function getStats() {
+		const tickets = await fetchTicketSummaries(getTicketSummaryBody(null));
+		ipoTicketStats.set(summarizeTickets(tickets));
 	}
 
 	async function getSpecialQueueCount(registryCategory: TicketCategory): Promise<number> {
@@ -413,6 +463,8 @@
 	async function onTabChange(tabId: string) {
 		activeTabId = tabId;
 		activeQueueMode = 'normal';
+		activeSearchTerm = '';
+		searchQuery = '';
 		activeStatusFilter = isTechSupport() || isAdmin ? 1 : null;
 		activeCategoryPillFilter = null;
 		ipoTicketsSummary.set(null);
@@ -424,6 +476,8 @@
 
 	async function setQueueMode(mode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical') {
 		activeQueueMode = mode;
+		activeSearchTerm = '';
+		searchQuery = '';
 		activeStatusFilter = null;
 		activeCategoryPillFilter = null;
 		ipoTicketsSummary.set(null);
@@ -437,6 +491,36 @@
 	async function getSpecific(status: number | null, categoryOverride?: TicketCategory | null) {
 		activeStatusFilter = status;
 		activeCategoryPillFilter = categoryOverride !== undefined ? (categoryOverride ?? null) : null;
+		ticketLoading = true;
+		if (activeSearchTerm.trim()) {
+			await refreshSearchResults(status);
+		} else {
+			await getSpecialQueueStats();
+			await getStats();
+			await fetchTabTickets(activeTabId);
+		}
+		ticketLoading = false;
+	}
+
+	async function searchTickets() {
+		const term = searchQuery.trim();
+		if (!term) {
+			toast.error('Enter a ticket number or file number.', { position: 'top-right' });
+			return;
+		}
+		activeSearchTerm = term;
+		activeStatusFilter = null;
+		activeCategoryPillFilter = null;
+		ipoTicketsSummary.set(null);
+		ticketLoading = true;
+		await refreshSearchResults(null);
+		ticketLoading = false;
+	}
+
+	async function clearSearch() {
+		activeSearchTerm = '';
+		searchQuery = '';
+		ipoTicketsSummary.set(null);
 		ticketLoading = true;
 		await getSpecialQueueStats();
 		await getStats();
@@ -721,6 +805,24 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			<Icon icon="line-md:loading-loop" width="2.5rem" height="2.5rem" />
 		</div>
 	{:else}
+		<form class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center" on:submit|preventDefault={searchTickets}>
+			<div class="relative w-full sm:max-w-md">
+				<Icon icon="mdi:magnify" width="1rem" height="1rem" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+				<Input class="pl-9" placeholder="Search ticket number or file number" bind:value={searchQuery} />
+			</div>
+			<div class="flex gap-2">
+				<Button type="submit" size="sm">Search</Button>
+				{#if activeSearchTerm}
+					<Button type="button" variant="outline" size="sm" on:click={clearSearch}>Clear</Button>
+				{/if}
+			</div>
+			{#if activeSearchTerm}
+				<p class="text-xs text-slate-500 sm:ml-2">
+					Showing search results for <span class="font-semibold text-slate-700">{activeSearchTerm}</span>
+				</p>
+			{/if}
+		</form>
+
 		<!-- Table controls -->
 		<div class="flex items-center gap-2 py-2 flex-wrap">
 			{#if $_selectedDataIds && Object.keys($_selectedDataIds).length > 0}
