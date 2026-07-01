@@ -761,8 +761,14 @@ export type TicketSummary = {
   ticketId?: string;
   ticketNumber?: string;
   category?: TicketCategory;
+  registryCategory?: TicketCategory;
+  ticketType?: TicketType;
+  fileNumber?: string;
+  applicationType?: ApplicationType;
+  recordalType?: number;
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
+  raisedByRegistryStaff?: boolean;
   creator: {
     id: string;
     name: string;
@@ -782,10 +788,13 @@ export type TicketInfo = {
   id: string;
   ticketNumber?: string;
   category?: TicketCategory;
+  registryCategory?: TicketCategory;
   ticketType?: TicketType;
   applicationType?: ApplicationType;
   recordalType?: number;
   fileNumber?: string;
+  accountEmail?: string;
+  raisedByRegistryStaff?: boolean;
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
   escalatedAt?: string;

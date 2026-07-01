@@ -8,7 +8,7 @@
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import Icon from "@iconify/svelte";
-  import { baseURL, type UsersType } from "$lib/helpers";
+  import { baseURL, type UsersType, UserRoles } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
@@ -61,7 +61,7 @@
     const token = getTokenFromCookie();
 
     if (token) {
-      await goto("/home/dashboard");
+      await goto(getExistingUserRoute());
     }
   });
 
@@ -90,6 +90,29 @@
     // also persist user object as a cookie (encoded)
     const encoded = encodeURIComponent(JSON.stringify(userForStore));
     document.cookie = `user=${encoded}; path=/; max-age=${maxAge}; secure; samesite=strict`;
+  }
+
+  function shouldOpenIpoSupport(user: UsersType | null | undefined): boolean {
+    const roles = user?.userRoles ?? [];
+    return roles.includes(UserRoles.TrademarkSupport) || roles.includes(UserRoles.PatentDesignSupport);
+  }
+
+  function getLoginRoute(user: UsersType): string {
+    return shouldOpenIpoSupport(user) ? "/home/iposupport" : "/home/dashboard";
+  }
+
+  function getExistingUserRoute(): string {
+    const userCookie = document.cookie
+      .split(";")
+      .find((c) => c.trim().startsWith("user="));
+    if (!userCookie) return "/home/dashboard";
+
+    try {
+      const user = JSON.parse(decodeURIComponent(userCookie.trim().slice(5))) as UsersType;
+      return getLoginRoute(user);
+    } catch {
+      return "/home/dashboard";
+    }
   }
 
   function validatePassword(password: string): {
@@ -262,7 +285,7 @@
         toast.success("Login successful", {
           position: "top-right",
         });
-        await goto("/home/dashboard");
+        await goto(getLoginRoute(data.user));
       } else {
         const error = await response.json();
 
