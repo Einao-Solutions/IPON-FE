@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
-export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -578,7 +578,7 @@ export function getStatusColour(status: ApplicationStatuses | null): string {
     case ApplicationStatuses.RequestWithdrawal:
       return "#e67e22";
     case ApplicationStatuses.NewOpposition:
-      return "#ede064";
+      return "#dc2626";
     case ApplicationStatuses.AwaitingCounter:
       return "rgb(253, 224, 71)";
     case ApplicationStatuses.AwaitingApproval:

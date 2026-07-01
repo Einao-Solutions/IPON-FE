@@ -311,10 +311,6 @@
 				<!-- Opposition Details -->
 				<div class="space-y-4">
 					<div class="border-b border-slate-200 pb-3">
-						<p class="text-xs font-semibold text-slate-500 uppercase">Payment Reference</p>
-						<p class="text-sm text-slate-700 font-mono mt-1">{selectedOpposition.paymentId}</p>
-					</div>
-					<div class="border-b border-slate-200 pb-3">
 						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition Date</p>
 						<p class="text-sm text-slate-700 mt-1">{mapDateToString(selectedOpposition.date)}</p>
 					</div>

@@ -1,4 +1,4 @@
-<script lang="ts">
+c<script lang="ts">
   import PatentView from "./PatentView.svelte";
   import {
     ApplicationStatuses,
@@ -186,8 +186,8 @@
             })
           : "pending",
     }));
-    console.log(mappedDates);
     return mappedDates;
+
   }
 
   // function getExpiryData() {

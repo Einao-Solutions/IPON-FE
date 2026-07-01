@@ -2611,9 +2611,17 @@
             >{mapDateToString(application.applicationDate)}</Table.Cell
           >
           <!-- for Type -->
-          <Table.Cell
-            ><p class="rounded-md bg-gray-400 text-black p-1 w-fit">
-              {mapTypeToString(application.applicationType ?? 0)}
+          <Table.Cell>
+            <p class="rounded-md bg-gray-400 text-black p-1 w-fit">
+              {#if application.applicationType === FormApplicationTypes.NewOpposition && (application.currentStatus === 30 || application.currentStatus === 29 || application.currentStatus === 31)}
+                Counter Statement
+              {:else if application.applicationType === FormApplicationTypes.NewOpposition && application.currentStatus === 33}
+                Statutory Declaration
+              {:else if application.applicationType === FormApplicationTypes.CounterStatement || application.applicationType === FormApplicationTypes.StatutoryDeclaration}
+                {mapTypeToString(application.applicationType ?? 0)}
+              {:else}
+                {mapTypeToString(application.applicationType ?? 0)}
+              {/if}
             </p>
           </Table.Cell>
           <!-- for Payment ID -->
