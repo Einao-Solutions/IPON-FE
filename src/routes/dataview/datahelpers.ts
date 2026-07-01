@@ -519,6 +519,8 @@ export function CanTreatApplication(
           UserRoles.SuperAdmin,
           UserRoles.Tech,
           UserRoles.PatentDesignRegistrar,
+          UserRoles.PatentCertification,
+          UserRoles.DesignCertification,
         ].includes(x),
       );
     }

@@ -163,11 +163,10 @@
         typecomponent = (await import("../components/UserDashboard.svelte"))
           .default;
       }
-      if (currentUser.lastUpdatedAt == null) {
-        showNoticeModal = true;
-      }
-      showNoticeModal = true;
-
+      // if (currentUser.lastUpdatedAt == null) {
+      //   showNoticeModal = false;
+      // }
+      showNoticeModal = false;
     }
     data = {
       user: $loggedInUser,
@@ -1546,7 +1545,10 @@
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:check-circle-outline" class="w-6 h-6 text-green-700" />
+          <Icon
+            icon="mdi:check-circle-outline"
+            class="w-6 h-6 text-green-700"
+          />
           <h2
             id="maintenance-notice-title"
             class="text-xl md:text-2xl font-semibold"
@@ -1575,7 +1577,7 @@
 
         <p class="text-sm md:text-base">
           You can now enjoy improved performance, enhanced security, and greater
-          reliability across the portal. 
+          reliability across the portal.
         </p>
 
         <p class="text-sm md:text-base">
@@ -1588,9 +1590,7 @@
       <div
         class="px-6 py-4 border-t flex flex-col sm:flex-row gap-3 sm:justify-end"
       >
-        <Button variant="outline" on:click={closeNotice}>
-          Close
-        </Button>
+        <Button variant="outline" on:click={closeNotice}>Close</Button>
       </div>
     </div>
   </div>
@@ -1604,7 +1604,9 @@
       <div
         class="w-full bg-green-800 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
-        <div class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold">
+        <div
+          class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold"
+        >
           View your accepted marks under “Trademark Publication” in Trademark
           Services. <b>◆</b> File opposition via the “Opposition” feature in
           Trademark Services or the “Oppose” button on the Trademark Publication
@@ -1803,7 +1805,6 @@
             </div>
           </div>
         </button>
-
       </div>
 
       <!-- Portfolio Summary Section -->

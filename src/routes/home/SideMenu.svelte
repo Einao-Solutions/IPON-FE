@@ -202,6 +202,17 @@
       location: "ClaimRequests",
       roles: [UserRoles.SuperAdmin, UserRoles.Tech],
     },
+    {
+      icon: "mdi:file-search-outline",
+      name: "Claim Files",
+      location: "claim-files",
+      roles: [
+        UserRoles.Tech,
+        UserRoles.SuperAdmin,
+        UserRoles.TrademarkExaminer,
+        UserRoles.TrademarkRegistrar,
+      ],
+    },
   ];
 
   function hasAccess(item: MenuItem, userRoles: UserRoles[]): boolean {
