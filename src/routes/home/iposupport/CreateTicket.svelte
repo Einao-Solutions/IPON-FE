@@ -87,6 +87,7 @@ let selectedApplicationType: ApplicationType | null = null;
 let selectedRecordalType: number | null = null;
 let titleOfTicket: string = '';
 let fileNumber: string = '';
+let accountEmail: string = '';
 let reason: string = '';
 let selectedFile: File | null = null;
 let selectedFileName: string = '';
@@ -145,10 +146,15 @@ $: recordalTypes = recordalRegistryCategory === TicketCategory.TrademarkRegistry
 { value: PatentDesignRecordalType.Renewal, label: 'Renewal' }
 ];
 
-$: fileNumberLabel = selectedApplicationType === ApplicationType.Opposition ? 'Opposition ID' : requireFileNumber ? 'File Number' : 'File Number (optional)';
-$: fileNumberValid = !requireFileNumber || (validatedFileNumber === fileNumber.trim() && !!validatedFileInfo);
+$: isAccountAccessTicket = isTechType && selectedTicketType === TicketType.AccountAccess;
+$: shouldShowFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue || (!technicalOnly && isTechType && selectedTicketType === TicketType.Others) || !!fileNumber.trim());
+$: mustValidateFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue);
+$: requiresAccountEmail = isAccountAccessTicket && !technicalOnly;
+$: fileNumberLabel = selectedApplicationType === ApplicationType.Opposition ? 'Opposition ID' : mustValidateFileNumber ? 'File Number' : 'File Number (optional)';
+$: fileNumberValid = !mustValidateFileNumber || (validatedFileNumber === fileNumber.trim() && !!validatedFileInfo);
+$: accountEmailValid = !requiresAccountEmail || accountEmail.trim().length > 0;
 $: basicDetailsValid = titleOfTicket.trim().length > 0 && reason.trim().length > 0;
-$: detailsValid = basicDetailsValid && (!requireFileNumber || fileNumberValid);
+$: detailsValid = basicDetailsValid && fileNumberValid && accountEmailValid;
 $: isRegistryTechnicalOther = isRegistryTechnicalFlow && isTechType && selectedTicketType === TicketType.Others;
 
 $: progressSteps = isTechType
@@ -305,13 +311,17 @@ isValidatingFile = false;
 }
 
 async function goToReview() {
-if (!basicDetailsValid) return;
-if (requireFileNumber && !fileNumberValid) {
+if (!detailsValid && !mustValidateFileNumber) return;
+if (mustValidateFileNumber && !fileNumberValid) {
 const valid = await validateFileNumber();
 if (!valid) {
 toast.error('Please enter a valid file number before continuing.', { position: 'top-right' });
 return;
 }
+}
+if (!accountEmailValid) {
+toast.error('Please enter the account email before continuing.', { position: 'top-right' });
+return;
 }
 step = 6;
 }
@@ -328,8 +338,12 @@ selectedFileName = '';
 const userName = ($loggedInUser?.firstName ?? '') + ' ' + ($loggedInUser?.lastName ?? '');
 
 async function saveNewTicket() {
-if (requireFileNumber && !fileNumberValid) {
+if (mustValidateFileNumber && !fileNumberValid) {
 toast.error('Please validate the file number before submitting.', { position: 'top-right' });
+return;
+}
+if (!accountEmailValid) {
+toast.error('Please enter the account email before submitting.', { position: 'top-right' });
 return;
 }
 isSavingTicket = true;
@@ -365,6 +379,7 @@ if (isRegistryTechnicalFlow && officerRegistryCategory !== null) body.registryCa
 if (selectedApplicationType !== null) body.applicationType = selectedApplicationType;
 if (selectedRecordalType !== null) body.recordalType = selectedRecordalType;
 if (fileNumber.trim()) body.fileNumber = fileNumber.trim();
+if (accountEmail.trim()) body.accountEmail = accountEmail.trim();
 if (validatedFileInfo) {
 body.fileId = validatedFileInfo.id ?? validatedFileInfo.Id ?? validatedFileInfo.fileId ?? validatedFileInfo.FileId;
 }
@@ -389,6 +404,7 @@ selectedApplicationType = null;
 selectedRecordalType = null;
 titleOfTicket = '';
 fileNumber = '';
+accountEmail = '';
 reason = '';
 selectedFile = null;
 selectedFileName = '';
@@ -569,12 +585,12 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 
 {:else if step === 5}
 <div class="space-y-4">
-{#if !isTechType || requireFileNumber}
+{#if shouldShowFileNumber}
 <div class="space-y-1.5">
-<label class="text-sm font-medium text-slate-700" for="ipo-filenum">{fileNumberLabel}{#if requireFileNumber} <span class="text-red-500">*</span>{/if}</label>
+<label class="text-sm font-medium text-slate-700" for="ipo-filenum">{fileNumberLabel}{#if mustValidateFileNumber} <span class="text-red-500">*</span>{/if}</label>
 <div class="flex gap-2">
 <Input id="ipo-filenum" placeholder="e.g. TM-2024-00001" bind:value={fileNumber} />
-{#if requireFileNumber}
+{#if mustValidateFileNumber}
 <Button type="button" variant="outline" disabled={isValidatingFile || !fileNumber.trim()} on:click={validateFileNumber}>
 {#if isValidatingFile}<Icon icon="eos-icons:loading" width="1rem" height="1rem" class="mr-1" />{/if}
 Validate
@@ -584,6 +600,12 @@ Validate
 {#if fileValidationMessage}
 <p class="text-xs {fileNumberValid ? 'text-green-700' : 'text-red-600'}">{fileValidationMessage}</p>
 {/if}
+</div>
+{/if}
+{#if requiresAccountEmail || (!technicalOnly && isTechType && selectedTicketType === TicketType.Others)}
+<div class="space-y-1.5">
+<label class="text-sm font-medium text-slate-700" for="ipo-account-email">Account Email{#if requiresAccountEmail} <span class="text-red-500">*</span>{:else} <span class="text-xs text-slate-400 font-normal">(optional)</span>{/if}</label>
+<Input id="ipo-account-email" type="email" placeholder="Enter account email" bind:value={accountEmail} />
 </div>
 {/if}
 <div class="space-y-1.5">
@@ -647,6 +669,12 @@ Validate
 </span>
 </div>
 {/if}
+{#if accountEmail.trim()}
+<div class="flex justify-between px-4 py-3">
+<span class="text-muted-foreground">Account Email</span>
+<span class="font-medium">{accountEmail}</span>
+</div>
+{/if}
 <div class="flex justify-between px-4 py-3">
 <span class="text-muted-foreground">Title</span>
 <span class="font-medium text-right max-w-[60%]">{titleOfTicket}</span>
@@ -698,7 +726,7 @@ Validate
 <Button variant="outline" on:click={goBack}>
 <Icon icon="mdi:arrow-left" width="1rem" height="1rem" class="mr-1" /> Back
 </Button>
-<Button disabled={!basicDetailsValid || isValidatingFile} on:click={goToReview}>
+<Button disabled={!detailsValid || isValidatingFile} on:click={goToReview}>
 Review <Icon icon="mdi:arrow-right" width="1rem" height="1rem" class="ml-1" />
 </Button>
 {:else if step === 6}

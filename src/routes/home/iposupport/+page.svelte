@@ -249,7 +249,6 @@
 
 		if (!isAdmin) {
 			hideForId['creator'] = false;
-			hideForId['category'] = false;
 		}
 	}
 
