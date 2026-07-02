@@ -1264,7 +1264,17 @@
           <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">File Info</h3>
           <div class="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-1 text-sm">
             <p><span class="font-semibold text-gray-700">File Number:</span> {file.fileId}</p>
-            <p><span class="font-semibold text-gray-700">Type:</span> {fileTypeToString(file.fileTypes)}</p>
+            <p><span class="font-semibold text-gray-700">Type:</span>
+              {#if Number(file.tradeMarkLogo) === 0}
+                Trademark Device
+              {:else if Number(file.tradeMarkLogo) === 1}
+                Trademark Word Mark
+              {:else if Number(file.tradeMarkLogo) === 2}
+                Trademark Word Mark and Device
+              {:else}
+                {fileTypeToString(file.fileTypes)}
+              {/if}
+            </p>
             {#if file.titleOfTradeMark}
               <p><span class="font-semibold text-gray-700">Title of Trade Mark:</span> {file.titleOfTradeMark}</p>
             {/if}
@@ -1274,8 +1284,8 @@
             {#if file.titleOfInvention}
               <p><span class="font-semibold text-gray-700">Title of Invention:</span> {file.titleOfInvention}</p>
             {/if}
-            {#if file.fileStatus !== undefined}
-              <p><span class="font-semibold text-gray-700">Status:</span> {file.fileStatus}</p>
+            {#if file.tradeMarkClass ?? file.trademarkClass}
+              <p><span class="font-semibold text-gray-700">Class:</span> {file.tradeMarkClass ?? file.trademarkClass}</p>
             {/if}
           </div>
         </div>
@@ -1326,46 +1336,6 @@
         {/if}
 
         <!-- Power of Attorney Upload -->
-        <div>
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Power of Attorney</h3>
-          <div class="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-md">
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-              class="hidden"
-              bind:this={changeAgentPoaInput}
-              on:change={() => {
-                changeAgentPoaFile = changeAgentPoaInput.files?.[0] ?? null;
-              }}
-            />
-            {#if changeAgentPoaFile}
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2 text-sm text-green-700">
-                  <Icon icon="lucide:file-check" class="w-4 h-4" />
-                  <span class="truncate max-w-[280px]">{changeAgentPoaFile.name}</span>
-                </div>
-                <button
-                  type="button"
-                  class="text-red-500 hover:text-red-700 text-xs"
-                  on:click={() => {
-                    changeAgentPoaFile = null;
-                    if (changeAgentPoaInput) changeAgentPoaInput.value = "";
-                  }}
-                >Remove</button>
-              </div>
-            {:else}
-              <button
-                type="button"
-                class="flex items-center gap-2 text-sm text-gray-600 hover:text-green-700 transition-colors"
-                on:click={() => changeAgentPoaInput.click()}
-              >
-                <Icon icon="lucide:upload" class="w-4 h-4" />
-                Attach Power of Attorney document
-              </button>
-              <p class="text-xs text-gray-400 mt-1">Accepted: PDF, DOC, DOCX, JPG, PNG</p>
-            {/if}
-          </div>
-        </div>
 
         <!-- Update Button -->
         <Button class="w-full bg-green-800 hover:bg-green-700 text-white" on:click={async () => await showOwnershipForm()}>

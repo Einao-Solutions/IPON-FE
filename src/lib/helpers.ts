@@ -578,7 +578,7 @@ export function getStatusColour(status: ApplicationStatuses | null): string {
     case ApplicationStatuses.RequestWithdrawal:
       return "#e67e22";
     case ApplicationStatuses.NewOpposition:
-      return "#ede064";
+      return "#dc2626";
     case ApplicationStatuses.AwaitingCounter:
       return "rgb(253, 224, 71)";
     case ApplicationStatuses.AwaitingApproval:

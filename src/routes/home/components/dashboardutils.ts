@@ -498,6 +498,10 @@ export function mapTypeToString(type: number) {
       return "Trademark Reclassification";
     case 23:
       return "Restoration";
+    case 24:
+      return "Counter Statement";
+    case 25:
+      return "Statutory Declaration";
     default:
       return "";
   }

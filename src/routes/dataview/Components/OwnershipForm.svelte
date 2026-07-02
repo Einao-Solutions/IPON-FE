@@ -2,7 +2,7 @@
 	import * as Table from '$lib/components/ui/table';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
-	import { baseURL, type CorrespondenceType } from '$lib/helpers';
+	import { baseURL, type CorrespondenceType, arrayBufferToBase64, toByteArray } from '$lib/helpers';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from 'svelte-sonner';
 	import Icon from '@iconify/svelte';
@@ -51,6 +51,8 @@
 	let matchesList: Usermatches[] = [];
 	let open = true;
 	let isSearching = false;
+	let poaFile: File | null = null;
+	let poaInput: HTMLInputElement;
 
 	async function Search() {
 		if (name_id.length < 3) {
@@ -98,9 +100,21 @@
 			return;
 		}
 
+		if (!poaFile) {
+			toast.error('Please attach the Power of Attorney document.', { position: 'top-right' });
+			return;
+		}
+
 		currentView = 'loading';
-		
+
 		try {
+			// Encode POA file for upload
+			const poaPayload = {
+				fileName: poaFile.name,
+				contentType: poaFile.type,
+				data: arrayBufferToBase64(await toByteArray(poaFile))
+			};
+
 			// Fetch old owner name
 			const name_search_ = await fetch(
 				`${baseURL}/api/users/SearchNameId?nameId=${requiredData.oldId}`
@@ -134,7 +148,8 @@
 					oldId: requiredData.oldId,
 					oldName: old_name,
 					oldCorrespondence: requiredData.oldCorrespondence,
-					newCorrespondence: newCorrespondence
+					newCorrespondence: newCorrespondence,
+					poa: poaPayload
 				})
 			});
 
@@ -155,6 +170,8 @@
 		selectedUser = undefined;
 		name_id = '';
 		matchesList = [];
+		poaFile = null;
+		if (poaInput) poaInput.value = '';
 		newCorrespondence = {
 			name: '',
 			state: '',
@@ -522,6 +539,48 @@
 								</Popover.Content>
 							</Popover.Root>
 						</div>
+						<div class="space-y-2">
+							<Label class="text-sm font-medium">
+								Power of Attorney <span class="text-destructive">*</span>
+							</Label>
+							<div class="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-md">
+								<input
+									type="file"
+									accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+									class="hidden"
+									bind:this={poaInput}
+									on:change={() => {
+										poaFile = poaInput.files?.[0] ?? null;
+									}}
+								/>
+								{#if poaFile}
+									<div class="flex items-center justify-between">
+										<div class="flex items-center gap-2 text-sm text-green-700">
+											<Icon icon="lucide:file-check" width="1rem" height="1rem" />
+											<span class="truncate max-w-[280px]">{poaFile.name}</span>
+										</div>
+										<button
+											type="button"
+											class="text-red-500 hover:text-red-700 text-xs"
+											on:click={() => {
+												poaFile = null;
+												if (poaInput) poaInput.value = '';
+											}}
+										>Remove</button>
+									</div>
+								{:else}
+									<button
+										type="button"
+										class="flex items-center gap-2 text-sm text-gray-600 hover:text-green-700 transition-colors"
+										on:click={() => poaInput.click()}
+									>
+										<Icon icon="lucide:upload" width="1rem" height="1rem" />
+										Attach Power of Attorney document
+									</button>
+									<p class="text-xs text-gray-400 mt-1">Accepted: PDF, DOC, DOCX, JPG, PNG</p>
+								{/if}
+							</div>
+						</div>
 					</div>
 				</div>
 				
@@ -536,7 +595,7 @@
 					<Button 
 						class="flex-1 h-11" 
 						on:click={saveCorr}
-						disabled={!newCorrespondence.name || !newCorrespondence.email || !newCorrespondence.phone}
+						disabled={!newCorrespondence.name || !newCorrespondence.email || !newCorrespondence.phone || !poaFile}
 					>
 						<Icon icon="ph:floppy-disk-bold" class="mr-2" width="1.2rem" height="1.2rem" />
 						Save & Transfer
