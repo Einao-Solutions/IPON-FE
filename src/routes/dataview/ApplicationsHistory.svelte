@@ -62,6 +62,7 @@
   import DesignMortgageDialog from "./Components/DesignMortgageDialog.svelte";
   import DesignAssignmentDialog from "./Components/DesignAssignmentDialog.svelte";
   import DesignMergerDialog from "./Components/DesignMergerDialog.svelte";
+  import OwnershipHistoryDialog from "./Components/OwnershipHistoryDialog.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -192,6 +193,13 @@
   let trademarkCTCFileId = "";
   let trademarkCTCApplicationId = "";
   let trademarkCTCStatus: number | null = null;
+
+  // Ownership History Modal State
+  let showOwnershipHistoryDialog = false;
+
+  function openOwnershipHistoryDialog() {
+    showOwnershipHistoryDialog = true;
+  }
 
   // Patent Dialog Statuses
   let patentAssignmentStatus: number | null = null;
@@ -2432,6 +2440,13 @@
   status={designMergerStatus}
 />
 
+<!-- Ownership History Dialog -->
+<OwnershipHistoryDialog
+  bind:open={showOwnershipHistoryDialog}
+  entries={allApplications}
+  closed={() => (showOwnershipHistoryDialog = false)}
+/>
+
 <!-- Patent Mortgage Dialog -->
 <PatentMortgageDialog
   bind:open={showPatentMortgageDialog}
@@ -2652,6 +2667,13 @@
               <DropdownMenu.Trigger on:click>More</DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 <DropdownMenu.Group>
+                  <!-- Ownership Change Application -->
+                  {#if application.applicationType === FormApplicationTypes.Ownership}
+                    <DropdownMenu.Item
+                      on:click={() => openOwnershipHistoryDialog()}
+                      >View Application</DropdownMenu.Item
+                    >
+                  {/if}
                   <!-- Data Update Application -->
                   {#if application.applicationType === 2}
                     <DropdownMenu.Item
