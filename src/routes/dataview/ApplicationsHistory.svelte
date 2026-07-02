@@ -3315,11 +3315,11 @@
 				{/if}
 
 				<!-- Counter Statements (if filed) -->
-				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id).length > 0}
+				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.filter((c: any) => !c.oppositionId || c.oppositionId === selectedOpposition.id).length > 0}
 					<div>
 						<h3 class="font-semibold text-slate-900 text-lg mb-4">Counter Statements</h3>
 						<div class="space-y-4">
-							{#each selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id) as cs, idx}
+							{#each selectedOpposition.counterStatements.filter((c: any) => !c.oppositionId || c.oppositionId === selectedOpposition.id) as cs, idx}
 								<div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
 									<div class="flex items-start justify-between mb-2">
 										<p class="text-sm font-semibold text-orange-900">Counter Statement {idx + 1}</p>
@@ -3396,7 +3396,7 @@
 			{/if}
 
 			<!-- File Statutory Declaration Button -->
-			{#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd) => sd.role === 'applicant'))}
+			{#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd: any) => sd.role === 'applicant'))}
 				<div class="mt-8 pt-6 border-t border-slate-200">
 					<Button
 						on:click={() => {
