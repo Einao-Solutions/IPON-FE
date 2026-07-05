@@ -428,6 +428,7 @@
         UpdateType: updateType,
         FileType: fileInfo.fileType ?? "",
         PaymentRRR: fileInfo.paymentRRR ?? "",
+        UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
       };
 
       if (updateType === ClericalUpdateTypes.PriorityInfo) {
@@ -641,6 +642,7 @@
       FileType: fileInfo.fileType ?? "",
       PaymentRRR: fileInfo.paymentRRR ?? "",
       RemoveApplicantIds: selectedRemoveIds,
+      UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
     };
 
     // Save to localStorage for the paid page
@@ -653,6 +655,10 @@
       formData.append("UpdateType", "RemoveApplicant");
       formData.append("FileType", String(fileInfo.fileType ?? ""));
       formData.append("PaymentRRR", fileInfo.paymentRRR ?? "");
+      formData.append(
+        "UserId",
+        $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
+      );
       selectedRemoveIds.forEach((id, i) => {
         formData.append(`RemoveApplicantIds[${i}]`, id);
       });
