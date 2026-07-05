@@ -319,10 +319,7 @@
     );
     const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
     const order: string[] = [];
-    const map = new Map<
-      string,
-      { field: string; left: any; right: any }
-    >();
+    const map = new Map<string, { field: string; left: any; right: any }>();
     for (const [k, v] of entries) {
       const lower = k.toLowerCase();
       const startsWithLeft =
@@ -368,12 +365,18 @@
     fileOppositions = [];
     activeOppositionIndex = 0;
     try {
-      const res = await fetch(`${baseURL}/api/opposition/getOppositionDetail?fileNumber=${fileNumber}`);
+      const res = await fetch(
+        `${baseURL}/api/opposition/getOppositionDetail?fileNumber=${fileNumber}`,
+      );
       if (res.ok) {
         const json = await res.json();
         const data = json.opposition ?? json.data ?? json;
         if (Array.isArray(data)) {
-          fileOppositions = data.sort((a: any, b: any) => new Date(a.date ?? a.oppositionDate ?? 0).getTime() - new Date(b.date ?? b.oppositionDate ?? 0).getTime());
+          fileOppositions = data.sort(
+            (a: any, b: any) =>
+              new Date(a.date ?? a.oppositionDate ?? 0).getTime() -
+              new Date(b.date ?? b.oppositionDate ?? 0).getTime(),
+          );
         } else {
           fileOppositions = [data];
         }
@@ -447,8 +450,42 @@
       const response = await fetch(`${baseURL}/api/payments/check?id=${id}`);
       if (!response.ok) throw new Error("Payment check failed");
 
-      const result = await response.json();
-      ({ amount, paymentDate, status, paymentDesc: paymentDescription } = result);
+      const text = await response.text();
+      if (!text) {
+        showToast("error", "No payment information returned");
+        remita_confirmation = "verify_update";
+        amount = "";
+        paymentDate = "";
+        status = "";
+        paymentDescription = "";
+        showManualUpdate = false;
+        updateCert = false;
+        showCancel = true;
+        return;
+      }
+
+      let result: any;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        showToast("error", "Invalid response from payment service");
+        remita_confirmation = "verify_update";
+        amount = "";
+        paymentDate = "";
+        status = "";
+        paymentDescription = "";
+        showManualUpdate = false;
+        updateCert = false;
+        showCancel = true;
+        return;
+      }
+
+      ({
+        amount,
+        paymentDate,
+        status,
+        paymentDesc: paymentDescription,
+      } = result);
       remita_confirmation = "verify_update";
 
       if (status === "00") {
@@ -966,7 +1003,7 @@
         beforeStatus: selectedApplication.currentStatus,
         afterStatus: mapStatusStringToStatus(String(newStatus ?? "")),
         reason: newStatusReason,
-        userId: $loggedInUser?.creatorId,
+        userId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
         userName: name,
       };
 
@@ -1323,11 +1360,15 @@
 
 <Toaster />
 <AlertDialog.Root bind:open={showAlertDialog}>
-  <AlertDialog.Content class="max-w-md p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-xl">
+  <AlertDialog.Content
+    class="max-w-md p-0 overflow-hidden rounded-2xl border border-slate-200 shadow-xl"
+  >
     <!-- Header -->
     <div class="px-6 pt-6 pb-4 border-b border-slate-100">
       <AlertDialog.Header class="space-y-1">
-        <AlertDialog.Title class="text-lg font-semibold text-slate-900 tracking-tight">
+        <AlertDialog.Title
+          class="text-lg font-semibold text-slate-900 tracking-tight"
+        >
           Payment Confirmation
         </AlertDialog.Title>
         <!-- <AlertDialog.Description class="text-xs text-slate-500">
@@ -1340,7 +1381,9 @@
     <div class="px-6 py-5">
       {#if remita_confirmation === "checking"}
         <div class="flex flex-col items-center justify-center py-8 gap-3">
-          <div class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center">
+          <div
+            class="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center"
+          >
             <Icon
               icon="line-md:loading-loop"
               width="1.75rem"
@@ -1352,7 +1395,9 @@
         </div>
       {:else if remita_confirmation === "success"}
         <div class="flex flex-col items-center text-center py-6 gap-4">
-          <div class="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center ring-4 ring-emerald-100/60">
+          <div
+            class="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center ring-4 ring-emerald-100/60"
+          >
             <Icon
               icon="clarity:success-standard-line"
               width="1.75rem"
@@ -1361,8 +1406,12 @@
             />
           </div>
           <div class="space-y-1">
-            <p class="text-base font-semibold text-slate-900">Application updated</p>
-            <p class="text-xs text-slate-500">The payment has been confirmed successfully.</p>
+            <p class="text-base font-semibold text-slate-900">
+              Application updated
+            </p>
+            <p class="text-xs text-slate-500">
+              The payment has been confirmed successfully.
+            </p>
           </div>
           <Button
             on:click={() => (showAlertDialog = false)}
@@ -1375,12 +1424,14 @@
         <div class="space-y-5">
           <!-- Status banner -->
           <div
-            class="flex items-center gap-3 rounded-xl px-4 py-3 border {status === '00'
+            class="flex items-center gap-3 rounded-xl px-4 py-3 border {status ===
+            '00'
               ? 'bg-emerald-50/60 border-emerald-100'
               : 'bg-amber-50/60 border-amber-100'}"
           >
             <div
-              class="h-9 w-9 rounded-full flex items-center justify-center {status === '00'
+              class="h-9 w-9 rounded-full flex items-center justify-center {status ===
+              '00'
                 ? 'bg-emerald-100 text-emerald-700'
                 : 'bg-amber-100 text-amber-700'}"
             >
@@ -1404,19 +1455,25 @@
             </div>
             <div class="text-right">
               <p class="text-xs text-slate-500">Amount</p>
-              <p class="text-sm font-semibold text-slate-900">₦{amount ?? ""}</p>
+              <p class="text-sm font-semibold text-slate-900">
+                ₦{amount ?? ""}
+              </p>
             </div>
           </div>
 
           <!-- Details -->
-          <dl class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+          <dl
+            class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden"
+          >
             <div class="flex items-center justify-between px-4 py-2.5">
               <dt class="text-xs font-medium text-slate-500">Payment Date</dt>
               <dd class="text-sm text-slate-900">{paymentDate || ""}</dd>
             </div>
             <div class="flex items-start justify-between gap-4 px-4 py-2.5">
               <dt class="text-xs font-medium text-slate-500">Description</dt>
-              <dd class="text-sm text-slate-900 text-right break-words max-w-[60%]">
+              <dd
+                class="text-sm text-slate-900 text-right break-words max-w-[60%]"
+              >
                 {paymentDescription || ""}
               </dd>
             </div>
@@ -1446,7 +1503,11 @@
                   updateCertPaymentStatus(validateRRR, fileData.fileId)}
                 class="flex-1 h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white"
               >
-                <Icon icon="mdi:certificate-outline" class="mr-1.5" width="1em" />
+                <Icon
+                  icon="mdi:certificate-outline"
+                  class="mr-1.5"
+                  width="1em"
+                />
                 Update Certificate
               </Button>
             {/if}
@@ -1572,7 +1633,9 @@
               FormApplicationTypes.Assignment}
             {@const leftPrefix = isAssignment ? "assignor" : "old"}
             {@const rightPrefix = isAssignment ? "assignee" : "new"}
-            {@const leftLabel = isAssignment ? "Assignor (Previous)" : "Previous"}
+            {@const leftLabel = isAssignment
+              ? "Assignor (Previous)"
+              : "Previous"}
             {@const rightLabel = isAssignment ? "Assignee (New)" : "New"}
             {@const rows = pairOldNew(recordalData, leftPrefix, rightPrefix)}
             {@const hasAnyLeft = rows.some((r) => r.left !== undefined)}
@@ -1598,13 +1661,22 @@
                 </thead>
                 <tbody>
                   {#each rows as row}
-                    <tr class="border-b border-slate-200 hover:bg-slate-50 align-top">
+                    <tr
+                      class="border-b border-slate-200 hover:bg-slate-50 align-top"
+                    >
                       <td
                         class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
                         >{row.field}</td
                       >
                       {#if hasAnyLeft}
-                        <td class="px-3 py-2 text-slate-800 border-l border-slate-200 {row.left !== undefined && row.right !== undefined && JSON.stringify(row.left) !== JSON.stringify(row.right) ? 'bg-amber-50' : ''}">
+                        <td
+                          class="px-3 py-2 text-slate-800 border-l border-slate-200 {row.left !==
+                            undefined &&
+                          row.right !== undefined &&
+                          JSON.stringify(row.left) !== JSON.stringify(row.right)
+                            ? 'bg-amber-50'
+                            : ''}"
+                        >
                           {#if Array.isArray(row.left)}
                             <div class="space-y-0.5">
                               {#each row.left as item}<div>{item}</div>{/each}
@@ -1616,7 +1688,14 @@
                           {/if}
                         </td>
                       {/if}
-                      <td class="px-3 py-2 text-slate-800 border-l border-slate-200 {hasAnyLeft && row.left !== undefined && row.right !== undefined && JSON.stringify(row.left) !== JSON.stringify(row.right) ? 'bg-emerald-50 font-medium' : ''}">
+                      <td
+                        class="px-3 py-2 text-slate-800 border-l border-slate-200 {hasAnyLeft &&
+                        row.left !== undefined &&
+                        row.right !== undefined &&
+                        JSON.stringify(row.left) !== JSON.stringify(row.right)
+                          ? 'bg-emerald-50 font-medium'
+                          : ''}"
+                      >
                         {#if Array.isArray(row.right)}
                           <div class="space-y-0.5">
                             {#each row.right as item}<div>{item}</div>{/each}
@@ -2020,7 +2099,6 @@
         </div>
       {:else if publicationDetails}
         <div class="space-y-6">
-
           <!-- File Information -->
           <div class="bg-gray-100 rounded-lg p-4">
             <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -2039,8 +2117,8 @@
                 <p class="mt-1 p-2 bg-white rounded border">
                   {publicationDetails.publicationDate
                     ? new Date(
-                      publicationDetails.publicationDate,
-                    ).toLocaleDateString()
+                        publicationDetails.publicationDate,
+                      ).toLocaleDateString()
                     : "N/A"}
                 </p>
               </div>
@@ -2049,21 +2127,28 @@
 
           <!-- Attachments -->
           <div class="mb-6">
-            <Label for="publication-attachments" class="font-semibold mb-3 block flex items-center gap-2">
+            <Label
+              for="publication-attachments"
+              class="font-semibold mb-3 block flex items-center gap-2"
+            >
               <Icon icon="mdi:attachment" class="text-green-600" />
               Publication Attachments:
             </Label>
             {#if publicationDetails.attachments && publicationDetails.attachments.length}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {#each publicationDetails.attachments as attachment, index}
-                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <div
+                    class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
+                  >
                     <div class="flex items-center justify-between gap-3">
                       <div class="flex-1 min-w-0">
                         <div class="font-medium text-gray-800 truncate">
-                          {attachment.name || `Publication Document ${index + 1}`}
+                          {attachment.name ||
+                            `Publication Document ${index + 1}`}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {publicationDetails.attachments.length}
+                          Document {index + 1} of {publicationDetails
+                            .attachments.length}
                         </div>
                       </div>
                       <div class="flex-shrink-0">
@@ -2075,8 +2160,16 @@
                               rel="noopener"
                               class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
                             >
-                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
+                              <Icon
+                                icon="mdi:file-eye"
+                                width="1.2em"
+                                height="1.2em"
+                              />
+                              <span
+                                >View {attachment.url.length > 1
+                                  ? urlIndex + 1
+                                  : ""}</span
+                              >
                             </a>
                           {/each}
                         {:else}
@@ -2086,7 +2179,11 @@
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
                           >
-                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                            <Icon
+                              icon="mdi:file-eye"
+                              width="1.2em"
+                              height="1.2em"
+                            />
                             <span>View</span>
                           </a>
                         {/if}
@@ -2096,8 +2193,15 @@
                 {/each}
               </div>
             {:else}
-              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
-                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
+              <div
+                class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed"
+              >
+                <Icon
+                  icon="mdi:file-outline"
+                  width="2em"
+                  height="2em"
+                  class="mx-auto mb-2 opacity-50"
+                />
                 <p>No attachments submitted</p>
               </div>
             {/if}
@@ -2105,7 +2209,10 @@
 
           <!-- Comment Section -->
           <div class="mb-4">
-            <Label for="publication-comment" class="block font-medium mb-1 flex items-center gap-2">
+            <Label
+              for="publication-comment"
+              class="block font-medium mb-1 flex items-center gap-2"
+            >
               <Icon icon="mdi:comment-text-outline" class="text-green-600" />
               Decision Comment: <span class="text-red-500">*</span>
             </Label>
@@ -2126,7 +2233,12 @@
               on:click={() => handlePublicationDecision(true)}
               disabled={publicationSubmitting || !publicationComment.trim()}
             >
-              <Icon icon="mdi:check-circle-outline" width="1.2em" height="1.2em" class="inline mr-1" />
+              <Icon
+                icon="mdi:check-circle-outline"
+                width="1.2em"
+                height="1.2em"
+                class="inline mr-1"
+              />
               Approve
             </Button>
             <Button
@@ -2134,18 +2246,32 @@
               on:click={() => handlePublicationDecision(false)}
               disabled={publicationSubmitting || !publicationComment.trim()}
             >
-              <Icon icon="mdi:close-circle-outline" width="1.2em" height="1.2em" class="inline mr-1" />
+              <Icon
+                icon="mdi:close-circle-outline"
+                width="1.2em"
+                height="1.2em"
+                class="inline mr-1"
+              />
               Reject
             </Button>
           </div>
-
         </div>
       {/if}
     </div>
 
-    <Dialog.Footer class="flex-shrink-0 mt-4 flex justify-end px-4 pb-4 border-t bg-gray-50">
-      <Button on:click={() => (showPublicationDialog = false)} variant="outline">
-        <Icon icon="mdi:close" width="1.2em" height="1.2em" class="inline mr-1" />
+    <Dialog.Footer
+      class="flex-shrink-0 mt-4 flex justify-end px-4 pb-4 border-t bg-gray-50"
+    >
+      <Button
+        on:click={() => (showPublicationDialog = false)}
+        variant="outline"
+      >
+        <Icon
+          icon="mdi:close"
+          width="1.2em"
+          height="1.2em"
+          class="inline mr-1"
+        />
         Close
       </Button>
     </Dialog.Footer>
@@ -2190,7 +2316,6 @@
         </div>
       {:else if withdrawalDetails}
         <div class="space-y-6">
-
           <!-- File Information -->
           <div class="bg-gray-100 rounded-lg p-4">
             <h3 class="font-semibold text-lg mb-3 flex items-center gap-2">
@@ -2209,8 +2334,8 @@
                 <p class="mt-1 p-2 bg-white rounded border">
                   {withdrawalDetails.withdrawalRequestDate
                     ? new Date(
-                      withdrawalDetails.withdrawalRequestDate,
-                    ).toLocaleString()
+                        withdrawalDetails.withdrawalRequestDate,
+                      ).toLocaleString()
                     : "N/A"}
                 </p>
               </div>
@@ -2226,14 +2351,17 @@
             {#if withdrawalDetails.withdrawalLetterAttachments && withdrawalDetails.withdrawalLetterAttachments.length}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {#each withdrawalDetails.withdrawalLetterAttachments as attachment, index}
-                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <div
+                    class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
+                  >
                     <div class="flex items-center justify-between gap-3">
                       <div class="flex-1 min-w-0">
                         <div class="font-medium text-gray-800 truncate">
                           {attachment.name || `Withdrawal Letter ${index + 1}`}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails.withdrawalLetterAttachments.length}
+                          Document {index + 1} of {withdrawalDetails
+                            .withdrawalLetterAttachments.length}
                         </div>
                       </div>
                       <div class="flex-shrink-0">
@@ -2245,8 +2373,16 @@
                               rel="noopener"
                               class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
                             >
-                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
+                              <Icon
+                                icon="mdi:file-eye"
+                                width="1.2em"
+                                height="1.2em"
+                              />
+                              <span
+                                >View {attachment.url.length > 1
+                                  ? urlIndex + 1
+                                  : ""}</span
+                              >
                             </a>
                           {/each}
                         {:else}
@@ -2256,7 +2392,11 @@
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
                           >
-                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                            <Icon
+                              icon="mdi:file-eye"
+                              width="1.2em"
+                              height="1.2em"
+                            />
                             <span>View</span>
                           </a>
                         {/if}
@@ -2266,8 +2406,15 @@
                 {/each}
               </div>
             {:else}
-              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
-                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
+              <div
+                class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed"
+              >
+                <Icon
+                  icon="mdi:file-outline"
+                  width="2em"
+                  height="2em"
+                  class="mx-auto mb-2 opacity-50"
+                />
                 <p>No withdrawal letter attachments</p>
               </div>
             {/if}
@@ -2282,14 +2429,18 @@
             {#if withdrawalDetails.supportingDocumentAttachments && withdrawalDetails.supportingDocumentAttachments.length}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {#each withdrawalDetails.supportingDocumentAttachments as attachment, index}
-                  <div class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <div
+                    class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
+                  >
                     <div class="flex items-center justify-between gap-3">
                       <div class="flex-1 min-w-0">
                         <div class="font-medium text-gray-800 truncate">
-                          {attachment.name || `Supporting Document ${index + 1}`}
+                          {attachment.name ||
+                            `Supporting Document ${index + 1}`}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails.supportingDocumentAttachments.length}
+                          Document {index + 1} of {withdrawalDetails
+                            .supportingDocumentAttachments.length}
                         </div>
                       </div>
                       <div class="flex-shrink-0">
@@ -2301,8 +2452,16 @@
                               rel="noopener"
                               class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
                             >
-                              <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
-                              <span>View {attachment.url.length > 1 ? urlIndex + 1 : ""}</span>
+                              <Icon
+                                icon="mdi:file-eye"
+                                width="1.2em"
+                                height="1.2em"
+                              />
+                              <span
+                                >View {attachment.url.length > 1
+                                  ? urlIndex + 1
+                                  : ""}</span
+                              >
                             </a>
                           {/each}
                         {:else}
@@ -2312,7 +2471,11 @@
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
                           >
-                            <Icon icon="mdi:file-eye" width="1.2em" height="1.2em" />
+                            <Icon
+                              icon="mdi:file-eye"
+                              width="1.2em"
+                              height="1.2em"
+                            />
                             <span>View</span>
                           </a>
                         {/if}
@@ -2322,8 +2485,15 @@
                 {/each}
               </div>
             {:else}
-              <div class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed">
-                <Icon icon="mdi:file-outline" width="2em" height="2em" class="mx-auto mb-2 opacity-50" />
+              <div
+                class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed"
+              >
+                <Icon
+                  icon="mdi:file-outline"
+                  width="2em"
+                  height="2em"
+                  class="mx-auto mb-2 opacity-50"
+                />
                 <p>No supporting documents</p>
               </div>
             {/if}
@@ -2373,7 +2543,6 @@
               Reject
             </Button>
           </div>
-
         </div>
       {/if}
     </div>
@@ -2515,92 +2684,227 @@
     }
   }}
 >
-  <Sheet.Content side="right" class="overflow-y-auto w-[600px]">
-    <Sheet.Header>
-      <Sheet.Title>
-        Change Status for {selectedApplication?.applicationType}
-      </Sheet.Title>
-      <Sheet.Description>Select new status and reason</Sheet.Description>
-    </Sheet.Header>
-    {#if newStatusContent === null || newStatusContent === 0}
-      <div class="flex flex-col gap-4">
-        <Label>Select new Status</Label>
-        <div class="grid grid-cols-2 gap-4">
-          {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)), ) as status}
-            <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
-            <div
-              class="border rounded-md w-fit {newStatus === status
-                ? 'bg-green-300'
-                : ''} p-2 m-2"
-              on:click={() => (newStatus = status)}
-            >
-              {status}
-            </div>
-          {/each}
-        </div>
-        <Textarea
-          class="min-w-full min-h-48"
-          placeholder="type reason for change..."
-          bind:value={newStatusReason}
-        />
-      </div>
-      <Sheet.Footer class="mt-4">
-        <Button
-          variant="outline"
-          on:click={() => {
-            showUpdateStatusForm = false;
-            newStatusReason = null;
-            newStatus = null;
-          }}>Cancel</Button
-        >
-        <Button
-          variant="default"
-          on:click={() => {
-            newStatusContent = 1;
-          }}>Ok</Button
-        >
-      </Sheet.Footer>
-    {:else if newStatusContent === 1}
-      <div class="flex flex-col gap-4">
-        <div>
-          Are you sure you want to change the status to <p
-            class="border rounded-md w-fit p-2 m-2"
-          >
-            {newStatus}
-          </p>
-          ?
-        </div>
-        <Button
-          disabled={isNewStatusLoading === true}
-          variant="outline"
-          on:click={() => (newStatusContent = null)}>Cancel</Button>
-        <Button
-          disabled={isNewStatusLoading === true}
-          on:click={() => confirmChange()}
+  <Sheet.Content
+    side="right"
+    class="overflow-y-auto w-full sm:max-w-[560px] p-0 bg-white"
+  >
+    <!-- Header -->
+    <div class="px-6 pt-6 pb-5 border-b border-slate-100">
+      <div class="flex items-start gap-3">
+        <div
+          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-900"
         >
           <Icon
-            class={isNewStatusLoading === true ? "" : "hidden"}
-            icon="eos-icons:bubble-loading"
-            width="1.2rem"
-            height="1.2rem"
+            icon="mdi:swap-horizontal-bold"
+            width="1.25em"
+            class="text-white"
           />
-          Ok</Button
-          >
-      </div>
-    {:else if newStatusContent === 2}
-      <div class="flex flex-col items-center justify-center">
-        <p>Status Change successful</p>
-        <Button
-          on:click={() => {
-            showUpdateStatusForm = false;
-            isNewStatusLoading = false;
-            newStatusContent = null;
-            newStatus = null;
-            newStatusReason = null;
-          }}>OK</Button>
         </div>
-    {/if}
+        <div class="flex-1 min-w-0">
+          <Sheet.Title class="text-lg font-semibold text-slate-900 tracking-tight">
+            Change Application Status
+          </Sheet.Title>
+          <Sheet.Description class="text-xs text-slate-500 mt-1">
+            {mapTypeToString(selectedApplication?.applicationType ?? 0)} • Current:
+            <span class="font-medium text-slate-700">
+              {selectedApplication?.currentStatus != null
+                ? ApplicationStatuses[selectedApplication.currentStatus]
+                : "—"}
+            </span>
+          </Sheet.Description>
+        </div>
+      </div>
+
+      <!-- Stepper -->
+      <div class="flex items-center gap-2 mt-5">
+        {#each [0, 1, 2] as step}
+          {@const current = newStatusContent ?? 0}
+          <div
+            class="h-1.5 flex-1 rounded-full transition-colors {step <= current
+              ? 'bg-slate-900'
+              : 'bg-slate-200'}"
+          />
+        {/each}
+      </div>
+      <div class="flex justify-between text-[10px] uppercase tracking-wider text-slate-500 mt-2 font-medium">
+        <span class={(newStatusContent ?? 0) >= 0 ? 'text-slate-900' : ''}>Select</span>
+        <span class={(newStatusContent ?? 0) >= 1 ? 'text-slate-900' : ''}>Confirm</span>
+        <span class={(newStatusContent ?? 0) >= 2 ? 'text-slate-900' : ''}>Done</span>
+      </div>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-5">
+      {#if newStatusContent === null || newStatusContent === 0}
+        <div class="space-y-5">
+          <div>
+            <Label class="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+              New Status
+            </Label>
+            <div class="grid grid-cols-2 gap-2 mt-2">
+              {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)), ) as status}
+                <!-- svelte-ignore a11y-click-events-have-key-events -->
+                <!-- svelte-ignore a11y-no-static-element-interactions -->
+                <div
+                  on:click={() => (newStatus = status)}
+                  class="cursor-pointer select-none rounded-lg border px-3 py-2 text-xs font-medium transition-all
+                    {newStatus === status
+                    ? 'border-slate-900 bg-slate-900 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400 hover:bg-slate-50'}"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="truncate">
+                      {status.replace(/([A-Z])/g, " $1").trim()}
+                    </span>
+                    {#if newStatus === status}
+                      <Icon icon="mdi:check" width="0.9em" class="shrink-0" />
+                    {/if}
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          <div>
+            <Label
+              for="status-reason"
+              class="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+            >
+              Reason for Change
+            </Label>
+            <Textarea
+              id="status-reason"
+              class="mt-2 min-h-32 rounded-lg border-slate-200 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 text-sm resize-none"
+              placeholder="Provide a reason for this status change..."
+              bind:value={newStatusReason}
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
+          <Button
+            variant="outline"
+            class="h-9 rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50"
+            on:click={() => {
+              showUpdateStatusForm = false;
+              newStatusReason = null;
+              newStatus = null;
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            class="h-9 rounded-lg bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50"
+            disabled={!newStatus || !newStatusReason?.trim()}
+            on:click={() => (newStatusContent = 1)}
+          >
+            Continue
+            <Icon icon="mdi:arrow-right" class="ml-1.5" width="0.95em" />
+          </Button>
+        </div>
+      {:else if newStatusContent === 1}
+        <div class="space-y-5">
+          <div
+            class="flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50/60 px-4 py-3"
+          >
+            <Icon
+              icon="mdi:alert-circle-outline"
+              width="1.25em"
+              class="text-amber-600 shrink-0 mt-0.5"
+            />
+            <p class="text-xs text-amber-800 leading-relaxed">
+              Please confirm this status change. This action will be recorded in
+              the application history.
+            </p>
+          </div>
+
+          <dl class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-3">
+              <dt class="text-xs font-medium text-slate-500">Current Status</dt>
+              <dd class="text-sm font-medium text-slate-900">
+                {selectedApplication?.currentStatus != null
+                  ? ApplicationStatuses[selectedApplication.currentStatus]
+                  : "—"}
+              </dd>
+            </div>
+            <div class="flex items-center justify-between px-4 py-3 bg-slate-50/50">
+              <dt class="text-xs font-medium text-slate-500">New Status</dt>
+              <dd class="flex items-center gap-2">
+                <Icon icon="mdi:arrow-right" width="0.9em" class="text-slate-400" />
+                <span class="text-sm font-semibold text-slate-900">{newStatus}</span>
+              </dd>
+            </div>
+            {#if newStatusReason}
+              <div class="px-4 py-3">
+                <dt class="text-xs font-medium text-slate-500 mb-1">Reason</dt>
+                <dd class="text-sm text-slate-700 whitespace-pre-wrap break-words">
+                  {newStatusReason}
+                </dd>
+              </div>
+            {/if}
+          </dl>
+
+          <div class="flex justify-end gap-2 pt-4 border-t border-slate-100">
+            <Button
+              disabled={isNewStatusLoading}
+              variant="outline"
+              class="h-9 rounded-lg border-slate-200 text-slate-700 hover:bg-slate-50"
+              on:click={() => (newStatusContent = null)}
+            >
+              <Icon icon="mdi:arrow-left" class="mr-1.5" width="0.95em" />
+              Back
+            </Button>
+            <Button
+              disabled={isNewStatusLoading}
+              class="h-9 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+              on:click={() => confirmChange()}
+            >
+              {#if isNewStatusLoading}
+                <Icon
+                  icon="line-md:loading-loop"
+                  class="mr-1.5 animate-spin"
+                  width="1em"
+                />
+                Updating...
+              {:else}
+                <Icon icon="mdi:check" class="mr-1.5" width="0.95em" />
+                Confirm Change
+              {/if}
+            </Button>
+          </div>
+        </div>
+      {:else if newStatusContent === 2}
+        <div class="flex flex-col items-center text-center py-8 gap-4">
+          <div
+            class="h-14 w-14 rounded-full bg-emerald-50 flex items-center justify-center ring-4 ring-emerald-100/60"
+          >
+            <Icon
+              icon="clarity:success-standard-line"
+              width="1.75rem"
+              class="text-emerald-600"
+            />
+          </div>
+          <div class="space-y-1">
+            <p class="text-base font-semibold text-slate-900">Status Updated</p>
+            <p class="text-xs text-slate-500">
+              The application status has been changed successfully.
+            </p>
+          </div>
+          <Button
+            class="w-full mt-2 h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white"
+            on:click={() => {
+              showUpdateStatusForm = false;
+              isNewStatusLoading = false;
+              newStatusContent = null;
+              newStatus = null;
+              newStatusReason = null;
+            }}
+          >
+            Done
+          </Button>
+        </div>
+      {/if}
+    </div>
   </Sheet.Content>
 </Sheet.Root>
 <div class="px-2 py-2 overflow-x-auto overflow-y-auto">
@@ -2644,15 +2948,22 @@
           <!-- for Application Status -->
           <Table.Cell>
             {#if application.applicationType === FormApplicationTypes.NewOpposition && (application.currentStatus === 30 || application.currentStatus === 29 || application.currentStatus === 31)}
-              <span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
+              <span
+                class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full"
+                >Awaiting Counter Statement</span
+              >
             {:else if application.applicationType === FormApplicationTypes.NewOpposition && application.currentStatus === 33}
-              <span class="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
+              <span
+                class="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                >Awaiting Statutory Declaration</span
+              >
             {:else if application.applicationType === FormApplicationTypes.CounterStatement || application.applicationType === FormApplicationTypes.StatutoryDeclaration}
-              <span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Submitted</span>
+              <span
+                class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full"
+                >Submitted</span
+              >
             {:else}
-              <AppStatusTag
-                value={application.currentStatus ?? undefined}
-              />
+              <AppStatusTag value={application.currentStatus ?? undefined} />
             {/if}
           </Table.Cell>
           <!-- for Payment Status -->
@@ -2942,14 +3253,19 @@
                       on:click={async () => {
                         oppositionDetailLoading = true;
                         try {
-                          const res = await fetch(`${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&fileId=${fileData.fileId}`);
+                          const res = await fetch(
+                            `${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&fileId=${fileData.fileId}`,
+                          );
                           if (res.ok) {
                             const json = await res.json();
                             const oppList = json.data || [];
                             if (oppList.length > 0) {
                               viewOppositionDetail(fileData.fileId);
                             } else {
-                              showToast("error", "No opposition found for this file");
+                              showToast(
+                                "error",
+                                "No opposition found for this file",
+                              );
                             }
                           } else {
                             showToast("error", "Failed to load opposition");
@@ -2967,189 +3283,189 @@
 
                   <!-- LETTERS -->
                   {#if application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                  <DropdownMenu.Separator />
-                  <DropdownMenu.Label>Print</DropdownMenu.Label>
-                  <DropdownMenu.Separator />
-                  {#if application.applicationType === FormApplicationTypes.NewApplication && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 0, 1);
-                      }}>Acknowledgement Letter</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 0, 37);
-                      }}>Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Active}
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.Label>Print</DropdownMenu.Label>
+                    <DropdownMenu.Separator />
+                    {#if application.applicationType === FormApplicationTypes.NewApplication && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 0, 1);
+                        }}>Acknowledgement Letter</DropdownMenu.Item
+                      >
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 0, 37);
+                        }}>Receipt</DropdownMenu.Item
+                      >
+                      <!-- {#if application.currentStatus === ApplicationStatuses.Active}
                       <DropdownMenu.Item
                         on:click={() => {
                           generateLetter(application, 0, 3);
                         }}>Certificate of Registration</DropdownMenu.Item
                       >
+                    {/if} -->
                     {/if}
-                  {/if}
-                  <!-- Appeal Docs -->
-                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 13, 2);
-                      }}>Acceptance Letter</DropdownMenu.Item
-                    >
-                  {/if}
-                  <!-- Merger Docs -->
-                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.Merger && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 8, 26);
-                      }}>Merger Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 8, 25);
-                      }}>Merger Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                    <!-- Appeal Docs -->
+                    {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.AppealRequest && application.currentStatus === ApplicationStatuses.Approved}
                       <DropdownMenu.Item
                         on:click={() => {
-                          generateLetter(application, 8, 27);
-                        }}>Certificate of Merger</DropdownMenu.Item
+                          generateLetter(application, 13, 2);
+                        }}>Acceptance Letter</DropdownMenu.Item
                       >
                     {/if}
-                  {/if}
-                  <!-- Assignment docs -->
-                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.Assignment && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 5, 12);
-                      }}>Assignment Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 5, 11);
-                      }}>Assignment Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                    <!-- Merger Docs -->
+                    {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.Merger && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                       <DropdownMenu.Item
                         on:click={() => {
-                          generateLetter(application, 5, 13);
-                        }}>Certificate of Assignment</DropdownMenu.Item
+                          generateLetter(application, 8, 26);
+                        }}>Merger Acknowledgement</DropdownMenu.Item
                       >
-                    {/if}
-                  {/if}
-                  <!-- Registered user docs -->
-                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.RegisteredUser && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 7, 29);
-                      }}>Registered User Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 7, 28);
-                      }}>Registered User Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Approved}
                       <DropdownMenu.Item
                         on:click={() => {
-                          generateLetter(application, 7, 30);
-                        }}>Certificate of Registered User</DropdownMenu.Item
+                          generateLetter(application, 8, 25);
+                        }}>Merger Receipt</DropdownMenu.Item
                       >
+                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                        <DropdownMenu.Item
+                          on:click={() => {
+                            generateLetter(application, 8, 27);
+                          }}>Certificate of Merger</DropdownMenu.Item
+                        >
+                      {/if}
                     {/if}
-                  {/if}
-                  <!-- Change of Name docs -->
-                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.ChangeOfName && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 9, 32);
-                      }}>Change of Name Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 9, 34);
-                      }}>Change of Name Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Approved}
+                    <!-- Assignment docs -->
+                    {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.Assignment && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                       <DropdownMenu.Item
                         on:click={() => {
-                          generateLetter(application, 9, 48);
-                        }}>Certificate of Change of Name</DropdownMenu.Item
+                          generateLetter(application, 5, 12);
+                        }}>Assignment Acknowledgement</DropdownMenu.Item
                       >
-                    {/if}
-                  {/if}
-                  <!-- Change of Address docs -->
-                  {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.ChangeOfAddress && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 10, 31);
-                      }}>Change of Address Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 10, 33);
-                      }}>Change of Address Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Approved}
                       <DropdownMenu.Item
                         on:click={() => {
-                          generateLetter(application, 10, 49);
-                        }}>Certificate of Change of Address</DropdownMenu.Item
+                          generateLetter(application, 5, 11);
+                        }}>Assignment Receipt</DropdownMenu.Item
                       >
+                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                        <DropdownMenu.Item
+                          on:click={() => {
+                            generateLetter(application, 5, 13);
+                          }}>Certificate of Assignment</DropdownMenu.Item
+                        >
+                      {/if}
                     {/if}
-                  {/if}
-                  <!-- Clerical Update Docs -->
-                  {#if application.applicationType === FormApplicationTypes.ClericalUpdate && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 11, 36);
-                      }}>Clerical Update Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 11, 35);
-                      }}>Clerical Update Receipt</DropdownMenu.Item
-                    >
-                  {/if}
-                  <!-- Certification Docs -->
-                  {#if application.applicationType === FormApplicationTypes.Certification && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 18, 21);
-                      }}>Certificate Acknowledgement</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Item
-                      on:click={() => {
-                        generateLetter(application, 18, 22);
-                      }}>Certificate Payment Receipt</DropdownMenu.Item
-                    >
-                    {#if application.currentStatus === ApplicationStatuses.Active}
+                    <!-- Registered user docs -->
+                    {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.RegisteredUser && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                       <DropdownMenu.Item
                         on:click={() => {
-                          generateLetter(application, 18, 3);
-                        }}>Certificate</DropdownMenu.Item
+                          generateLetter(application, 7, 29);
+                        }}>Registered User Acknowledgement</DropdownMenu.Item
                       >
-                    {/if}
-                  {/if}
-                  <!-- Certificate -->
-                  {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
-                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
                       <DropdownMenu.Item
-                        on:click={() => certificate(application)}
+                        on:click={() => {
+                          generateLetter(application, 7, 28);
+                        }}>Registered User Receipt</DropdownMenu.Item
                       >
-                        Certificate
-                      </DropdownMenu.Item>
+                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                        <DropdownMenu.Item
+                          on:click={() => {
+                            generateLetter(application, 7, 30);
+                          }}>Certificate of Registered User</DropdownMenu.Item
+                        >
+                      {/if}
                     {/if}
+                    <!-- Change of Name docs -->
+                    {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.ChangeOfName && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 9, 32);
+                        }}>Change of Name Acknowledgement</DropdownMenu.Item
+                      >
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 9, 34);
+                        }}>Change of Name Receipt</DropdownMenu.Item
+                      >
+                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                        <DropdownMenu.Item
+                          on:click={() => {
+                            generateLetter(application, 9, 48);
+                          }}>Certificate of Change of Name</DropdownMenu.Item
+                        >
+                      {/if}
+                    {/if}
+                    <!-- Change of Address docs -->
+                    {#if fileData.type === FileTypes.Trademark && application.applicationType === FormApplicationTypes.ChangeOfAddress && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 10, 31);
+                        }}>Change of Address Acknowledgement</DropdownMenu.Item
+                      >
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 10, 33);
+                        }}>Change of Address Receipt</DropdownMenu.Item
+                      >
+                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                        <DropdownMenu.Item
+                          on:click={() => {
+                            generateLetter(application, 10, 49);
+                          }}>Certificate of Change of Address</DropdownMenu.Item
+                        >
+                      {/if}
+                    {/if}
+                    <!-- Clerical Update Docs -->
+                    {#if application.applicationType === FormApplicationTypes.ClericalUpdate && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 11, 36);
+                        }}>Clerical Update Acknowledgement</DropdownMenu.Item
+                      >
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 11, 35);
+                        }}>Clerical Update Receipt</DropdownMenu.Item
+                      >
+                    {/if}
+                    <!-- Certification Docs -->
+                    {#if application.applicationType === FormApplicationTypes.Certification && application.currentStatus !== ApplicationStatuses.AwaitingCertification}
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 18, 21);
+                        }}>Certificate Acknowledgement</DropdownMenu.Item
+                      >
+                      <DropdownMenu.Item
+                        on:click={() => {
+                          generateLetter(application, 18, 22);
+                        }}>Certificate Payment Receipt</DropdownMenu.Item
+                      >
+                      {#if application.currentStatus === ApplicationStatuses.Active}
+                        <DropdownMenu.Item
+                          on:click={() => {
+                            generateLetter(application, 18, 3);
+                          }}>Certificate</DropdownMenu.Item
+                        >
+                      {/if}
+                    {/if}
+                    <!-- Certificate -->
+                    {#if (application.certificatePaymentId != null || fileData.type === FileTypes.Patent) && application.currentStatus === ApplicationStatuses.Active}
+                      {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                        <DropdownMenu.Item
+                          on:click={() => certificate(application)}
+                        >
+                          Certificate
+                        </DropdownMenu.Item>
+                      {/if}
 
-                    <!-- Renewal docs -->
-                  {:else if application.applicationType == FormApplicationTypes.LicenseRenewal && (application.currentStatus === ApplicationStatuses.Approved || application.currentStatus === ApplicationStatuses.AutoApproved)}
-                    {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
-                      <DropdownMenu.Item
-                        on:click={() => renewalCertificate(application)}
-                      >
-                        Renewal Certificate</DropdownMenu.Item
-                      >
+                      <!-- Renewal docs -->
+                    {:else if application.applicationType == FormApplicationTypes.LicenseRenewal && (application.currentStatus === ApplicationStatuses.Approved || application.currentStatus === ApplicationStatuses.AutoApproved)}
+                      {#if $loggedInUser?.userRoles && [UserRoles.TrademarkCertification, UserRoles.Tech, UserRoles.SuperAdmin].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                        <DropdownMenu.Item
+                          on:click={() => renewalCertificate(application)}
+                        >
+                          Renewal Certificate</DropdownMenu.Item
+                        >
+                      {/if}
                     {/if}
-                  {/if}
                   {/if}<!-- end LETTERS guard -->
                 </DropdownMenu.Group>
               </DropdownMenu.Content>
@@ -3163,254 +3479,391 @@
 
 <!-- Opposition Detail Sheet -->
 <Sheet.Root bind:open={showOppositionDetail}>
-	<Sheet.Content side="right" class="w-full sm:max-w-2xl overflow-y-auto">
-		{#if oppositionDetailLoading}
-			<div class="flex justify-center items-center h-full">
-				<Icon icon="line-md:loading-loop" class="w-8 h-8 text-green-600" />
-			</div>
-		{:else if selectedOpposition}
-			<Sheet.Header>
-				<Sheet.Title class="text-2xl font-bold text-slate-900">Opposition Details</Sheet.Title>
-				<Sheet.Description class="text-slate-600 mt-2">
-					File: <span class="font-semibold">{selectedOpposition.fileNumber}</span>
-				</Sheet.Description>
-			</Sheet.Header>
+  <Sheet.Content side="right" class="w-full sm:max-w-2xl overflow-y-auto">
+    {#if oppositionDetailLoading}
+      <div class="flex justify-center items-center h-full">
+        <Icon icon="line-md:loading-loop" class="w-8 h-8 text-green-600" />
+      </div>
+    {:else if selectedOpposition}
+      <Sheet.Header>
+        <Sheet.Title class="text-2xl font-bold text-slate-900"
+          >Opposition Details</Sheet.Title
+        >
+        <Sheet.Description class="text-slate-600 mt-2">
+          File: <span class="font-semibold"
+            >{selectedOpposition.fileNumber}</span
+          >
+        </Sheet.Description>
+      </Sheet.Header>
 
-			<!-- Opposition Tabs (when multiple oppositions exist on the same file) -->
-			{#if fileOppositions.length > 1}
-				<div class="mt-4 border-b border-slate-200">
-					<div class="flex gap-1 overflow-x-auto pb-0">
-						{#each fileOppositions as opp, idx}
-							<button
-								on:click={() => switchOpposition(idx)}
-								class="px-3 py-2 text-sm font-medium whitespace-nowrap rounded-t-lg transition-colors
+      <!-- Opposition Tabs (when multiple oppositions exist on the same file) -->
+      {#if fileOppositions.length > 1}
+        <div class="mt-4 border-b border-slate-200">
+          <div class="flex gap-1 overflow-x-auto pb-0">
+            {#each fileOppositions as opp, idx}
+              <button
+                on:click={() => switchOpposition(idx)}
+                class="px-3 py-2 text-sm font-medium whitespace-nowrap rounded-t-lg transition-colors
 									{activeOppositionIndex === idx
-										? 'bg-green-50 text-green-700 border border-b-0 border-green-200'
-										: 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}"
-							>
-								Opposition {idx + 1}
-								<span class="ml-1 text-xs text-slate-400">({opp.name?.split(' ')[0] ?? 'Unknown'})</span>
-							</button>
-						{/each}
-					</div>
-					<p class="text-xs text-slate-500 mt-2 mb-1">
-						Showing {activeOppositionIndex + 1} of {fileOppositions.length} oppositions on this file
-					</p>
-				</div>
-			{/if}
+                  ? 'bg-green-50 text-green-700 border border-b-0 border-green-200'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}"
+              >
+                Opposition {idx + 1}
+                <span class="ml-1 text-xs text-slate-400"
+                  >({opp.name?.split(" ")[0] ?? "Unknown"})</span
+                >
+              </button>
+            {/each}
+          </div>
+          <p class="text-xs text-slate-500 mt-2 mb-1">
+            Showing {activeOppositionIndex + 1} of {fileOppositions.length} oppositions
+            on this file
+          </p>
+        </div>
+      {/if}
 
-			<div class="space-y-6 mt-6">
-				<!-- Status Section -->
-				<div class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-					<div class="space-y-3">
-						<div>
-							<p class="text-sm font-semibold text-slate-600">Opposition ID</p>
-							<p class="text-sm font-mono text-slate-800 mt-1" title={selectedOpposition.id}>OPP-{selectedOpposition.id?.slice(0, 8).toUpperCase()}</p>
-						</div>
-						<div class="border-t border-green-200 pt-3">
-							<p class="text-sm font-semibold text-slate-600">File Status</p>
-							<div class="mt-1">
-								<AppStatusTag value={selectedOpposition.fileStatus} />
-							</div>
-						</div>
-						<div class="border-t border-green-200 pt-3">
-							<p class="text-sm font-semibold text-slate-600">Opposition Application Status</p>
-							<div class="mt-1">
-								{#if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 36}
-									<AppStatusTag value={36} />
-								{:else if selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33}
-									<span class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
-								{:else if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 30 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 29 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 31}
-									<span class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
-								{:else}
-									<AppStatusTag value={selectedOpposition.status ?? selectedOpposition.oppositionStatus} />
-								{/if}
-							</div>
-						</div>
-					</div>
-					{#if selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33}
-						<div class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-orange-600">
-							<Icon icon="mdi:alert-circle" class="w-5 h-5" />
-							<span class="text-sm font-medium">Counter Statement Filed</span>
-							{#if selectedOpposition.counterStatementDate}
-								<span class="text-xs text-slate-600">on {mapDateToString(selectedOpposition.counterStatementDate)}</span>
-							{/if}
-						</div>
-					{:else}
-						<div class="mt-3 pt-3 border-t border-red-200 flex items-center gap-2 text-red-600">
-							<Icon icon="mdi:close-circle" class="w-5 h-5" />
-							<span class="text-sm font-medium">No Counter Statement Yet</span>
-						</div>
-					{/if}
-				</div>
+      <div class="space-y-6 mt-6">
+        <!-- Status Section -->
+        <div
+          class="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4"
+        >
+          <div class="space-y-3">
+            <div>
+              <p class="text-sm font-semibold text-slate-600">Opposition ID</p>
+              <p
+                class="text-sm font-mono text-slate-800 mt-1"
+                title={selectedOpposition.id}
+              >
+                OPP-{selectedOpposition.id?.slice(0, 8).toUpperCase()}
+              </p>
+            </div>
+            <div class="border-t border-green-200 pt-3">
+              <p class="text-sm font-semibold text-slate-600">File Status</p>
+              <div class="mt-1">
+                <AppStatusTag value={selectedOpposition.fileStatus} />
+              </div>
+            </div>
+            <div class="border-t border-green-200 pt-3">
+              <p class="text-sm font-semibold text-slate-600">
+                Opposition Application Status
+              </p>
+              <div class="mt-1">
+                {#if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 36}
+                  <AppStatusTag value={36} />
+                {:else if selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33}
+                  <span
+                    class="inline-block px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                    >Awaiting Statutory Declaration</span
+                  >
+                {:else if (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 30 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 29 || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 31}
+                  <span
+                    class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full"
+                    >Awaiting Counter Statement</span
+                  >
+                {:else}
+                  <AppStatusTag
+                    value={selectedOpposition.status ??
+                      selectedOpposition.oppositionStatus}
+                  />
+                {/if}
+              </div>
+            </div>
+          </div>
+          {#if selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33}
+            <div
+              class="mt-3 pt-3 border-t border-green-200 flex items-center gap-2 text-orange-600"
+            >
+              <Icon icon="mdi:alert-circle" class="w-5 h-5" />
+              <span class="text-sm font-medium">Counter Statement Filed</span>
+              {#if selectedOpposition.counterStatementDate}
+                <span class="text-xs text-slate-600"
+                  >on {mapDateToString(
+                    selectedOpposition.counterStatementDate,
+                  )}</span
+                >
+              {/if}
+            </div>
+          {:else}
+            <div
+              class="mt-3 pt-3 border-t border-red-200 flex items-center gap-2 text-red-600"
+            >
+              <Icon icon="mdi:close-circle" class="w-5 h-5" />
+              <span class="text-sm font-medium">No Counter Statement Yet</span>
+            </div>
+          {/if}
+        </div>
 
-				<!-- Opposition Details -->
-				<div class="space-y-4">
-					<div class="border-b border-slate-200 pb-3">
-						<p class="text-xs font-semibold text-slate-500 uppercase">Payment Reference</p>
-						<p class="text-sm text-slate-700 font-mono mt-1">{selectedOpposition.paymentId ?? selectedOpposition.rrr ?? '—'}</p>
-					</div>
-					<div class="border-b border-slate-200 pb-3">
-						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition Date</p>
-						<p class="text-sm text-slate-700 mt-1">{mapDateToString(selectedOpposition.date)}</p>
-					</div>
-				</div>
+        <!-- Opposition Details -->
+        <div class="space-y-4">
+          <div class="border-b border-slate-200 pb-3">
+            <p class="text-xs font-semibold text-slate-500 uppercase">
+              Payment Reference
+            </p>
+            <p class="text-sm text-slate-700 font-mono mt-1">
+              {selectedOpposition.paymentId ?? selectedOpposition.rrr ?? "—"}
+            </p>
+          </div>
+          <div class="border-b border-slate-200 pb-3">
+            <p class="text-xs font-semibold text-slate-500 uppercase">
+              Opposition Date
+            </p>
+            <p class="text-sm text-slate-700 mt-1">
+              {mapDateToString(selectedOpposition.date)}
+            </p>
+          </div>
+        </div>
 
-				<!-- Opposer Information -->
-				<div>
-					<h3 class="font-semibold text-slate-900 text-lg mb-4">Opposer Information</h3>
-					<div class="bg-slate-50 rounded-lg p-4 space-y-3">
-						<div>
-							<p class="text-xs font-semibold text-slate-600 uppercase">Name</p>
-							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.name}</p>
-						</div>
-						<div>
-							<p class="text-xs font-semibold text-slate-600 uppercase">Email</p>
-							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.email}</p>
-						</div>
-						<div>
-							<p class="text-xs font-semibold text-slate-600 uppercase">Phone</p>
-							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.phone || '—'}</p>
-						</div>
-						<div>
-							<p class="text-xs font-semibold text-slate-600 uppercase">Address</p>
-							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.address || '—'}</p>
-						</div>
-						<div>
-							<p class="text-xs font-semibold text-slate-600 uppercase">Nationality</p>
-							<p class="text-sm text-slate-900 mt-1">{selectedOpposition.nationality || '—'}</p>
-						</div>
-					</div>
-				</div>
+        <!-- Opposer Information -->
+        <div>
+          <h3 class="font-semibold text-slate-900 text-lg mb-4">
+            Opposer Information
+          </h3>
+          <div class="bg-slate-50 rounded-lg p-4 space-y-3">
+            <div>
+              <p class="text-xs font-semibold text-slate-600 uppercase">Name</p>
+              <p class="text-sm text-slate-900 mt-1">
+                {selectedOpposition.name}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-600 uppercase">
+                Email
+              </p>
+              <p class="text-sm text-slate-900 mt-1">
+                {selectedOpposition.email}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-600 uppercase">
+                Phone
+              </p>
+              <p class="text-sm text-slate-900 mt-1">
+                {selectedOpposition.phone || "—"}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-600 uppercase">
+                Address
+              </p>
+              <p class="text-sm text-slate-900 mt-1">
+                {selectedOpposition.address || "—"}
+              </p>
+            </div>
+            <div>
+              <p class="text-xs font-semibold text-slate-600 uppercase">
+                Nationality
+              </p>
+              <p class="text-sm text-slate-900 mt-1">
+                {selectedOpposition.nationality || "—"}
+              </p>
+            </div>
+          </div>
+        </div>
 
-				<!-- Opposition Grounds -->
-				<div>
-					<h3 class="font-semibold text-slate-900 text-lg mb-4">Grounds for Opposition</h3>
-					<div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
-						<p class="text-sm text-slate-700 whitespace-pre-wrap">{selectedOpposition.reason}</p>
-					</div>
-				</div>
+        <!-- Opposition Grounds -->
+        <div>
+          <h3 class="font-semibold text-slate-900 text-lg mb-4">
+            Grounds for Opposition
+          </h3>
+          <div class="bg-slate-50 rounded-lg p-4 border border-slate-200">
+            <p class="text-sm text-slate-700 whitespace-pre-wrap">
+              {selectedOpposition.reason}
+            </p>
+          </div>
+        </div>
 
-				<!-- Supporting Documents -->
-				{#if selectedOpposition.supportingDocs && selectedOpposition.supportingDocs.length > 0}
-					<div>
-						<h3 class="font-semibold text-slate-900 text-lg mb-4">Supporting Documents</h3>
-						<div class="space-y-2">
-							{#each selectedOpposition.supportingDocs as doc, idx}
-								<a
-									href={doc}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
-								>
-									<div class="flex items-center gap-2">
-										<Icon icon="mdi:file-document" class="w-5 h-5 text-slate-600" />
-										<span class="text-sm font-medium text-slate-900">Document {idx + 1}</span>
-									</div>
-									<Icon icon="mdi:download" class="w-4 h-4 text-green-600" />
-								</a>
-							{/each}
-						</div>
-					</div>
-				{/if}
+        <!-- Supporting Documents -->
+        {#if selectedOpposition.supportingDocs && selectedOpposition.supportingDocs.length > 0}
+          <div>
+            <h3 class="font-semibold text-slate-900 text-lg mb-4">
+              Supporting Documents
+            </h3>
+            <div class="space-y-2">
+              {#each selectedOpposition.supportingDocs as doc, idx}
+                <a
+                  href={doc}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <div class="flex items-center gap-2">
+                    <Icon
+                      icon="mdi:file-document"
+                      class="w-5 h-5 text-slate-600"
+                    />
+                    <span class="text-sm font-medium text-slate-900"
+                      >Document {idx + 1}</span
+                    >
+                  </div>
+                  <Icon icon="mdi:download" class="w-4 h-4 text-green-600" />
+                </a>
+              {/each}
+            </div>
+          </div>
+        {/if}
 
-				<!-- Counter Statements (if filed) -->
-				{#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id).length > 0}
-					<div>
-						<h3 class="font-semibold text-slate-900 text-lg mb-4">Counter Statements</h3>
-						<div class="space-y-4">
-							{#each selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id) as cs, idx}
-								<div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
-									<div class="flex items-start justify-between mb-2">
-										<p class="text-sm font-semibold text-orange-900">Counter Statement {idx + 1}</p>
-										<p class="text-xs text-orange-700">{mapDateToString(cs.submittedDate)}</p>
-									</div>
-									<p class="text-sm text-orange-900 whitespace-pre-wrap">{cs.text}</p>
-									{#if cs.attachments && cs.attachments.length > 0}
-										<div class="mt-3 pt-3 border-t border-orange-200">
-											<p class="text-xs font-semibold text-orange-700 mb-2">Attachments:</p>
-											<div class="space-y-1">
-												{#each cs.attachments as attachment}
-													<a href={attachment} target="_blank" rel="noopener noreferrer" class="text-xs text-orange-600 hover:text-orange-800 underline block">View Document</a>
-												{/each}
-											</div>
-										</div>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
+        <!-- Counter Statements (if filed) -->
+        {#if selectedOpposition.counterStatements && selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id).length > 0}
+          <div>
+            <h3 class="font-semibold text-slate-900 text-lg mb-4">
+              Counter Statements
+            </h3>
+            <div class="space-y-4">
+              {#each selectedOpposition.counterStatements.filter((c) => !c.oppositionId || c.oppositionId === selectedOpposition.id) as cs, idx}
+                <div
+                  class="bg-orange-50 border border-orange-200 rounded-lg p-4"
+                >
+                  <div class="flex items-start justify-between mb-2">
+                    <p class="text-sm font-semibold text-orange-900">
+                      Counter Statement {idx + 1}
+                    </p>
+                    <p class="text-xs text-orange-700">
+                      {mapDateToString(cs.submittedDate)}
+                    </p>
+                  </div>
+                  <p class="text-sm text-orange-900 whitespace-pre-wrap">
+                    {cs.text}
+                  </p>
+                  {#if cs.attachments && cs.attachments.length > 0}
+                    <div class="mt-3 pt-3 border-t border-orange-200">
+                      <p class="text-xs font-semibold text-orange-700 mb-2">
+                        Attachments:
+                      </p>
+                      <div class="space-y-1">
+                        {#each cs.attachments as attachment}
+                          <a
+                            href={attachment}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-xs text-orange-600 hover:text-orange-800 underline block"
+                            >View Document</a
+                          >
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
 
-				<!-- Statutory Declarations (if filed) -->
-				{#if selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.length > 0}
-					<div>
-						<h3 class="font-semibold text-slate-900 text-lg mb-4">Statutory Declarations</h3>
-						<div class="space-y-4">
-							{#each selectedOpposition.statutoryDeclarations as sd, idx}
-								<div class="{sd.role === 'applicant' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'} border rounded-lg p-4">
-									<div class="flex items-start justify-between mb-2">
-										<div>
-											<p class="text-sm font-semibold {sd.role === 'applicant' ? 'text-green-900' : 'text-blue-900'}">Declaration {idx + 1}</p>
-											<span class="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full {sd.role === 'applicant' ? 'bg-green-200 text-green-800' : 'bg-blue-200 text-blue-800'}">
-												{sd.role === 'applicant' ? 'Applicant' : 'Opposer'}
-											</span>
-										</div>
-										<p class="text-xs {sd.role === 'applicant' ? 'text-green-700' : 'text-blue-700'}">{mapDateToString(sd.submittedDate ?? sd.dateCreated)}</p>
-									</div>
-									{#if sd.text || sd.comment}
-										<p class="text-sm {sd.role === 'applicant' ? 'text-green-900' : 'text-blue-900'} whitespace-pre-wrap">{sd.text ?? sd.comment}</p>
-									{/if}
-									{#if sd.attachments && sd.attachments.length > 0}
-										<div class="mt-3 pt-3 border-t {sd.role === 'applicant' ? 'border-green-200' : 'border-blue-200'}">
-											<p class="text-xs font-semibold {sd.role === 'applicant' ? 'text-green-700' : 'text-blue-700'} mb-2">Attachments:</p>
-											<div class="space-y-1">
-												{#each sd.attachments as attachment}
-													<a href={attachment} target="_blank" rel="noopener noreferrer" class="text-xs {sd.role === 'applicant' ? 'text-green-600 hover:text-green-800' : 'text-blue-600 hover:text-blue-800'} underline block">View Document</a>
-												{/each}
-											</div>
-										</div>
-									{/if}
-								</div>
-							{/each}
-						</div>
-					</div>
-				{/if}
-			</div>
+        <!-- Statutory Declarations (if filed) -->
+        {#if selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.length > 0}
+          <div>
+            <h3 class="font-semibold text-slate-900 text-lg mb-4">
+              Statutory Declarations
+            </h3>
+            <div class="space-y-4">
+              {#each selectedOpposition.statutoryDeclarations as sd, idx}
+                <div
+                  class="{sd.role === 'applicant'
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-blue-50 border-blue-200'} border rounded-lg p-4"
+                >
+                  <div class="flex items-start justify-between mb-2">
+                    <div>
+                      <p
+                        class="text-sm font-semibold {sd.role === 'applicant'
+                          ? 'text-green-900'
+                          : 'text-blue-900'}"
+                      >
+                        Declaration {idx + 1}
+                      </p>
+                      <span
+                        class="inline-block mt-1 text-xs font-medium px-2 py-0.5 rounded-full {sd.role ===
+                        'applicant'
+                          ? 'bg-green-200 text-green-800'
+                          : 'bg-blue-200 text-blue-800'}"
+                      >
+                        {sd.role === "applicant" ? "Applicant" : "Opposer"}
+                      </span>
+                    </div>
+                    <p
+                      class="text-xs {sd.role === 'applicant'
+                        ? 'text-green-700'
+                        : 'text-blue-700'}"
+                    >
+                      {mapDateToString(sd.submittedDate ?? sd.dateCreated)}
+                    </p>
+                  </div>
+                  {#if sd.text || sd.comment}
+                    <p
+                      class="text-sm {sd.role === 'applicant'
+                        ? 'text-green-900'
+                        : 'text-blue-900'} whitespace-pre-wrap"
+                    >
+                      {sd.text ?? sd.comment}
+                    </p>
+                  {/if}
+                  {#if sd.attachments && sd.attachments.length > 0}
+                    <div
+                      class="mt-3 pt-3 border-t {sd.role === 'applicant'
+                        ? 'border-green-200'
+                        : 'border-blue-200'}"
+                    >
+                      <p
+                        class="text-xs font-semibold {sd.role === 'applicant'
+                          ? 'text-green-700'
+                          : 'text-blue-700'} mb-2"
+                      >
+                        Attachments:
+                      </p>
+                      <div class="space-y-1">
+                        {#each sd.attachments as attachment}
+                          <a
+                            href={attachment}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="text-xs {sd.role === 'applicant'
+                              ? 'text-green-600 hover:text-green-800'
+                              : 'text-blue-600 hover:text-blue-800'} underline block"
+                            >View Document</a
+                          >
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
 
-			<!-- File Counter Statement Button -->
-			{#if selectedOpposition && (!selectedOpposition.hasCounterStatement || selectedOpposition.oppositionStatus === 31)}
-				<div class="mt-8 pt-6 border-t border-slate-200">
-					<Button
-						on:click={() => {
-							const fileNumber = selectedOpposition.fileNumber;
-							const oppId = selectedOpposition.id;
-							window.location.href = `/opposition?step=counterstatement&fileNumber=${fileNumber}&oppositionId=${oppId}`;
-						}}
-						class="w-full bg-blue-600 hover:bg-blue-700 text-white"
-					>
-						<Icon icon="mdi:reply" class="w-4 h-4 mr-2" />
-						File Counter Statement
-					</Button>
-				</div>
-			{/if}
+      <!-- File Counter Statement Button -->
+      {#if selectedOpposition && (!selectedOpposition.hasCounterStatement || selectedOpposition.oppositionStatus === 31)}
+        <div class="mt-8 pt-6 border-t border-slate-200">
+          <Button
+            on:click={() => {
+              const fileNumber = selectedOpposition.fileNumber;
+              const oppId = selectedOpposition.id;
+              window.location.href = `/opposition?step=counterstatement&fileNumber=${fileNumber}&oppositionId=${oppId}`;
+            }}
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Icon icon="mdi:reply" class="w-4 h-4 mr-2" />
+            File Counter Statement
+          </Button>
+        </div>
+      {/if}
 
-			<!-- File Statutory Declaration Button -->
-			{#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd) => sd.role === 'applicant'))}
-				<div class="mt-8 pt-6 border-t border-slate-200">
-					<Button
-						on:click={() => {
-							const fileNumber = selectedOpposition.fileNumber;
-							const oppId = selectedOpposition.id;
-							window.location.href = `/opposition?step=statutorydeclaration&role=applicant&fileNumber=${fileNumber}&oppositionId=${oppId}`;
-						}}
-						class="w-full bg-orange-600 hover:bg-orange-700 text-white"
-					>
-						<Icon icon="mdi:file-document-edit" class="w-4 h-4 mr-2" />
-						File Statutory Declaration
-					</Button>
-				</div>
-			{/if}
-		{/if}
-	</Sheet.Content>
+      <!-- File Statutory Declaration Button -->
+      {#if selectedOpposition && (selectedOpposition.hasCounterStatement || (selectedOpposition.status ?? selectedOpposition.oppositionStatus) === 33) && !(selectedOpposition.statutoryDeclarations && selectedOpposition.statutoryDeclarations.some((sd) => sd.role === "applicant"))}
+        <div class="mt-8 pt-6 border-t border-slate-200">
+          <Button
+            on:click={() => {
+              const fileNumber = selectedOpposition.fileNumber;
+              const oppId = selectedOpposition.id;
+              window.location.href = `/opposition?step=statutorydeclaration&role=applicant&fileNumber=${fileNumber}&oppositionId=${oppId}`;
+            }}
+            class="w-full bg-orange-600 hover:bg-orange-700 text-white"
+          >
+            <Icon icon="mdi:file-document-edit" class="w-4 h-4 mr-2" />
+            File Statutory Declaration
+          </Button>
+        </div>
+      {/if}
+    {/if}
+  </Sheet.Content>
 </Sheet.Root>

@@ -163,9 +163,10 @@
         typecomponent = (await import("../components/UserDashboard.svelte"))
           .default;
       }
-      if (currentUser.lastUpdatedAt == null) {
-        showNoticeModal = true;
-      }
+      // if (currentUser.lastUpdatedAt == null) {
+      //   showNoticeModal = false;
+      // }
+      showNoticeModal = false;
     }
     data = {
       user: $loggedInUser,
@@ -1630,17 +1631,20 @@
       class="relative w-full max-w-[700px] bg-white rounded-xl shadow-2xl overflow-hidden"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="profile-update-title"
+      aria-labelledby="maintenance-notice-title"
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:account-edit" class="w-6 h-6 text-gray-700" />
+          <Icon
+            icon="mdi:check-circle-outline"
+            class="w-6 h-6 text-green-700"
+          />
           <h2
-            id="profile-update-title"
+            id="maintenance-notice-title"
             class="text-xl md:text-2xl font-semibold"
           >
-            Profile Update Required
+            System Restoration Notice
           </h2>
         </div>
 
@@ -1655,32 +1659,21 @@
 
       <!-- Content -->
       <div class="px-6 py-5 space-y-4 text-gray-700">
-        <p class="text-sm md:text-base">Dear Esteemed Customer,</p>
+        <p class="text-sm md:text-base">Dear Valued User,</p>
 
         <p class="text-sm md:text-base">
-          To improve service delivery and ensure uninterrupted access to all
-          platform features, we kindly request that you review and update your
-          profile information.
+          We are pleased to inform you that the system update has been completed
+          and all portal services have been fully restored.
         </p>
 
         <p class="text-sm md:text-base">
-          Keeping your details accurate helps us process filings, payments,
-          notifications, and official communications more efficiently.
+          You can now enjoy improved performance, enhanced security, and greater
+          reliability across the portal.
         </p>
 
-        <!-- <div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
-          <p class="text-sm md:text-base font-medium text-blue-900">
-            Please confirm or update the following:
-          </p>
-          <ul class="mt-2 list-disc pl-6 text-sm md:text-base text-blue-800 space-y-1">
-            <li>Contact information</li>
-            <li>Organization / Applicant details</li>
-            <li>Address and communication preferences</li>
-          </ul>
-        </div> -->
-
         <p class="text-sm md:text-base">
-          This process only takes a few minutes and helps us serve you better.
+          Thank you for your patience and understanding during the maintenance
+          period.
         </p>
       </div>
 
@@ -1688,18 +1681,7 @@
       <div
         class="px-6 py-4 border-t flex flex-col sm:flex-row gap-3 sm:justify-end"
       >
-        <Button variant="outline" on:click={closeNotice}>
-          Remind Me Later
-        </Button>
-
-        <Button
-          on:click={() => {
-            closeNotice();
-            window.location.href = "/home/profile";
-          }}
-        >
-          Update Profile
-        </Button>
+        <Button variant="outline" on:click={closeNotice}>Close</Button>
       </div>
     </div>
   </div>
@@ -1713,7 +1695,9 @@
       <div
         class="w-full bg-green-800 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
-        <div class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold">
+        <div
+          class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold"
+        >
           View your accepted marks under “Trademark Publication” in Trademark
           Services. <b>◆</b> File opposition via the “Opposition” feature in
           Trademark Services or the “Oppose” button on the Trademark Publication
@@ -1912,7 +1896,6 @@
             </div>
           </div>
         </button>
-
       </div>
 
       <!-- Portfolio Summary Section -->

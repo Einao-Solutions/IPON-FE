@@ -126,6 +126,7 @@
         const file = fileData[0];
         const fileStatus = file?.fileStatus;
         const statusText = file?.statusText?.toLowerCase() || "";
+        const isRenewalEligible = file?.isRenewalEligible;
 
         // Allow only specific statuses: Publication, AwaitingCertification, AwaitingCertificateConfirmation, and Active
         const allowedStatuses = [
@@ -136,9 +137,9 @@
           ApplicationStatuses.Active,
         ];
 
-        const isStatusAllowed = allowedStatuses.includes(fileStatus);
-        if (fileStatus === ApplicationStatuses.Inactive) {
-          error = `Your file is currently Inactive, Please file for restoration.`;
+        const isStatusAllowed = allowedStatuses.includes(fileStatus) || isRenewalEligible;
+        if (fileStatus === ApplicationStatuses.Inactive && !isRenewalEligible) {
+          error = `Your file is currently Inactive or not eligible for renewal. Please file for restoration.`;
           return;
         }
         if (!isStatusAllowed) {

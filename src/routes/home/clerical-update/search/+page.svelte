@@ -338,11 +338,11 @@
                         );
                       } else if (selectedValue === "update-title") {
                         goto(
-                          `/home/clerical-update/update?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`,
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`,
                         );
                       } else if (selectedValue === "addorremove-applicant") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}`,
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.AddApplicant}`,
                         );
                       } else if (selectedValue === "edit-inventors") {
                         goto(

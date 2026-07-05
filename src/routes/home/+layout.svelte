@@ -56,7 +56,10 @@
     loggedInToken.set(null);
     loggedInUser.set(null);
     sessionStorage.clear();
+    // Preserve cookie consent choice across logout so the banner doesn't reappear on every login
+    const cookieConsent = localStorage.getItem("cookie_consent");
     localStorage.clear();
+    if (cookieConsent) localStorage.setItem("cookie_consent", cookieConsent);
     document.cookie.split(";").forEach((c) => {
       const eqPos = c.indexOf("=");
       const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim();
