@@ -28,6 +28,7 @@ export interface PaymentContext {
     setFileTitle: (v: string | null) => void;
     setResponseUrl: (v: string | null) => void;
     isLateRenewal: (v: boolean) =>  void;
+    isRenewalEligible: (v: boolean) => void;
     setPenaltyFee: (v: string) => void;
     setRenewalMeta: (meta: {
       missedYearsCount?: number;

@@ -139,3 +139,7 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Security audit report (internal, do not commit)
+# Security audit report
+docs/SECURITY-AUDIT-REPORT.md

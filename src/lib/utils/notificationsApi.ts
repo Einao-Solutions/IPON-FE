@@ -16,10 +16,12 @@ export enum NotificationAudience {
 export enum NotificationCategory {
   Application,
   Payment,
-  CustomerSupport,
+  Support,
   Security,
   System,
   Messaging,
+  Renewal,
+  StatusUpdate
 }
 
 export enum NotificationPriority {
