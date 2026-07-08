@@ -30,6 +30,7 @@
   import Icon from "@iconify/svelte";
   import {
     mapDateToString,
+    mapDateToStringNoDate,
     mapTypeToString,
   } from "../home/components/dashboardutils";
   import { goto } from "$app/navigation";
@@ -2912,7 +2913,7 @@
           <Table.Cell class="w-1">{i + 1}</Table.Cell>
           <!-- for Date -->
           <Table.Cell class="w-32"
-            >{mapDateToString(application.applicationDate)}</Table.Cell
+            >{mapDateToStringNoDate(application.applicationDate)}</Table.Cell
           >
           <!-- for Type -->
           <Table.Cell

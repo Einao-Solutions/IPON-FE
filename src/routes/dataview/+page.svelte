@@ -17,6 +17,7 @@
   import {
     fileTypeToString,
     mapDateToString,
+    mapDateToStringNoDate,
   } from "../home/components/dashboardutils";
   import { onMount } from "svelte";
   import {
@@ -691,7 +692,7 @@
         <div>
           <Label for="type" class="font-bold">Filing Date</Label>
           <p id="name">
-            {mapDateToString(
+            {mapDateToStringNoDate(
               String(fileData.filingDate ?? fileData.dateCreated ?? ""),
             )}
           </p>

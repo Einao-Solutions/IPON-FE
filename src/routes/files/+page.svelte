@@ -114,25 +114,6 @@
 
     const resp = await result.json();
 
-    // 🔥 CRITICAL DEBUG: What did we get back?
-    // console.log('🎯 SIMPLE API CHECK:', {
-    // 	gotResults: !!resp?.result,
-    // 	resultLength: resp?.result?.length || 0,
-    // 	apiStatus: result.status
-    // });
-
-    // DEBUG: Log the API response
-    // console.log('📡 FILES PAGE DEBUG - API Response:', {
-    // 	status: result.status,
-    // 	statusText: result.statusText,
-    // 	responseData: resp,
-    // 	resultCount: resp?.result?.length || 0,
-    // 	totalCount: resp?.count || 0,
-    // 	errorMessage: resp?.message || resp?.error || resp?.title,
-    // 	errorDetails: resp?.errors || resp?.details,
-    // 	rawResponse: JSON.stringify(resp)
-    // });
-
     // Handle potential undefined response
     if (!resp || !resp.result) {
       console.error("❌ API Response Error:", {
@@ -155,14 +136,15 @@
       const first = allPending.length > 0 ? allPending[0] : null;
 
       const applicationDate =
-        first?.applicationDate ?? curr.createdAt ?? new Date().toISOString();
+        curr?.filingDate ?? curr.createdAt ?? new Date().toISOString();
       const formattedDate = Intl.DateTimeFormat("en-NG", {
-        year: "2-digit",
+        year: "numeric",
         month: "short",
         day: "numeric",
         weekday: "short",
-        hour: "numeric",
-        minute: "numeric",
+        // hour: "numeric",
+        // minute: "numeric",
+        timeZone: "UTC",
       }).format(new Date(applicationDate));
 
       _dataList.push({

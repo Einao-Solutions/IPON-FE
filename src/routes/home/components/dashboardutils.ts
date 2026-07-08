@@ -533,6 +533,7 @@ export function mapDateToStringNoDate(data: string) {
     month: "short",
     day: "numeric",
     weekday: "short",
+    timeZone: "UTC",
   }).format(new Date(data));
 }
 
