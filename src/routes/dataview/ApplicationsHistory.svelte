@@ -763,6 +763,7 @@
     null;
 
   async function viewAppeal(application: ApplicationHistoryType) {
+    selectedApplication = application;
     try {
       const response = await fetch(
         `${baseURL}/api/files/getappeal?fileId=${fileData.fileId}&appId=${application.id}`,
@@ -819,6 +820,7 @@
           applicationId: currentAppeal?.applicationId,
           reason: appealReason.trim(),
           isApproved: true,
+          userId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
         }),
       });
 
@@ -876,6 +878,7 @@
           applicationId: currentAppeal?.applicationId,
           reason: appealReason.trim(),
           isApproved: false,
+          userId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
         }),
       });
 
