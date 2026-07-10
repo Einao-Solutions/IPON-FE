@@ -11,15 +11,19 @@
 
   $: showTrademark = isFullAccess || 
                      userRoles.includes(UserRoles.TrademarkRegistrar) || 
-                     userRoles.includes(UserRoles.Finance);
+                     userRoles.includes(UserRoles.Finance) ||
+                     userRoles.includes(UserRoles.EinaoFinance);
+
 
   $: showPatent = isFullAccess || 
                   userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance);
+                  userRoles.includes(UserRoles.Finance) ||
+                  userRoles.includes(UserRoles.EinaoFinance);
 
   $: showDesign = isFullAccess || 
                   userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance);
+                  userRoles.includes(UserRoles.Finance) ||
+                  userRoles.includes(UserRoles.EinaoFinance);
 
   $: visibleCount = [showTrademark, showPatent, showDesign].filter(Boolean).length;
   $: gridCols = visibleCount === 1 ? "md:grid-cols-1 max-w-md mx-auto" 

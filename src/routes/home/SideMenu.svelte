@@ -207,6 +207,10 @@
         UserRoles.PermSec,
         UserRoles.Minister,
         UserRoles.Tech,
+        UserRoles.Finance,
+        UserRoles.TrademarkRegistrar,
+        UserRoles.PatentDesignRegistrar,
+        UserRoles.EinaoFinance,
       ],
     },
     {
