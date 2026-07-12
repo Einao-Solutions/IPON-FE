@@ -58,12 +58,12 @@
 
   function handlePeriodValueChange(value: string) {
     selectedPeriodValue = value;
-    loadPerformanceData();
+   
   }
 
   function handleYearChange(year: number) {
     selectedYear = year;
-    loadPerformanceData();
+   
   }
 
   function handleClearFilters() {
@@ -192,6 +192,7 @@
   }
 
   onMount(() => {
+    loadPerformanceData();
     return () => destroyCharts();
   });
 </script>
@@ -203,7 +204,7 @@
     <div class="flex items-center justify-between mb-6">
       <button
         on:click={() => window.history.back()}
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg px-4 py-2"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
         <span class="text-sm font-medium">Back to Performance Statistics</span>
@@ -290,6 +291,24 @@
             </div>
           </div>
         </div>
+
+        <!-- Fetch Button -->
+        <div class="mt-6 flex justify-end">
+          <button
+            on:click={loadPerformanceData}
+            disabled={loading}
+            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+          >
+            {#if loading}
+              <Icon icon="line-md:loading-loop" class="h-4 w-4 animate-spin" />
+              Fetching...
+            {:else}
+              <Icon icon="lucide:search" class="h-4 w-4" />
+              Fetch
+            {/if}
+          </button>
+        </div>
+
       </div>
     </div>
 

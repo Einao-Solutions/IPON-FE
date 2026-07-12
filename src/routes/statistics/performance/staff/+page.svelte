@@ -204,7 +204,7 @@
   }
 
   onMount(() => {
-    // ✅ Safely read search params here
+
     registryType = $page.url.searchParams.get("registryType") ?? "Trademark";
 
     // Re-derive filingType and units after registryType is set
@@ -213,6 +213,11 @@
                  FilingType.Trademark;
 
     units = getUnitsForFileType(filingType);
+
+    if (units.length > 0) {
+      selectedUnit = units[0].unitId;
+      loadPerformanceData();
+    }
 
     return () => destroyCharts();
   });
@@ -223,13 +228,6 @@
     try {
       loading = true;
       error = null;
-        // console.log("Fetching performance data for:", {
-        //   registryType,
-        //   unit: selectedUnit,
-        //   periodType: selectedPeriodType,
-        //   periodValue: selectedPeriodValue,
-        //   year: selectedYear
-        // });
       
       performanceData = await statisticsApi.getStaffPerformance(
         registryType,
@@ -238,10 +236,10 @@
         selectedPeriodValue,
         selectedYear
       );
-      // console.log("✅ Performance data loaded:", performanceData);
+
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to load performance data";
-      // console.error("❌ Error loading performance data:", err);
+
     } finally {
       loading = false;
     }
@@ -253,9 +251,9 @@
     
     if (value && value !== "") {
       selectedUnit = parseInt(value) as ApplicationUnits;
-      // console.log("Unit selected:", selectedUnit, selectedUnitName);
+
       searchQuery = "";
-      loadPerformanceData();
+
     }
   }
 
@@ -270,32 +268,22 @@
       const currentQuarter = Math.floor(currentMonth / 3);
       selectedPeriodValue = quarters[currentQuarter];
     } else {
-      // For "year", no period value needed
+
       selectedPeriodValue = selectedYear.toString();
     }
-    
-    if (selectedUnit !== null) {
-      loadPerformanceData();
-    }
+
   }
 
   function handlePeriodValueChange(value: string) {
     selectedPeriodValue = value;
-    if (selectedUnit !== null) {
-      loadPerformanceData();
-    }
+
   }
 
   function handleYearChange(value: number) {
     selectedYear = value;
     
-    // If period type is "year", update period value to match selected year
     if (selectedPeriodType === "year") {
       selectedPeriodValue = value.toString();
-    }
-    
-    if (selectedUnit !== null) {
-      loadPerformanceData();
     }
   }
 
@@ -332,7 +320,7 @@
     <div class="flex items-center mb-6">
       <button
         on:click={handleBack}
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg px-4 py-2"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
         <span class="text-sm font-medium">Back to Performance Statistics</span>
@@ -471,6 +459,25 @@
         </div>
 
       </div>
+      <!-- end filters grid -->
+
+      <!-- Fetch Button -->
+      <div class="mt-6 flex justify-end">
+        <button
+          on:click={loadPerformanceData}
+          disabled={loading}
+          class="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+        >
+          {#if loading}
+            <Icon icon="line-md:loading-loop" class="h-4 w-4 animate-spin" />
+            Fetching...
+          {:else}
+            <Icon icon="lucide:search" class="h-4 w-4" />
+            Fetch
+          {/if}
+        </button>
+      </div>
+
     </div>
 
     <!-- Loading State -->

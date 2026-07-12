@@ -118,6 +118,17 @@
       let user = cookieUser.trimStart();
       user = user.slice(5);
       loggedInUser.set(JSON.parse(decodeURIComponent(user)));
+
+      // Redirect Finance and EinaoFinance straight to statistics
+      // if (
+      //   $loggedInUser?.userRoles?.some(role => 
+      //     [UserRoles.Finance, UserRoles.EinaoFinance].includes(role)
+      //   )
+      // ) {
+      //   goto("/statistics");
+      //   return;
+      // }
+
       // Determine if user should see StaffDashboard (all non-regular user roles except Agent)
       isStaff = !!$loggedInUser?.userRoles?.some((e) =>
         [
@@ -142,16 +153,16 @@
           // Administrative roles
           UserRoles.Minister,
 
-          // ✅ PermSec removed — they now see UserDashboard like regular users
+          // PermSec removed — they now see UserDashboard like regular users
           // UserRoles.PermSec,
 
           UserRoles.Finance,
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only
 
-          UserRoles.TrademarkStaff, // ✅ added
-          UserRoles.PatentStaff, // ✅ added
-          UserRoles.DesignStaff, // ✅ added
+          UserRoles.TrademarkStaff, 
+          UserRoles.PatentStaff, 
+          UserRoles.DesignStaff, 
         ].includes(e),
       );
     }

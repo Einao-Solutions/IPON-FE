@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
-  import { baseURL } from "$lib/helpers";
+  import { baseURL, FormApplicationTypes } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
@@ -113,7 +113,7 @@
 
     // Fix 1: rename to avoid redeclaration
     const firstPeriod = results.periods[0];
-    const paymentLabels = firstPeriod.paymentTypes.map(pt => pt.paymentType || "Unknown");
+    const paymentLabels = firstPeriod.paymentTypes.map(pt => formatPaymentType(pt.paymentType || "Unknown"));
 
     barChart = new Chart(barCanvas, {
       type: "bar",
@@ -196,9 +196,11 @@
                 const bgColors = dataset.backgroundColor as string[];
                 return (chart.data.labels as string[]).map((label, i) => {
                   const value = (dataset.data[i] as number) ?? 0;
-                  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+                  const pct = total > 0 ? ((value / total) * 100) : 0;
+                  // ✅ Full precision
+                  const pctDisplay = pct < 0.01 ? pct.toExponential(2) : pct.toPrecision(4).replace(/\.?0+$/, '');
                   return {
-                    text: `${label}  —  ${pct}%`,
+                    text: `${label}  —  ${pctDisplay}%`,
                     fillStyle: bgColors[i],
                     strokeStyle: "#fff",
                     lineWidth: 1,
@@ -217,21 +219,14 @@
             callbacks: {
               label: (ctx) => {
                 const val = ctx.parsed ?? 0;
-                const pct = total > 0 ? ((val / total) * 100).toFixed(1) : "0";
-                return ` ${ctx.label}: ${formatCurrency(val)} (${pct}%)`;
+                const pct = total > 0 ? ((val / total) * 100) : 0;
+                // ✅ Show full precision — no fixed decimal cutoff
+                const pctDisplay = pct < 0.01 ? pct.toExponential(2) : pct.toPrecision(4).replace(/\.?0+$/, '');
+                return ` ${ctx.label}: ${formatCurrency(val)} (${pctDisplay}%)`;
               }
             }
           },
-          // Fix 2: cast as any to bypass strict TS check since plugin is registered globally
-          // ...({ datalabels: {
-          //   color: "#fff",
-          //   font: { size: 11, weight: "bold" },
-          //   formatter: (value: number) => {
-          //     const pct = total > 0 ? ((value / total) * 100) : 0;
-          //     if (pct < 3) return "";
-          //     return `${pct.toFixed(1)}%`;
-          //   }
-          // }} as any)
+          
           ...({ datalabels: { display: false } } as any)
         }
       }
@@ -321,6 +316,9 @@
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to fetch financial statistics");
       results = data.data;
+      if (data?.paymentTypes) {
+        data.paymentTypes = mergePaymentTypes(data.paymentTypes);
+      }
     } catch (e) {
       error = (e as Error).message;
       toast.error(error ?? "An error occurred");
@@ -354,6 +352,31 @@
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString("en-NG", {
       day: "numeric", month: "short", year: "numeric"
+    });
+  }
+
+  function formatPaymentType(type: string): string {
+    if (!type) return "Unknown";
+    return type
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .trim();
+  }
+
+  //  Master list of all payment types
+  const ALL_PAYMENT_TYPES = Object.keys(FormApplicationTypes)
+    .filter(key => isNaN(Number(key))) // get string keys only
+    .map(key => ({
+      paymentType: key,
+      totalAmount: 0,
+      count: 0
+    }));
+
+  //  Merge API response with master list — zero out missing ones
+  function mergePaymentTypes(returned: { paymentType: string; totalAmount: number; count: number }[]) {
+    return ALL_PAYMENT_TYPES.map(master => {
+      const found = returned.find(r => r.paymentType === master.paymentType);
+      return found ?? master;
     });
   }
 
