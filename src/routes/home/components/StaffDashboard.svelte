@@ -106,6 +106,7 @@
         UserRoles.TrademarkExaminer,
         UserRoles.TrademarkOpposition,
         UserRoles.TrademarkAcceptance,
+        UserRoles.AppealExaminer,
         UserRoles.TrademarkCertification,
         UserRoles.TrademarkRegistrar,
         UserRoles.PermSec,

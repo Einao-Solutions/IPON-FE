@@ -53,6 +53,7 @@
 	let isSearching = false;
 	let poaFile: File | null = null;
 	let poaInput: HTMLInputElement;
+	let errorMessage = '';
 
 	async function Search() {
 		if (name_id.length < 3) {
@@ -111,6 +112,7 @@
 			// Encode POA file for upload
 			const poaPayload = {
 				fileName: poaFile.name,
+				name: poaFile.name,
 				contentType: poaFile.type,
 				data: arrayBufferToBase64(await toByteArray(poaFile))
 			};
@@ -153,20 +155,63 @@
 				})
 			});
 
-			if (response.ok) {
-				const latest = await response.json();
-				applicationData.set(latest);
-				currentView = 'success';
-			} else {
-				currentView = 'error';
+		if (response.ok) {
+			const latest = await response.json();
+			applicationData.set(latest);
+			currentView = 'success';
+		} else {
+			// Try to get the actual error message from the server
+			errorMessage = 'We couldn\'t complete your request. Please check your connection and try again.';
+			try {
+				const errorResponse = await response.json();
+				if (errorResponse?.errors) {
+					// ASP.NET validation errors - extract field-level errors
+					const fieldErrors = errorResponse.errors;
+					const errorMessages: string[] = [];
+					for (const field in fieldErrors) {
+						if (Object.prototype.hasOwnProperty.call(fieldErrors, field)) {
+							const msgs = fieldErrors[field];
+							if (Array.isArray(msgs)) {
+								msgs.forEach((msg: string) => errorMessages.push(`${field}: ${msg}`));
+							} else {
+								errorMessages.push(`${field}: ${msgs}`);
+							}
+						}
+					}
+					if (errorMessages.length > 0) {
+						errorMessage = errorMessages.join('; ');
+					} else if (errorResponse.title) {
+						errorMessage = errorResponse.title;
+					}
+				} else if (errorResponse?.message || errorResponse?.Message) {
+					errorMessage = errorResponse.message || errorResponse.Message;
+				} else if (errorResponse?.title) {
+					errorMessage = errorResponse.title;
+				} else {
+					console.error('❌ ReAssign API Error Response:', errorResponse);
+				}
+			} catch (jsonError) {
+				try {
+					const textResponse = await response.text();
+					if (textResponse) {
+						console.error('❌ ReAssign API Error Text:', textResponse);
+						errorMessage = textResponse.substring(0, 200);
+					}
+				} catch (textError) {
+					console.error('❌ Could not read error response:', textError);
+				}
 			}
-		} catch (error) {
-			console.error('Save error:', error);
+			console.error('❌ ReAssign API failed:', response.status, response.statusText);
 			currentView = 'error';
 		}
+	} catch (error) {
+		console.error('❌ Save error:', error);
+		currentView = 'error';
+	}
 	}
 
 	function resetAndClose() {
+		errorMessage = '';
 		selectedUser = undefined;
 		name_id = '';
 		matchesList = [];
@@ -612,7 +657,7 @@
 				<div class="text-center space-y-2">
 					<h3 class="text-lg font-semibold">Operation Failed</h3>
 					<p class="text-sm text-muted-foreground max-w-sm">
-						We couldn't complete your request. Please check your connection and try again.
+						{errorMessage || "We couldn't complete your request. Please check your connection and try again."}
 					</p>
 				</div>
 				<Button 

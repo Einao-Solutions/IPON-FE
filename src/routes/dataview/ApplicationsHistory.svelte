@@ -30,6 +30,7 @@
   import Icon from "@iconify/svelte";
   import {
     mapDateToString,
+    mapDateToStringNoDate,
     mapTypeToString,
   } from "../home/components/dashboardutils";
   import { goto } from "$app/navigation";
@@ -770,6 +771,7 @@
     null;
 
   async function viewAppeal(application: ApplicationHistoryType) {
+    selectedApplication = application;
     try {
       const response = await fetch(
         `${baseURL}/api/files/getappeal?fileId=${fileData.fileId}&appId=${application.id}`,
@@ -826,6 +828,7 @@
           applicationId: currentAppeal?.applicationId,
           reason: appealReason.trim(),
           isApproved: true,
+          userId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
         }),
       });
 
@@ -883,6 +886,7 @@
           applicationId: currentAppeal?.applicationId,
           reason: appealReason.trim(),
           isApproved: false,
+          userId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
         }),
       });
 
@@ -2927,7 +2931,7 @@
           <Table.Cell class="w-1">{i + 1}</Table.Cell>
           <!-- for Date -->
           <Table.Cell class="w-32"
-            >{mapDateToString(application.applicationDate)}</Table.Cell
+            >{mapDateToStringNoDate(application.applicationDate)}</Table.Cell
           >
           <!-- for Type -->
           <Table.Cell>
@@ -2984,6 +2988,14 @@
                       on:click={() => openOwnershipHistoryDialog()}
                       >View Application</DropdownMenu.Item
                     >
+                  {/if}
+                  <!-- Change Status (Admin only) -->
+                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                    <DropdownMenu.Item
+                      on:click={() => changeStatus(application)}
+                      >Change Status</DropdownMenu.Item
+                    >
+                    <DropdownMenu.Separator />
                   {/if}
                   <!-- Data Update Application -->
                   {#if application.applicationType === 2}

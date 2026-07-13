@@ -277,6 +277,47 @@
 
   // === ATTACHMENT HANDLING FUNCTIONS ===
 
+  // Canonical attachment option lists per file type
+  type AttachmentOption = { value: string; label: string };
+
+  const patentAttachmentOptions: AttachmentOption[] = [
+    { value: 'pct', label: 'PCT Document' },
+    { value: 'patentDrawing', label: 'Patent Drawing' },
+    { value: 'priorityDocument', label: 'Priority Document' },
+    { value: 'cs', label: 'Claims and Specifications' },
+    { value: 'complete_specifications', label: 'Complete Specifications' },
+    { value: 'poa', label: 'Power of Attorney' },
+    { value: 'noveltyStatement', label: 'Novelty Statement' },
+    { value: 'deed_of_assignment', label: 'Deed of Assignment' },
+    { value: 'authorization', label: 'Letter of Authorization' },
+    { value: 'other1', label: 'Supporting Document 1' },
+    { value: 'other2', label: 'Supporting Document 2' },
+    { value: 'others', label: 'Other Document' },
+  ];
+
+  const trademarkAttachmentOptions: AttachmentOption[] = [
+    { value: 'representation', label: 'Proposed Trademark Representation' },
+    { value: 'poa', label: 'Power of Attorney' },
+    { value: 'priorityDocument', label: 'Priority Document' },
+    { value: 'authorization', label: 'Letter of Authorization' },
+    { value: 'deed_of_assignment', label: 'Deed of Assignment' },
+    { value: 'other1', label: 'Supporting Document 1' },
+    { value: 'other2', label: 'Supporting Document 2' },
+    { value: 'others', label: 'Other Document' },
+  ];
+
+  const designAttachmentOptions: AttachmentOption[] = [
+    { value: 'designDrawings', label: 'Design Drawings' },
+    { value: 'statementOfNovelty', label: 'Statement of Novelty' },
+    { value: 'designPriorityDocument', label: 'Design Priority Document' },
+    { value: 'poa', label: 'Power of Attorney' },
+    { value: 'authorization', label: 'Letter of Authorization' },
+    { value: 'deed_of_assignment', label: 'Deed of Assignment' },
+    { value: 'other1', label: 'Supporting Document 1' },
+    { value: 'other2', label: 'Supporting Document 2' },
+    { value: 'others', label: 'Other Document' },
+  ];
+
   // Track new file uploads for attachments
   let newAttachments: Array<{
     Name: string;
@@ -881,6 +922,20 @@
                     class="input min-h-24"
                     bind:value={filing.trademarkClassDescription}
                     placeholder="Trademark Class Description"
+                  />
+                </div>
+
+                <div class="md:col-span-2">
+                  <label
+                    for="trademark-specification"
+                    class="block text-sm font-medium text-gray-700 mb-1"
+                    >Trademark Specification</label
+                  >
+                  <textarea
+                    id="trademark-specification"
+                    class="input min-h-24"
+                    bind:value={filing.trademarkSpecification}
+                    placeholder="Enter trademark specification (goods and services covered under this class)"
                   />
                 </div>
               </div>
@@ -2066,12 +2121,19 @@
                       </Button>
                     </div>
 
-                    <input
+                    <select
                       id="patent-attachment-{index}-name"
                       class="input"
                       bind:value={attachment.name}
-                      placeholder="Attachment Name (POA, CS, Patent Drawing, etc.)"
-                    />
+                    >
+                      <option value="">-- Select Attachment Type --</option>
+                      {#each patentAttachmentOptions as opt}
+                        <option value={opt.value}>{opt.label}</option>
+                      {/each}
+                      {#if attachment.name && !patentAttachmentOptions.some((o) => o.value === attachment.name)}
+                        <option value={attachment.name}>{attachment.name} (existing)</option>
+                      {/if}
+                    </select>
 
                     <!-- Existing URLs -->
                     <div class="space-y-2">
@@ -2242,12 +2304,19 @@
                       </Button>
                     </div>
 
-                    <input
+                    <select
                       id="trademark-attachment-{index}-name"
                       class="input"
                       bind:value={attachment.name}
-                      placeholder="Attachment Name (POA, Trademark Rep, Supporting Doc, etc.)"
-                    />
+                    >
+                      <option value="">-- Select Attachment Type --</option>
+                      {#each trademarkAttachmentOptions as opt}
+                        <option value={opt.value}>{opt.label}</option>
+                      {/each}
+                      {#if attachment.name && !trademarkAttachmentOptions.some((o) => o.value === attachment.name)}
+                        <option value={attachment.name}>{attachment.name} (existing)</option>
+                      {/if}
+                    </select>
 
                     <!-- Existing URLs -->
                     <div class="space-y-2">
@@ -2418,12 +2487,19 @@
                       </Button>
                     </div>
 
-                    <input
+                    <select
                       id="design-attachment-{index}-name"
                       class="input"
                       bind:value={attachment.name}
-                      placeholder="Attachment Name (POA, Novelty Statement, Design Rep, Priority Docs)"
-                    />
+                    >
+                      <option value="">-- Select Attachment Type --</option>
+                      {#each designAttachmentOptions as opt}
+                        <option value={opt.value}>{opt.label}</option>
+                      {/each}
+                      {#if attachment.name && !designAttachmentOptions.some((o) => o.value === attachment.name)}
+                        <option value={attachment.name}>{attachment.name} (existing)</option>
+                      {/if}
+                    </select>
 
                     <!-- Existing URLs -->
                     <div class="space-y-2">
