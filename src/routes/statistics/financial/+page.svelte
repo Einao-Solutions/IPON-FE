@@ -111,19 +111,21 @@
     if (!results || !barCanvas || !doughnutCanvas) return;
     destroyCharts();
 
-    // Fix 1: rename to avoid redeclaration
     const firstPeriod = results.periods[0];
-    const paymentLabels = firstPeriod.paymentTypes.map(pt => formatPaymentType(pt.paymentType || "Unknown"));
+    
+    // ✅ Keep raw keys for data lookup, format only for display
+    const rawLabels = firstPeriod.paymentTypes.map(pt => pt.paymentType || "Unknown");
+    const displayLabels = rawLabels.map(l => formatPaymentType(l));
 
     barChart = new Chart(barCanvas, {
       type: "bar",
       data: {
-        labels: paymentLabels,
+        labels: displayLabels,
         datasets: results.periods.map((period, index) => ({
           label: period.label,
-          // Fix 3: align paymentTypes order to paymentLabels
-          data: paymentLabels.map(label => {
-            const found = period.paymentTypes.find(pt => (pt.paymentType || "Unknown") === label);
+          // ✅ Fix — lookup by RAW key not formatted label
+          data: rawLabels.map(rawKey => {
+            const found = period.paymentTypes.find(pt => (pt.paymentType || "Unknown") === rawKey);
             return found?.totalGovernmentFee ?? 0;
           }),
           backgroundColor: CHART_COLORS[index % CHART_COLORS.length],
@@ -142,7 +144,7 @@
           },
           tooltip: {
             callbacks: {
-              // Fix 3: ctx.parsed.y can be null, coerce to number
+              // ✅ Fix — ctx.parsed.y can be null, coerce to number
               label: (ctx) => ` ${ctx.dataset.label}: ${formatCurrency(ctx.parsed.y ?? 0)}`
             }
           }
@@ -164,15 +166,15 @@
       }
     });
 
-    // Fix 1: use firstPeriod instead of period0
-    const labels = firstPeriod.paymentTypes.map(pt => pt.paymentType || "Unknown");
+    // ✅ Fix — use formatPaymentType for doughnut labels too
+    const doughnutLabels = firstPeriod.paymentTypes.map(pt => formatPaymentType(pt.paymentType || "Unknown"));
     const data = firstPeriod.paymentTypes.map(pt => pt.totalGovernmentFee);
     const total = data.reduce((a, b) => a + b, 0);
 
     doughnutChart = new Chart(doughnutCanvas, {
       type: "doughnut",
       data: {
-        labels,
+        labels: doughnutLabels, // ✅ formatted labels
         datasets: [{
           data,
           backgroundColor: CHART_COLORS,
@@ -197,10 +199,9 @@
                 return (chart.data.labels as string[]).map((label, i) => {
                   const value = (dataset.data[i] as number) ?? 0;
                   const pct = total > 0 ? ((value / total) * 100) : 0;
-                  // ✅ Full precision
                   const pctDisplay = pct < 0.01 ? pct.toExponential(2) : pct.toPrecision(4).replace(/\.?0+$/, '');
                   return {
-                    text: `${label}  —  ${pctDisplay}%`,
+                    text: `${label}  —  ${pctDisplay}%`, // ✅ already formatted
                     fillStyle: bgColors[i],
                     strokeStyle: "#fff",
                     lineWidth: 1,
@@ -210,23 +211,17 @@
                 });
               }
             }
-          // legend: {
-          //   position: "bottom",
-          //   labels: { font: { size: 11 }, padding: 12, boxWidth: 12 }
-          // },
           },
           tooltip: {
             callbacks: {
               label: (ctx) => {
                 const val = ctx.parsed ?? 0;
                 const pct = total > 0 ? ((val / total) * 100) : 0;
-                // ✅ Show full precision — no fixed decimal cutoff
                 const pctDisplay = pct < 0.01 ? pct.toExponential(2) : pct.toPrecision(4).replace(/\.?0+$/, '');
                 return ` ${ctx.label}: ${formatCurrency(val)} (${pctDisplay}%)`;
               }
             }
           },
-          
           ...({ datalabels: { display: false } } as any)
         }
       }
@@ -282,6 +277,31 @@
     if (!compareMode) { comparisonPeriods = []; results = null; }
   }
 
+  function normalizePaymentType(type: string): string {
+    if (!type) return "Unknown";
+    // ✅ Treat NewCreation as NewApplication
+    if (type === "NewCreation") return "NewApplication";
+    return type;
+  }
+
+  function normalizePaymentTypes(paymentTypes: FinancePaymentTypeResultDto[]): FinancePaymentTypeResultDto[] {
+    const map = new Map<string, FinancePaymentTypeResultDto>();
+    for (const pt of paymentTypes) {
+      const key = normalizePaymentType(pt.paymentType);
+      if (map.has(key)) {
+        const existing = map.get(key)!;
+        map.set(key, {
+          paymentType: key,
+          totalGovernmentFee: existing.totalGovernmentFee + pt.totalGovernmentFee,
+          count: existing.count + pt.count
+        });
+      } else {
+        map.set(key, { ...pt, paymentType: key });
+      }
+    }
+    return Array.from(map.values());
+  }
+
   async function fetchSingle() {
     loading = true; error = null; results = null;
     try {
@@ -293,6 +313,14 @@
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to fetch financial statistics");
+      
+      // ✅ Normalize payment types after fetch
+      if (data.data?.periods) {
+        data.data.periods = data.data.periods.map((p: FinancePeriodResultDto) => ({
+          ...p,
+          paymentTypes: normalizePaymentTypes(p.paymentTypes)
+        }));
+      }
       results = data.data;
     } catch (e) {
       error = (e as Error).message;
@@ -315,10 +343,15 @@
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to fetch financial statistics");
-      results = data.data;
-      if (data?.paymentTypes) {
-        data.paymentTypes = mergePaymentTypes(data.paymentTypes);
+
+      // ✅ Normalize payment types after fetch
+      if (data.data?.periods) {
+        data.data.periods = data.data.periods.map((p: FinancePeriodResultDto) => ({
+          ...p,
+          paymentTypes: normalizePaymentTypes(p.paymentTypes)
+        }));
       }
+      results = data.data;
     } catch (e) {
       error = (e as Error).message;
       toast.error(error ?? "An error occurred");
@@ -858,7 +891,7 @@
                   <td class="py-3.5 px-6 font-medium text-slate-700">
                     <div class="flex items-center gap-2">
                       <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                      {paymentType || "Unknown"}
+                      {formatPaymentType(paymentType) || "Unknown"} <!-- ✅ formatted -->
                     </div>
                   </td>
                   {#each results.periods as period, index}
