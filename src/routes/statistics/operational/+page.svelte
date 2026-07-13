@@ -6,6 +6,7 @@
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
   import { toast } from "svelte-sonner";
+  import { GetCountryImageLink } from "$lib/helpers";
 
   type PeriodType = "month" | "quarter" | "year" | "month-range" | "year-range";
 
@@ -30,6 +31,7 @@
     startDate: string;
     endDate: string;
     totalFiles: number;
+    applicationTypes: KeyCountDto[];
     trademarkClasses: KeyCountDto[];
     tradeMarkTypes: KeyCountDto[];
     designTypes: KeyCountDto[];
@@ -173,6 +175,14 @@
 
   function formatDate(dateStr: string): string {
     return new Date(dateStr).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+  }
+
+  function formatApplicationType(type: string): string {
+    if (!type) return "Unknown";
+    return type
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .trim();
   }
 
   // Collapsible state per table section
@@ -620,13 +630,13 @@
         <!-- TRADEMARK TABLES -->
         {#if isTrademark}
           {#each [
-            { field: "tradeMarkTypes", label: "Trademark Types", icon: "lucide:tag", iconBg: "bg-blue-100", iconColor: "text-blue-600" },
-            { field: "trademarkClasses", label: "Trademark Classes", icon: "lucide:list", iconBg: "bg-purple-100", iconColor: "text-purple-600" },
+            { field: "tradeMarkTypes", label: "Trademark Types", icon: "lucide:tag", iconBg: "bg-green-100", iconColor: "text-green-600" },
+            { field: "trademarkClasses", label: "Trademark Classes", icon: "lucide:list", iconBg: "bg-green-100", iconColor: "text-green-600" },
+            { field: "applicationTypes", label: "Application Types", icon: "lucide:file-plus", iconBg: "bg-green-100", iconColor: "text-green-600" },
             { field: "nationalities", label: "Nationalities", icon: "lucide:globe", iconBg: "bg-green-100", iconColor: "text-green-600" }
           ] as section}
             {#if getAllKeys(section.field).length > 0}
               <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <!-- Clickable Header -->
                 <button
                   on:click={() => toggleSection(section.field)}
                   class="w-full flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white hover:from-green-50 hover:to-white transition-colors text-left"
@@ -668,7 +678,18 @@
                               <td class="py-3.5 px-6 font-medium text-slate-700">
                                 <div class="flex items-center gap-2">
                                   <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                                  {section.field === "trademarkClasses" ? `Class ${key}` : key || "Unknown"}
+                                  {#if section.field === "nationalities"}
+                                    <img src={GetCountryImageLink(key)} width="20" height="15" alt="@flag" class="inline-block" />
+                                  {/if}
+                                  {#if section.field === "filingCountries"}
+                                    <img src={GetCountryImageLink(key)} width="20" height="15" alt="@flag" class="inline-block" />
+                                  {/if}
+                                  <!-- ✅ Format applicationTypes keys -->
+                                  {section.field === "trademarkClasses" 
+                                    ? `Class ${key}` 
+                                    : section.field === "applicationTypes"
+                                      ? formatApplicationType(key)
+                                      : key || "Unknown"}
                                 </div>
                               </td>
                               {#each results.periods as period, index}
@@ -712,11 +733,11 @@
         <!-- PATENT TABLES -->
         {#if isPatent}
           {#each [
-            { field: "patentTypes", label: "Patent Types", icon: "lucide:file-text", iconBg: "bg-blue-100", iconColor: "text-blue-600" },
-            { field: "patentApplicationTypes", label: "Application Types", icon: "lucide:file-plus", iconBg: "bg-purple-100", iconColor: "text-purple-600" },
-            { field: "fileOrigins", label: "File Origins", icon: "lucide:map-pin", iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+            { field: "patentTypes", label: "Patent Types", icon: "lucide:file-text", iconBg: "bg-green-100", iconColor: "text-green-600" },
+            { field: "patentApplicationTypes", label: "Patent Application Types", icon: "lucide:file-plus", iconBg: "bg-green-100", iconColor: "text-green-600" },
+            { field: "applicationTypes", label: "Application Types", icon: "lucide:file-plus", iconBg: "bg-green-100", iconColor: "text-green-600" },
+            { field: "fileOrigins", label: "File Origins", icon: "lucide:map-pin", iconBg: "bg-green-100", iconColor: "text-green-600" },
             { field: "filingCountries", label: "Filing Countries", icon: "lucide:globe", iconBg: "bg-green-100", iconColor: "text-green-600" },
-            { field: "nationalities", label: "Nationalities", icon: "lucide:users", iconBg: "bg-teal-100", iconColor: "text-teal-600" }
           ] as section}
             {#if getAllKeys(section.field).length > 0}
               <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -763,6 +784,10 @@
                             <td class="py-3.5 px-6 font-medium text-slate-700">
                               <div class="flex items-center gap-2">
                                 <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                <!-- ✅ Flag for filingCountries -->
+                                {#if section.field === "filingCountries"}
+                                  <img src={GetCountryImageLink(key)} width="20" height="15" alt="@flag" class="inline-block" />
+                                {/if}
                                 {key || "Unknown"}
                               </div>
                             </td>
@@ -808,10 +833,10 @@
         <!-- DESIGN TABLES -->
         {#if isDesign}
           {#each [
-            { field: "designTypes", label: "Design Types", icon: "lucide:pen-tool", iconBg: "bg-purple-100", iconColor: "text-purple-600" },
-            { field: "fileOrigins", label: "File Origins", icon: "lucide:map-pin", iconBg: "bg-orange-100", iconColor: "text-orange-600" },
+            { field: "designTypes", label: "Design Types", icon: "lucide:pen-tool", iconBg: "bg-green-100", iconColor: "text-green-600" },
+            { field: "applicationTypes", label: "Application Types", icon: "lucide:file-plus", iconBg: "bg-green-100", iconColor: "text-green-600" },
+            { field: "fileOrigins", label: "File Origins", icon: "lucide:map-pin", iconBg: "bg-green-100", iconColor: "text-green-600" },
             { field: "filingCountries", label: "Filing Countries", icon: "lucide:globe", iconBg: "bg-green-100", iconColor: "text-green-600" },
-            { field: "nationalities", label: "Nationalities", icon: "lucide:users", iconBg: "bg-teal-100", iconColor: "text-teal-600" }
           ] as section}
             {#if getAllKeys(section.field).length > 0}
               <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -855,6 +880,10 @@
                             <td class="py-3.5 px-6 font-medium text-slate-700">
                               <div class="flex items-center gap-2">
                                 <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                <!-- ✅ Flag for filingCountries -->
+                                {#if section.field === "filingCountries"}
+                                  <img src={GetCountryImageLink(key)} width="20" height="15" alt="@flag" class="inline-block" />
+                                {/if}
                                 {key || "Unknown"}
                               </div>
                             </td>
