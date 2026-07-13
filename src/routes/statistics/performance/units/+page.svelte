@@ -8,19 +8,21 @@
 
   Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, DoughnutController, ArcElement);
 
+  
+  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const quarters = ["Q1: Jan-Mar", "Q2: Apr-Jun", "Q3: Jul-Sep", "Q4: Oct-Dec"];
+  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
+  
   let registryType = $page.url.searchParams.get("registryType") || "Trademark";
 
   let selectedPeriodType = "month";
-  let selectedPeriodValue = new Date().toLocaleString('default', { month: 'long' });
+  let selectedPeriodValue = months[new Date().getMonth()]; // e.g. "July" not locale string
   let selectedYear = new Date().getFullYear();
 
   let performanceData: UnitPerformanceData | null = null;
   let loading = false;
   let error: string | null = null;
 
-  const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  const quarters = ["Q1", "Q2", "Q3", "Q4"];
-  const years = Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i);
 
   const COLORS = ['#10b981', '#3b82f6', '#a855f7', '#ec4899', '#f59e0b', '#ef4444'];
 
@@ -51,7 +53,8 @@
 
   function handlePeriodTypeChange(type: string) {
     selectedPeriodType = type;
-    selectedPeriodValue = periodValues[0];
+    // Use the actual array directly instead of reactive periodValues
+    selectedPeriodValue = type === "month" ? months[new Date().getMonth()] : quarters[0];
     performanceData = null;
     destroyCharts();
   }
@@ -405,7 +408,7 @@
                 <th class="text-left py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Period</th>
                 <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Units</th>
                 <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Active Units</th>
-                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Assigned</th>
+                <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Applications</th>
                 <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Total Processed</th>
                 <th class="text-right py-3 px-6 font-semibold text-slate-600 text-xs uppercase tracking-wide">Overall Rate</th>
               </tr>

@@ -1994,7 +1994,7 @@
 		-->
 {/if}
 
-{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkSupport) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignSupport)}
+{#if $loggedInUser?.userRoles?.some((role) => [UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkSupport, UserRoles.PatentDesignSupport].includes(role))}
   <div class="min-h-[60vh] flex items-center justify-center p-6">
     <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex items-center gap-3 mb-4">

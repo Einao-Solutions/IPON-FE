@@ -38,6 +38,7 @@
 	// ── Role helpers ──────────────────────────────────────────────────────────────
 	const SUPPORT_STAFF_ROLES = [
 		UserRoles.Tech,
+		UserRoles.SuperAdmin,
 		UserRoles.TrademarkSupport,
 		UserRoles.PatentDesignSupport
 	];
@@ -55,7 +56,7 @@
 		return hasRole(UserRoles.PatentDesignSupport);
 	}
 	function isTechSupport(): boolean {
-		return hasRole(UserRoles.Tech);
+		return hasRole(UserRoles.Tech) || hasRole(UserRoles.SuperAdmin);
 	}
 	function hasAnyRole(roles: UserRoles[]): boolean {
 		return roles.some((role) => hasRole(role));

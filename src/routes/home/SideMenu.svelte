@@ -168,6 +168,7 @@
       roles: [
         UserRoles.User,
         UserRoles.Tech,
+        UserRoles.SuperAdmin,
         UserRoles.TrademarkSupport,
         UserRoles.PatentDesignSupport,
         UserRoles.TrademarkSearch,
@@ -234,17 +235,6 @@
       name: "Claim Requests",
       location: "ClaimRequests",
       roles: [UserRoles.SuperAdmin, UserRoles.Tech],
-    },
-    {
-      icon: "mdi:file-search-outline",
-      name: "Claim Files",
-      location: "claim-files",
-      roles: [
-        UserRoles.Tech,
-        UserRoles.SuperAdmin,
-        UserRoles.TrademarkExaminer,
-        UserRoles.TrademarkRegistrar,
-      ],
     },
   ];
 
