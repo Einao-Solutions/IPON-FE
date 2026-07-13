@@ -160,7 +160,7 @@
       location: "Resources",
       roles: [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin],
     },
-    { icon: "mdi:help-circle-outline", location: "Support" },
+    // { icon: "mdi:help-circle-outline", location: "Support" },
     {
       icon: "mdi:headset",
       location: "iposupport",

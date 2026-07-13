@@ -166,7 +166,7 @@
       // if (currentUser.lastUpdatedAt == null) {
       //   showNoticeModal = false;
       // }
-      showNoticeModal = false;
+      showNoticeModal = true;
     }
     data = {
       user: $loggedInUser,
@@ -1637,14 +1637,14 @@
       <div class="flex items-center justify-between px-6 py-4 border-b">
         <div class="flex items-center gap-2">
           <Icon
-            icon="mdi:check-circle-outline"
+            icon="mdi:ticket-confirmation-outline"
             class="w-6 h-6 text-green-700"
           />
           <h2
             id="maintenance-notice-title"
             class="text-xl md:text-2xl font-semibold"
           >
-            System Restoration Notice
+            Support Module Update: Improved Ticketing Experience
           </h2>
         </div>
 
@@ -1658,23 +1658,60 @@
       </div>
 
       <!-- Content -->
-      <div class="px-6 py-5 space-y-4 text-gray-700">
-        <p class="text-sm md:text-base">Dear Valued User,</p>
-
+      <div
+        class="px-6 py-5 space-y-4 text-gray-700 max-h-[70vh] overflow-y-auto"
+      >
         <p class="text-sm md:text-base">
-          We are pleased to inform you that the system update has been completed
-          and all portal services have been fully restored.
+          We've upgraded the IPO Support module with new features to make it
+          easier to log, track, and resolve your issues with the right team.
         </p>
 
-        <p class="text-sm md:text-base">
-          You can now enjoy improved performance, enhanced security, and greater
-          reliability across the portal.
-        </p>
+        <div class="space-y-2">
+          <h3 class="text-sm md:text-base font-semibold text-gray-900">
+            How to Raise a Ticket
+          </h3>
+          <ol class="list-decimal pl-5 space-y-1 text-sm md:text-base">
+            <li>Go to ‘IPO Support’</li>
+            <li>Click ‘Create Ticket’</li>
+            <li>
+              Select whether your issue is Technical or Administrative
+            </li>
+            <li>
+              Choose the support category that best describes your issue
+            </li>
+            <li>Fill in the form that appears and Submit</li>
+          </ol>
+        </div>
 
-        <p class="text-sm md:text-base">
-          Thank you for your patience and understanding during the maintenance
-          period.
-        </p>
+        <div class="space-y-2">
+          <h3 class="text-sm md:text-base font-semibold text-gray-900">
+            Tracking Your Ticket
+          </h3>
+          <p class="text-sm md:text-base">
+            You can monitor progress at any time via the Ticket Status.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <h3 class="text-sm md:text-base font-semibold text-gray-900">
+            Important Notes
+          </h3>
+          <ol class="list-decimal pl-5 space-y-1 text-sm md:text-base">
+            <li>
+              Save your ticket number as you'll need it to search for,
+              reference, or follow up on your ticket.
+            </li>
+            <li>
+              If you have further technical concerns, you can raise a new
+              technical ticket.
+            </li>
+            <li>
+              If you had a previous issue that's still unresolved, please raise
+              it again as a new ticket so it can be properly logged and tracked
+              going forward.
+            </li>
+          </ol>
+        </div>
       </div>
 
       <!-- Footer -->
