@@ -27,9 +27,9 @@ stages:
         targetType: 'inline'
         script: |
           Write-Host "Removing old files..."
-          Remove-Item -Path 'C:\Users\einaoadmin\Desktop\UpLinks\build\*' -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item -Path 'C:\inetpub\vhosts\iponigeria.com\test.iponigeria.com\*' -Recurse -Force -ErrorAction SilentlyContinue
 
           Write-Host "Copying new build..."
           Copy-Item -Path "$(System.DefaultWorkingDirectory)\build\*" `
-                    -Destination "C:\Users\einaoadmin\Desktop\UpLinks\build" `
+                    -Destination "C:\inetpub\vhosts\iponigeria.com\test.iponigeria.com" `
                     -Recurse -Force
