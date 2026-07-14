@@ -118,6 +118,17 @@
       let user = cookieUser.trimStart();
       user = user.slice(5);
       loggedInUser.set(JSON.parse(decodeURIComponent(user)));
+
+      // Redirect Finance and EinaoFinance straight to statistics
+      // if (
+      //   $loggedInUser?.userRoles?.some(role => 
+      //     [UserRoles.Finance, UserRoles.EinaoFinance].includes(role)
+      //   )
+      // ) {
+      //   goto("/statistics");
+      //   return;
+      // }
+
       // Determine if user should see StaffDashboard (all non-regular user roles except Agent)
       isStaff = !!$loggedInUser?.userRoles?.some((e) =>
         [
@@ -142,16 +153,16 @@
           // Administrative roles
           UserRoles.Minister,
 
-          // ✅ PermSec removed — they now see UserDashboard like regular users
+          // PermSec removed — they now see UserDashboard like regular users
           // UserRoles.PermSec,
 
           UserRoles.Finance,
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only
 
-          UserRoles.TrademarkStaff, // ✅ added
-          UserRoles.PatentStaff, // ✅ added
-          UserRoles.DesignStaff, // ✅ added
+          UserRoles.TrademarkStaff, 
+          UserRoles.PatentStaff, 
+          UserRoles.DesignStaff, 
         ].includes(e),
       );
     }
@@ -1983,7 +1994,7 @@
 		-->
 {/if}
 
-{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkSupport) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignSupport)}
+{#if $loggedInUser?.userRoles?.some((role) => [UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkSupport, UserRoles.PatentDesignSupport].includes(role))}
   <div class="min-h-[60vh] flex items-center justify-center p-6">
     <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div class="flex items-center gap-3 mb-4">

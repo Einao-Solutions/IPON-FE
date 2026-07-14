@@ -11,20 +11,33 @@
 
   $: showTrademark = isFullAccess || 
                      userRoles.includes(UserRoles.TrademarkRegistrar) || 
-                     userRoles.includes(UserRoles.Finance);
+                     userRoles.includes(UserRoles.Finance) ||
+                     userRoles.includes(UserRoles.EinaoFinance);
+
 
   $: showPatent = isFullAccess || 
                   userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance);
+                  userRoles.includes(UserRoles.Finance) ||
+                  userRoles.includes(UserRoles.EinaoFinance);
 
   $: showDesign = isFullAccess || 
                   userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance);
+                  userRoles.includes(UserRoles.Finance) ||
+                  userRoles.includes(UserRoles.EinaoFinance);
 
   $: visibleCount = [showTrademark, showPatent, showDesign].filter(Boolean).length;
   $: gridCols = visibleCount === 1 ? "md:grid-cols-1 max-w-md mx-auto" 
               : visibleCount === 2 ? "md:grid-cols-2 max-w-2xl mx-auto" 
               : "md:grid-cols-3";
+  $: cardSubtitle = (() => {
+    if (userRoles.includes(UserRoles.EinaoFinance)) 
+      return "View tech fee revenue statistics";
+    if (userRoles.includes(UserRoles.Finance)) 
+      return "View financial statistics";
+    if (userRoles.includes(UserRoles.TrademarkRegistrar) || userRoles.includes(UserRoles.PatentDesignRegistrar))
+      return "View operational, financial & performance statistics";
+    return "View operational, financial & performance statistics";
+  })();
 </script>
 
 <div class="grid grid-cols-1 {gridCols} gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
@@ -48,9 +61,7 @@
       <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
         Trademark
       </h3>
-      <p class="text-sm text-slate-500">
-        View performance, operational & financial statistics
-      </p>
+      <p class="text-slate-600 text-sm leading-relaxed">{cardSubtitle}</p>
       
       <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
         <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
@@ -84,9 +95,7 @@
       <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
         Patent
       </h3>
-      <p class="text-sm text-slate-500">
-        View performance, operational & financial statistics
-      </p>
+      <p class="text-slate-600 text-sm leading-relaxed">{cardSubtitle}</p>
       
       <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
         <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
@@ -120,9 +129,7 @@
       <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
         Design
       </h3>
-      <p class="text-sm text-slate-500">
-        View performance, operational & financial statistics
-      </p>
+      <p class="text-slate-600 text-sm leading-relaxed">{cardSubtitle}</p>
       
       <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
         <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">

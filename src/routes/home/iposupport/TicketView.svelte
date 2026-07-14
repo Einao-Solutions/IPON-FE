@@ -334,6 +334,13 @@ Escalate
 </div>
 {/if}
 
+{#if data?.fileNumber}
+<div>
+<p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">File Number</p>
+<p class="text-xs text-slate-700 font-medium break-words">{data.fileNumber}</p>
+</div>
+{/if}
+
 <div>
 <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Status</p>
 <div class="flex items-center gap-1.5">
@@ -421,7 +428,7 @@ Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ti
 <div class="h-px flex-1 bg-slate-200"></div>
 <div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 border border-red-200 max-w-[75%] min-w-0">
 <Icon icon="mdi:arrow-up-circle" width="0.75rem" height="0.75rem" class="text-red-500" />
-<span class="text-[10px] font-medium text-red-700 whitespace-pre-wrap break-words" style="overflow-wrap:anywhere;">{message.message}</span>
+<span class="text-[10px] font-medium text-red-700 break-words" style="white-space:break-spaces;overflow-wrap:anywhere;tab-size:4;">{message.message}</span>
 </div>
 <div class="h-px flex-1 bg-slate-200"></div>
 </div>
@@ -440,7 +447,7 @@ Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ti
 </div>
 <div class="px-4 py-3 rounded-2xl text-sm leading-relaxed break-words shadow-sm min-w-0
 {isCreator ? 'bg-green-700 text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'}">
-<div class="whitespace-pre-wrap break-words" style="overflow-wrap:anywhere;">{message.message}</div>
+<div class="break-words" style="white-space:break-spaces;overflow-wrap:anywhere;tab-size:4;">{message.message}</div>
 {#if message.attachment}
 <a target="_blank" rel="noopener noreferrer" href={message.attachment}
 class="mt-2 inline-flex items-center gap-1 text-xs font-medium {isCreator ? 'text-green-100 hover:text-white' : 'text-blue-600 hover:underline'}">
