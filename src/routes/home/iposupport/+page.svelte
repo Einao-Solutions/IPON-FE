@@ -6,7 +6,10 @@
 		TicketStates,
 		type TicketSummary,
 		UserRoles,
-		TicketCategory
+		TicketCategory,
+
+        ApplicationType
+
 	} from '$lib/helpers';
 	import { createRender, createTable, Render, Subscribe } from 'svelte-headless-table';
 	import { writable, type Writable } from 'svelte/store';
@@ -640,7 +643,9 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 	// ── Pill counts (computed from loaded data) ───────────────────────────────────
 	function ticketTypeFor(rowId: string): string {
 		const type = ($ipoTicketsSummary as any)?.[rowId]?.ticketType;
+		const applicationType = ($ipoTicketsSummary as any)?.[rowId]?.applicationType;
 		if (type === undefined || type === null) return '—';
+		if (applicationType === ApplicationType.Certificate) return 'Certificate';
 		const labels: Record<number, string> = {
 			0: 'Process Inquiry', 1: 'App Status', 2: 'Follow Up',
 			3: 'Account Access', 4: 'Payment Issue', 5: 'Others'
