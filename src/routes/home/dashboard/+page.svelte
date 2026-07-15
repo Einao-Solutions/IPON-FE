@@ -1978,43 +1978,6 @@
       </div>
     </div>
   </div>
-{:else}
-  <!-- FALLBACK WHEN CONDITIONS NOT MET - COMMENTED OUT FOR CLEAN VIEW
-		<div class="p-4 bg-red-100 border border-red-300 rounded">
-			<h3 class="text-lg font-semibold text-red-800">Dashboard Not Showing</h3>
-			<p class="text-red-600">Conditions not met:</p>
-			<ul class="text-red-600">
-				<li>isLoading: {isLoading}</li>
-				<li>loggedInUser exists: {!!$loggedInUser}</li>
-				<li>canCreateApplication(): {canCreateApplication()}</li>
-				<li>currentView: {currentView}</li>
-				<li>Expected: !isLoading AND loggedInUser AND canCreateApplication() AND currentView = 'main'</li>
-			</ul>
-		</div>
-		-->
-{/if}
-
-{#if $loggedInUser?.userRoles?.some((role) => [UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.TrademarkSupport, UserRoles.PatentDesignSupport].includes(role))}
-  <div class="min-h-[60vh] flex items-center justify-center p-6">
-    <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-          <Icon icon="mdi:scale-balance" class="text-green-700" width="1.2rem" height="1.2rem" />
-        </div>
-        <div>
-          <h2 class="text-lg font-semibold text-slate-900">IP Support Dashboard</h2>
-          <p class="text-sm text-slate-600">Open your tickets and actions</p>
-        </div>
-      </div>
-
-      <Button
-        class="w-full bg-green-800 hover:bg-green-700 text-white"
-        on:click={() => goto('/home/iposupport')}
-      >
-        Go to IPO Support
-      </Button>
-    </div>
-  </div>
 {/if}
 
 <!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->
