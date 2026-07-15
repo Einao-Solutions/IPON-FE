@@ -119,16 +119,6 @@
       user = user.slice(5);
       loggedInUser.set(JSON.parse(decodeURIComponent(user)));
 
-      // Redirect Finance and EinaoFinance straight to statistics
-      // if (
-      //   $loggedInUser?.userRoles?.some(role => 
-      //     [UserRoles.Finance, UserRoles.EinaoFinance].includes(role)
-      //   )
-      // ) {
-      //   goto("/statistics");
-      //   return;
-      // }
-
       // Determine if user should see StaffDashboard (all non-regular user roles except Agent)
       isStaff = !!$loggedInUser?.userRoles?.some((e) =>
         [
@@ -1722,16 +1712,6 @@
     </div>
   {/if}
 {/if}
-
-<!-- DEBUG INFO - COMMENTED OUT
-	<div class="p-4 bg-yellow-100 border border-yellow-300 rounded mb-4">
-		<p>Debug Info:</p>
-		<p>canCreateApplication(): {canCreateApplication()}</p>
-		<p>currentView: {currentView}</p>
-		<p>User roles: {JSON.stringify($loggedInUser?.roles)}</p>
-		<p>User ID: {$loggedInUser?.id}</p>
-	</div>
-	-->
 
 <!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
 {#if !isLoading && $loggedInUser && canCreateApplication() && currentView === "main"}
