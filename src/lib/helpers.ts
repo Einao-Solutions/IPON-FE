@@ -422,6 +422,10 @@ export enum ApplicationStatuses {
   PendingRenewal = 35,
   AwaitingOfficeProcess = 36,
   Abandoned = 37,
+  WithdrawalRequested = 38,
+  WithdrawalApproved = 39,
+  BatchedManualPublication = 40,
+  Published = 41,
 }
 export enum PatentTypes {
   Conventional = 0,
@@ -595,6 +599,14 @@ export function getStatusColour(status: ApplicationStatuses | null): string {
       return "#9B870C";
     case ApplicationStatuses.Abandoned:
       return "#fa6d6d";
+    case ApplicationStatuses.WithdrawalRequested:
+      return "#9B870C";
+    case ApplicationStatuses.WithdrawalApproved:
+      return "#5ce45c";
+    case ApplicationStatuses.BatchedManualPublication:
+      return "#5ce45c";
+    case ApplicationStatuses.Published:
+      return "#5ce45c";
     case null:
       return "";
     default:
