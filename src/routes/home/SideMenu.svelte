@@ -118,11 +118,16 @@
     location: string;
     name?: string;
     roles?: UserRoles[]; // undefined = visible to everyone
+    hiddenForRoles?: UserRoles[];
     submenus?: MenuItem[];
   };
 
   let menus: MenuItem[] = [
-    { icon: "radix-icons:dashboard", location: "Dashboard" },
+    {
+      icon: "radix-icons:dashboard",
+      location: "Dashboard",
+      hiddenForRoles: [UserRoles.TrademarkSupport, UserRoles.PatentDesignSupport],
+    },
     {
       icon: "mdi:file-document-multiple-outline",
       location: "Publications",
@@ -160,7 +165,6 @@
       location: "Resources",
       roles: [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin],
     },
-    { icon: "mdi:help-circle-outline", location: "Support" },
     {
       icon: "mdi:headset",
       location: "iposupport",
@@ -239,7 +243,8 @@
   ];
 
   function hasAccess(item: MenuItem, userRoles: UserRoles[]): boolean {
-    return !item.roles || item.roles.some((r) => userRoles.includes(r));
+    const isHidden = item.hiddenForRoles?.some((r) => userRoles.includes(r)) ?? false;
+    return !isHidden && (!item.roles || item.roles.some((r) => userRoles.includes(r)));
   }
 
   function filterMenus(items: MenuItem[], userRoles: UserRoles[]): MenuItem[] {
