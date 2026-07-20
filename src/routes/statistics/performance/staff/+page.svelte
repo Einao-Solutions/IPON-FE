@@ -3,6 +3,8 @@
   import { page } from "$app/stores";
   import { goto } from "$app/navigation";
   import Icon from "@iconify/svelte";
+  import { toast } from "svelte-sonner"; // ✅ add toast import
+  import { baseURL } from "$lib/helpers"; // ✅ add baseURL import
   import { statisticsApi, type StaffPerformanceData } from "$lib/utils/statisticsApi";
   import { ApplicationUnits, getUnitsForFileType, FilingType } from "$lib/helpers";
   import {
@@ -18,6 +20,56 @@
   } from "chart.js";
 
   Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, DoughnutController, ArcElement);
+
+  // ✅ Types for comparison
+  interface FinancePeriodRequestDto {
+    periodType: string;
+    periodValue: string;
+    year: number;
+  }
+
+  interface ComparisonPeriod extends FinancePeriodRequestDto {
+    _id: number;
+    displayLabel: string;
+  }
+
+  interface StaffPerformanceEntryDto {
+    staffId: string;
+    staffName: string;
+    staffEmail: string;
+    totalAssigned: number;
+    totalTreated: number;
+    percentage: number;
+    contributionToUnit: number;
+  }
+
+  interface StaffPerformanceSummaryDto {
+    totalAssigned: number;
+    totalTreated: number;
+    treatmentRate: number;
+  }
+
+  interface StaffPerformanceDataDto {
+    unitId: number;
+    unitName: string;
+    registryType: string;
+    period: { type: string; value: string; year: number };
+    summary: StaffPerformanceSummaryDto;
+    staffPerformance: StaffPerformanceEntryDto[];
+  }
+
+  interface StaffPerformanceComparisonDataDto {
+    registryType: string;
+    unitId: number;
+    unitName: string;
+    periods: StaffPerformanceDataDto[];
+  }
+
+  const COLORS = [
+    "#10b981", "#3b82f6", "#a855f7", "#ec4899",
+    "#f59e0b", "#ef4444", "#06b6d4", "#84cc16",
+    "#f97316", "#6366f1"
+  ];
 
   // Initialize with default, set properly in onMount
   let registryType = "Trademark";
@@ -98,6 +150,67 @@
         .sort((a, b) => b.totalTreated - a.totalTreated)
         .slice(0, 10)
     : [];
+
+  // ✅ Comparison state
+  let compareMode = false;
+  let comparisonPeriods: ComparisonPeriod[] = [];
+  let nextId = 0;
+  let comparisonResults: StaffPerformanceComparisonDataDto | null = null;
+
+  // ✅ Build current period object
+  function buildCurrentPeriod(): FinancePeriodRequestDto {
+    return {
+      periodType: selectedPeriodType,
+      periodValue: selectedPeriodValue,
+      year: selectedYear
+    };
+  }
+
+  // ✅ Build display label for comparison pill
+  function buildDisplayLabel(period: FinancePeriodRequestDto): string {
+    if (period.periodType === "year") return `${period.year}`;
+    return `${period.periodValue} ${period.year}`;
+  }
+
+  function toggleCompareMode() {
+    compareMode = !compareMode;
+    if (!compareMode) { comparisonPeriods = []; comparisonResults = null; }
+  }
+
+  function addToComparison() {
+    if (comparisonPeriods.length >= 5) { toast.warning("Maximum 5 periods allowed"); return; }
+    const period = buildCurrentPeriod();
+    const displayLabel = buildDisplayLabel(period);
+    comparisonPeriods = [...comparisonPeriods, { ...period, _id: nextId++, displayLabel }];
+    toast.success(`Added: ${displayLabel}`);
+  }
+
+  function removePeriod(id: number) {
+    comparisonPeriods = comparisonPeriods.filter(p => p._id !== id);
+  }
+
+  async function fetchComparison() {
+    if (comparisonPeriods.length < 2) { toast.error("Please add at least 2 periods to compare"); return; }
+    loading = true; error = null; comparisonResults = null;
+    try {
+      const dto = {
+        registryType,
+        unitId: selectedUnit,
+        periods: comparisonPeriods.map(({ _id, displayLabel, ...p }) => p)
+      };
+      const response = await fetch(`${baseURL}/api/statistics/performance/staff/compare`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dto)
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to fetch comparison");
+      comparisonResults = data.data;
+    } catch (e) {
+      error = (e as Error).message;
+      toast.error(error ?? "An error occurred");
+    } finally { loading = false; }
+  }
 
   function destroyCharts() {
     if (barChart) { barChart.destroy(); barChart = null; }
@@ -204,7 +317,7 @@
   }
 
   onMount(() => {
-    // ✅ Safely read search params here
+
     registryType = $page.url.searchParams.get("registryType") ?? "Trademark";
 
     // Re-derive filingType and units after registryType is set
@@ -213,6 +326,11 @@
                  FilingType.Trademark;
 
     units = getUnitsForFileType(filingType);
+
+    if (units.length > 0) {
+      selectedUnit = units[0].unitId;
+      loadPerformanceData();
+    }
 
     return () => destroyCharts();
   });
@@ -223,13 +341,6 @@
     try {
       loading = true;
       error = null;
-        // console.log("Fetching performance data for:", {
-        //   registryType,
-        //   unit: selectedUnit,
-        //   periodType: selectedPeriodType,
-        //   periodValue: selectedPeriodValue,
-        //   year: selectedYear
-        // });
       
       performanceData = await statisticsApi.getStaffPerformance(
         registryType,
@@ -238,10 +349,10 @@
         selectedPeriodValue,
         selectedYear
       );
-      // console.log("✅ Performance data loaded:", performanceData);
+
     } catch (err) {
       error = err instanceof Error ? err.message : "Failed to load performance data";
-      // console.error("❌ Error loading performance data:", err);
+
     } finally {
       loading = false;
     }
@@ -253,9 +364,9 @@
     
     if (value && value !== "") {
       selectedUnit = parseInt(value) as ApplicationUnits;
-      // console.log("Unit selected:", selectedUnit, selectedUnitName);
+
       searchQuery = "";
-      loadPerformanceData();
+
     }
   }
 
@@ -270,32 +381,22 @@
       const currentQuarter = Math.floor(currentMonth / 3);
       selectedPeriodValue = quarters[currentQuarter];
     } else {
-      // For "year", no period value needed
+
       selectedPeriodValue = selectedYear.toString();
     }
-    
-    if (selectedUnit !== null) {
-      loadPerformanceData();
-    }
+
   }
 
   function handlePeriodValueChange(value: string) {
     selectedPeriodValue = value;
-    if (selectedUnit !== null) {
-      loadPerformanceData();
-    }
+
   }
 
   function handleYearChange(value: number) {
     selectedYear = value;
     
-    // If period type is "year", update period value to match selected year
     if (selectedPeriodType === "year") {
       selectedPeriodValue = value.toString();
-    }
-    
-    if (selectedUnit !== null) {
-      loadPerformanceData();
     }
   }
 
@@ -332,7 +433,7 @@
     <div class="flex items-center mb-6">
       <button
         on:click={handleBack}
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg px-4 py-2"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
         <span class="text-sm font-medium">Back to Performance Statistics</span>
@@ -348,24 +449,34 @@
     <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
       
       <!-- Section Title with Icon -->
-      <div class="flex items-start gap-4 mb-6 pb-6 border-b border-gray-200">
-        <div class="flex-shrink-0 w-14 h-14 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
-          <Icon icon="lucide:users" class="w-7 h-7 text-white" />
+      <div class="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
+        <div class="flex items-start gap-4 flex-1">
+          <div class="flex-shrink-0 w-14 h-14 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
+            <Icon icon="lucide:users" class="w-7 h-7 text-white" />
+          </div>
+          <div class="flex-1">
+            <h2 class="text-2xl font-bold text-gray-900 mb-1">Staff Performance</h2>
+            <p class="text-sm text-gray-600">{registryType} Registry - Individual staff productivity metrics</p>
+          </div>
         </div>
-        <div class="flex-1">
-          <h2 class="text-2xl font-bold text-gray-900 mb-1">
-            Staff Performance
-          </h2>
-          <p class="text-sm text-gray-600">
-            {registryType} Registry - Individual staff productivity metrics
-          </p>
-        </div>
+
+        <!-- ✅ Compare Toggle Button -->
+        <button
+          on:click={toggleCompareMode}
+          class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all flex-shrink-0
+            {compareMode
+              ? 'bg-green-600 text-white border-green-600 shadow-sm'
+              : 'bg-white text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600'}"
+        >
+          <Icon icon="lucide:git-compare" class="w-4 h-4" />
+          {compareMode ? "Compare ON" : "Compare Periods"}
+        </button>
       </div>
 
-      <!-- Filters Layout - Responsive Grid -->
+      <!-- Filters Layout -->
       <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-        
-        <!-- LEFT SIDE: Filters -->
+
+        <!-- LEFT: existing filters -->
         <div class="space-y-4">
           
           <!-- Row 1: Year & Clear Button -->
@@ -444,33 +555,109 @@
 
         </div>
 
-        <!-- RIGHT SIDE: Unit Selection -->
+        <!-- RIGHT: Unit Selection OR Comparison Panel -->
         <div class="flex flex-col justify-center">
-          <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 h-full flex flex-col justify-center">
-            <div class="flex items-center gap-3 mb-3">
-              <Icon icon="lucide:building-2" class="w-5 h-5 text-gray-500" />
-              <span class="text-sm font-semibold text-gray-700">Select Unit</span>
+          {#if !compareMode}
+            <!-- existing unit select -->
+            <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-4 h-full flex flex-col justify-center">
+              <div class="flex items-center gap-3 mb-3">
+                <Icon icon="lucide:building-2" class="w-5 h-5 text-gray-500" />
+                <span class="text-sm font-semibold text-gray-700">Select Unit</span>
+              </div>
+              <div class="relative">
+                <select
+                  value={selectedUnit ?? ""}
+                  on:change={handleUnitChange}
+                  class="w-full appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-3 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
+                >
+                  <option value="" disabled>Choose a unit...</option>
+                  {#each units as unit (unit.unitId)}
+                    <option value={unit.unitId}>{unit.unitName}</option>
+                  {/each}
+                </select>
+                <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              </div>
+              <p class="text-xs text-gray-500 mt-2">{units.length} unit{units.length !== 1 ? 's' : ''} available</p>
             </div>
-            <div class="relative">
-              <select
-                value={selectedUnit ?? ""}
-                on:change={handleUnitChange}
-                class="w-full appearance-none bg-white border-2 border-gray-300 rounded-lg px-4 py-3 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all"
+          {:else}
+            <!-- ✅ Comparison Panel -->
+            <div class="bg-gray-50 border-2 border-green-300 rounded-lg p-4 h-full flex flex-col gap-3">
+              <div class="flex items-center gap-3 mb-1">
+                <Icon icon="lucide:layers" class="w-5 h-5 text-green-600" />
+                <span class="text-sm font-semibold text-gray-700">Comparison Periods</span>
+                <span class="ml-auto text-xs text-gray-400">{comparisonPeriods.length}/5</span>
+              </div>
+
+              <button
+                on:click={addToComparison}
+                disabled={comparisonPeriods.length >= 5}
+                class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                <option value="" disabled>Choose a unit...</option>
-                {#each units as unit (unit.unitId)}
-                  <option value={unit.unitId}>{unit.unitName}</option>
-                {/each}
-              </select>
-              <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                <Icon icon="mdi:plus" class="w-4 h-4" />
+                Add Period
+              </button>
+
+              {#if comparisonPeriods.length > 0}
+                <div class="flex flex-col gap-2 mt-1">
+                  {#each comparisonPeriods as period, index}
+                    <div class="flex items-center justify-between px-3 py-2 rounded-lg text-white text-xs font-medium" style="background-color: {COLORS[index % COLORS.length]}">
+                      <span>{period.displayLabel}</span>
+                      <button on:click={() => removePeriod(period._id)} class="ml-2 hover:opacity-70">
+                        <Icon icon="mdi:close" class="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  {/each}
+                </div>
+              {:else}
+                <p class="text-xs text-gray-400 text-center mt-1">No periods added yet.</p>
+              {/if}
+
+              <button
+                on:click={() => { comparisonPeriods = []; comparisonResults = null; }}
+                class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 transition-colors mt-auto"
+              >
+                <Icon icon="lucide:x" class="w-4 h-4" />
+                Clear All
+              </button>
             </div>
-            <p class="text-xs text-gray-500 mt-2">
-              {units.length} unit{units.length !== 1 ? 's' : ''} available
-            </p>
-          </div>
+          {/if}
         </div>
 
       </div>
+
+      <!-- ✅ Action Buttons — Fetch or Compare -->
+      <div class="mt-6 flex justify-end">
+        {#if compareMode}
+          <button
+            on:click={fetchComparison}
+            disabled={loading || comparisonPeriods.length < 2}
+            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+          >
+            {#if loading}
+              <Icon icon="line-md:loading-loop" class="h-4 w-4 animate-spin" />
+              Comparing...
+            {:else}
+              <Icon icon="lucide:git-compare" class="h-4 w-4" />
+              Compare Periods
+            {/if}
+          </button>
+        {:else}
+          <button
+            on:click={loadPerformanceData}
+            disabled={loading}
+            class="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+          >
+            {#if loading}
+              <Icon icon="line-md:loading-loop" class="h-4 w-4 animate-spin" />
+              Fetching...
+            {:else}
+              <Icon icon="lucide:search" class="h-4 w-4" />
+              Fetch
+            {/if}
+          </button>
+        {/if}
+      </div>
+
     </div>
 
     <!-- Loading State -->

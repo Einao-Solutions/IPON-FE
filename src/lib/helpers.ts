@@ -7,7 +7,7 @@ import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
 //  export const baseURL = "http://localhost:5044";
-export const baseURL = "https://backend.einaotest.com";
+export const baseURL = "https://testbackend.iponigeria.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -220,6 +220,7 @@ export type PatentData = {
   titleOfTradeMark: string | null;
   trademarkClass: number | null;
   trademarkClassDescription: string | null;
+  trademarkSpecification: string | null;
   additionalDescription: string | null;
   filingCountry: string | null;
   fileOrigin: string | null;
@@ -422,6 +423,10 @@ export enum ApplicationStatuses {
   PendingRenewal = 35,
   AwaitingOfficeProcess = 36,
   Abandoned = 37,
+  WithdrawalRequested = 38,
+  WithdrawalApproved = 39,
+  BatchedManualPublication = 40,
+  Published = 41,
 }
 export enum PatentTypes {
   Conventional = 0,
@@ -595,6 +600,14 @@ export function getStatusColour(status: ApplicationStatuses | null): string {
       return "#9B870C";
     case ApplicationStatuses.Abandoned:
       return "#fa6d6d";
+    case ApplicationStatuses.WithdrawalRequested:
+      return "#9B870C";
+    case ApplicationStatuses.WithdrawalApproved:
+      return "#5ce45c";
+    case ApplicationStatuses.BatchedManualPublication:
+      return "#5ce45c";
+    case ApplicationStatuses.Published:
+      return "#5ce45c";
     case null:
       return "";
     default:

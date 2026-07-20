@@ -98,14 +98,23 @@ let validatedFileNumber: string = '';
 let validatedFileInfo: any = null;
 let statusMessage: string | null = null;
 
-const techTypes = [
+type TicketTypeOption = {
+value: TicketType;
+label: string;
+icon: string;
+applicationType?: ApplicationType;
+};
+
+const techTypes: TicketTypeOption[] = [
 { value: TicketType.AccountAccess, label: 'Account Access', icon: 'mdi:account-key-outline' },
 { value: TicketType.PaymentIssue, label: 'Payment Issue', icon: 'mdi:credit-card-outline' },
+{ value: TicketType.FollowUp, label: 'Certificate', icon: 'mdi:certificate-outline', applicationType: ApplicationType.Certificate },
 { value: TicketType.Others, label: 'Others', icon: 'mdi:help-circle-outline' }
 ];
 
-const registryTechnicalTypes = [
+const registryTechnicalTypes: TicketTypeOption[] = [
 { value: TicketType.RegistryProcessInquiry, label: 'Filings', icon: 'mdi:file-document-multiple-outline' },
+{ value: TicketType.FollowUp, label: 'Certificate', icon: 'mdi:certificate-outline', applicationType: ApplicationType.Certificate },
 { value: TicketType.Others, label: 'Others', icon: 'mdi:help-circle-outline' }
 ];
 
@@ -124,6 +133,8 @@ const applicationTypes = [
 { value: ApplicationType.Withdrawal, label: 'Withdrawal', icon: 'mdi:file-remove-outline' },
 { value: ApplicationType.Appeal, label: 'Appeal', icon: 'mdi:scale-balance' }
 ];
+
+const registryApplicationTypes = applicationTypes.filter((type) => type.value !== ApplicationType.Certificate);
 
 $: recordalTypes = recordalRegistryCategory === TicketCategory.TrademarkRegistry
 ? [
@@ -147,8 +158,9 @@ $: recordalTypes = recordalRegistryCategory === TicketCategory.TrademarkRegistry
 ];
 
 $: isAccountAccessTicket = isTechType && selectedTicketType === TicketType.AccountAccess;
-$: shouldShowFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue || (!technicalOnly && isTechType && selectedTicketType === TicketType.Others) || !!fileNumber.trim());
-$: mustValidateFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue);
+$: isCertificateTicket = isTechType && selectedApplicationType === ApplicationType.Certificate;
+$: shouldShowFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue || isCertificateTicket || (!technicalOnly && isTechType && selectedTicketType === TicketType.Others) || !!fileNumber.trim());
+$: mustValidateFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue || isCertificateTicket);
 $: requiresAccountEmail = isAccountAccessTicket && !technicalOnly;
 $: fileNumberLabel = selectedApplicationType === ApplicationType.Opposition ? 'Opposition ID' : mustValidateFileNumber ? 'File Number' : 'File Number (optional)';
 $: fileNumberValid = !mustValidateFileNumber || (validatedFileNumber === fileNumber.trim() && !!validatedFileInfo);
@@ -190,22 +202,22 @@ if (step === 5) return selectedApplicationType === ApplicationType.Recordals ? 4
 return selectedApplicationType === ApplicationType.Recordals ? 5 : 4;
 })();
 
-function pickTechType(type: TicketType) {
-selectedTicketType = type;
+function pickTechType(type: TicketTypeOption) {
+selectedTicketType = type.value;
 isTechType = true;
 selectedCategory = TicketCategory.TechnicalSupport;
-selectedApplicationType = null;
+selectedApplicationType = type.applicationType ?? null;
 selectedRecordalType = null;
-step = technicalOnly ? 3 : requireFileNumber ? 3 : 5;
+step = selectedApplicationType === ApplicationType.Certificate ? 5 : technicalOnly ? 3 : requireFileNumber ? 3 : 5;
 }
 
-function pickRegistryTechnicalType(type: TicketType) {
-selectedTicketType = type;
+function pickRegistryTechnicalType(type: TicketTypeOption) {
+selectedTicketType = type.value;
 isTechType = true;
 selectedCategory = TicketCategory.TechnicalSupport;
-selectedApplicationType = null;
+selectedApplicationType = type.applicationType ?? null;
 selectedRecordalType = null;
-step = type === TicketType.Others ? 5 : 3;
+step = type.value === TicketType.Others || selectedApplicationType === ApplicationType.Certificate ? 5 : 3;
 }
 
 function pickRegistryType(type: TicketType) {
@@ -426,6 +438,7 @@ return '—';
 }
 
 function ticketTypeLabel(tt: TicketType | null): string {
+if (selectedApplicationType === ApplicationType.Certificate) return 'Certificate';
 if (isRegistryTechnicalFlow && tt === TicketType.RegistryProcessInquiry) return 'Filings';
 return [...techTypes, ...registryTypes].find((t) => t.value === tt)?.label ?? '—';
 }
@@ -479,9 +492,9 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 {#if !isStaffOnlyTech && !technicalOnly}
 <div>
 <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Technical Support</p>
-<div class="grid grid-cols-3 gap-3">
+<div class="grid grid-cols-2 gap-3">
 {#each techTypes as type}
-<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type.value)}>
+<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type)}>
 <span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
 <Icon icon={type.icon} width="1.4rem" height="1.4rem" class="text-green-700" />
 </span>
@@ -510,10 +523,10 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 </div>
 {:else}
 <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Technical Support</p>
-<div class="grid {isRegistryTechnicalFlow ? 'grid-cols-2' : 'grid-cols-3'} gap-3">
+<div class="grid {isRegistryTechnicalFlow ? 'grid-cols-3' : 'grid-cols-2'} gap-3">
 {#if isRegistryTechnicalFlow}
 {#each registryTechnicalTypes as type}
-<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickRegistryTechnicalType(type.value)}>
+<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickRegistryTechnicalType(type)}>
 <span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
 <Icon icon={type.icon} width="1.4rem" height="1.4rem" class="text-green-700" />
 </span>
@@ -522,7 +535,7 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 {/each}
 {:else}
 {#each techTypes as type}
-<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type.value)}>
+<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type)}>
 <span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
 <Icon icon={type.icon} width="1.4rem" height="1.4rem" class="text-green-700" />
 </span>
@@ -559,7 +572,7 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 <div>
 <p class="text-sm text-slate-600 mb-4">What type of application is this about?</p>
 <div class="grid grid-cols-3 gap-3">
-{#each applicationTypes as at}
+{#each registryApplicationTypes as at}
 <button type="button" class="{cardBase} {selectedApplicationType === at.value ? cardActive : cardIdle}" on:click={() => pickApplicationType(at.value)}>
 <span class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
 <Icon icon={at.icon} width="1.3rem" height="1.3rem" class="text-green-700" />

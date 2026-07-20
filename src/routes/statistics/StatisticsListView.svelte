@@ -35,9 +35,23 @@
                     userRoles.includes(UserRoles.Minister) || 
                     userRoles.includes(UserRoles.SuperAdmin);
 
-  $: isFinanceOnly = userRoles.includes(UserRoles.Finance) && !isFullAccess;
+  $: isFinanceOnly = (userRoles.includes(UserRoles.Finance) || isEinaoFinance) && !isFullAccess; // ✅ EinaoFinance behaves like financeOnly — hides Performance & Operational
 
-  // ✅ Pass isFinanceOnly as parameter so $: can track it
+  // STRICTLY EinaoFinance only — no SuperAdmin, no Finance, nothing else
+  // $: isEinaoFinance = userRoles.length === 1 && userRoles.includes(UserRoles.EinaoFinance) 
+  //   || (userRoles.includes(UserRoles.EinaoFinance) && !userRoles.some(r => [
+  //       UserRoles.SuperAdmin,
+  //       UserRoles.Finance,
+  //       UserRoles.PermSec,
+  //       UserRoles.Minister,
+  //       UserRoles.Tech,
+  //       UserRoles.TrademarkRegistrar,
+  //       UserRoles.PatentDesignRegistrar
+  //     ].includes(r)));
+
+  $: isEinaoFinance = userRoles.includes(UserRoles.EinaoFinance);
+
+  // Pass isFinanceOnly as parameter so $: can track it
   $: sections = getSectionsForRole(isFinanceOnly);
 
   function getSectionsForRole(financeOnly: boolean) {
@@ -69,7 +83,8 @@
       userRoles.includes(UserRoles.PermSec) ||
       userRoles.includes(UserRoles.Minister) ||
       userRoles.includes(UserRoles.Finance) ||
-      userRoles.includes(UserRoles.SuperAdmin)
+      userRoles.includes(UserRoles.SuperAdmin) ||
+      userRoles.includes(UserRoles.EinaoFinance) 
     ) {
       sections.push({
         id: "financial",
@@ -214,28 +229,9 @@
                 <p class="text-sm text-gray-600 mb-4">
                   Choose a financial view to analyze {selectedRegistry} registry data:
                 </p>
-                <button
-                  on:click={navigateToFinancialStatistics}
-                  class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left w-full"
-                >
-                  <div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div class="relative z-10">
-                    <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
-                      <Icon icon="mdi:cash-multiple" class="text-2xl text-green-600" />
-                    </div>
-                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Revenue Statistics</h4>
-                    <p class="text-sm text-gray-600 mb-4">
-                      Compare government fees and payment volumes across custom periods — by month, quarter, year or date range
-                    </p>
-                    <div class="flex items-center text-green-600 text-sm font-medium">
-                      <span>View Details</span>
-                      <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </button>
 
-              <!-- Tech Fee Revenue Statistics — SuperAdmin only -->
-                {#if isSuperAdmin}
+                {#if isEinaoFinance}
+                  <!-- ✅ EinaoFinance ONLY sees this — one card, no green card -->
                   <button
                     on:click={navigateToTechFeeStatistics}
                     class="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 border-2 border-blue-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-blue-300/60 text-left w-full"
@@ -246,7 +242,7 @@
                         <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                           <Icon icon="mdi:chip" class="text-2xl text-blue-600" />
                         </div>
-                        <span class="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">Super Admin</span>
+                        <span class="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">EINAO Finance</span>
                       </div>
                       <h4 class="text-lg font-semibold text-slate-800 mb-2">Tech Fee Revenue Statistics</h4>
                       <p class="text-sm text-gray-600 mb-4">
@@ -258,9 +254,55 @@
                       </div>
                     </div>
                   </button>
+                {:else}
+                  <!-- Finance role sees the green Revenue card -->
+                  <button
+                    on:click={navigateToFinancialStatistics}
+                    class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left w-full"
+                  >
+                    <div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div class="relative z-10">
+                      <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Icon icon="mdi:cash-multiple" class="text-2xl text-green-600" />
+                      </div>
+                      <h4 class="text-lg font-semibold text-slate-800 mb-2">Revenue Statistics</h4>
+                      <p class="text-sm text-gray-600 mb-4">
+                        Compare government fees and payment volumes across custom periods — by month, quarter, year or date range
+                      </p>
+                      <div class="flex items-center text-green-600 text-sm font-medium">
+                        <span>View Details</span>
+                        <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </button>
                 {/if}
-              </div>
 
+              </div>
+              <!-- Tech Fee Revenue Statistics — STRICTLY EinaoFinance role ONLY -->
+              <!-- {#if isEinaoFinance}
+                <button
+                  on:click={navigateToTechFeeStatistics}
+                  class="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 border-2 border-blue-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-blue-300/60 text-left w-full"
+                >
+                  <div class="absolute inset-0 bg-gradient-to-br from-transparent via-blue-50/40 to-blue-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div class="relative z-10">
+                    <div class="flex items-center gap-2 mb-4">
+                      <div class="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                        <Icon icon="mdi:chip" class="text-2xl text-blue-600" />
+                      </div>
+                      <span class="text-xs font-semibold px-2 py-1 bg-blue-100 text-blue-700 rounded-full">EINAO Finance</span>
+                    </div>
+                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Tech Fee Revenue Statistics</h4>
+                    <p class="text-sm text-gray-600 mb-4">
+                      Compare EINAO technology fees and payment volumes across custom periods — by month, quarter, year or date range
+                    </p>
+                    <div class="flex items-center text-blue-600 text-sm font-medium">
+                      <span>View Details</span>
+                      <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
+              {/if} -->
             {/if}
           </div>
         </Accordion.Content>

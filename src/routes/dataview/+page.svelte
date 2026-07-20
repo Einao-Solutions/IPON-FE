@@ -1,4 +1,4 @@
-c<script lang="ts">
+<script lang="ts">
   import PatentView from "./PatentView.svelte";
   import {
     ApplicationStatuses,

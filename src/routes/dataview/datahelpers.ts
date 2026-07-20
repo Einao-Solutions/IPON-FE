@@ -28,6 +28,15 @@ export function getStatuses(
   }
   if (
     fileType === FilingType.Trademark &&
+    currentStatus == ApplicationStatuses.BatchedManualPublication
+  ) {
+    return [
+      ApplicationStatuses.Published,
+      ApplicationStatuses.NewOpposition,
+    ];
+  }
+  if (
+    fileType === FilingType.Trademark &&
     currentStatus == ApplicationStatuses.Rejected
   ) {
     return [
@@ -128,7 +137,7 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
     case ApplicationStatuses.AwaitingRecordalProcess:
       return "Awaiting Recordal Process";
     case ApplicationStatuses.NewOpposition:
-      return "Opposed";
+      return "Oppose";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter Statement";
     case ApplicationStatuses.AwaitingCertificateConfirmation:
@@ -139,6 +148,8 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
       return "Awaiting Renewal Confirmation";
     case ApplicationStatuses.PendingRenewal:
       return "Pending Renewal";
+    case ApplicationStatuses.Published:
+      return "Publish";
     default:
       return "-";
   }
@@ -496,7 +507,16 @@ export function CanTreatApplication(
       );
     }
   }
-
+  if (applicationStatus === ApplicationStatuses.BatchedManualPublication) {
+    hasRole = userRoles.some((x) =>
+      [
+        UserRoles.TrademarkPublication,
+        UserRoles.Tech,
+        UserRoles.SuperAdmin,
+        UserRoles.TrademarkRegistrar,
+      ].includes(x),
+    );
+  }
   if (
     applicationStatus === ApplicationStatuses.AwaitingCertificateConfirmation
   ) {
