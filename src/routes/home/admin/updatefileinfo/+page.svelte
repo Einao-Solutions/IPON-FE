@@ -151,6 +151,134 @@
     }
   }
 
+  // === RECORDAL FORM DATA ===
+  // Assignment form data
+  let assignmentData = {
+    assigneeName: "",
+    assigneeEmail: "",
+    assigneePhone: "",
+    assigneeNationality: "",
+    assigneeAddress: "",
+    assignmentDeed: null as File | null,
+    authorizationLetter: null as File | null,
+  };
+
+  // View-only copies for opening existing application history entries
+  let selectedRecordal: { applicationType: number; hist: any } | null = null;
+  let viewAssignmentData: any = {};
+  let viewRegisteredUserData: any = {};
+  let viewMergerData: any = {};
+  let viewChangeOfNameData: any = {};
+  let viewChangeOfAddressData: any = {};
+
+  const safePick = (obj: any, ...paths: string[]) => {
+    for (const p of paths) {
+      if (!obj) continue;
+      // support nested like 'newValue.name'
+      const parts = p.split(".");
+      let cur = obj;
+      for (const part of parts) {
+        if (cur == null) break;
+        cur = cur[part];
+      }
+      if (cur !== undefined && cur !== null) return cur;
+    }
+    return "";
+  };
+
+  function openRecordalView(hist: any) {
+    selectedRecordal = { applicationType: hist.applicationType, hist };
+
+    // Assignment (type 5)
+    viewAssignmentData = {
+      assigneeName:
+        safePick(hist, "newValue.assigneeName", "newValue.name", "assigneeName") || "",
+      assigneeEmail:
+        safePick(hist, "newValue.assigneeEmail", "newValue.email", "assigneeEmail") || "",
+      assigneePhone:
+        safePick(hist, "newValue.assigneePhone", "newValue.phone", "assigneePhone") || "",
+      assigneeNationality:
+        safePick(hist, "newValue.assigneeNationality", "newValue.nationality", "assigneeNationality") || "",
+      assigneeAddress:
+        safePick(hist, "newValue.assigneeAddress", "newValue.address", "assigneeAddress") || "",
+      assignmentDeed: null,
+      authorizationLetter: null,
+    };
+
+    // Registered User (type 7)
+    viewRegisteredUserData = {
+      name: safePick(hist, "newValue.name", "newValue.registeredName", "name") || "",
+      email: safePick(hist, "newValue.email", "email") || "",
+      phone: safePick(hist, "newValue.phone", "phone") || "",
+      nationality: safePick(hist, "newValue.nationality", "nationality") || "",
+      address: safePick(hist, "newValue.address", "address") || "",
+      document: null,
+    };
+
+    // Merger (type 8)
+    viewMergerData = {
+      name: safePick(hist, "newValue.name", "newValue.mergerName", "name") || "",
+      email: safePick(hist, "newValue.email", "email") || "",
+      phone: safePick(hist, "newValue.phone", "phone") || "",
+      dateOfMerger: safePick(hist, "newValue.dateOfMerger", "dateOfMerger") || "",
+      nationality: safePick(hist, "newValue.nationality", "nationality") || "",
+      address: safePick(hist, "newValue.address", "address") || "",
+      document: null,
+    };
+
+    // Change of Name (type 9)
+    viewChangeOfNameData = {
+      newName: safePick(hist, "newValue.newName", "newValue.name", "newName") || "",
+      supportingDocument: null,
+    };
+
+    // Change of Address (type 10)
+    viewChangeOfAddressData = {
+      newAddress: safePick(hist, "newValue.newAddress", "newValue.address", "newAddress") || "",
+      supportingDocument: null,
+    };
+  }
+
+  function closeRecordalView() {
+    selectedRecordal = null;
+  }
+
+  // Registered Users form data
+  let registeredUserData = {
+    name: "",
+    email: "",
+    phone: "",
+    nationality: "",
+    address: "",
+    document: null as File | null,
+  };
+
+  // Merger form data
+  let mergerData = {
+    name: "",
+    email: "",
+    phone: "",
+    dateOfMerger: "",
+    nationality: "",
+    address: "",
+    document: null as File | null,
+  };
+
+  // Change of Name form data
+  let changeOfNameData = {
+    newName: "",
+    supportingDocument: null as File | null,
+  };
+
+  // Change of Address form data
+  let changeOfAddressData = {
+    newAddress: "",
+    supportingDocument: null as File | null,
+  };
+
+  // Helper to check if selected type is a recordal type
+  $: isRecordalType = [5, 7, 8, 9, 10].includes(newApp.applicationType);
+
   //add app history
   let newApp: AppHistory = {
     applicationDate: "",
@@ -171,48 +299,6 @@
     certificatePaymentId: string | null;
     fileNumber: string;
   }
-
-  async function addApplicationHistory(app: AppHistory) {
-    const result = await fetch(
-      `${baseURL}/api/admin/CreateApplicationHistory`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${$loggedInToken}`,
-        },
-        body: JSON.stringify({
-          applicationDate: newApp.applicationDate,
-          applicationType: newApp.applicationType,
-          currentStatus: newApp.currentStatus,
-          userId: $loggedInUser?.id,
-          paymentId: newApp.paymentId,
-          certificatePaymentId: newApp.certificatePaymentId ?? null,
-          fileNumber: filing.fileId,
-        }),
-      }
-    );
-    if (result.ok) {
-      const text = await result.text();
-      const data = text ? JSON.parse(text) : null;
-      window.alert("Application Added to History Successfully!");
-      toast.success("Application added successfully", {
-        position: "top-right",
-      });
-    } else {
-      toast.error("Failed to Change Status", {
-        position: "top-right",
-      });
-      throw new Error("Verification failed");
-    }
-  }
-
-  // Delete applicant
-  const deleteApplicant = (index: number) => {
-    filing.applicants = filing.applicants.filter(
-      (_: any, i: number) => i !== index
-    );
-  };
 
   // Add new inventor
   const addInventor = () => {
@@ -1181,6 +1267,154 @@
                 {/each}
               </select>
             </div>
+          </div>
+
+          <!-- ===== RECORDAL-SPECIFIC FORMS ===== -->
+          {#if isRecordalType && filing?.fileId}
+            <!-- Assignment Application (type 5) -->
+            {#if newApp.applicationType === 5}
+              <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
+                <div class="bg-blue-100 px-4 py-2 font-semibold text-blue-900">Assignment Application [Form 16]</div>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Name: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={assignmentData.assigneeName} placeholder="Enter assignee name" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Email: <span class="text-red-500">*</span></label>
+                    <input type="email" class="input" bind:value={assignmentData.assigneeEmail} placeholder="Enter assignee email" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Phone: <span class="text-red-500">*</span></label>
+                    <input type="tel" class="input" bind:value={assignmentData.assigneePhone} placeholder="Enter assignee phone" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Nationality: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={assignmentData.assigneeNationality} placeholder="Enter assignee nationality" required />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Address: <span class="text-red-500">*</span></label>
+                    <textarea class="input min-h-20" bind:value={assignmentData.assigneeAddress} placeholder="Enter assignee address" required></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignment Deed (PDF):</label>
+                    <input type="file" accept=".pdf" class="input" on:change={handleAssignmentDeedUpload} />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Authorization Letter (PDF):</label>
+                    <input type="file" accept=".pdf" class="input" on:change={handleAssignmentLetterUpload} />
+                  </div>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Registered Users (type 7) -->
+            {#if newApp.applicationType === 7}
+              <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
+                <div class="bg-blue-100 px-4 py-2 font-semibold text-blue-900">Registered User Application</div>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={registeredUserData.name} placeholder="Enter name" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email: <span class="text-red-500">*</span></label>
+                    <input type="email" class="input" bind:value={registeredUserData.email} placeholder="Enter email" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone: <span class="text-red-500">*</span></label>
+                    <input type="tel" class="input" bind:value={registeredUserData.phone} placeholder="Enter phone" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nationality: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={registeredUserData.nationality} placeholder="Enter nationality" required />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address: <span class="text-red-500">*</span></label>
+                    <textarea class="input min-h-20" bind:value={registeredUserData.address} placeholder="Enter address" required></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Document (PDF):</label>
+                    <input type="file" accept=".pdf" class="input" on:change={handleRegisteredUserDocUpload} />
+                  </div>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Merger Application (type 8) -->
+            {#if newApp.applicationType === 8}
+              <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
+                <div class="bg-blue-100 px-4 py-2 font-semibold text-blue-900">Merger Application [Form 17]</div>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={mergerData.name} placeholder="Enter name" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email: <span class="text-red-500">*</span></label>
+                    <input type="email" class="input" bind:value={mergerData.email} placeholder="Enter email" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone: <span class="text-red-500">*</span></label>
+                    <input type="tel" class="input" bind:value={mergerData.phone} placeholder="Enter phone" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Merger: <span class="text-red-500">*</span></label>
+                    <input type="date" class="input" bind:value={mergerData.dateOfMerger} required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nationality: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={mergerData.nationality} placeholder="Enter nationality" required />
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address: <span class="text-red-500">*</span></label>
+                    <textarea class="input min-h-20" bind:value={mergerData.address} placeholder="Enter address" required></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Deed of Merger (PDF):</label>
+                    <input type="file" accept=".pdf" class="input" on:change={handleMergerDocUpload} />
+                  </div>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Change of Applicant Name (type 9) -->
+            {#if newApp.applicationType === 9}
+              <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
+                <div class="bg-blue-100 px-4 py-2 font-semibold text-blue-900">Change of Applicant Name</div>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Name: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={changeOfNameData.newName} placeholder="Enter the new applicant name" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Document (PDF):</label>
+                    <input type="file" accept=".pdf" class="input" on:change={handleChangeOfNameDocUpload} />
+                  </div>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Change of Applicant Address (type 10) -->
+            {#if newApp.applicationType === 10}
+              <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
+                <div class="bg-blue-100 px-4 py-2 font-semibold text-blue-900">Change of Applicant Address</div>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">New Address: <span class="text-red-500">*</span></label>
+                    <textarea class="input min-h-20" bind:value={changeOfAddressData.newAddress} placeholder="Enter the new applicant address" required></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Document (PDF):</label>
+                    <input type="file" accept=".pdf" class="input" on:change={handleChangeOfAddressDocUpload} />
+                  </div>
+                </div>
+              </div>
+            {/if}
+          {/if}
+
+          <!-- ===== EXISTING SIMPLE FORM (below recordal forms) ===== -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <!-- Current Status -->
             <div>
               <label class="block text-sm font-medium mb-1" for="currentStatus"
@@ -1235,6 +1469,97 @@
           </div>
         </div>
         <!-- ============ App History Table ================= -->
+        {#if selectedRecordal}
+          <div class="bg-white border border-slate-200 p-4 rounded-lg shadow-sm mb-4">
+            <div class="flex justify-between items-center mb-3">
+              <h3 class="text-lg font-semibold">View Application Details</h3>
+              <button class="text-sm text-gray-600 hover:text-gray-800" on:click={closeRecordalView}>Close</button>
+            </div>
+
+            {#if selectedRecordal.applicationType === 5}
+              <!-- Assignment view -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Name</label>
+                  <input class="input" readonly value={viewAssignmentData.assigneeName} />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Email</label>
+                  <input class="input" readonly value={viewAssignmentData.assigneeEmail} />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Phone</label>
+                  <input class="input" readonly value={viewAssignmentData.assigneePhone} />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Address</label>
+                  <textarea class="input" readonly>{viewAssignmentData.assigneeAddress}</textarea>
+                </div>
+              </div>
+            {/if}
+
+            {#if selectedRecordal.applicationType === 7}
+              <!-- Registered user view -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input class="input" readonly value={viewRegisteredUserData.name} />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input class="input" readonly value={viewRegisteredUserData.email} />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input class="input" readonly value={viewRegisteredUserData.phone} />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <textarea class="input" readonly>{viewRegisteredUserData.address}</textarea>
+                </div>
+              </div>
+            {/if}
+
+            {#if selectedRecordal.applicationType === 8}
+              <!-- Merger view -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input class="input" readonly value={viewMergerData.name} />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input class="input" readonly value={viewMergerData.email} />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Date of Merger</label>
+                  <input class="input" readonly value={viewMergerData.dateOfMerger} />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                  <textarea class="input" readonly>{viewMergerData.address}</textarea>
+                </div>
+              </div>
+            {/if}
+
+            {#if selectedRecordal.applicationType === 9}
+              <!-- Change of Name view -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Name</label>
+                <input class="input" readonly value={viewChangeOfNameData.newName} />
+              </div>
+            {/if}
+
+            {#if selectedRecordal.applicationType === 10}
+              <!-- Change of Address view -->
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">New Address</label>
+                <textarea class="input" readonly>{viewChangeOfAddressData.newAddress}</textarea>
+              </div>
+            {/if}
+          </div>
+        {/if}
+
         <div class="overflow-x-auto">
           <table
             class="min-w-full bg-white border border-slate-200 rounded-lg shadow-sm"
@@ -1327,19 +1652,7 @@
                           on:click={saveEdit}
                           title="Save"
                         >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M5 13l4 4L19 7"
-                            ></path>
-                          </svg>
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                           Save
                         </button>
 
@@ -1348,19 +1661,7 @@
                           on:click={cancelEdit}
                           title="Cancel"
                         >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            ></path>
-                          </svg>
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                           Cancel
                         </button>
 
@@ -1369,43 +1670,30 @@
                           on:click={() => deleteApplicationHistory(hist)}
                           title="Delete"
                         >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            ></path>
-                          </svg>
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                           Delete
                         </button>
                       </div>
                     {:else}
-                      <button
-                        class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
-                        on:click={() => startEdit(hist)}
-                        title="Edit"
-                      >
-                        <svg
-                          class="w-4 h-4"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
+                      <div class="flex items-center gap-2">
+                        <button
+                          class="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 text-sm"
+                          on:click={() => openRecordalView(hist)}
+                          title="View"
                         >
-                          <path
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2"
-                            d="M15.232 5.232l3.536 3.536M4 20h4.586a1 1 0 00.707-.293l9.414-9.414a2 2 0 000-2.828l-3.586-3.586a2 2 0 00-2.828 0L4.707 13.293A1 1 0 004 14v4z"
-                          ></path>
-                        </svg>
-                        Edit
-                      </button>
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          View
+                        </button>
+
+                        <button
+                          class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm"
+                          on:click={() => startEdit(hist)}
+                          title="Edit"
+                        >
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M4 20h4.586a1 1 0 00.707-.293l9.414-9.414a2 2 0 000-2.828l-3.586-3.586a2 2 0 00-2.828 0L4.707 13.293A1 1 0 004 14v4z"></path></svg>
+                          Edit
+                        </button>
+                      </div>
                     {/if}
                   </td>
                 </tr>
