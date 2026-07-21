@@ -220,6 +220,7 @@ export type PatentData = {
   titleOfTradeMark: string | null;
   trademarkClass: number | null;
   trademarkClassDescription: string | null;
+  trademarkSpecification: string | null;
   additionalDescription: string | null;
   filingCountry: string | null;
   fileOrigin: string | null;
