@@ -76,10 +76,21 @@
 	{#if data?.additionalDescription}
 	<Card.Root>
 		<Card.Header>
-			<Card.Title>Specification of Goods</Card.Title>
+			<Card.Title>Specification of Goods (Additional Description)</Card.Title>
 		</Card.Header>
 		<Card.Content>
 			<p class="mt-2">{data?.additionalDescription}</p>
+		</Card.Content>
+	</Card.Root>
+	{/if}
+
+	{#if data?.trademarkSpecification}
+	<Card.Root>
+		<Card.Header>
+			<Card.Title>Trademark Specification</Card.Title>
+		</Card.Header>
+		<Card.Content>
+			<p class="mt-2 whitespace-pre-wrap">{data?.trademarkSpecification}</p>
 		</Card.Content>
 	</Card.Root>
 	{/if}

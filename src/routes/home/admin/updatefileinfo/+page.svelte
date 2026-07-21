@@ -501,6 +501,44 @@
     }
   };
 
+  // Delete application history
+  const deleteApplicationHistory = async (hist: any) => {
+    if (!confirm("Are you sure you want to delete this application history entry?")) return;
+    try {
+      const res = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${$loggedInToken}`,
+        },
+        body: JSON.stringify({
+          fileNumber: filing.fileId,
+          applicationId: hist.id,
+        }),
+      });
+      if (res.ok) {
+        filing.applicationHistory = filing.applicationHistory.filter(
+          (x: any) => x.id !== hist.id
+        );
+        if (editingId === hist.id) cancelEdit();
+        toast.success("Application history deleted", {
+          position: "top-right",
+        });
+      } else {
+        const errText = await res.text();
+        console.error("Delete failed", errText);
+        toast.error("Failed to delete application history", {
+          position: "top-right",
+        });
+      }
+    } catch (err) {
+      console.error("Error deleting application history:", err);
+      toast.error("An error occurred while deleting", {
+        position: "top-right",
+      });
+    }
+  };
+
   const saveChanges = async () => {
     try {
       isLoading = true;
@@ -1324,6 +1362,27 @@
                             ></path>
                           </svg>
                           Cancel
+                        </button>
+
+                        <button
+                          class="inline-flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700 transition"
+                          on:click={() => deleteApplicationHistory(hist)}
+                          title="Delete"
+                        >
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            ></path>
+                          </svg>
+                          Delete
                         </button>
                       </div>
                     {:else}
