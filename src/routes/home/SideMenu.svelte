@@ -9,6 +9,8 @@
     type NotificationsType,
     UserRoles,
     FileTypes,
+    TicketCategory,
+    TicketStates,
   } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { writable } from "svelte/store";
@@ -395,7 +397,22 @@
       } else if (roles.includes(UserRoles.PatentDesignSupport)) {
         url = `${baseURL}/api/tickets/GetStats?category=1`;
       } else if (roles.includes(UserRoles.Tech) || roles.includes(UserRoles.SuperAdmin)) {
-        url = `${baseURL}/api/tickets/GetStats`;
+        const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            creatorId: "null",
+            category: TicketCategory.TechnicalSupport,
+            status: TicketStates.awaitingStaff,
+            amount: 100000,
+            startIndex: 0,
+          }),
+        });
+        if (response.ok) {
+          const tickets = await response.json();
+          ipoSupportCount = Array.isArray(tickets) ? tickets.length : 0;
+        }
+        return;
       } else {
         const userId = ($loggedInUser as any)?.creatorId;
         url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
