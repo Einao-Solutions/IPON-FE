@@ -79,6 +79,14 @@ export function mapStatusToString(
       return "Awaiting Office Process";
     case ApplicationStatuses.Abandoned:
       return "Abandoned";
+    case ApplicationStatuses.WithdrawalRequested:
+      return "Withdrawal Requested";
+    case ApplicationStatuses.WithdrawalApproved:
+      return "Withdrawal Approved";
+    case ApplicationStatuses.BatchedManualPublication:
+      return "Batched Manual Publication";
+    case ApplicationStatuses.Published:
+      return "Published";
     default:
       return "";
   }
