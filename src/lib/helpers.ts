@@ -6,9 +6,9 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-//  export const baseURL = "http://localhost:5044";
+export const baseURL = "http://localhost:5044";
 // export const baseURL = "https://testbackend.iponigeria.com";
-export const baseURL = "https://integration.iponigeria.com";
+// export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
 export const nonConventionalDescription =
@@ -498,6 +498,8 @@ export enum UserRoles {
   DesignStaff,
   TrademarkSupport,
   PatentDesignSupport,
+  ActingTrademarkRegistrar,
+  ActingPatentDesignRegistrar,
 }
 
 export enum FilingType {
@@ -673,6 +675,7 @@ export type DataHistory = {
   message: string;
   userId: string;
   user: string;
+  attachmentUrl: string;
 };
 export type ApplicationHistoryType = {
   applicationType: number | null;
