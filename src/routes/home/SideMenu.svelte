@@ -158,8 +158,13 @@
         {
           icon: "mdi:file-document-multiple-outline",
           name: "Publications",
-          location: "trademarkpubs",
+          location: "trademarkpubs/publish",
         },
+        // {
+        //   icon: "mdi:publish",
+        //   name: "Publication list",
+        //   location: "trademarkpubs",
+        // }
       ],
     },
     {
