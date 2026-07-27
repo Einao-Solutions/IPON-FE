@@ -498,6 +498,8 @@ export enum UserRoles {
   DesignStaff,
   TrademarkSupport,
   PatentDesignSupport,
+  ActingTrademarkRegistrar,
+  ActingPatentDesignRegistrar,
 }
 
 export enum FilingType {
@@ -673,6 +675,7 @@ export type DataHistory = {
   message: string;
   userId: string;
   user: string;
+  attachmentUrl: string;
 };
 export type ApplicationHistoryType = {
   applicationType: number | null;

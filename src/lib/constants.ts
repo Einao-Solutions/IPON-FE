@@ -506,3 +506,4 @@ export function MapTradeMarkClass(classNumber: number): string {
 export function MapPatentType(type: number) {
   return type === 0 ? "Conventional" : type == 1 ? "Non-Conventional" : "PCT";
 }
+
