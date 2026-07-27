@@ -993,6 +993,202 @@
     newStatusAttachment = e.currentTarget.files?.[0] ?? null;
   }
 
+  // ======================
+  // Status Transition Rules
+  // ======================
+  // Returns the list of status option *names* (keys of ApplicationStatuses)
+  // that make sense as the next status for the given application, based on
+  // its type and current status. Falls back to all statuses when no specific
+  // rule matches so admins are never blocked.
+  function getAvailableStatuses(app: ApplicationHistoryType | null): string[] {
+    const allStatusNames = Object.keys(ApplicationStatuses).filter((x) =>
+      isNaN(parseInt(x)),
+    );
+    const toNames = (values: ApplicationStatuses[]): string[] =>
+      values
+        .map((v) => ApplicationStatuses[v])
+        .filter((n): n is string => typeof n === "string");
+
+    if (!app || app.currentStatus == null || app.applicationType == null) {
+      return allStatusNames;
+    }
+
+    const type = app.applicationType;
+    const current = app.currentStatus;
+
+    // Recordal-style flows (Assignment, RegisteredUser, Merger, ChangeOfName,
+    // ChangeOfAddress, ClericalUpdate, Amendment, License, Mortgage,
+    // CertifiedTrueCopy, Reclassification)
+    const recordalTypes = new Set<number>([
+      FormApplicationTypes.Assignment,
+      FormApplicationTypes.RegisteredUser,
+      FormApplicationTypes.Merger,
+      FormApplicationTypes.ChangeOfName,
+      FormApplicationTypes.ChangeOfAddress,
+      FormApplicationTypes.ClericalUpdate,
+      FormApplicationTypes.Amendment,
+      FormApplicationTypes.License,
+      FormApplicationTypes.Mortgage,
+      FormApplicationTypes.CertifiedTrueCopy,
+      FormApplicationTypes.Reclassification,
+    ]);
+    if (recordalTypes.has(type)) {
+      switch (current) {
+        case ApplicationStatuses.AwaitingPayment:
+          return toNames([
+            ApplicationStatuses.AwaitingRecordalProcess,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.AwaitingRecordalProcess:
+        case ApplicationStatuses.AwaitingApproval:
+          return toNames([
+            ApplicationStatuses.Approved,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Approved:
+        case ApplicationStatuses.Rejected:
+          return toNames([
+            ApplicationStatuses.AwaitingApproval,
+            ApplicationStatuses.AwaitingRecordalProcess,
+          ]);
+      }
+    }
+
+    // New application flow (Trademark / Patent / Design new filings)
+    if (type === FormApplicationTypes.NewApplication) {
+      switch (current) {
+        // case ApplicationStatuses.AwaitingPayment:
+        //   return toNames([
+        //     ApplicationStatuses.AwaitingSearch,
+        //     ApplicationStatuses.Rejected,
+        //   ]);
+        case ApplicationStatuses.AwaitingSearch:
+          return toNames([ApplicationStatuses.Rejected]);
+        case ApplicationStatuses.AwaitingExaminer:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.FormalityFail:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Active:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.AwaitingCertificateConfirmation,
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.Opposition,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Publication:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Opposition:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.AwaitingCertificateConfirmation:
+        case ApplicationStatuses.AwaitingCertification:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.Opposition,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+      }
+    }
+
+    // Renewal flow
+    if (type === FormApplicationTypes.LicenseRenewal) {
+      switch (current) {
+        case ApplicationStatuses.AwaitingPayment:
+          return toNames([
+            ApplicationStatuses.PendingRenewal,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.PendingRenewal:
+        case ApplicationStatuses.AwaitingRenewalConfirmation:
+          return toNames([
+            ApplicationStatuses.Approved,
+            ApplicationStatuses.Rejected,
+          ]);
+      }
+    }
+
+    // Opposition flow
+    if (type === FormApplicationTypes.NewOpposition) {
+      switch (current) {
+        case ApplicationStatuses.NewOpposition:
+          return toNames([
+            ApplicationStatuses.AwaitingCounter,
+            ApplicationStatuses.Withdrawn,
+          ]);
+        case ApplicationStatuses.AwaitingCounter:
+        case ApplicationStatuses.RequestWithdrawal:
+          return toNames([
+            ApplicationStatuses.StatutoryDeclaration,
+            ApplicationStatuses.Withdrawn,
+          ]);
+        case ApplicationStatuses.StatutoryDeclaration:
+          return toNames([
+            ApplicationStatuses.AwaitingResolution,
+            ApplicationStatuses.Resolved,
+          ]);
+      }
+    }
+
+    // Appeal flow
+    if (type === FormApplicationTypes.AppealRequest) {
+      if (current === ApplicationStatuses.AppealRequest) {
+        return toNames([
+          ApplicationStatuses.Publication,
+          ApplicationStatuses.Rejected,
+        ]);
+      }
+    }
+
+    // Publication status update
+    if (type === FormApplicationTypes.PublicationStatusUpdate) {
+      if (current === ApplicationStatuses.AwaitingStatusUpdate) {
+        return toNames([
+          ApplicationStatuses.Publication,
+          ApplicationStatuses.Rejected,
+        ]);
+      }
+    }
+
+    // Withdrawal request
+    if (type === FormApplicationTypes.WithdrawalRequest) {
+      if (
+        current === ApplicationStatuses.WithdrawalRequested ||
+        current === ApplicationStatuses.RequestWithdrawal
+      ) {
+        return toNames([
+          ApplicationStatuses.WithdrawalApproved,
+          ApplicationStatuses.Rejected,
+        ]);
+      }
+    }
+
+    // Fallback: no specific rule — allow any status.
+    return allStatusNames;
+  }
+
   async function confirmChange() {
     isNewStatusLoading = true;
 
@@ -2737,7 +2933,7 @@
           <Sheet.Title
             class="text-lg font-semibold text-slate-900 tracking-tight"
           >
-            Change Application Status
+            Recall Application Status
           </Sheet.Title>
           <Sheet.Description class="text-xs text-slate-500 mt-1">
             {mapTypeToString(selectedApplication?.applicationType ?? 0)} • Current:
@@ -2787,7 +2983,7 @@
               New Status
             </Label>
             <div class="grid grid-cols-2 gap-2 mt-2">
-              {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)), ) as status}
+              {#each getAvailableStatuses(selectedApplication) as status}
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div
@@ -3107,12 +3303,14 @@
                     >
                   {/if}
                   <!-- Change Status (Admin only) -->
-                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
-                    <DropdownMenu.Item
-                      on:click={() => changeStatus(application)}
-                      >Recall Application</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Separator />
+                  {#if application.applicationType === FormApplicationTypes.NewApplication}
+                    {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                      <DropdownMenu.Item
+                        on:click={() => changeStatus(application)}
+                        >Recall Application</DropdownMenu.Item
+                      >
+                      <DropdownMenu.Separator />
+                    {/if}
                   {/if}
                   <!-- Data Update Application -->
                   {#if application.applicationType === 2}
