@@ -84,6 +84,7 @@
   let newStatusContent: number | null = null;
   let showUpdateStatusForm: boolean = false;
   let newStatusReason: string | null = null;
+  let newStatusAttachment: File | null = null;
   let showRecordalDialog = false;
   let recordalData: any = null;
   let recordalLoading = false;
@@ -986,6 +987,208 @@
     showUpdateStatusForm = true;
   }
 
+  function handleStatusAttachmentChange(
+    e: Event & { currentTarget: EventTarget & HTMLInputElement },
+  ) {
+    newStatusAttachment = e.currentTarget.files?.[0] ?? null;
+  }
+
+  // ======================
+  // Status Transition Rules
+  // ======================
+  // Returns the list of status option *names* (keys of ApplicationStatuses)
+  // that make sense as the next status for the given application, based on
+  // its type and current status. Falls back to all statuses when no specific
+  // rule matches so admins are never blocked.
+  function getAvailableStatuses(app: ApplicationHistoryType | null): string[] {
+    const allStatusNames = Object.keys(ApplicationStatuses).filter((x) =>
+      isNaN(parseInt(x)),
+    );
+    const toNames = (values: ApplicationStatuses[]): string[] =>
+      values
+        .map((v) => ApplicationStatuses[v])
+        .filter((n): n is string => typeof n === "string");
+
+    if (!app || app.currentStatus == null || app.applicationType == null) {
+      return allStatusNames;
+    }
+
+    const type = app.applicationType;
+    const current = app.currentStatus;
+
+    // Recordal-style flows (Assignment, RegisteredUser, Merger, ChangeOfName,
+    // ChangeOfAddress, ClericalUpdate, Amendment, License, Mortgage,
+    // CertifiedTrueCopy, Reclassification)
+    const recordalTypes = new Set<number>([
+      FormApplicationTypes.Assignment,
+      FormApplicationTypes.RegisteredUser,
+      FormApplicationTypes.Merger,
+      FormApplicationTypes.ChangeOfName,
+      FormApplicationTypes.ChangeOfAddress,
+      FormApplicationTypes.ClericalUpdate,
+      FormApplicationTypes.Amendment,
+      FormApplicationTypes.License,
+      FormApplicationTypes.Mortgage,
+      FormApplicationTypes.CertifiedTrueCopy,
+      FormApplicationTypes.Reclassification,
+    ]);
+    if (recordalTypes.has(type)) {
+      switch (current) {
+        case ApplicationStatuses.AwaitingPayment:
+          return toNames([
+            ApplicationStatuses.AwaitingRecordalProcess,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.AwaitingRecordalProcess:
+        case ApplicationStatuses.AwaitingApproval:
+          return toNames([
+            ApplicationStatuses.Approved,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Approved:
+        case ApplicationStatuses.Rejected:
+          return toNames([
+            ApplicationStatuses.AwaitingApproval,
+            ApplicationStatuses.AwaitingRecordalProcess,
+          ]);
+      }
+    }
+
+    // New application flow (Trademark / Patent / Design new filings)
+    if (type === FormApplicationTypes.NewApplication) {
+      switch (current) {
+        // case ApplicationStatuses.AwaitingPayment:
+        //   return toNames([
+        //     ApplicationStatuses.AwaitingSearch,
+        //     ApplicationStatuses.Rejected,
+        //   ]);
+        case ApplicationStatuses.AwaitingSearch:
+          return toNames([ApplicationStatuses.Rejected]);
+        case ApplicationStatuses.AwaitingExaminer:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.FormalityFail:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Active:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.AwaitingCertificateConfirmation,
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.Opposition,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Publication:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.Opposition:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.AwaitingCertificateConfirmation:
+        case ApplicationStatuses.AwaitingCertification:
+          return toNames([
+            ApplicationStatuses.AwaitingSearch,
+            ApplicationStatuses.AwaitingExaminer,
+            ApplicationStatuses.Publication,
+            ApplicationStatuses.Opposition,
+            ApplicationStatuses.Re_conduct,
+            ApplicationStatuses.Rejected,
+          ]);
+      }
+    }
+
+    // Renewal flow
+    if (type === FormApplicationTypes.LicenseRenewal) {
+      switch (current) {
+        case ApplicationStatuses.AwaitingPayment:
+          return toNames([
+            ApplicationStatuses.PendingRenewal,
+            ApplicationStatuses.Rejected,
+          ]);
+        case ApplicationStatuses.PendingRenewal:
+        case ApplicationStatuses.AwaitingRenewalConfirmation:
+          return toNames([
+            ApplicationStatuses.Approved,
+            ApplicationStatuses.Rejected,
+          ]);
+      }
+    }
+
+    // Opposition flow
+    if (type === FormApplicationTypes.NewOpposition) {
+      switch (current) {
+        case ApplicationStatuses.NewOpposition:
+          return toNames([
+            ApplicationStatuses.AwaitingCounter,
+            ApplicationStatuses.Withdrawn,
+          ]);
+        case ApplicationStatuses.AwaitingCounter:
+        case ApplicationStatuses.RequestWithdrawal:
+          return toNames([
+            ApplicationStatuses.StatutoryDeclaration,
+            ApplicationStatuses.Withdrawn,
+          ]);
+        case ApplicationStatuses.StatutoryDeclaration:
+          return toNames([
+            ApplicationStatuses.AwaitingResolution,
+            ApplicationStatuses.Resolved,
+          ]);
+      }
+    }
+
+    // Appeal flow
+    if (type === FormApplicationTypes.AppealRequest) {
+      if (current === ApplicationStatuses.AppealRequest) {
+        return toNames([
+          ApplicationStatuses.Publication,
+          ApplicationStatuses.Rejected,
+        ]);
+      }
+    }
+
+    // Publication status update
+    if (type === FormApplicationTypes.PublicationStatusUpdate) {
+      if (current === ApplicationStatuses.AwaitingStatusUpdate) {
+        return toNames([
+          ApplicationStatuses.Publication,
+          ApplicationStatuses.Rejected,
+        ]);
+      }
+    }
+
+    // Withdrawal request
+    if (type === FormApplicationTypes.WithdrawalRequest) {
+      if (
+        current === ApplicationStatuses.WithdrawalRequested ||
+        current === ApplicationStatuses.RequestWithdrawal
+      ) {
+        return toNames([
+          ApplicationStatuses.WithdrawalApproved,
+          ApplicationStatuses.Rejected,
+        ]);
+      }
+    }
+
+    // Fallback: no specific rule — allow any status.
+    return allStatusNames;
+  }
+
   async function confirmChange() {
     isNewStatusLoading = true;
 
@@ -1000,23 +1203,41 @@
         isNewStatusLoading = false;
         return;
       }
-      const body = {
-        fileId: fileData.id,
-        applicationId: selectedApplication.id,
-        applicationType: selectedApplication.applicationType,
-        beforeStatus: selectedApplication.currentStatus,
-        afterStatus: mapStatusStringToStatus(String(newStatus ?? "")),
-        reason: newStatusReason,
-        userId: $loggedInUser?.id ?? $loggedInUser?.creatorId,
-        userName: name,
-      };
+
+      const formData = new FormData();
+      formData.append("fileId", String(fileData.id));
+      formData.append("applicationId", String(selectedApplication.id));
+      formData.append(
+        "applicationType",
+        String(selectedApplication.applicationType ?? ""),
+      );
+      formData.append(
+        "beforeStatus",
+        String(selectedApplication.currentStatus ?? ""),
+      );
+      formData.append(
+        "afterStatus",
+        String(mapStatusStringToStatus(String(newStatus ?? ""))),
+      );
+      formData.append("reason", newStatusReason ?? "");
+      formData.append(
+        "userId",
+        String($loggedInUser?.id ?? $loggedInUser?.creatorId ?? ""),
+      );
+      formData.append("userName", name);
+      if (newStatusAttachment) {
+        formData.append(
+          "attachment",
+          newStatusAttachment,
+          newStatusAttachment.name,
+        );
+      }
 
       const response = await fetch(
         `${baseURL}/api/files/AdminUpdateApplication`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: formData,
         },
       );
 
@@ -1025,9 +1246,12 @@
         fileData = latestData;
         applicationData.set(latestData);
         newStatusContent = 2;
+      } else {
+        showToast("error", "Failed to update application status");
       }
     } catch (error) {
       console.error("Status change error:", error);
+      showToast("error", "Failed to update application status");
     } finally {
       isNewStatusLoading = false;
     }
@@ -2685,6 +2909,7 @@
     if (!isOpen) {
       newStatus = null;
       newStatusReason = null;
+      newStatusAttachment = null;
     }
   }}
 >
@@ -2705,8 +2930,10 @@
           />
         </div>
         <div class="flex-1 min-w-0">
-          <Sheet.Title class="text-lg font-semibold text-slate-900 tracking-tight">
-            Change Application Status
+          <Sheet.Title
+            class="text-lg font-semibold text-slate-900 tracking-tight"
+          >
+            Recall Application Status
           </Sheet.Title>
           <Sheet.Description class="text-xs text-slate-500 mt-1">
             {mapTypeToString(selectedApplication?.applicationType ?? 0)} • Current:
@@ -2730,10 +2957,18 @@
           />
         {/each}
       </div>
-      <div class="flex justify-between text-[10px] uppercase tracking-wider text-slate-500 mt-2 font-medium">
-        <span class={(newStatusContent ?? 0) >= 0 ? 'text-slate-900' : ''}>Select</span>
-        <span class={(newStatusContent ?? 0) >= 1 ? 'text-slate-900' : ''}>Confirm</span>
-        <span class={(newStatusContent ?? 0) >= 2 ? 'text-slate-900' : ''}>Done</span>
+      <div
+        class="flex justify-between text-[10px] uppercase tracking-wider text-slate-500 mt-2 font-medium"
+      >
+        <span class={(newStatusContent ?? 0) >= 0 ? "text-slate-900" : ""}
+          >Select</span
+        >
+        <span class={(newStatusContent ?? 0) >= 1 ? "text-slate-900" : ""}
+          >Confirm</span
+        >
+        <span class={(newStatusContent ?? 0) >= 2 ? "text-slate-900" : ""}
+          >Done</span
+        >
       </div>
     </div>
 
@@ -2742,11 +2977,13 @@
       {#if newStatusContent === null || newStatusContent === 0}
         <div class="space-y-5">
           <div>
-            <Label class="text-xs font-semibold text-slate-700 uppercase tracking-wide">
+            <Label
+              class="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+            >
               New Status
             </Label>
             <div class="grid grid-cols-2 gap-2 mt-2">
-              {#each Object.keys(ApplicationStatuses).filter( (x) => isNaN(parseInt(x)), ) as status}
+              {#each getAvailableStatuses(selectedApplication) as status}
                 <!-- svelte-ignore a11y-click-events-have-key-events -->
                 <!-- svelte-ignore a11y-no-static-element-interactions -->
                 <div
@@ -2783,6 +3020,67 @@
               bind:value={newStatusReason}
             />
           </div>
+
+          <div>
+            <Label
+              for="status-attachment"
+              class="text-xs font-semibold text-slate-700 uppercase tracking-wide"
+            >
+              Supporting Attachment
+            </Label>
+            <label
+              for="status-attachment"
+              class="mt-2 flex items-center justify-between gap-3 rounded-lg border border-dashed border-slate-300 bg-slate-50/50 px-4 py-3 cursor-pointer hover:border-slate-400 hover:bg-slate-50 transition-colors"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div
+                  class="h-9 w-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center shrink-0"
+                >
+                  <Icon
+                    icon={newStatusAttachment
+                      ? "mdi:file-check-outline"
+                      : "mdi:cloud-upload-outline"}
+                    width="1.15em"
+                    class={newStatusAttachment
+                      ? "text-emerald-600"
+                      : "text-slate-500"}
+                  />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-medium text-slate-900 truncate">
+                    {newStatusAttachment
+                      ? newStatusAttachment.name
+                      : "Choose a file to upload"}
+                  </p>
+                  <p class="text-xs text-slate-500">
+                    {newStatusAttachment
+                      ? `${(newStatusAttachment.size / 1024).toFixed(1)} KB`
+                      : "PDF, image, or document"}
+                  </p>
+                </div>
+              </div>
+              {#if newStatusAttachment}
+                <button
+                  type="button"
+                  class="text-xs text-slate-500 hover:text-red-600 shrink-0"
+                  on:click|preventDefault|stopPropagation={() =>
+                    (newStatusAttachment = null)}
+                >
+                  Remove
+                </button>
+              {:else}
+                <span class="text-xs font-medium text-slate-700 shrink-0">
+                  Browse
+                </span>
+              {/if}
+            </label>
+            <input
+              id="status-attachment"
+              type="file"
+              class="sr-only"
+              on:change={handleStatusAttachmentChange}
+            />
+          </div>
         </div>
 
         <div class="flex justify-end gap-2 mt-6 pt-4 border-t border-slate-100">
@@ -2793,13 +3091,15 @@
               showUpdateStatusForm = false;
               newStatusReason = null;
               newStatus = null;
+              newStatusAttachment = null;
             }}
           >
             Cancel
           </Button>
           <Button
-            class="h-9 rounded-lg bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-50"
-            disabled={!newStatus || !newStatusReason?.trim()}
+            disabled={!newStatus ||
+              !newStatusReason?.trim() ||
+              !newStatusAttachment}
             on:click={() => (newStatusContent = 1)}
           >
             Continue
@@ -2822,7 +3122,9 @@
             </p>
           </div>
 
-          <dl class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden">
+          <dl
+            class="divide-y divide-slate-100 rounded-xl border border-slate-200 overflow-hidden"
+          >
             <div class="flex items-center justify-between px-4 py-3">
               <dt class="text-xs font-medium text-slate-500">Current Status</dt>
               <dd class="text-sm font-medium text-slate-900">
@@ -2831,17 +3133,27 @@
                   : "—"}
               </dd>
             </div>
-            <div class="flex items-center justify-between px-4 py-3 bg-slate-50/50">
+            <div
+              class="flex items-center justify-between px-4 py-3 bg-slate-50/50"
+            >
               <dt class="text-xs font-medium text-slate-500">New Status</dt>
               <dd class="flex items-center gap-2">
-                <Icon icon="mdi:arrow-right" width="0.9em" class="text-slate-400" />
-                <span class="text-sm font-semibold text-slate-900">{newStatus}</span>
+                <Icon
+                  icon="mdi:arrow-right"
+                  width="0.9em"
+                  class="text-slate-400"
+                />
+                <span class="text-sm font-semibold text-slate-900"
+                  >{newStatus}</span
+                >
               </dd>
             </div>
             {#if newStatusReason}
               <div class="px-4 py-3">
                 <dt class="text-xs font-medium text-slate-500 mb-1">Reason</dt>
-                <dd class="text-sm text-slate-700 whitespace-pre-wrap break-words">
+                <dd
+                  class="text-sm text-slate-700 whitespace-pre-wrap break-words"
+                >
                   {newStatusReason}
                 </dd>
               </div>
@@ -2902,6 +3214,7 @@
               newStatusContent = null;
               newStatus = null;
               newStatusReason = null;
+              newStatusAttachment = null;
             }}
           >
             Done
@@ -2990,12 +3303,14 @@
                     >
                   {/if}
                   <!-- Change Status (Admin only) -->
-                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
-                    <DropdownMenu.Item
-                      on:click={() => changeStatus(application)}
-                      >Change Status</DropdownMenu.Item
-                    >
-                    <DropdownMenu.Separator />
+                  {#if application.applicationType === FormApplicationTypes.NewApplication}
+                    {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                      <DropdownMenu.Item
+                        on:click={() => changeStatus(application)}
+                        >Recall Application</DropdownMenu.Item
+                      >
+                      <DropdownMenu.Separator />
+                    {/if}
                   {/if}
                   <!-- Data Update Application -->
                   {#if application.applicationType === 2}
