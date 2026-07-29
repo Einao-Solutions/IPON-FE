@@ -138,7 +138,7 @@
         ];
 
         const isStatusAllowed = allowedStatuses.includes(fileStatus) || isRenewalEligible;
-        if (fileStatus === ApplicationStatuses.Inactive && !isRenewalEligible) {
+        if (file?.type === FileTypes.Trademark && fileStatus === ApplicationStatuses.Inactive && !isRenewalEligible) {
           error = `Your file is currently Inactive or not eligible for renewal. Please file for restoration.`;
           return;
         }
