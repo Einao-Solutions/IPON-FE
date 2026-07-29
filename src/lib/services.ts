@@ -314,7 +314,7 @@ export const trademarkServices: IPService[] = [
     icon: "mdi:refresh",
     route: "modal",
     category: "filing",
-    price: "₦13,500",
+    price: "₦3,500",
   },
   // FINANCIAL CATEGORY
   {

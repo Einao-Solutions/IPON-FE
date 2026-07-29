@@ -1172,14 +1172,13 @@
         <div class="space-y-4">
           <!-- New Opposition -->
           <button
-            on:click={() => handleOption('New Opposition', true, () => (currentStep = "search"))}
+            on:click={() => handleOption('New Opposition', false, () => (currentStep = "search"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-base font-semibold text-gray-900 group-hover:text-green-700">
                   New Opposition
-                  <span class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 align-middle">Under Maintenance</span>
                 </p>
                 <p class="text-sm text-gray-500 mt-1">
                   File a new opposition against a trademark currently in publication
@@ -1191,14 +1190,13 @@
 
           <!-- Counter Statement -->
           <button
-            on:click={() => handleOption('Counter Statement', true, () => (currentStep = "cs-search"))}
+            on:click={() => handleOption('Counter Statement', false, () => (currentStep = "cs-search"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-base font-semibold text-gray-900 group-hover:text-green-700">
                   Counter Statement
-                  <span class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 align-middle">Under Maintenance</span>
                 </p>
                 <p class="text-sm text-gray-500 mt-1">
                   Submit a counter statement in response to a filed opposition
@@ -1210,14 +1208,13 @@
 
           <!-- Statutory -->
           <button
-            on:click={() => handleOption('Statutory Declaration', true, () => (currentStep = "sd-role"))}
+            on:click={() => handleOption('Statutory Declaration', false, () => (currentStep = "sd-role"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-base font-semibold text-gray-900 group-hover:text-green-700">
                   Statutory Declaration
-                  <span class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 align-middle">Under Maintenance</span>
                 </p>
                 <p class="text-sm text-gray-500 mt-1">
                   File a statutory declaration related to an opposition proceeding
@@ -1247,14 +1244,13 @@
 
           <!-- Opposition Withdrawal -->
           <button
-            on:click={() => handleOption('Opposition Withdrawal', true, () => (currentStep = "withdrawal-search"))}
+            on:click={() => handleOption('Opposition Withdrawal', false, () => (currentStep = "withdrawal-search"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-orange-500 hover:bg-orange-50 transition-all group"
           >
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-base font-semibold text-gray-900 group-hover:text-orange-700">
                   Opposition Withdrawal
-                  <span class="ml-2 inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700 align-middle">Under Maintenance</span>
                 </p>
                 <p class="text-sm text-gray-500 mt-1">
                   Withdraw an opposition you previously filed

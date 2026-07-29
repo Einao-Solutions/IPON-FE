@@ -498,6 +498,8 @@ export enum UserRoles {
   DesignStaff,
   TrademarkSupport,
   PatentDesignSupport,
+  ActingTrademarkRegistrar,
+  ActingPatentDesignRegistrar,
 }
 
 export enum FilingType {
@@ -673,6 +675,7 @@ export type DataHistory = {
   message: string;
   userId: string;
   user: string;
+  attachmentUrl: string;
 };
 export type ApplicationHistoryType = {
   applicationType: number | null;
@@ -1074,6 +1077,10 @@ export function mapRoleToString(type: UserRoles) {
       return "Trademark Support";
     case UserRoles.PatentDesignSupport:
       return "Patent/Design Support";
+    case UserRoles.ActingTrademarkRegistrar:
+      return "Acting Trademark Registrar";
+    case UserRoles.ActingPatentDesignRegistrar:
+      return "Acting Patent/Design Registrar";
     default:
       return "Unknown";
   }
