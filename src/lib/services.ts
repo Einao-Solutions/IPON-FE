@@ -88,15 +88,6 @@ export const commonServices: IPService[] = [
     category: "agent",
     isCommon: true,
   },
-  // {
-  //   id: "update-file",
-  //   name: "UPDATE FILE",
-  //   description: 'Edit/Update files with status "Awaiting Search"',
-  //   icon: "mdi:update",
-  //   route: "/home/update-files",
-  //   category: "agent",
-  //   isCommon: true,
-  // },
   {
     id: "appeal",
     name: "APPEAL",
@@ -123,6 +114,16 @@ export const commonServices: IPService[] = [
     route: "/home/file-withdrawal",
     category: "filing",
     price: "₦3,500",
+    isCommon: true,
+  },
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: (ipType?: string) =>
+      ipType ? `/home/offline-renewal?ipType=${ipType}` : "/home/offline-renewal",
+    category: "filing",
     isCommon: true,
   },
 ];
@@ -316,6 +317,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦3,500",
   },
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: "/home/offline-renewal?ipType=trademark",
+    category: "filing",
+  },
+
   // FINANCIAL CATEGORY
   {
     id: "pay-certificate",
@@ -452,6 +462,15 @@ export const patentServices: IPService[] = [
     category: "filing",
     price: "₦11,500",
     maintenance: false,
+  },
+
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: "/home/offline-renewal?ipType=patent",
+    category: "filing",
   },
 
   // FINANCIAL CATEGORY
@@ -697,6 +716,15 @@ export const designServices: IPService[] = [
     category: "filing",
     price: "₦15,500",
     maintenance: false,
+  },
+
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: "/home/offline-renewal?ipType=design",
+    category: "filing",
   },
 
   // FINANCIAL CATEGORY
