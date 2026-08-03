@@ -742,16 +742,21 @@ export const designServices: IPService[] = [
 export function getServicesForIPType(
   ipType: "trademark" | "patent" | "design",
 ): IPService[] {
+  let services: IPService[];
   switch (ipType) {
     case "trademark":
-      return trademarkServices;
+      services = trademarkServices;
+      break;
     case "patent":
-      return patentServices;
+      services = patentServices;
+      break;
     case "design":
-      return designServices;
+      services = designServices;
+      break;
     default:
-      return commonServices;
+      services = commonServices;
   }
+  return [...services].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function getServicesByCategory(services: IPService[]) {
