@@ -299,7 +299,10 @@ export enum FormApplicationTypes {
   Restoration = 23,
   CounterStatement = 24,
   StatutoryDeclaration = 25,
+  ChangeOfAgent = 26,
+  OfflineRenewalRequest = 27,
 }
+
 
 export enum ApplicationLetters {
   NewApplicationReceipt = 0,

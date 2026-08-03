@@ -1,4 +1,4 @@
-<script lang="ts">
+﻿<script lang="ts">
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
@@ -249,7 +249,7 @@
 											on:click={() => removeReceipt(i)}
 											type="button"
 										>
-											<Icon icon="mdi:close" width="1rem" />
+											<Icon icon="mdi:delete-outline" width="1rem" />
 										</button>
 									</li>
 								{/each}
@@ -285,7 +285,7 @@
 											on:click={() => removeCertificate(i)}
 											type="button"
 										>
-											<Icon icon="mdi:close" width="1rem" />
+											<Icon icon="mdi:delete-outline" width="1rem" />
 										</button>
 									</li>
 								{/each}
@@ -319,3 +319,4 @@
 		{/if}
 	</div>
 </div>
+

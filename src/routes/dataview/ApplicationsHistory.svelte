@@ -64,6 +64,7 @@
   import DesignAssignmentDialog from "./Components/DesignAssignmentDialog.svelte";
   import DesignMergerDialog from "./Components/DesignMergerDialog.svelte";
   import OwnershipHistoryDialog from "./Components/OwnershipHistoryDialog.svelte";
+  import OfflineRenewalDialog from "./Components/OfflineRenewalDialog.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -195,6 +196,11 @@
   let trademarkCTCFileId = "";
   let trademarkCTCApplicationId = "";
   let trademarkCTCStatus: number | null = null;
+
+  // Offline Renewal Dialog State
+  let showOfflineRenewalDialog = false;
+  let offlineRenewalApplicationId = "";
+  let offlineRenewalStatus: number | null = null;
 
   // Ownership History Modal State
   let showOwnershipHistoryDialog = false;
@@ -1561,6 +1567,12 @@
     showTrademarkCTCDialog = true;
   }
 
+  function openOfflineRenewalDialog(applicationId: string, status: number) {
+    offlineRenewalApplicationId = applicationId;
+    offlineRenewalStatus = status;
+    showOfflineRenewalDialog = true;
+  }
+
   // Open design amendment dialog
   function openDesignAmendmentDialog(
     fileId: string,
@@ -2844,6 +2856,13 @@
   closed={() => (showOwnershipHistoryDialog = false)}
 />
 
+<!-- Offline Renewal Dialog -->
+<OfflineRenewalDialog
+  bind:open={showOfflineRenewalDialog}
+  applicationId={offlineRenewalApplicationId}
+  status={offlineRenewalStatus}
+/>
+
 <!-- Patent Mortgage Dialog -->
 <PatentMortgageDialog
   bind:open={showPatentMortgageDialog}
@@ -3551,6 +3570,22 @@
                           application.id,
                           application.currentStatus ?? 0,
                         )}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Offline Renewal — Patent & Design -->
+                  {#if application.applicationType === FormApplicationTypes.OfflineRenewalRequest && application.currentStatus != null && [ApplicationStatuses.AwaitingRenewalConfirmation, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && (fileData.type === FileTypes.Patent || fileData.type === FileTypes.Design) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentCertification) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() => openOfflineRenewalDialog(application.id, application.currentStatus ?? 0)}
+                    >
+                      View Application
+                    </DropdownMenu.Item>
+                  {/if}
+                  <!-- Offline Renewal — Trademark -->
+                  {#if application.applicationType === FormApplicationTypes.OfflineRenewalRequest && application.currentStatus != null && [ApplicationStatuses.AwaitingRenewalConfirmation, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && fileData.type === FileTypes.Trademark && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) || $loggedInUser?.userRoles?.includes(UserRoles.TrademarkRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                    <DropdownMenu.Item
+                      on:click={() => openOfflineRenewalDialog(application.id, application.currentStatus ?? 0)}
                     >
                       View Application
                     </DropdownMenu.Item>

@@ -133,7 +133,7 @@
 				<div class="flex items-start gap-2 p-3 bg-blue-50 rounded-md">
 					<Icon icon="mdi:information-variant-circle" class="text-blue-600 w-5 h-5 mt-0.5 shrink-0" />
 					<span class="text-xs text-blue-800">
-						Only <strong>Active</strong> files are eligible to submit an offline renewal.
+						Only <strong>Active</strong> or <strong>Inactive</strong> files are eligible to submit an offline renewal.
 					</span>
 				</div>
 

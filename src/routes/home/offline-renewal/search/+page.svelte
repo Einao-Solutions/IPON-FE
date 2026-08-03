@@ -21,8 +21,8 @@
 			if (!res.ok) { error = 'Failed to fetch file details'; return; }
 			const data = await res.json();
 			if (!data || data.length === 0) { error = 'No file found for the provided number'; return; }
-			if (data[0].fileStatus !== ApplicationStatuses.Active) {
-				error = 'This file is not eligible. Only Active files can submit an offline renewal.';
+			if (data[0].fileStatus !== ApplicationStatuses.Active && data[0].fileStatus !== ApplicationStatuses.Inactive) {
+				error = 'This file is not eligible. Only Active or Inactive files can submit an offline renewal.';
 				return;
 			}
 			results = data;
@@ -78,7 +78,7 @@
 		<div class="bg-yellow-50 p-8 rounded-md text-center">
 			<Icon icon="lucide:search-x" width="2rem" height="2rem" class="mx-auto mb-2 text-yellow-600" />
 			<h3 class="text-lg font-medium text-gray-800 mb-1">No eligible file found</h3>
-			<p class="text-gray-600 text-sm">Only <strong>Active</strong> files can submit an offline renewal.</p>
+			<p class="text-gray-600 text-sm">Only <strong>Active</strong> or <strong>Inactive</strong> files can submit an offline renewal.</p>
 		</div>
 	{:else}
 		<div class="bg-white rounded-md shadow overflow-hidden">
