@@ -136,7 +136,10 @@ const config = {
         "/statutorydeclaration/paid",
         "/oppositionwithdrawal/paid",
         "/home/other-applications",
-        "/home/iposupport"
+        "/home/iposupport",
+        "/home/offline-renewal",
+        "/home/offline-renewal/search",
+        "/home/offline-renewal/submit"
       ],
     },
   },
