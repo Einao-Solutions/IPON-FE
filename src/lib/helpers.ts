@@ -1077,6 +1077,10 @@ export function mapRoleToString(type: UserRoles) {
       return "Trademark Support";
     case UserRoles.PatentDesignSupport:
       return "Patent/Design Support";
+    case UserRoles.ActingTrademarkRegistrar:
+      return "Acting Trademark Registrar";
+    case UserRoles.ActingPatentDesignRegistrar:
+      return "Acting Patent/Design Registrar";
     default:
       return "Unknown";
   }
