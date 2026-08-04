@@ -66,6 +66,10 @@
         paymentId = rrrReclassification ?? null;
         success = await updateManual(data, false);
         break;
+      case "journal":
+        console.log("Processing journal payment");
+        success = await updateJournalRequestStatus();
+        break;
       case "opposition":
         console.log("Processing opposition payment");
         const rrr = localStorage.getItem("rrr") ?? undefined;
@@ -192,6 +196,68 @@
       errorMessage = "Failed to update opposition payment";
       toast.error("Failed to update opposition payment");
       return false;
+    }
+  }
+
+  async function updateJournalRequestStatus(): Promise<boolean> {
+    try {
+      const raw = sessionStorage.getItem("journalPaymentData");
+      const parsed = raw ? JSON.parse(raw) : null;
+      const appId = parsed?.appId ?? null;
+      const user = $loggedInUser as any;
+      const userId = user?.id ?? user?.creatorId ?? null;
+
+      if (!appId || !userId) {
+        errorMessage = "Missing journal payment identifiers.";
+        toast.error(errorMessage);
+        isStatusUpdating = false;
+        return false;
+      }
+
+      console.log("Updating journal request status...");
+      const response = await fetch(
+        `${baseURL}/api/publication/UpdateRequestStatus`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ AppId: appId, UserId: userId }),
+        },
+      );
+
+      const text = await response.text().catch(() => "");
+      const payload = text ? safeJsonParse(text) : null;
+
+      if (!response.ok) {
+        errorMessage = payload?.message || text || "Failed to update journal payment status";
+        toast.error(errorMessage);
+        isStatusUpdating = false;
+        return false;
+      }
+
+      if (payload && payload.success === false) {
+        errorMessage = payload.message ?? "Failed to update journal payment status";
+        toast.error(errorMessage);
+        isStatusUpdating = false;
+        return false;
+      }
+
+      sessionStorage.removeItem("journalPaymentData");
+      isStatusUpdating = false;
+      return true;
+    } catch (error) {
+      console.error("Journal status update error:", error);
+      errorMessage = "Failed to update journal payment status";
+      toast.error(errorMessage);
+      isStatusUpdating = false;
+      return false;
+    }
+  }
+
+  function safeJsonParse(text: string): any {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
     }
   }
 </script>

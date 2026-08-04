@@ -105,6 +105,7 @@
           setTitle: (v) => (title = v),
           setCost: (v) => (cost = v),
           setPaymentId: (v) => (paymentId = v),
+          setServiceCharge: (v) => (serviceFee = v),
           setFileNumber: (v) => (fileNumber = v),
           setFileApplicant: (v) => (fileApplicant = v),
           setFileType: (v) => (fileType = v),
@@ -358,7 +359,7 @@
             </div>
             <!-- Other Payment Details -->
             <div class="grid gap-4">
-              {#if type && ["oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
+              {#if type && ["journal","oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
                 <div
                   class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
                 >

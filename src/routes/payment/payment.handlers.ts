@@ -19,6 +19,7 @@ export interface PaymentContext {
   state: {
     setTitle: (v: string | null) => void;
     setCost: (v: string) => void;
+    setServiceCharge: (v: string) => void;
     setPaymentId: (v: string) => void;
     setFileNumber: (v: string | null) => void;
     setFileApplicant: (v: string | null) => void;
@@ -82,6 +83,7 @@ export const paymentHandlers: Record<
   changedatarecordal,
   clerical,
   tradecertificate,
+  journal,
   patentassignment,
   patentlicense,
   patentmortgage,
@@ -298,6 +300,30 @@ async function filewithdrawal(ctx: PaymentContext) {
 
 async function availabilitysearch(ctx: PaymentContext) {
   return simpleRedirectHandler(ctx, "/availabilitysearch");
+}
+
+async function journal(ctx: PaymentContext): Promise<void> {
+  const raw = sessionStorage.getItem("journalPaymentData");
+  const parsed = raw ? JSON.parse(raw) : null;
+  if (!parsed) throw new Error("Missing journal payment data");
+
+  const cost = parsed.cost;
+  const rrr = parsed.paymentId;
+  if (!cost || !rrr) throw new Error("Missing payment details");
+
+  const label =
+    parsed.volume != null || parsed.number != null
+      ? ` (Vol ${parsed.volume ?? "—"} No ${parsed.number ?? "—"})`
+      : "";
+
+  ctx.state.setTitle(`Journal Payment${label}`);
+  ctx.state.setCost(String(cost));
+  ctx.state.setPaymentId(String(rrr));
+  ctx.state.setFileNumber(parsed.appId ?? parsed.batch ?? null);
+  ctx.state.setFileApplicant(parsed.applicantName ?? "");
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/payment/paid?paymentType=journal&rrr=${rrr}`,
+  );
 }
 
 async function merger(ctx: PaymentContext) {
@@ -901,5 +927,30 @@ async function oppositionwithdrawal(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(applicantName);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/oppositionwithdrawal/paid?rrr=${rrr}`,
+  );
+}
+
+async function trademarkJournal(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const rrr = params.get("rrr");
+  const amount = params.get("amount");
+  const fileId = params.get("fileId");
+
+  if (!rrr || !amount) throw new Error("Missing trademark journal payment data");
+
+  const raw = sessionStorage.getItem("trademarkJournalPayload");
+  const payload = raw ? JSON.parse(raw) : null;
+
+  const applicantName = params.get("name") ?? payload?.applicantName ?? null;
+  const fileNumber = params.get("fileNumber") ?? payload?.fileNumber ?? fileId;
+
+  ctx.state.setTitle("Trademark Journal");
+  ctx.state.setCost(amount);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setFileTitle(payload?.fileTitle ?? null);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/trademarkjournal/paid?rrr=${rrr}`,
   );
 }
