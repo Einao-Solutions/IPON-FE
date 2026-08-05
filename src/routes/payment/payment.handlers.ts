@@ -419,6 +419,8 @@ async function designRenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileNumber(parsed?.fileId ?? null);
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
+  ctx.state.isLateRenewal(parsed.isLateRenewal ?? false);
+  ctx.state.setPenaltyFee(parsed.lateRenewalCost ?? "")
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=renewal`,
@@ -438,6 +440,8 @@ async function patentRenewal(ctx: PaymentContext): Promise<void> {
   ctx.state.setTitle("Patent Renewal Payment");
   ctx.state.setFileNumber(parsed?.fileId ?? null);
   ctx.state.setCost(cost);
+  ctx.state.isLateRenewal(parsed.isLateRenewal ?? false);
+  ctx.state.setPenaltyFee(parsed.lateRenewalCost ?? "")
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
   ctx.state.setResponseUrl(
