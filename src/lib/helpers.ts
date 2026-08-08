@@ -9,7 +9,7 @@ import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
  export const baseURL = "http://localhost:5044";
 // export const baseURL = "https://testbackend.iponigeria.com";
 // export const baseURL = "https://integration.iponigeria.com";
-export const localhost = "http://localhost:5044";
+export const localhost = "http://localhost:5044"   
 
 export const nonConventionalDescription =
   "Filing new patent application with protection in Nigeria only.";
@@ -299,7 +299,10 @@ export enum FormApplicationTypes {
   Restoration = 23,
   CounterStatement = 24,
   StatutoryDeclaration = 25,
+  ChangeOfAgent = 26,
+  OfflineRenewalRequest = 27,
 }
+
 
 export enum ApplicationLetters {
   NewApplicationReceipt = 0,

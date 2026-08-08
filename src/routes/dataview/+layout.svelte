@@ -71,6 +71,16 @@
     newStatusReason.set(null);
   }
 
+  function getAwaitingExaminerEntry(): { message?: string; user?: string } | null {
+    const history = (selectedApplication?.statusHistory ?? []) as any[];
+    for (let i = history.length - 1; i >= 0; i--) {
+      if (history[i]?.afterStatus === ApplicationStatuses.AwaitingExaminer) {
+        return history[i];
+      }
+    }
+    return null;
+  }
+
   $: validateForm = (): boolean => {
     return (
       $newStatusReason !== null &&
@@ -411,7 +421,112 @@
 
     <!-- Body -->
     <div class="px-6 py-5 space-y-5 max-h-[70vh] overflow-y-auto">
-      {#if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingSearch}
+      {#if fileData}
+        {@const fileTitle =
+          fileData.type === FilingType.Patent
+            ? fileData.titleOfInvention
+            : fileData.type === FilingType.Design
+              ? fileData.titleOfDesign
+              : fileData.titleOfTradeMark}
+        {@const fileClass =
+          fileData.type === FilingType.Trademark
+            ? fileData.trademarkClass
+              ? `Class ${fileData.trademarkClass}`
+              : "—"
+            : fileData.type === FilingType.Patent
+              ? "Patent"
+              : fileData.type === FilingType.Design
+                ? "Design"
+                : "—"}
+        {@const applicant =
+          (fileData.applicants?.length ?? 0) > 1
+            ? `${fileData.applicants?.[0]?.name ?? ""} et al.`
+            : (fileData.applicants?.[0]?.name ?? "—")}
+
+          {@const country =
+            (fileData.applicants?.length ?? 0) > 1
+              ? `${fileData.applicants?.[0]?.country ?? ""} et al.`
+              : (fileData.applicants?.[0]?.country ?? "—")
+
+          }
+        <div
+          class="rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3"
+        >
+          <dl class="grid grid-cols-[7rem,1fr] gap-x-4 gap-y-2 text-sm">
+            <dt
+              class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+            >
+              File No.
+            </dt>
+            <dd class="text-slate-800 font-medium truncate">
+              {fileData.fileId ?? "—"}
+            </dd>
+
+            <dt
+              class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+            >
+              Title
+            </dt>
+            <dd class="text-slate-800 font-medium break-words">
+              {fileTitle ?? "—"}
+            </dd>
+
+            <dt
+              class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+            >
+              Class
+            </dt>
+            <dd class="text-slate-800 font-medium">{fileClass}</dd>
+
+            <dt
+              class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+            >
+              Applicant
+            </dt>
+            <dd class="text-slate-800 font-medium break-words">{applicant}</dd>
+            <dt
+              class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+            >
+              Country
+            </dt>
+            <dd class="text-slate-800 font-medium break-words">{country}</dd>
+          </dl>
+        </div>
+      {/if}
+
+      {#if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingExaminer}
+        {@const searchEntry = getAwaitingExaminerEntry()}
+        {#if searchEntry}
+          <div
+            class="rounded-xl border border-slate-200 bg-white px-4 py-3 space-y-2"
+          >
+            <div class="flex items-center gap-2">
+              <Icon
+                icon="mdi:magnify-scan"
+                width="1rem"
+                class="text-slate-600"
+              />
+              <p
+                class="text-[11px] font-semibold uppercase tracking-wide text-slate-500"
+              >
+                Search Report
+              </p>
+            </div>
+            <p class="text-sm text-slate-800 whitespace-pre-wrap break-words">
+              {searchEntry.message ?? "—"}
+            </p>
+            <div class="flex items-center gap-1.5 text-xs text-slate-500">
+              <Icon icon="mdi:account-outline" width="0.95rem" />
+              <span>By</span>
+              <span class="font-medium text-slate-700"
+                >{searchEntry.user ?? "—"}</span
+              >
+            </div>
+          </div>
+        {/if}
+      {/if}
+
+      {#if selectedApplication?.currentStatus === ApplicationStatuses.AwaitingSearch || selectedApplication?.currentStatus === ApplicationStatuses.AwaitingExaminer}
         <Button
           on:click={searchAvailability}
           class="w-full h-10 rounded-lg bg-slate-900 hover:bg-slate-800 text-white"
