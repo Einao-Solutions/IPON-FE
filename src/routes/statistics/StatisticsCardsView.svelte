@@ -14,7 +14,6 @@
                      userRoles.includes(UserRoles.Finance) ||
                      userRoles.includes(UserRoles.EinaoFinance);
 
-
   $: showPatent = isFullAccess || 
                   userRoles.includes(UserRoles.PatentDesignRegistrar) || 
                   userRoles.includes(UserRoles.Finance) ||
@@ -24,6 +23,9 @@
                   userRoles.includes(UserRoles.PatentDesignRegistrar) || 
                   userRoles.includes(UserRoles.Finance) ||
                   userRoles.includes(UserRoles.EinaoFinance);
+
+  $: showSupport = userRoles.includes(UserRoles.SuperAdmin) ||
+                   userRoles.includes(UserRoles.Tech);
 
   $: visibleCount = [showTrademark, showPatent, showDesign].filter(Boolean).length;
   $: gridCols = visibleCount === 1 ? "md:grid-cols-1 max-w-md mx-auto" 
@@ -145,3 +147,41 @@
   {/if}
 
 </div>
+
+<!-- Support Card — SuperAdmin & Tech only -->
+{#if showSupport}
+<div class="mt-4 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
+  <button
+    on:click={() => onCardClick('Support')}
+    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-purple-400/50 hover:scale-[1.02] w-full text-left"
+  >
+    <div class="absolute inset-0 bg-gradient-to-br from-purple-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+    <div class="relative p-8 flex items-center gap-8">
+      <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 flex-shrink-0">
+        <Icon icon="mdi:headset" class="text-white text-3xl" />
+      </div>
+
+      <div class="flex-1">
+        <div class="flex items-center gap-3 mb-1">
+          <h3 class="text-2xl font-bold text-slate-800 group-hover:text-purple-700 transition-colors">
+            Support
+          </h3>
+          <span class="text-xs font-semibold px-2 py-1 bg-purple-100 text-purple-700 rounded-full">Admin & Tech</span>
+        </div>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          View support ticket performance metrics — response rates, closure rates, and officer performance scores across all scopes
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <div class="flex items-center space-x-1">
+          <div class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></div>
+          <span class="text-xs text-slate-400">Active</span>
+        </div>
+        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-purple-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
+      </div>
+    </div>
+  </button>
+</div>
+{/if}
