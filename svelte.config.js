@@ -141,7 +141,7 @@ const config = {
         "/home/offline-renewal",
         "/home/offline-renewal/search",
         "/home/offline-renewal/submit",
-
+        "/home/trademarkpubs/publish"
       ],
     },
   },
