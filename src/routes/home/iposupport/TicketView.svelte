@@ -96,6 +96,12 @@ if (parts.length === 1) return parts[0][0].toUpperCase();
 return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function getMessageSenderName(message: { senderId?: string; senderName?: string }): string {
+if (message.senderName?.trim()) return message.senderName;
+if (message.senderId === data?.creatorId && data?.creatorName?.trim()) return data.creatorName;
+return '—';
+}
+
 async function confirmAndEscalateTicket() {
 // Confirm with user before performing escalation
 if (!window.confirm(`Confirm escalation to: ${escalationTargets.find((t) => t.value === selectedEscalationTarget)?.label ?? 'the selected team'}?`)) {
@@ -436,12 +442,12 @@ Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ti
 <div class="flex {isCreator ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 min-w-0">
 <!-- Avatar -->
 <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold {isCreator ? 'bg-gradient-to-br from-green-500 to-green-800' : 'bg-gradient-to-br from-slate-500 to-slate-700'}">
-{getSenderInitials(message.senderName)}
+{getSenderInitials(getMessageSenderName(message))}
 </div>
 <!-- Bubble -->
 <div class="max-w-[78%] min-w-0 flex flex-col {isCreator ? 'items-end' : 'items-start'}">
 <div class="flex items-center gap-2 mb-1 px-1 text-[10px] text-slate-400">
-<span class="font-medium text-slate-600">{isCreator ? 'You' : message.senderName}</span>
+<span class="font-medium text-slate-600">{getMessageSenderName(message)}</span>
 <span>·</span>
 <span>{relativeTime(message.dateAdded)}</span>
 </div>
