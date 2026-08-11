@@ -317,14 +317,14 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦3,500",
   },
-  {
-    id: "offline-renewal",
-    name: "RENEWAL HISTORY UPDATE",
-    description: "Submit offline renewal details for history update",
-    icon: "mdi:history",
-    route: "/home/offline-renewal?ipType=trademark",
-    category: "filing",
-  },
+  // {
+  //   id: "offline-renewal",
+  //   name: "RENEWAL HISTORY UPDATE",
+  //   description: "Submit offline renewal details for history update",
+  //   icon: "mdi:history",
+  //   route: "/home/offline-renewal?ipType=trademark",
+  //   category: "filing",
+  // },
 
   // FINANCIAL CATEGORY
   {
