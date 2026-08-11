@@ -102,6 +102,10 @@
     filing.applicants = [...filing.applicants, newApplicant];
   };
 
+  const deleteApplicant = (index: number) => {
+    filing.applicants = filing.applicants.filter((_: any, i: number) => i !== index);
+  };
+
   //change file status
   const fileStatus = (s: ApplicationStatuses) => {
     const newStatus = s;
@@ -154,11 +158,18 @@
   // === RECORDAL FORM DATA ===
   // Assignment form data
   let assignmentData = {
+    assignorName: "",
+    assignorEmail: "",
+    assignorPhone: "",
+    assignorNationality: "",
+    assignorAddress: "",
     assigneeName: "",
     assigneeEmail: "",
     assigneePhone: "",
     assigneeNationality: "",
+    assigneeCountry: "",
     assigneeAddress: "",
+    dateOfAssignment: "",
     assignmentDeed: null as File | null,
     authorizationLetter: null as File | null,
   };
@@ -187,24 +198,41 @@
   };
 
   function openRecordalView(hist: any) {
+    console.log("VIEW CLICKED - raw hist:", JSON.stringify(hist, null, 2));
     selectedRecordal = { applicationType: hist.applicationType, hist };
+    newApp = {
+      ...newApp,
+      applicationType: hist.applicationType,
+      applicationDate: hist.applicationDate ? hist.applicationDate.slice(0, 10) : "",
+      currentStatus: hist.currentStatus ?? ApplicationStatuses.None,
+      paymentId: hist.paymentId ?? "",
+      certificatePaymentId: hist.certificatePaymentId ?? null,
+      fileNumber: filing.fileId || "",
+    };
 
-    // Assignment (type 5)
+    // Assignment (type 5) — populate from hist.assignment first, then oldValue/newValue fallback
+    const a = hist?.assignment ?? {};
+    const ov = hist?.oldValue ?? {};
+    const nv = hist?.newValue ?? {};
     viewAssignmentData = {
-      assigneeName:
-        safePick(hist, "newValue.assigneeName", "newValue.name", "assigneeName") || "",
-      assigneeEmail:
-        safePick(hist, "newValue.assigneeEmail", "newValue.email", "assigneeEmail") || "",
-      assigneePhone:
-        safePick(hist, "newValue.assigneePhone", "newValue.phone", "assigneePhone") || "",
-      assigneeNationality:
-        safePick(hist, "newValue.assigneeNationality", "newValue.nationality", "assigneeNationality") || "",
-      assigneeAddress:
-        safePick(hist, "newValue.assigneeAddress", "newValue.address", "assigneeAddress") || "",
+      assignorName:        a.assignorName        ?? ov.name        ?? "",
+      assignorEmail:       a.assignorEmail       ?? ov.email       ?? "",
+      assignorPhone:       a.assignorPhone       ?? ov.phone       ?? "",
+      assignorNationality: a.assignorNationality ?? ov.nationality ?? "",
+      assignorAddress:     a.assignorAddress     ?? ov.address     ?? "",
+      assignorCountry:     a.assignorCountry     ?? ov.country     ?? "",
+
+      assigneeName:        a.assigneeName        ?? nv.assigneeName        ?? nv.name        ?? "",
+      assigneeEmail:       a.assigneeEmail       ?? nv.assigneeEmail       ?? nv.email       ?? "",
+      assigneePhone:       a.assigneePhone       ?? nv.assigneePhone       ?? nv.phone       ?? "",
+      assigneeNationality: a.assigneeNationality ?? nv.assigneeNationality ?? nv.nationality ?? "",
+      assigneeAddress:     a.assigneeAddress     ?? nv.assigneeAddress     ?? nv.address     ?? "",
+      assigneeCountry:     a.assigneeCountry     ?? nv.assigneeCountry     ?? nv.country     ?? "",
+
+      dateOfAssignment:    a.dateOfAssignment    ?? nv.dateOfAssignment    ?? "",
       assignmentDeed: null,
       authorizationLetter: null,
     };
-
     // Registered User (type 7)
     viewRegisteredUserData = {
       name: safePick(hist, "newValue.name", "newValue.registeredName", "name") || "",
@@ -237,6 +265,13 @@
       newAddress: safePick(hist, "newValue.newAddress", "newValue.address", "newAddress") || "",
       supportingDocument: null,
     };
+
+    assignmentData = { ...assignmentData, ...viewAssignmentData };
+    registeredUserData = { ...registeredUserData, ...viewRegisteredUserData };
+    mergerData = { ...mergerData, ...viewMergerData };
+    changeOfNameData = { ...changeOfNameData, ...viewChangeOfNameData };
+    changeOfAddressData = { ...changeOfAddressData, ...viewChangeOfAddressData };
+    console.log("assignmentData AFTER set:", JSON.stringify(assignmentData, null, 2));
   }
 
   function closeRecordalView() {
@@ -623,6 +658,196 @@
         position: "top-right",
       });
     }
+  };
+
+  // File input handlers for recordal forms
+  const handleAssignmentDeedUpload = async (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    assignmentData.assignmentDeed = file;
+    viewAssignmentData.assignmentDeed = file;
+  };
+
+  const handleAssignmentLetterUpload = async (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    assignmentData.authorizationLetter = file;
+    viewAssignmentData.authorizationLetter = file;
+  };
+
+  const handleRegisteredUserDocUpload = async (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    registeredUserData.document = file;
+    viewRegisteredUserData.document = file;
+  };
+
+  const handleMergerDocUpload = async (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    mergerData.document = file;
+    viewMergerData.document = file;
+  };
+
+  const handleChangeOfNameDocUpload = async (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    changeOfNameData.supportingDocument = file;
+    viewChangeOfNameData.supportingDocument = file;
+  };
+
+  const handleChangeOfAddressDocUpload = async (e: Event) => {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    changeOfAddressData.supportingDocument = file;
+    viewChangeOfAddressData.supportingDocument = file;
+  };
+
+  // Helper to convert a File to the backend attachment shape
+  const fileToAttachment = async (file: File | null) => {
+    if (!file) return null;
+    const base64 = await fileToBase64(file);
+    return { fileName: file.name, contentType: file.type || "application/octet-stream", data: base64 };
+  };
+
+  // Build and POST a new application history entry
+  const addApplicationHistory = async (app: any) => {
+    try {
+      isLoading = true;
+      const body: any = {
+        fileNumber: filing.fileId,
+        applicationType: app.applicationType,
+        applicationDate: app.applicationDate ? new Date(app.applicationDate) : new Date(),
+        currentStatus: app.currentStatus ?? ApplicationStatuses.None,
+        paymentId: app.paymentId ?? null,
+        certificatePaymentId: app.certificatePaymentId ?? null,
+      };
+
+      // Attach recordal-specific newValue/oldValue
+      if (app.applicationType === FormApplicationTypes.Assignment) {
+        body.oldValue = {
+          name: filing.applicants?.[0]?.name || filing.correspondence?.name || "",
+          email: filing.applicants?.[0]?.email || filing.correspondence?.email || "",
+          address: filing.applicants?.[0]?.address || filing.correspondence?.address || "",
+        };
+        body.newValue = {
+          assigneeName: assignmentData.assigneeName,
+          assigneeEmail: assignmentData.assigneeEmail,
+          assigneePhone: assignmentData.assigneePhone,
+          assigneeNationality: assignmentData.assigneeNationality,
+          assigneeAddress: assignmentData.assigneeAddress,
+        };
+        const deed = await fileToAttachment(assignmentData.assignmentDeed);
+        const auth = await fileToAttachment(assignmentData.authorizationLetter);
+        body.newValue.attachments = [deed, auth].filter(Boolean);
+      }
+
+      if (app.applicationType === FormApplicationTypes.RegisteredUser) {
+        body.oldValue = { name: filing.registeredUser?.name || "" };
+        body.newValue = {
+          name: registeredUserData.name,
+          email: registeredUserData.email,
+          phone: registeredUserData.phone,
+          nationality: registeredUserData.nationality,
+          address: registeredUserData.address,
+        };
+        const doc = await fileToAttachment(registeredUserData.document);
+        body.newValue.attachments = [doc].filter(Boolean);
+      }
+
+      if (app.applicationType === FormApplicationTypes.Merger) {
+        body.oldValue = { name: filing.applicants?.[0]?.name || "" };
+        body.newValue = {
+          name: mergerData.name,
+          email: mergerData.email,
+          phone: mergerData.phone,
+          dateOfMerger: mergerData.dateOfMerger,
+          nationality: mergerData.nationality,
+          address: mergerData.address,
+        };
+        const doc = await fileToAttachment(mergerData.document);
+        body.newValue.attachments = [doc].filter(Boolean);
+      }
+
+      if (app.applicationType === FormApplicationTypes.ChangeOfName) {
+        body.oldValue = { name: filing.applicants?.[0]?.name || filing.correspondence?.name || "" };
+        body.newValue = { newName: changeOfNameData.newName };
+        const doc = await fileToAttachment(changeOfNameData.supportingDocument);
+        body.newValue.attachments = [doc].filter(Boolean);
+      }
+
+      if (app.applicationType === FormApplicationTypes.ChangeOfAddress) {
+        body.oldValue = { address: filing.correspondence?.address || "" };
+        body.newValue = { newAddress: changeOfAddressData.newAddress };
+        const doc = await fileToAttachment(changeOfAddressData.supportingDocument);
+        body.newValue.attachments = [doc].filter(Boolean);
+      }
+
+      const res = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${$loggedInToken}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        const created = await res.json();
+        filing.applicationHistory = filing.applicationHistory || [];
+        filing.applicationHistory = [created, ...filing.applicationHistory];
+        toast.success("Application history added", { position: "top-right" });
+      } else {
+        const txt = await res.text();
+        console.error("Failed to add application history:", txt);
+        toast.error("Failed to add application", { position: "top-right" });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Error adding application", { position: "top-right" });
+    } finally {
+      isLoading = false;
+    }
+  };
+
+  // Submit from the opened recordal view (uses view* data)
+  const submitRecordalFromView = async () => {
+    if (!selectedRecordal) return;
+    const t = selectedRecordal.applicationType;
+    // Build a lightweight app object similar to newApp
+    const appObj: any = {
+      applicationType: t,
+      applicationDate: new Date().toISOString(),
+      currentStatus: ApplicationStatuses.None,
+      paymentId: null,
+      certificatePaymentId: null,
+    };
+
+    // copy view data into the canonical form objects so addApplicationHistory can read them
+    if (t === FormApplicationTypes.Assignment) {
+      assignmentData = { ...assignmentData, ...viewAssignmentData };
+    }
+    if (t === FormApplicationTypes.RegisteredUser) {
+      registeredUserData = { ...registeredUserData, ...viewRegisteredUserData };
+    }
+    if (t === FormApplicationTypes.Merger) {
+      mergerData = { ...mergerData, ...viewMergerData };
+    }
+    if (t === FormApplicationTypes.ChangeOfName) {
+      changeOfNameData = { ...changeOfNameData, ...viewChangeOfNameData };
+    }
+    if (t === FormApplicationTypes.ChangeOfAddress) {
+      changeOfAddressData = { ...changeOfAddressData, ...viewChangeOfAddressData };
+    }
+
+    await addApplicationHistory(appObj);
+    closeRecordalView();
   };
 
   const saveChanges = async () => {
@@ -1276,6 +1501,32 @@
               <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
                 <div class="bg-blue-100 px-4 py-2 font-semibold text-blue-900">Assignment Application [Form 16]</div>
                 <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="md:col-span-2 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <h4 class="font-semibold mb-3">Assignor Information</h4>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                        <input type="text" class="input" readonly value={assignmentData.assignorName} />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <input type="email" class="input" readonly value={assignmentData.assignorEmail} />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                        <input type="tel" class="input" readonly value={assignmentData.assignorPhone} />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
+                        <input type="text" class="input" readonly value={assignmentData.assignorNationality} />
+                      </div>
+                      <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                        <textarea class="input min-h-20" readonly>{assignmentData.assignorAddress}</textarea>
+                      </div>
+                    </div>
+                  </div>
+
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Name: <span class="text-red-500">*</span></label>
                     <input type="text" class="input" bind:value={assignmentData.assigneeName} placeholder="Enter assignee name" required />
@@ -1292,9 +1543,17 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Nationality: <span class="text-red-500">*</span></label>
                     <input type="text" class="input" bind:value={assignmentData.assigneeNationality} placeholder="Enter assignee nationality" required />
                   </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Country</label>
+                    <input type="text" class="input" readonly value={assignmentData.assigneeCountry} />
+                  </div>
                   <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Address: <span class="text-red-500">*</span></label>
                     <textarea class="input min-h-20" bind:value={assignmentData.assigneeAddress} placeholder="Enter assignee address" required></textarea>
+                  </div>
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Assignment</label>
+                    <input type="text" class="input" readonly value={assignmentData.dateOfAssignment} />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignment Deed (PDF):</label>
@@ -1477,84 +1736,162 @@
             </div>
 
             {#if selectedRecordal.applicationType === 5}
-              <!-- Assignment view -->
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Name</label>
-                  <input class="input" readonly value={viewAssignmentData.assigneeName} />
+              <!-- Assignment: show full form preview -->
+              <div class="space-y-4">
+                <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Form Header</p>
+                      <p class="text-sm text-slate-900 mt-2">{safePick(selectedRecordal.hist, 'oldValue.title', 'newValue.title') || '—'}</p>
+                    </div>
+                    <div class="grid gap-2 text-sm text-slate-700">
+                      <div><span class="font-medium">File Number:</span> {safePick(selectedRecordal.hist, 'oldValue.fileNumber', 'newValue.fileNumber') || '—'}</div>
+                      <div><span class="font-medium">File Type:</span> {safePick(selectedRecordal.hist, 'oldValue.fileType', 'newValue.fileType') || '—'}</div>
+                      <div><span class="font-medium">Product Class:</span> {safePick(selectedRecordal.hist, 'oldValue.productClass', 'newValue.productClass') ?? '—'}</div>
+                      <div><span class="font-medium">RTM Number:</span> {safePick(selectedRecordal.hist, 'oldValue.rtmNumber', 'newValue.rtmNumber') || '—'}</div>
+                    </div>
+                  </div>
+                </section>
+
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <h4 class="font-semibold mb-3">Assignor</h4>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorName || viewAssignmentData.assignorName || ''} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorEmail || viewAssignmentData.assignorEmail || ''} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorPhone || viewAssignmentData.assignorPhone || ''} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
+                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorNationality || viewAssignmentData.assignorNationality || ''} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <textarea class="input" readonly>{selectedRecordal.hist.assignment?.assignorAddress || viewAssignmentData.assignorAddress || ''}</textarea>
+                  </section>
+
+                  <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <h4 class="font-semibold mb-3">Assignee / New Value</h4>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                    <input class="input mb-2" bind:value={viewAssignmentData.assigneeName} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input class="input mb-2" bind:value={viewAssignmentData.assigneeEmail} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                    <input class="input mb-2" bind:value={viewAssignmentData.assigneePhone} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
+                    <input class="input mb-2" bind:value={viewAssignmentData.assigneeNationality} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assigneeCountry || viewAssignmentData.assigneeCountry || ''} />
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                    <textarea class="input mb-2" bind:value={viewAssignmentData.assigneeAddress}></textarea>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Assignment</label>
+                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.dateOfAssignment || viewAssignmentData.dateOfAssignment || ''} />
+                  </section>
                 </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Email</label>
-                  <input class="input" readonly value={viewAssignmentData.assigneeEmail} />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Phone</label>
-                  <input class="input" readonly value={viewAssignmentData.assigneePhone} />
-                </div>
-                <div class="md:col-span-2">
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Address</label>
-                  <textarea class="input" readonly>{viewAssignmentData.assigneeAddress}</textarea>
-                </div>
+
+                <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <h4 class="font-semibold mb-3">Attachments</h4>
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Assignment Deed (PDF)</label>
+                      <input type="file" accept=".pdf" class="input mb-2" on:change={handleAssignmentDeedUpload} />
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Authorization Letter (PDF)</label>
+                      <input type="file" accept=".pdf" class="input mb-2" on:change={handleAssignmentLetterUpload} />
+                    </div>
+                  </div>
+                  <div class="flex justify-end mt-2">
+                    <Button size="sm" on:click={submitRecordalFromView}>Submit Application</Button>
+                  </div>
+                </section>
               </div>
             {/if}
 
             {#if selectedRecordal.applicationType === 7}
-              <!-- Registered user view -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div class="bg-slate-50 p-3 rounded">
+                  <h4 class="font-semibold mb-2">Current Registered User (Old)</h4>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input class="input" readonly value={viewRegisteredUserData.name} />
+                  <input class="input mb-2" readonly value={safePick(selectedRecordal.hist, 'oldValue.name','oldValue.oldValue.name','oldValue.party.name','oldValue.name','oldName') || filing.registeredUser?.name || ""} />
                 </div>
-                <div>
+
+                <div class="p-3 rounded">
+                  <h4 class="font-semibold mb-2">New Registered User</h4>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input class="input mb-2" bind:value={viewRegisteredUserData.name} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input class="input" readonly value={viewRegisteredUserData.email} />
-                </div>
-                <div>
+                  <input class="input mb-2" bind:value={viewRegisteredUserData.email} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <input class="input" readonly value={viewRegisteredUserData.phone} />
-                </div>
-                <div class="md:col-span-2">
+                  <input class="input mb-2" bind:value={viewRegisteredUserData.phone} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <textarea class="input" readonly>{viewRegisteredUserData.address}</textarea>
+                  <textarea class="input mb-2" bind:value={viewRegisteredUserData.address}></textarea>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Document (PDF)</label>
+                  <input type="file" accept=".pdf" class="input mb-2" on:change={handleRegisteredUserDocUpload} />
+                  <div class="flex justify-end mt-2">
+                    <Button size="sm" on:click={submitRecordalFromView}>Submit Application</Button>
+                  </div>
                 </div>
               </div>
             {/if}
 
             {#if selectedRecordal.applicationType === 8}
-              <!-- Merger view -->
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                <div class="bg-slate-50 p-3 rounded">
+                  <h4 class="font-semibold mb-2">Current Party (Old)</h4>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                  <input class="input" readonly value={viewMergerData.name} />
+                  <input class="input mb-2" readonly value={safePick(selectedRecordal.hist, 'oldValue.name','oldValue.oldValue.name','oldValue.party.name','oldValue.name','oldName') || filing.applicants?.[0]?.name || ""} />
                 </div>
-                <div>
+                <div class="p-3 rounded">
+                  <h4 class="font-semibold mb-2">Merger Details (New)</h4>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <input class="input mb-2" bind:value={viewMergerData.name} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input class="input" readonly value={viewMergerData.email} />
-                </div>
-                <div>
+                  <input class="input mb-2" bind:value={viewMergerData.email} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Date of Merger</label>
-                  <input class="input" readonly value={viewMergerData.dateOfMerger} />
-                </div>
-                <div class="md:col-span-2">
+                  <input type="date" class="input mb-2" bind:value={viewMergerData.dateOfMerger} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <textarea class="input" readonly>{viewMergerData.address}</textarea>
+                  <textarea class="input mb-2" bind:value={viewMergerData.address}></textarea>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Deed (PDF)</label>
+                  <input type="file" accept=".pdf" class="input mb-2" on:change={handleMergerDocUpload} />
+                  <div class="flex justify-end mt-2">
+                    <Button size="sm" on:click={submitRecordalFromView}>Submit Application</Button>
+                  </div>
                 </div>
               </div>
             {/if}
 
             {#if selectedRecordal.applicationType === 9}
-              <!-- Change of Name view -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">New Name</label>
-                <input class="input" readonly value={viewChangeOfNameData.newName} />
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-50 p-3 rounded">
+                  <h4 class="font-semibold mb-2">Current Name (Old)</h4>
+                  <input class="input" readonly value={safePick(selectedRecordal.hist, 'oldValue.name','oldValue.oldValue.name','oldValue.party.name','oldValue.name','oldName') || filing.applicants?.[0]?.name || filing.correspondence?.name || ""} />
+                </div>
+                <div class="p-3 rounded">
+                  <h4 class="font-semibold mb-2">New Name</h4>
+                  <input class="input mb-2" bind:value={viewChangeOfNameData.newName} />
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Document (PDF)</label>
+                  <input type="file" accept=".pdf" class="input mb-2" on:change={handleChangeOfNameDocUpload} />
+                  <div class="flex justify-end mt-2">
+                    <Button size="sm" on:click={submitRecordalFromView}>Submit Application</Button>
+                  </div>
+                </div>
               </div>
             {/if}
 
             {#if selectedRecordal.applicationType === 10}
-              <!-- Change of Address view -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">New Address</label>
-                <textarea class="input" readonly>{viewChangeOfAddressData.newAddress}</textarea>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-slate-50 p-3 rounded">
+                  <h4 class="font-semibold mb-2">Current Address (Old)</h4>
+                  <textarea class="input" readonly>{safePick(selectedRecordal.hist, 'oldValue.address','oldValue.oldValue.address','oldValue.party.address','oldValue.address','oldAddress') || filing.correspondence?.address || ""}</textarea>
+                </div>
+                <div class="p-3 rounded">
+                  <h4 class="font-semibold mb-2">New Address</h4>
+                  <textarea class="input mb-2" bind:value={viewChangeOfAddressData.newAddress}></textarea>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Document (PDF)</label>
+                  <input type="file" accept=".pdf" class="input mb-2" on:change={handleChangeOfAddressDocUpload} />
+                  <div class="flex justify-end mt-2">
+                    <Button size="sm" on:click={submitRecordalFromView}>Submit Application</Button>
+                  </div>
+                </div>
               </div>
             {/if}
           </div>
