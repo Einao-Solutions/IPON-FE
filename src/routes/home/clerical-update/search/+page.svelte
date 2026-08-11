@@ -116,6 +116,17 @@
   function goBack() {
     window.history.back();
   }
+
+  function getSelectedValue(event: Event): string {
+    return event.currentTarget instanceof HTMLSelectElement
+      ? event.currentTarget.value
+      : "";
+  }
+
+  function isForeignPatentFile(result: SearchResult): boolean {
+    const origin = result.fileOrigin?.trim() ?? "";
+    return origin === "Foreign" || origin.toLowerCase().startsWith("f");
+  }
 </script>
 
 <div class="space-y-4 m-4 p-2">
@@ -271,7 +282,7 @@
                 <select
                   class="border rounded px-2 py-1"
                   on:change={(e) => {
-                    const selectedValue = e.target.value;
+                    const selectedValue = getSelectedValue(e);
                     if (result.fileTypes === FileTypes.Trademark) {
                       // Trademark options
                       if (selectedValue === "update-name") {
@@ -338,7 +349,7 @@
                         );
                       } else if (selectedValue === "update-title") {
                         goto(
-                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}`,
+                          `/home/clerical-update/patentclericalupdate?fileId=${result.fileId}&fileType=${result.fileTypes}&updateType=${ClericalUpdateTypes.FileTitle}&isForeignPatent=${isForeignPatentFile(result)}`,
                         );
                       } else if (selectedValue === "addorremove-applicant") {
                         goto(
@@ -385,7 +396,7 @@
                       >Update Applicant Address</option
                     >
                     <option value="update-title"
-                      >Update Abstract/Application Type/Title Of Invention</option
+                      >Update Abstract/Application Type/Title Of Invention{isForeignPatentFile(result) ? "/Patent Type" : ""}</option
                     >
                     <option value="addorremove-applicant"
                       >Add/Remove Applicant</option

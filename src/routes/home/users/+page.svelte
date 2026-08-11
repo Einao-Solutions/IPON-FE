@@ -71,6 +71,7 @@
 {#if showAddUser}
   <svelte:component this={addUser} {...userCreationData} />
 {/if}
+
 <div>
   <!-- <Button on:click={() => addNewUser()}>+ Add user</Button> -->
   {#if isLoading}

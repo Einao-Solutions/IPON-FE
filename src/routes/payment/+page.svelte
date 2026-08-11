@@ -105,6 +105,7 @@
           setTitle: (v) => (title = v),
           setCost: (v) => (cost = v),
           setPaymentId: (v) => (paymentId = v),
+          setServiceCharge: (v) => (serviceFee = v),
           setFileNumber: (v) => (fileNumber = v),
           setFileApplicant: (v) => (fileApplicant = v),
           setFileType: (v) => (fileType = v),
@@ -202,16 +203,17 @@
 
     const penaltyAmount = isLateRenewal ? parseFloat(lateRenewalCost) || 0 : 0;
     const serviceFeeAmount = parseFloat(serviceFee) || 0;
-    const baseAmount = Math.max(totalCost - penaltyAmount - serviceFeeAmount, 0);
+    const baseAmount = Math.max(
+      totalCost - penaltyAmount - serviceFeeAmount,
+      0,
+    );
 
     const items: BreakdownItem[] = [];
 
     if (baseAmount > 0) {
+      const renewalTypes = ["patentRenewal", "renewal", "designRenewal"];
       items.push({
-        label:
-          type && type.toLowerCase().includes("renewal")
-            ? "Renewal Fee"
-            : "Base Fee",
+        label: type && renewalTypes.includes(type) ? "Renewal Fee" : "Base Fee",
         amount: baseAmount,
       });
     }
@@ -264,7 +266,9 @@
         <h2 class="text-lg font-semibold mb-2">
           Your file is not yet due for Renewal
         </h2>
-        <p class="mb-4">Renewal is only available 90 days before the due date.</p>
+        <p class="mb-4">
+          Renewal is only available 90 days before the due date.
+        </p>
         <Button
           class="outline bg-red-500 text-white"
           on:click={() => goto("/home/dashboard")}>Back</Button
@@ -358,7 +362,7 @@
             </div>
             <!-- Other Payment Details -->
             <div class="grid gap-4">
-              {#if type && ["oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
+              {#if type && ["journal","oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
                 <div
                   class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
                 >

@@ -29,32 +29,40 @@
     goto(`/statistics/techfee?registryType=${selectedRegistry}`);
   }
 
+  function navigateToSupportStatistics() {
+    const scope = selectedRegistry === 'Trademark' ? 'Trademark'
+                : selectedRegistry === 'Patent' ? 'Patent'
+                : 'Design';
+    goto(`/statistics/support?scope=${scope}&registryType=${selectedRegistry}`);
+  }
+
   $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
 
   $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
                     userRoles.includes(UserRoles.Minister) || 
                     userRoles.includes(UserRoles.SuperAdmin);
 
-  $: isFinanceOnly = (userRoles.includes(UserRoles.Finance) || isEinaoFinance) && !isFullAccess; // ✅ EinaoFinance behaves like financeOnly — hides Performance & Operational
-
-  // STRICTLY EinaoFinance only — no SuperAdmin, no Finance, nothing else
-  // $: isEinaoFinance = userRoles.length === 1 && userRoles.includes(UserRoles.EinaoFinance) 
-  //   || (userRoles.includes(UserRoles.EinaoFinance) && !userRoles.some(r => [
-  //       UserRoles.SuperAdmin,
-  //       UserRoles.Finance,
-  //       UserRoles.PermSec,
-  //       UserRoles.Minister,
-  //       UserRoles.Tech,
-  //       UserRoles.TrademarkRegistrar,
-  //       UserRoles.PatentDesignRegistrar
-  //     ].includes(r)));
+  $: isFinanceOnly = (userRoles.includes(UserRoles.Finance) || isEinaoFinance) && !isFullAccess;
 
   $: isEinaoFinance = userRoles.includes(UserRoles.EinaoFinance);
 
-  // Pass isFinanceOnly as parameter so $: can track it
-  $: sections = getSectionsForRole(isFinanceOnly);
+  $: canSeeTrademarkSupport = selectedRegistry === 'Trademark' && (
+    userRoles.includes(UserRoles.SuperAdmin) ||
+    userRoles.includes(UserRoles.Tech) ||
+    userRoles.includes(UserRoles.TrademarkRegistrar)
+  );
 
-  function getSectionsForRole(financeOnly: boolean) {
+  $: canSeePatentDesignSupport = (selectedRegistry === 'Patent' || selectedRegistry === 'Design') && (
+    userRoles.includes(UserRoles.SuperAdmin) ||
+    userRoles.includes(UserRoles.Tech) ||
+    userRoles.includes(UserRoles.PatentDesignRegistrar)
+  );
+
+  $: showSupportSection = canSeeTrademarkSupport || canSeePatentDesignSupport;
+
+  $: sections = getSectionsForRole(isFinanceOnly, showSupportSection);
+
+  function getSectionsForRole(financeOnly: boolean, includeSupport: boolean) {
     const sections = [];
     
     if (!financeOnly) {
@@ -91,6 +99,17 @@
         title: "Financial Statistics",
         description: "Revenue and payment analytics",
         icon: "mdi:cash-multiple",
+        iconColor: "text-green-600",
+        iconBg: "bg-green-100"
+      });
+    }
+
+    if (includeSupport) {
+      sections.push({
+        id: "support",
+        title: "Support Statistics",
+        description: "Track support ticket response rates, closure rates, and officer performance",
+        icon: "mdi:headset",
         iconColor: "text-green-600",
         iconBg: "bg-green-100"
       });
@@ -303,6 +322,33 @@
                   </div>
                 </button>
               {/if} -->
+            {:else if section.id === "support"}
+              <!-- Support Statistics Content -->
+              <div class="space-y-4">
+                <p class="text-sm text-gray-600 mb-4">
+                  View support ticket performance metrics for {selectedRegistry} registry:
+                </p>
+                <button
+                  on:click={navigateToSupportStatistics}
+                  class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left w-full"
+                >
+                  <div class="absolute inset-0 bg-gradient-to-br from-transparent via-green-50/40 to-green-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div class="relative z-10">
+                    <div class="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                      <Icon icon="mdi:headset" class="text-2xl text-green-600" />
+                    </div>
+                    <h4 class="text-lg font-semibold text-slate-800 mb-2">Support Officer Performance</h4>
+                    <p class="text-sm text-gray-600 mb-4">
+                      Compare support ticket response rates, closure rates, and individual officer performance scores across custom periods
+                    </p>
+                    <div class="flex items-center text-green-600 text-sm font-medium">
+                      <span>View Details</span>
+                      <Icon icon="mdi:arrow-right" class="ml-2 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
+              </div>
+
             {/if}
           </div>
         </Accordion.Content>

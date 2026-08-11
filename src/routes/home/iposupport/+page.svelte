@@ -135,6 +135,7 @@
 	let showResultLengthList: boolean = false;
 	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
 	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 0: 1, 2: 2 };
+	const FULL_SUMMARY_FETCH_LIMIT = 100000;
 
 	const userName = ($loggedInUser?.firstName ?? '') + ' ' + ($loggedInUser?.lastName ?? '');
 
@@ -282,6 +283,10 @@
 		return null;
 	}
 
+	function withFullSummaryPage(body: Record<string, any>): Record<string, any> {
+		return { ...body, amount: FULL_SUMMARY_FETCH_LIMIT, startIndex: 0 };
+	}
+
 	function getTicketSummaryBody(status: number | null = activeStatusFilter): Record<string, any> {
 		const userId = ($loggedInUser as any)?.creatorId;
 		const specialRegistryCategory = getSpecialRegistryCategory();
@@ -294,7 +299,7 @@
 				raisedByRegistryStaff: true
 			};
 			if (status !== null) body.status = status;
-			return body;
+			return withFullSummaryPage(body);
 		}
 
 		if (isTechSupport()) {
@@ -306,22 +311,22 @@
 				body.raisedByRegistryStaff = false;
 			}
 			if (status !== null) body.status = status;
-			return body;
+			return withFullSummaryPage(body);
 		}
 		if (isTrademarkSupport()) {
 			const body: Record<string, any> = { creatorId: 'null', category: TicketCategory.TrademarkRegistry };
 			if (status !== null) body.status = status;
-			return body;
+			return withFullSummaryPage(body);
 		}
 		if (isPatentDesignSupport()) {
 			const body: Record<string, any> = { creatorId: 'null', category: TicketCategory.PatentDesignRegistry };
 			if (status !== null) body.status = status;
-			return body;
+			return withFullSummaryPage(body);
 		}
 
 		const body: Record<string, any> = { creatorId: userId };
 		if (status !== null) body.status = status;
-		return body;
+		return withFullSummaryPage(body);
 	}
 
 	function sortTicketSummaries(raw: any): any {
@@ -406,12 +411,12 @@
 	}
 
 	async function getSpecialQueueCount(registryCategory: TicketCategory): Promise<number> {
-		return (await fetchTicketSummaries({
+		return (await fetchTicketSummaries(withFullSummaryPage({
 			creatorId: 'null',
 			category: TicketCategory.TechnicalSupport,
 			registryCategory,
 			raisedByRegistryStaff: true
-		})).length;
+		}))).length;
 	}
 
 	async function getSpecialQueueStats() {

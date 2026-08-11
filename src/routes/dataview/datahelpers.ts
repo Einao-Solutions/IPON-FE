@@ -23,7 +23,6 @@ export function getStatuses(
       ApplicationStatuses.Publication,
       ApplicationStatuses.Re_conduct,
       ApplicationStatuses.Rejected,
-      ApplicationStatuses.Withdrawn,
     ];
   }
   if (
@@ -121,9 +120,9 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
     case ApplicationStatuses.Approved:
       return "Approve";
     case ApplicationStatuses.Rejected:
-      return "Reject";
+      return "Refuse";
     case ApplicationStatuses.Publication:
-      return "Publication";
+      return "Accept";
     case ApplicationStatuses.Withdrawn:
       return "Withdraw";
     case ApplicationStatuses.AppealRequest:
@@ -149,7 +148,7 @@ export function mapStatusOptionToString(obj: ApplicationStatuses): string {
     case ApplicationStatuses.PendingRenewal:
       return "Pending Renewal";
     case ApplicationStatuses.Published:
-      return "Publish";
+      return "Accept";
     default:
       return "-";
   }

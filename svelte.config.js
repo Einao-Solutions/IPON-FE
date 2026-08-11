@@ -114,6 +114,7 @@ const config = {
         "/statistics/performance/staff",
         "/statistics/performance/units",
         "/statistics/operational",
+        "/statistics/support",
         "/design",
         "/auth/reset-password",
         "/home/postregistration/designamendment",
@@ -136,7 +137,11 @@ const config = {
         "/statutorydeclaration/paid",
         "/oppositionwithdrawal/paid",
         "/home/other-applications",
-        "/home/iposupport"
+        "/home/iposupport",
+        "/home/offline-renewal",
+        "/home/offline-renewal/search",
+        "/home/offline-renewal/submit",
+        "/home/trademarkpubs/publish"
       ],
     },
   },

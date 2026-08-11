@@ -137,8 +137,17 @@
           ApplicationStatuses.Active,
         ];
 
-        const isStatusAllowed = allowedStatuses.includes(fileStatus) || isRenewalEligible;
-        if (fileStatus === ApplicationStatuses.Inactive && !isRenewalEligible) {
+        const isPatentOrDesign =
+          file?.fileTypes === FileTypes.Patent ||
+          file?.fileTypes === FileTypes.Design;
+        const inactiveAllowedForType =
+          isPatentOrDesign && fileStatus === ApplicationStatuses.Inactive;
+
+        const isStatusAllowed =
+          allowedStatuses.includes(fileStatus) ||
+          isRenewalEligible ||
+          inactiveAllowedForType;
+        if (file?.fileTypes === FileTypes.Trademark && fileStatus === ApplicationStatuses.Inactive && !isRenewalEligible) {
           error = `Your file is currently Inactive or not eligible for renewal. Please file for restoration.`;
           return;
         }

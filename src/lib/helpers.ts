@@ -9,7 +9,7 @@ import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 //  export const baseURL = "http://localhost:5044";
 export const baseURL = "https://testbackend.iponigeria.com";
 // export const baseURL = "https://integration.iponigeria.com";
-export const localhost = "http://localhost:5044";
+export const localhost = "http://localhost:5044"   
 
 export const nonConventionalDescription =
   "Filing new patent application with protection in Nigeria only.";
@@ -299,7 +299,10 @@ export enum FormApplicationTypes {
   Restoration = 23,
   CounterStatement = 24,
   StatutoryDeclaration = 25,
+  ChangeOfAgent = 26,
+  OfflineRenewalRequest = 27,
 }
+
 
 export enum ApplicationLetters {
   NewApplicationReceipt = 0,
@@ -498,6 +501,8 @@ export enum UserRoles {
   DesignStaff,
   TrademarkSupport,
   PatentDesignSupport,
+  ActingTrademarkRegistrar,
+  ActingPatentDesignRegistrar,
 }
 
 export enum FilingType {
@@ -673,6 +678,7 @@ export type DataHistory = {
   message: string;
   userId: string;
   user: string;
+  attachmentUrl: string;
 };
 export type ApplicationHistoryType = {
   applicationType: number | null;
@@ -1074,6 +1080,10 @@ export function mapRoleToString(type: UserRoles) {
       return "Trademark Support";
     case UserRoles.PatentDesignSupport:
       return "Patent/Design Support";
+    case UserRoles.ActingTrademarkRegistrar:
+      return "Acting Trademark Registrar";
+    case UserRoles.ActingPatentDesignRegistrar:
+      return "Acting Patent/Design Registrar";
     default:
       return "Unknown";
   }

@@ -39,6 +39,10 @@
   });
 
   function handleCardClick(registry: string) {
+    if (registry === 'Support') {
+      goto('/statistics/support');
+      return;
+    }
     selectedRegistry = registry;
     currentView = "list";
   }
