@@ -3747,7 +3747,7 @@
                           generateLetter(application, 9, 34);
                         }}>Change of Name Receipt</DropdownMenu.Item
                       >
-                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                      {#if application.currentStatus === ApplicationStatuses.Approved || application.currentStatus === ApplicationStatuses.AutoApproved}
                         <DropdownMenu.Item
                           on:click={() => {
                             generateLetter(application, 9, 48);
@@ -3767,7 +3767,7 @@
                           generateLetter(application, 10, 33);
                         }}>Change of Address Receipt</DropdownMenu.Item
                       >
-                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                      {#if application.currentStatus === ApplicationStatuses.Approved || application.currentStatus === ApplicationStatuses.AutoApproved}
                         <DropdownMenu.Item
                           on:click={() => {
                             generateLetter(application, 10, 49);
