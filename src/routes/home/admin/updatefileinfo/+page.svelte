@@ -396,6 +396,13 @@
     );
   };
 
+  // Delete design creator
+  const deleteDesignCreator = (index: number) => {
+    filing.designCreators = filing.designCreators.filter(
+      (_: any, i: number) => i !== index
+    );
+  };
+
   // === ATTACHMENT HANDLING FUNCTIONS ===
 
   // Canonical attachment option lists per file type
@@ -732,9 +739,11 @@
       // Attach recordal-specific newValue/oldValue
       if (app.applicationType === FormApplicationTypes.Assignment) {
         body.oldValue = {
-          name: filing.applicants?.[0]?.name || filing.correspondence?.name || "",
-          email: filing.applicants?.[0]?.email || filing.correspondence?.email || "",
-          address: filing.applicants?.[0]?.address || filing.correspondence?.address || "",
+          name: assignmentData.assignorName || filing.applicants?.[0]?.name || filing.correspondence?.name || "",
+          email: assignmentData.assignorEmail || filing.applicants?.[0]?.email || filing.correspondence?.email || "",
+          phone: assignmentData.assignorPhone || filing.applicants?.[0]?.phone || "",
+          nationality: assignmentData.assignorNationality || filing.applicants?.[0]?.nationality || "",
+          address: assignmentData.assignorAddress || filing.applicants?.[0]?.address || filing.correspondence?.address || "",
         };
         body.newValue = {
           assigneeName: assignmentData.assigneeName,
@@ -1506,23 +1515,23 @@
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                        <input type="text" class="input" readonly value={assignmentData.assignorName} />
+                        <input type="text" class="input" bind:value={assignmentData.assignorName} />
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" class="input" readonly value={assignmentData.assignorEmail} />
+                        <input type="email" class="input" bind:value={assignmentData.assignorEmail} />
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                        <input type="tel" class="input" readonly value={assignmentData.assignorPhone} />
+                        <input type="tel" class="input" bind:value={assignmentData.assignorPhone} />
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
-                        <input type="text" class="input" readonly value={assignmentData.assignorNationality} />
+                        <input type="text" class="input" bind:value={assignmentData.assignorNationality} />
                       </div>
                       <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                        <textarea class="input min-h-20" readonly>{assignmentData.assignorAddress}</textarea>
+                        <textarea class="input min-h-20" bind:value={assignmentData.assignorAddress}></textarea>
                       </div>
                     </div>
                   </div>
@@ -1757,15 +1766,15 @@
                   <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h4 class="font-semibold mb-3">Assignor</h4>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorName || viewAssignmentData.assignorName || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorName} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorEmail || viewAssignmentData.assignorEmail || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorEmail} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorPhone || viewAssignmentData.assignorPhone || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorPhone} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorNationality || viewAssignmentData.assignorNationality || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorNationality} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <textarea class="input" readonly>{selectedRecordal.hist.assignment?.assignorAddress || viewAssignmentData.assignorAddress || ''}</textarea>
+                    <textarea class="input" bind:value={viewAssignmentData.assignorAddress}></textarea>
                   </section>
 
                   <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -2667,17 +2676,21 @@
                 <div
                   class="bg-white border border-slate-200 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <!-- <div class="mb-4 flex justify-between items-center bg-slate-50 p-3 rounded-md">
-                    <label for="creator-{index}-heading" class="text-base font-semibold text-slate-800">Creator {index + 1}</label>
-                    <Button 
-                      variant="destructive" 
+                  <div class="mb-4 flex justify-between items-center bg-slate-50 p-3 rounded-md">
+                    <label
+                      for="creator-{index}-heading"
+                      class="text-base font-semibold text-slate-800"
+                      >Creator {index + 1}</label
+                    >
+                    <Button
+                      variant="destructive"
                       size="sm"
                       on:click={() => deleteDesignCreator(index)}
                       class="text-xs"
                     >
                       Delete
                     </Button>
-                  </div> -->
+                  </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
