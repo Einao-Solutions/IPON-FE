@@ -506,6 +506,8 @@ export function mapTypeToString(type: number) {
       return "Change of Agent";
     case 27:
       return "Offline Renewal Request";
+    case 28:
+      return "Trademark Journal Request";
     default:
       return "";
   }

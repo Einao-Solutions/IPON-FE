@@ -316,6 +316,85 @@
   // the right side. Matching is done by normalizing the remaining base name.
   // Additionally, any key ending in "2" (e.g. "applicantName2") is also treated as
   // the previous/old value for its unsuffixed counterpart (e.g. "applicantName").
+  function formatRecordalValue(key: string, value: any) {
+    if (typeof value !== "string") return value;
+    const isDateField = /date/i.test(key);
+    if (isDateField) {
+      const parsed = new Date(value);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toLocaleDateString();
+      }
+    }
+    return value;
+  }
+
+  function flattenRecordalObject(
+    obj: any,
+    prefix: string,
+    target: Record<string, any>,
+    mappings: Record<string, string> = {},
+  ) {
+    if (!obj || typeof obj !== "object") return;
+    for (const [key, value] of Object.entries(obj)) {
+      if (value == null || value === "") continue;
+      const normalizedKey = mappings[key] ?? key;
+      target[`${prefix}${normalizedKey.charAt(0).toUpperCase()}${normalizedKey.slice(1)}`] = value;
+    }
+  }
+
+  function normalizeRecordalData(
+    application: any,
+    data: any,
+  ): Record<string, any> {
+    if (!data) return {};
+    const normalized = { ...data };
+
+    if (application?.applicationType === FormApplicationTypes.Assignment) {
+      const assignment = data.assignment || {};
+      if (assignment.assignorName) normalized.assignorName = assignment.assignorName;
+      if (assignment.assignorEmail) normalized.assignorEmail = assignment.assignorEmail;
+      if (assignment.assignorPhone) normalized.assignorPhone = assignment.assignorPhone;
+      if (assignment.assignorNationality) normalized.assignorNationality = assignment.assignorNationality;
+      if (assignment.assignorAddress) normalized.assignorAddress = assignment.assignorAddress;
+      if (assignment.assignorCountry) normalized.assignorCountry = assignment.assignorCountry;
+      if (assignment.assigneeName) normalized.assigneeName = assignment.assigneeName;
+      if (assignment.assigneeEmail) normalized.assigneeEmail = assignment.assigneeEmail;
+      if (assignment.assigneePhone) normalized.assigneePhone = assignment.assigneePhone;
+      if (assignment.assigneeNationality) normalized.assigneeNationality = assignment.assigneeNationality;
+      if (assignment.assigneeAddress) normalized.assigneeAddress = assignment.assigneeAddress;
+      if (assignment.assigneeCountry) normalized.assigneeCountry = assignment.assigneeCountry;
+      if (assignment.dateOfAssignment) normalized.dateOfAssignment = assignment.dateOfAssignment;
+    }
+
+    if (data.oldValue) {
+      flattenRecordalObject(data.oldValue, "old", normalized, {
+        name: "Name",
+        email: "Email",
+        phone: "Phone",
+        address: "Address",
+        country: "Country",
+        nationality: "Nationality",
+      });
+    }
+
+    if (data.newValue) {
+      flattenRecordalObject(data.newValue, "new", normalized, {
+        name: "Name",
+        email: "Email",
+        phone: "Phone",
+        address: "Address",
+        country: "Country",
+        nationality: "Nationality",
+        mergerDate: "MergerDate",
+        dateOfAssignment: "DateOfAssignment",
+        newName: "Name",
+        newAddress: "Address",
+      });
+    }
+
+    return normalized;
+  }
+
   function pairOldNew(
     data: any,
     leftPrefix: string,
@@ -359,8 +438,9 @@
         order.push(id);
       }
       const row = map.get(id)!;
-      if (isLeft) row.left = v;
-      else row.right = v;
+      const formattedValue = formatRecordalValue(k, v);
+      if (isLeft) row.left = formattedValue;
+      else row.right = formattedValue;
     }
     return order.map((id) => map.get(id)!);
   }
@@ -1866,199 +1946,278 @@
           <p class="text-xs text-slate-500">Loading application data</p>
         </div>
       {:else if recordalData}
-        <div class="space-y-0">
-          {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment || selectedApplication?.applicationType === FormApplicationTypes.Merger || selectedApplication?.applicationType === FormApplicationTypes.ClericalUpdate || selectedApplication?.applicationType === FormApplicationTypes.Amendment || [7, 9, 36, 10].includes(selectedApplication?.applicationType ?? -1)}
-            {@const isAssignment =
-              selectedApplication?.applicationType ===
-              FormApplicationTypes.Assignment}
-            {@const leftPrefix = isAssignment ? "assignor" : "old"}
-            {@const rightPrefix = isAssignment ? "assignee" : "new"}
-            {@const leftLabel = isAssignment
-              ? "Assignor (Previous)"
-              : "Previous"}
-            {@const rightLabel = isAssignment ? "Assignee (New)" : "New"}
-            {@const rows = pairOldNew(recordalData, leftPrefix, rightPrefix)}
-            {@const hasAnyLeft = rows.some((r) => r.left !== undefined)}
-            <section>
-              <table class="w-full text-sm border border-slate-200 rounded">
-                <thead>
-                  <tr class="border-b border-slate-200 bg-slate-50">
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 text-xs w-1/4"
-                      >Field</th
-                    >
-                    {#if hasAnyLeft}
-                      <th
-                        class="text-left px-3 py-2 font-semibold text-slate-900 text-xs w-3/8 border-l border-slate-200"
-                        >{leftLabel}</th
-                      >
-                    {/if}
-                    <th
-                      class="text-left px-3 py-2 font-semibold text-slate-900 text-xs border-l border-slate-200"
-                      >{hasAnyLeft ? rightLabel : "Details"}</th
-                    >
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each rows as row}
-                    <tr
-                      class="border-b border-slate-200 hover:bg-slate-50 align-top"
-                    >
-                      <td
-                        class="px-3 py-2 font-medium text-slate-700 whitespace-nowrap"
-                        >{row.field}</td
-                      >
-                      {#if hasAnyLeft}
-                        <td
-                          class="px-3 py-2 text-slate-800 border-l border-slate-200 {row.left !==
-                            undefined &&
-                          row.right !== undefined &&
-                          JSON.stringify(row.left) !== JSON.stringify(row.right)
-                            ? 'bg-amber-50'
-                            : ''}"
-                        >
-                          {#if Array.isArray(row.left)}
-                            <div class="space-y-0.5">
-                              {#each row.left as item}<div>{item}</div>{/each}
-                            </div>
-                          {:else if row.left === undefined}
-                            <span class="text-slate-400 italic">—</span>
-                          {:else}
-                            {row.left}
-                          {/if}
-                        </td>
-                      {/if}
-                      <td
-                        class="px-3 py-2 text-slate-800 border-l border-slate-200 {hasAnyLeft &&
-                        row.left !== undefined &&
-                        row.right !== undefined &&
-                        JSON.stringify(row.left) !== JSON.stringify(row.right)
-                          ? 'bg-emerald-50 font-medium'
-                          : ''}"
-                      >
-                        {#if Array.isArray(row.right)}
-                          <div class="space-y-0.5">
-                            {#each row.right as item}<div>{item}</div>{/each}
-                          </div>
-                        {:else if row.right === undefined}
-                          <span class="text-slate-400 italic">—</span>
-                        {:else}
-                          {row.right}
-                        {/if}
-                      </td>
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
-            </section>
-          {/if}
-
-          <!-- Shared: Attachments -->
-          {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl || recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
-            <section class="mt-3">
-              <h4 class="text-xs font-semibold text-slate-900 mb-2">
-                Attachments
-              </h4>
-              <div class="flex flex-wrap gap-4">
-                {#if recordalData.oldAttachmentUrl || recordalData.OldAttachmentUrl}
-                  <div class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-slate-600"
-                      >Previous</span
-                    >
-                    <img
-                      src={recordalData.oldAttachmentUrl ||
-                        recordalData.OldAttachmentUrl}
-                      alt="Old Attachment"
-                      class="max-w-xs h-auto rounded border border-slate-200"
-                      style="max-height: 150px; object-fit: contain;"
-                    />
-                  </div>
-                {/if}
-                {#if recordalData.newAttachmentUrl || recordalData.NewAttachmentUrl}
-                  <div class="flex flex-col gap-1">
-                    <span class="text-xs font-medium text-slate-600"
-                      >Updated</span
-                    >
-                    <img
-                      src={recordalData.newAttachmentUrl ||
-                        recordalData.NewAttachmentUrl}
-                      alt="New Attachment"
-                      class="max-w-xs h-auto rounded border border-slate-200"
-                      style="max-height: 150px; object-fit: contain;"
-                    />
-                  </div>
-                {/if}
+        <div class="space-y-6">
+          <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div class="flex items-center justify-between gap-4">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Form Header
+                </p>
+                <p class="text-sm text-slate-700 mt-1">
+                  {recordalData.oldValue?.title || recordalData.newValue?.title || "—"}
+                </p>
               </div>
-            </section>
-          {/if}
-
-          <!-- Shared: Documents -->
-          {#if recordalData.documentUrl || recordalData.assignmentDeedUrl || recordalData.authorizationLetterUrl || (recordalData.appealDocs && recordalData.appealDocs.length > 0)}
-            <section class="mt-3">
-              <h4 class="text-xs font-semibold text-slate-900 mb-2">
-                Supporting Documents
-              </h4>
-              <div class="flex flex-wrap gap-2">
-                {#if recordalData.documentUrl}
-                  <Button
-                    on:click={() =>
-                      window.open(recordalData.documentUrl, "_blank")}
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                  >
-                    <Icon
-                      icon="mdi:file-document-outline"
-                      width="1em"
-                    />Document
-                  </Button>
-                {/if}
-                {#if recordalData.assignmentDeedUrl}
-                  <Button
-                    on:click={() =>
-                      window.open(recordalData.assignmentDeedUrl, "_blank")}
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                  >
-                    <Icon icon="mdi:file-sign" width="1em" />Assignment Deed
-                  </Button>
-                {/if}
-                {#if recordalData.authorizationLetterUrl}
-                  <Button
-                    on:click={() =>
-                      window.open(
-                        recordalData.authorizationLetterUrl,
-                        "_blank",
-                      )}
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                  >
-                    <Icon
-                      icon="mdi:file-certificate-outline"
-                      width="1em"
-                    />Authorization
-                  </Button>
-                {/if}
-                {#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
-                  {#each recordalData.appealDocs as docUrl, index}
-                    <Button
-                      on:click={() => window.open(docUrl, "_blank")}
-                      variant="outline"
-                      size="sm"
-                      class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                    >
-                      <Icon
-                        icon="mdi:file-document-outline"
-                        width="1em"
-                      />Appeal {index + 1}
-                    </Button>
-                  {/each}
-                {/if}
+              <div class="text-right text-xs text-slate-500">
+                <div>File ID: {fileData?.fileId ?? "—"}</div>
+                <div>Type: {recordalData.oldValue?.fileType || recordalData.newValue?.fileType || "—"}</div>
               </div>
-            </section>
-          {/if}
+            </div>
+            <div class="grid grid-cols-1 gap-4 mt-4 md:grid-cols-2">
+              <div class="space-y-3">
+                <div>
+                  <div class="text-xs text-slate-500">File Number</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.fileNumber || "—"}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500">Product Class</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.productClass ?? "—"}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500">RTM Number</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.rtmNumber || "—"}</div>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <div>
+                  <div class="text-xs text-slate-500">Current Applicant</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.name || "—"}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500">Email</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.email || "—"}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500">Phone</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.phone || "—"}</div>
+                </div>
+              </div>
+              <div class="space-y-3 md:col-span-2">
+                <div>
+                  <div class="text-xs text-slate-500">Address</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.address || "—"}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500">Country</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.country || "—"}</div>
+                </div>
+                <div>
+                  <div class="text-xs text-slate-500">Nationality</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.nationality || "—"}</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid gap-6 lg:grid-cols-2">
+            {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Assignor
+                </p>
+                <div class="mt-4 space-y-3 text-sm text-slate-900">
+                  <div>
+                    <div class="text-xs text-slate-500">Name</div>
+                    <div>{recordalData.assignment?.assignorName || recordalData.oldValue?.name || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Email</div>
+                    <div>{recordalData.assignment?.assignorEmail || recordalData.oldValue?.email || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Phone</div>
+                    <div>{recordalData.assignment?.assignorPhone || recordalData.oldValue?.phone || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Nationality</div>
+                    <div>{recordalData.assignment?.assignorNationality || recordalData.oldValue?.nationality || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Address</div>
+                    <div>{recordalData.assignment?.assignorAddress || recordalData.oldValue?.address || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Country</div>
+                    <div>{recordalData.assignment?.assignorCountry || recordalData.oldValue?.country || "—"}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Assignee / New Value
+                </p>
+                <div class="mt-4 space-y-3 text-sm text-slate-900">
+                  <div>
+                    <div class="text-xs text-slate-500">Name</div>
+                    <div>{recordalData.assignment?.assigneeName || recordalData.newValue?.assigneeName || recordalData.newValue?.name || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Email</div>
+                    <div>{recordalData.assignment?.assigneeEmail || recordalData.newValue?.assigneeEmail || recordalData.newValue?.email || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Phone</div>
+                    <div>{recordalData.assignment?.assigneePhone || recordalData.newValue?.assigneePhone || recordalData.newValue?.phone || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Nationality</div>
+                    <div>{recordalData.assignment?.assigneeNationality || recordalData.newValue?.assigneeNationality || recordalData.newValue?.nationality || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Address</div>
+                    <div>{recordalData.assignment?.assigneeAddress || recordalData.newValue?.assigneeAddress || recordalData.newValue?.address || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Country</div>
+                    <div>{recordalData.assignment?.assigneeCountry || recordalData.newValue?.assigneeCountry || recordalData.newValue?.country || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Date of Assignment</div>
+                    <div>{recordalData.assignment?.dateOfAssignment || recordalData.newValue?.dateOfAssignment || "—"}</div>
+                  </div>
+                </div>
+              </div>
+            {:else if selectedApplication?.applicationType === FormApplicationTypes.RegisteredUser || selectedApplication?.applicationType === FormApplicationTypes.Merger}
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  {selectedApplication?.applicationType === FormApplicationTypes.Merger ? "Merger" : "Registered User"} Details
+                </p>
+                <div class="mt-4 grid gap-4 md:grid-cols-2 text-sm text-slate-900">
+                  <div>
+                    <div class="text-xs text-slate-500">Name</div>
+                    <div>{recordalData.newValue?.name || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Email</div>
+                    <div>{recordalData.newValue?.email || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Phone</div>
+                    <div>{recordalData.newValue?.phone || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">Nationality</div>
+                    <div>{recordalData.newValue?.nationality || "—"}</div>
+                  </div>
+                  <div class="md:col-span-2">
+                    <div class="text-xs text-slate-500">Address</div>
+                    <div>{recordalData.newValue?.address || "—"}</div>
+                  </div>
+                  {#if selectedApplication?.applicationType === FormApplicationTypes.Merger}
+                    <div class="md:col-span-2">
+                      <div class="text-xs text-slate-500">Merger Date</div>
+                      <div>{recordalData.newValue?.mergerDate || "—"}</div>
+                    </div>
+                  {/if}
+                </div>
+              </div>
+            {:else if selectedApplication?.applicationType === FormApplicationTypes.ChangeOfName}
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Change of Name Details
+                </p>
+                <div class="mt-4 space-y-4 text-sm text-slate-900">
+                  <div>
+                    <div class="text-xs text-slate-500">Current Name</div>
+                    <div>{recordalData.oldValue?.name || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">New Name</div>
+                    <div>{recordalData.newValue?.newName || recordalData.newValue?.name || "—"}</div>
+                  </div>
+                </div>
+              </div>
+            {:else if selectedApplication?.applicationType === FormApplicationTypes.ChangeOfAddress}
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                  Change of Address Details
+                </p>
+                <div class="mt-4 space-y-4 text-sm text-slate-900">
+                  <div>
+                    <div class="text-xs text-slate-500">Current Address</div>
+                    <div>{recordalData.oldValue?.address || "—"}</div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">New Address</div>
+                    <div>{recordalData.newValue?.newAddress || recordalData.newValue?.address || "—"}</div>
+                  </div>
+                </div>
+              </div>
+            {:else}
+              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
+                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Recordal Details</p>
+                <div class="mt-4 space-y-3 text-sm text-slate-900">
+                  {#each Object.entries(recordalData.newValue || {}) as [key, value]}
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="text-xs text-slate-500">{key}</div>
+                      <div>{value}</div>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          </section>
+
+          <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Attachments
+            </p>
+            <div class="mt-3 flex flex-wrap gap-2">
+              {#if recordalData.documentUrl}
+                <Button
+                  on:click={() => window.open(recordalData.documentUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                >
+                  <Icon icon="mdi:file-document-outline" width="1em" />Document
+                </Button>
+              {/if}
+              {#if recordalData.assignment?.deedOfAgreementUrl}
+                <Button
+                  on:click={() => window.open(recordalData.assignment.deedOfAgreementUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                >
+                  <Icon icon="mdi:file-sign" width="1em" />Assignment Deed
+                </Button>
+              {/if}
+              {#if recordalData.assignment?.authorizationLetterUrl}
+                <Button
+                  on:click={() => window.open(recordalData.assignment.authorizationLetterUrl, "_blank")}
+                  variant="outline"
+                  size="sm"
+                  class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                >
+                  <Icon icon="mdi:file-certificate-outline" width="1em" />Authorization
+                </Button>
+              {/if}
+              {#if recordalData.newValue?.attachments && recordalData.newValue.attachments.length > 0}
+                {#each recordalData.newValue.attachments as attachment}
+                  <Button
+                    on:click={() => window.open(attachment.url, "_blank")}
+                    variant="outline"
+                    size="sm"
+                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                  >
+                    <Icon icon="mdi:file-document-outline" width="1em" />{attachment.fileName}
+                  </Button>
+                {/each}
+              {/if}
+              {#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
+                {#each recordalData.appealDocs as docUrl, index}
+                  <Button
+                    on:click={() => window.open(docUrl, "_blank")}
+                    variant="outline"
+                    size="sm"
+                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
+                  >
+                    <Icon icon="mdi:file-document-outline" width="1em" />Appeal {index + 1}
+                  </Button>
+                {/each}
+              {/if}
+            </div>
+          </section>
         </div>
       {:else}
         <div class="flex flex-col items-center justify-center h-40 gap-2">
