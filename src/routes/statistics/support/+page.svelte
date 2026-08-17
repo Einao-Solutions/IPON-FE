@@ -322,14 +322,18 @@
     else goto("/statistics");
   }
 
-  onMount(() => {
+  onMount(async () => {
     const user = $loggedInUser;
     if (!user) { goto("/auth"); return; }
 
     userRolesLocal = user.userRoles ?? [];
-    const isSuperAdminOrTech = userRolesLocal.includes(UserRoles.SuperAdmin) || userRolesLocal.includes(UserRoles.Tech);
-    const isTrademarkReg = userRolesLocal.includes(UserRoles.TrademarkRegistrar);
-    const isPatentDesignReg = userRolesLocal.includes(UserRoles.PatentDesignRegistrar);
+    const isSuperAdminOrTech = userRolesLocal.includes(UserRoles.SuperAdmin) ||
+      userRolesLocal.includes(UserRoles.PermSec) ||
+      userRolesLocal.includes(UserRoles.Tech);
+    const isTrademarkReg = userRolesLocal.includes(UserRoles.TrademarkRegistrar) ||
+      userRolesLocal.includes(UserRoles.ActingTrademarkRegistrar);
+    const isPatentDesignReg = userRolesLocal.includes(UserRoles.PatentDesignRegistrar) ||
+      userRolesLocal.includes(UserRoles.ActingPatentDesignRegistrar);
 
     if (!isSuperAdminOrTech && !isTrademarkReg && !isPatentDesignReg) {
       goto("/home/dashboard");
@@ -352,11 +356,16 @@
 
     if (scopeParam && availableScopes.some(s => s.value === scopeParam)) {
       selectedScope = scopeParam;
-    } else if (isScopeLocked && availableScopes.length === 1) {
-      selectedScope = availableScopes[0].value;
+    } else if (availableScopes.length > 0) {
+      const overviewScope = availableScopes.find(s => s.value === "Overview");
+      selectedScope = overviewScope?.value ?? availableScopes[0].value;
     }
 
     selectedMonth = MONTHS[new Date().getMonth()];
+
+    if (selectedScope) {
+      await fetchSingle();
+    }
   });
 </script>
 
@@ -410,10 +419,10 @@
           <!-- Scope selector — tab picker for multi-scope roles, locked badge for single-scope -->
           {#if availableScopes.length > 1}
             <div>
-              <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 <Icon icon="mdi:filter-outline" class="w-4 h-4 text-gray-500" />
                 Scope
-              </label>
+              </div>
               <div class="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg">
                 {#each availableScopes as scope}
                   <button
@@ -440,10 +449,10 @@
           <!-- Period Type -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+              <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 <Icon icon="lucide:calendar" class="w-4 h-4 text-gray-500" />
                 Period Type
-              </label>
+              </div>
               <div class="inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg flex-wrap">
                 {#each PERIOD_TYPES as type}
                   <button
@@ -459,10 +468,10 @@
 
             {#if selectedPeriodType !== "year-range"}
               <div>
-                <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+                <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <Icon icon="lucide:calendar-days" class="w-4 h-4 text-gray-500" />
                   Year
-                </label>
+                </div>
                 <div class="relative">
                   <select bind:value={selectedYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
                     {#each YEARS as year}<option value={year}>{year}</option>{/each}
@@ -477,7 +486,7 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             {#if selectedPeriodType === "month"}
               <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">Month</label>
+                <div class="text-sm font-semibold text-gray-700 mb-2 block">Month</div>
                 <div class="relative">
                   <select bind:value={selectedMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
                     {#each MONTHS as m}<option value={m}>{m}</option>{/each}
@@ -489,7 +498,7 @@
 
             {#if selectedPeriodType === "quarter"}
               <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">Quarter</label>
+                <div class="text-sm font-semibold text-gray-700 mb-2 block">Quarter</div>
                 <div class="relative">
                   <select bind:value={selectedQuarter} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
                     {#each QUARTERS as q}<option value={q}>{q}</option>{/each}
@@ -501,7 +510,7 @@
 
             {#if selectedPeriodType === "month-range"}
               <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">Start Month</label>
+                <div class="text-sm font-semibold text-gray-700 mb-2 block">Start Month</div>
                 <div class="relative">
                   <select bind:value={selectedStartMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
                     {#each MONTHS as m, i}<option value={i + 1}>{m}</option>{/each}
@@ -510,7 +519,7 @@
                 </div>
               </div>
               <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">End Month</label>
+                <div class="text-sm font-semibold text-gray-700 mb-2 block">End Month</div>
                 <div class="relative">
                   <select bind:value={selectedEndMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
                     {#each MONTHS as m, i}<option value={i + 1}>{m}</option>{/each}
@@ -522,7 +531,7 @@
 
             {#if selectedPeriodType === "year-range"}
               <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">Start Year</label>
+                <div class="text-sm font-semibold text-gray-700 mb-2 block">Start Year</div>
                 <div class="relative">
                   <select bind:value={selectedStartYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
                     {#each YEARS as year}<option value={year}>{year}</option>{/each}
@@ -531,7 +540,7 @@
                 </div>
               </div>
               <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">End Year</label>
+                <div class="text-sm font-semibold text-gray-700 mb-2 block">End Year</div>
                 <div class="relative">
                   <select bind:value={selectedEndYear} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer">
                     {#each YEARS as year}<option value={year}>{year}</option>{/each}
