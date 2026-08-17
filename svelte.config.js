@@ -43,6 +43,7 @@ const config = {
         "/payment/paid",
         "/home/payments",
         "/home/trademarkpubs",
+        "/home/trademarkpubs/publish",
         "/PaymentView",
         "/payment/status",
         "/publications",
