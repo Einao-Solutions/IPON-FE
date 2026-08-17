@@ -776,7 +776,6 @@
           name: mergerData.name,
           email: mergerData.email,
           phone: mergerData.phone,
-          dateOfMerger: mergerData.dateOfMerger,
           nationality: mergerData.nationality,
           address: mergerData.address,
         };
@@ -1552,17 +1551,9 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Nationality: <span class="text-red-500">*</span></label>
                     <input type="text" class="input" bind:value={assignmentData.assigneeNationality} placeholder="Enter assignee nationality" required />
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Country</label>
-                    <input type="text" class="input" readonly value={assignmentData.assigneeCountry} />
-                  </div>
                   <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Address: <span class="text-red-500">*</span></label>
                     <textarea class="input min-h-20" bind:value={assignmentData.assigneeAddress} placeholder="Enter assignee address" required></textarea>
-                  </div>
-                  <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Assignment</label>
-                    <input type="text" class="input" readonly value={assignmentData.dateOfAssignment} />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignment Deed (PDF):</label>
@@ -1625,10 +1616,6 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Phone: <span class="text-red-500">*</span></label>
                     <input type="tel" class="input" bind:value={mergerData.phone} placeholder="Enter phone" required />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Merger: <span class="text-red-500">*</span></label>
-                    <input type="date" class="input" bind:value={mergerData.dateOfMerger} required />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nationality: <span class="text-red-500">*</span></label>
@@ -1787,12 +1774,8 @@
                     <input class="input mb-2" bind:value={viewAssignmentData.assigneePhone} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
                     <input class="input mb-2" bind:value={viewAssignmentData.assigneeNationality} />
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assigneeCountry || viewAssignmentData.assigneeCountry || ''} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                     <textarea class="input mb-2" bind:value={viewAssignmentData.assigneeAddress}></textarea>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Assignment</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.dateOfAssignment || viewAssignmentData.dateOfAssignment || ''} />
                   </section>
                 </div>
 
@@ -1855,8 +1838,6 @@
                   <input class="input mb-2" bind:value={viewMergerData.name} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input class="input mb-2" bind:value={viewMergerData.email} />
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Date of Merger</label>
-                  <input type="date" class="input mb-2" bind:value={viewMergerData.dateOfMerger} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                   <textarea class="input mb-2" bind:value={viewMergerData.address}></textarea>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Deed (PDF)</label>
