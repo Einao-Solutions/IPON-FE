@@ -140,8 +140,7 @@ const config = {
         "/home/iposupport",
         "/home/offline-renewal",
         "/home/offline-renewal/search",
-        "/home/offline-renewal/submit",
-        "/home/trademarkpubs/publish"
+        "/home/offline-renewal/submit"
       ],
     },
   },
