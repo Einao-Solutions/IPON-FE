@@ -46,24 +46,46 @@
 
   $: isEinaoFinance = userRoles.includes(UserRoles.EinaoFinance);
 
+  $: isActingTrademarkRegistrar = userRoles.includes(UserRoles.ActingTrademarkRegistrar);
+  $: isActingPatentDesignRegistrar = userRoles.includes(UserRoles.ActingPatentDesignRegistrar);
+  $: isActingRegistrarSupportOnly = isActingTrademarkRegistrar || isActingPatentDesignRegistrar;
+
   $: canSeeTrademarkSupport = selectedRegistry === 'Trademark' && (
     userRoles.includes(UserRoles.SuperAdmin) ||
+    userRoles.includes(UserRoles.PermSec) ||
     userRoles.includes(UserRoles.Tech) ||
-    userRoles.includes(UserRoles.TrademarkRegistrar)
+    userRoles.includes(UserRoles.TrademarkRegistrar) ||
+    userRoles.includes(UserRoles.ActingTrademarkRegistrar)
   );
 
   $: canSeePatentDesignSupport = (selectedRegistry === 'Patent' || selectedRegistry === 'Design') && (
     userRoles.includes(UserRoles.SuperAdmin) ||
+    userRoles.includes(UserRoles.PermSec) ||
     userRoles.includes(UserRoles.Tech) ||
-    userRoles.includes(UserRoles.PatentDesignRegistrar)
+    userRoles.includes(UserRoles.PatentDesignRegistrar) ||
+    userRoles.includes(UserRoles.ActingPatentDesignRegistrar)
   );
 
   $: showSupportSection = canSeeTrademarkSupport || canSeePatentDesignSupport;
 
-  $: sections = getSectionsForRole(isFinanceOnly, showSupportSection);
+  $: sections = getSectionsForRole(isFinanceOnly, showSupportSection, isActingRegistrarSupportOnly);
 
-  function getSectionsForRole(financeOnly: boolean, includeSupport: boolean) {
+  function getSectionsForRole(financeOnly: boolean, includeSupport: boolean, actingSupportOnly: boolean) {
     const sections = [];
+
+    if (actingSupportOnly) {
+      if (includeSupport) {
+        sections.push({
+          id: "support",
+          title: "Support Statistics",
+          description: "Track support ticket response rates, closure rates, and officer performance",
+          icon: "mdi:headset",
+          iconColor: "text-green-600",
+          iconBg: "bg-green-100"
+        });
+      }
+      return sections;
+    }
     
     if (!financeOnly) {
       sections.push({
