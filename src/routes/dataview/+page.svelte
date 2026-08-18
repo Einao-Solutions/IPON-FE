@@ -17,6 +17,7 @@
   import {
     fileTypeToString,
     mapDateToString,
+    mapDateToStringNoDate,
   } from "../home/components/dashboardutils";
   import { onMount } from "svelte";
   import {
@@ -186,7 +187,6 @@
             })
           : "pending",
     }));
-    console.log(mappedDates);
     return mappedDates;
   }
 
@@ -401,6 +401,7 @@
     userId: string;
     fileId: string | null;
     reason: string;
+    attachment: File | null;
   }
 
   let statusUpdate: StatusChange = {
@@ -408,6 +409,7 @@
     userId: "",
     fileId: "",
     reason: "",
+    attachment: null,
   };
   let step = 0; // 0: form, 1: confirm, 2: success
   let isLoading = false;
@@ -439,6 +441,7 @@
         userId: $loggedInUser?.id,
         fileId: fileData?.fileId,
         reason: statusUpdate.reason,
+        attachment: statusUpdate.attachment, // Handle file attachment if needed
       }),
     });
     if (result.ok) {
@@ -691,7 +694,7 @@
         <div>
           <Label for="type" class="font-bold">Filing Date</Label>
           <p id="name">
-            {mapDateToString(
+            {mapDateToStringNoDate(
               String(fileData.filingDate ?? fileData.dateCreated ?? ""),
             )}
           </p>

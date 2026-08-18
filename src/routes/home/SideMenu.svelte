@@ -8,7 +8,8 @@
     decodeUser,
     type NotificationsType,
     UserRoles,
-    FileTypes,
+    TicketCategory,
+    TicketStates,
   } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { writable } from "svelte/store";
@@ -16,9 +17,7 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Select from "$lib/components/ui/select/index.js";
   import dayjs from "dayjs";
-  import quarterOfYear from "dayjs/plugin/quarterOfYear";
   import { User } from "lucide-svelte";
-  dayjs.extend(quarterOfYear);
 
   let notifications = writable<NotificationsType | null>(null);
   let notificationsLoading = false;
@@ -32,13 +31,23 @@
   let showJournalModal: boolean = false;
   let journalCurrentYear: number = dayjs().year();
   let journalIsFetching: boolean = false;
-  let journalSelectedType: undefined | string = "Trademark";
   let journalSelectedYear: number;
-  let journalSelectedQuarter: number;
   let journalAllYears: number[] = Array(journalCurrentYear + 1 - 2020)
     .fill(0)
     .map((_, i) => 2020 + i);
-  let journalQuarters = [1, 2, 3, 4];
+
+  type PublicationJournal = {
+    id?: string | number;
+    volume?: number | string;
+    number?: number | string;
+    journalReleaseDate?: string;
+    documentUrl?: string;
+    batch?: string;
+  };
+  let journalResults: PublicationJournal[] = [];
+  let journalFetchError: string | null = null;
+  let payingBatch: string | null = null;
+
   $: freePublication =
     $loggedInUser?.userRoles?.some((role) =>
       [
@@ -50,39 +59,30 @@
     ) ?? false;
 
   async function fetchJournalData() {
-    if (!journalSelectedQuarter || !journalSelectedYear) {
+    if (!journalSelectedYear) {
       return;
     }
-    const startDate = dayjs(journalSelectedYear.toString())
-      .set("date", 1)
-      .quarter(journalSelectedQuarter)
-      .format()
-      .split("T")[0];
-    const endDate = dayjs(journalSelectedYear.toString())
-      .set("date", 1)
-      .quarter(journalSelectedQuarter + 1)
-      .format()
-      .split("T")[0];
 
     journalIsFetching = true;
+    journalFetchError = null;
+    journalResults = [];
     try {
       const queryResult = await fetch(
-        `${baseURL}/api/publication/GetPublication?start=${startDate}&end=${endDate}&type=${FileTypes.Trademark}`,
+        `${baseURL}/api/publication/GetJournals?year=${journalSelectedYear}`,
       );
       if (queryResult.ok) {
-        const dataBlob = await queryResult.blob();
-        const link = document.createElement("a");
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = "journal.pdf";
-        link.click();
+        const data = await queryResult.json();
+        journalResults = Array.isArray(data) ? data : [];
       } else {
+        journalFetchError = `Failed to fetch journals (${queryResult.status}).`;
         console.error(
-          "Failed to fetch publication",
+          "Failed to fetch journals",
           queryResult.status,
           await queryResult.text(),
         );
       }
     } catch (e) {
+      journalFetchError = "Failed to fetch journals.";
       console.error(e);
     } finally {
       journalIsFetching = false;
@@ -91,12 +91,27 @@
 
   function handleJournalYearChange(selectin: any) {
     journalSelectedYear = Number(selectin?.value);
+    journalResults = [];
+    journalFetchError = null;
+    fetchJournalData();
   }
-  function handleJournalQuarterChange(selectin: any) {
-    journalSelectedQuarter = Number(selectin?.value);
+
+  function formatJournalDate(value?: string) {
+    if (!value) return "";
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return value;
+    return d.toLocaleDateString("en-NG", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
   }
-  function handleJournalTypeChange(selectin: any) {
-    journalSelectedType = selectin?.value as string;
+
+  function formatJournalBatch(batch?: string) {
+    if (!batch) return "Journal";
+    const match = batch.match(/V(\d+)N(\d+)/i);
+    if (!match) return batch;
+    return `Volume ${match[1]}, No. ${match[2]}`;
   }
 
   let systemNotification = {
@@ -118,11 +133,19 @@
     location: string;
     name?: string;
     roles?: UserRoles[]; // undefined = visible to everyone
+    hiddenForRoles?: UserRoles[];
     submenus?: MenuItem[];
   };
 
   let menus: MenuItem[] = [
-    { icon: "radix-icons:dashboard", location: "Dashboard" },
+    {
+      icon: "radix-icons:dashboard",
+      location: "Dashboard",
+      hiddenForRoles: [
+        UserRoles.TrademarkSupport,
+        UserRoles.PatentDesignSupport,
+      ],
+    },
     {
       icon: "mdi:file-document-multiple-outline",
       location: "Publications",
@@ -151,8 +174,13 @@
         {
           icon: "mdi:file-document-multiple-outline",
           name: "Publications",
-          location: "trademarkpubs",
+          location: "trademarkpubs/publish",
         },
+        // {
+        //   icon: "mdi:publish",
+        //   name: "Publication list",
+        //   location: "trademarkpubs",
+        // }
       ],
     },
     {
@@ -160,8 +188,39 @@
       location: "Resources",
       roles: [UserRoles.User, UserRoles.Tech, UserRoles.SuperAdmin],
     },
-    { icon: "mdi:help-circle-outline", location: "Support" },
-    { icon: "mdi:headset", location: "iposupport", name: "IPO Support" },
+    {
+      icon: "mdi:headset",
+      location: "iposupport",
+      name: "IPO Support",
+      roles: [
+        UserRoles.User,
+        UserRoles.Tech,
+        UserRoles.SuperAdmin,
+        UserRoles.PermSec,
+        UserRoles.TrademarkSupport,
+        UserRoles.PatentDesignSupport,
+        UserRoles.TrademarkSearch,
+        UserRoles.TrademarkExaminer,
+        UserRoles.TrademarkOpposition,
+        UserRoles.TrademarkAcceptance,
+        UserRoles.TrademarkCertification,
+        UserRoles.TrademarkPublication,
+        UserRoles.TrademarkRegistrar,
+        UserRoles.ActingTrademarkRegistrar,
+        UserRoles.PatentDesignRegistrar,
+        UserRoles.ActingPatentDesignRegistrar,
+        UserRoles.PatentSearch,
+        UserRoles.PatentExaminer,
+        UserRoles.PatentCertification,
+        UserRoles.AppealExaminer,
+        UserRoles.DesignSearch,
+        UserRoles.DesignExaminer,
+        UserRoles.DesignCertification,
+        UserRoles.TrademarkStaff,
+        UserRoles.PatentStaff,
+        UserRoles.DesignStaff,
+      ],
+    },
     {
       icon: "mdi:gavel",
       location: "Opposition",
@@ -180,6 +239,12 @@
         UserRoles.PermSec,
         UserRoles.Minister,
         UserRoles.Tech,
+        UserRoles.Finance,
+        UserRoles.TrademarkRegistrar,
+        UserRoles.PatentDesignRegistrar,
+        UserRoles.ActingTrademarkRegistrar,
+        UserRoles.ActingPatentDesignRegistrar,
+        UserRoles.EinaoFinance,
       ],
     },
     {
@@ -207,7 +272,12 @@
   ];
 
   function hasAccess(item: MenuItem, userRoles: UserRoles[]): boolean {
-    return !item.roles || item.roles.some((r) => userRoles.includes(r));
+    const isHidden =
+      item.hiddenForRoles?.some((r) => userRoles.includes(r)) ?? false;
+    return (
+      !isHidden &&
+      (!item.roles || item.roles.some((r) => userRoles.includes(r)))
+    );
   }
 
   function filterMenus(items: MenuItem[], userRoles: UserRoles[]): MenuItem[] {
@@ -357,8 +427,26 @@
         url = `${baseURL}/api/tickets/GetStats?category=0`;
       } else if (roles.includes(UserRoles.PatentDesignSupport)) {
         url = `${baseURL}/api/tickets/GetStats?category=1`;
-      } else if (roles.includes(UserRoles.Tech) || roles.includes(UserRoles.SuperAdmin)) {
-        url = `${baseURL}/api/tickets/GetStats`;
+      } else if (
+        roles.includes(UserRoles.Tech) ||
+        roles.includes(UserRoles.SuperAdmin)
+      ) {
+        const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            creatorId: "null",
+            category: TicketCategory.TechnicalSupport,
+            status: TicketStates.awaitingStaff,
+            amount: 100000,
+            startIndex: 0,
+          }),
+        });
+        if (response.ok) {
+          const tickets = await response.json();
+          ipoSupportCount = Array.isArray(tickets) ? tickets.length : 0;
+        }
+        return;
       } else {
         const userId = ($loggedInUser as any)?.creatorId;
         url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
@@ -366,7 +454,8 @@
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
-        const isStaff = roles.includes(UserRoles.Tech) ||
+        const isStaff =
+          roles.includes(UserRoles.Tech) ||
           roles.includes(UserRoles.TrademarkSupport) ||
           roles.includes(UserRoles.PatentDesignSupport) ||
           roles.includes(UserRoles.SuperAdmin);
@@ -400,6 +489,69 @@
         return "bg-green-800 text-white border-green-800";
       default:
         return "bg-gray-500 text-white border-gray-600";
+    }
+  }
+  async function getJournalCost(userId: string, batch: string) {
+    try {
+      const response = await fetch(
+        `${baseURL}/api/publication/GetJournalCost?userId=${encodeURIComponent(userId)}&batch=${encodeURIComponent(batch)}`,
+      );
+      if (!response.ok) {
+        console.error("Failed to fetch journal cost:", response.status);
+        return null;
+      }
+      const text = await response.text();
+      if (!text) return null;
+      try {
+        return JSON.parse(text);
+      } catch {
+        console.error("Journal cost response was not valid JSON:", text);
+        return null;
+      }
+    } catch (error) {
+      console.error("Error fetching journal cost:", error);
+      return null;
+    }
+  }
+
+  async function payJournal(j: PublicationJournal) {
+    const user = $loggedInUser as any;
+    const userId = user?.id ?? user?.creatorId;
+    const batch = j.batch;
+    if (!userId || !batch) {
+      journalFetchError = "Unable to start payment: missing user or journal batch.";
+      return;
+    }
+
+    payingBatch = batch;
+    journalFetchError = null;
+    try {
+      const data = await getJournalCost(userId, batch);
+      if (!data) {
+        journalFetchError = "Failed to fetch journal cost. Please try again.";
+        return;
+      }
+
+      const applicantName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+      sessionStorage.setItem(
+        "journalPaymentData",
+        JSON.stringify({
+          appId: data.appId ?? data.AppId ?? null,
+          cost: data.cost ?? data.Cost ?? null,
+          paymentId: data.paymentId ?? data.PaymentId ?? null,
+          serviceFee: data.serviceFee ?? data.ServiceFee ?? null,
+          batch,
+          volume: j.volume ?? null,
+          number: j.number ?? null,
+          journalReleaseDate: j.journalReleaseDate ?? null,
+          applicantName,
+        }),
+      );
+
+      showJournalModal = false;
+      await goto("/payment?type=journal");
+    } finally {
+      payingBatch = null;
     }
   }
 </script>
@@ -446,14 +598,14 @@
                   {oppsCount}
                 </span>
               {/if}
-              {#if menu.location === 'ClaimRequests' && claimRequestsCount > 0}
+              {#if menu.location === "ClaimRequests" && claimRequestsCount > 0}
                 <span
                   class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
                 >
                   {claimRequestsCount}
                 </span>
               {/if}
-              {#if menu.location === 'iposupport'}
+              {#if menu.location === "iposupport"}
                 <span
                   class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
                 >
@@ -596,95 +748,82 @@
         </Select.Root>
       </div>
 
-      <!-- Quarter -->
-      <label
-        for="journal-quarter"
-        class="block text-sm font-medium text-gray-700 mb-2"
-      >
-        Select Quarter
-      </label>
-      <div class="relative mb-5">
-        <Select.Root onSelectedChange={handleJournalQuarterChange}>
-          <Select.Trigger
-            id="journal-quarter"
-            class="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-3 text-gray-800 font-medium focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-transparent cursor-pointer h-auto"
-          >
-            <Select.Value placeholder="-- Choose a quarter --" />
-          </Select.Trigger>
-          <Select.Content class="max-h-60 overflow-y-auto">
-            <Select.Group>
-              <Select.Label>Quarters</Select.Label>
-              {#each journalQuarters as quarter}
-                <Select.Item value={quarter} label={`Q${quarter}`}
-                  >{`Q${quarter}`}</Select.Item
-                >
-              {/each}
-            </Select.Group>
-          </Select.Content>
-          <Select.Input
-            name="journalSelectedQuarter"
-            bind:value={journalSelectedQuarter}
+      {#if !journalSelectedYear}
+        <div class="text-center py-4 text-sm text-gray-400">
+          Select a year above to view available journals.
+        </div>
+      {:else if journalIsFetching}
+        <div
+          class="flex items-center justify-center gap-2 py-6 text-sm text-gray-500"
+        >
+          <Icon icon="line-md:loading-loop" width="18" height="18" />
+          Fetching journals...
+        </div>
+      {:else if journalFetchError}
+        <div
+          class="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl"
+        >
+          <Icon
+            icon="mdi:alert"
+            class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0"
+            width="20"
+            height="20"
           />
-        </Select.Root>
-      </div>
-
-      {#if journalSelectedYear && journalSelectedQuarter}
-        <div class="space-y-4">
-          {#if freePublication}
-            <div
-              class="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-xl mb-4"
-            >
-              <Icon
-                icon="mdi:book-open-page-variant"
-                class="w-5 h-5 text-green-700 mt-0.5 flex-shrink-0"
-                width="20"
-                height="20"
-              />
-              <p class="text-sm text-gray-700 leading-relaxed">
-                Download the {journalSelectedType} Journal for Q{journalSelectedQuarter}
-                {journalSelectedYear}.
-              </p>
-            </div>
-            <button
-              type="button"
-              on:click={fetchJournalData}
-              disabled={journalIsFetching}
-              class="flex items-center justify-center gap-2 w-full px-5 py-3 bg-green-700 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors duration-200"
-            >
-              {#if journalIsFetching}
-                <Icon icon="line-md:loading-loop" width="18" height="18" />
-              {:else}
-                <Icon icon="mdi:download" width="18" height="18" />
-              {/if}
-              {journalIsFetching ? "Fetching..." : "Download Journal"}
-            </button>
-          {:else}
-            <button
-              type="button"
-              on:click={fetchJournalData}
-              disabled={true}
-              class="flex items-center justify-center gap-2 w-full px-5 py-3 bg-green-700 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors duration-200"
-            >
-              Pay
-            </button>
-            <div
-              class="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl mb-4"
-            >
-              <Icon
-                icon="mdi:alert"
-                class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0"
-                width="20"
-                height="20"
-              />
-              <p class="text-sm text-yellow-800 leading-relaxed">
-                This journal is not yet available for download.
-              </p>
-            </div>
-          {/if}
+          <p class="text-sm text-red-800 leading-relaxed">
+            {journalFetchError}
+          </p>
+        </div>
+      {:else if journalResults.length === 0}
+        <div
+          class="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl"
+        >
+          <Icon
+            icon="mdi:alert"
+            class="w-5 h-5 text-yellow-600 mt-0.5 flex-shrink-0"
+            width="20"
+            height="20"
+          />
+          <p class="text-sm text-yellow-800 leading-relaxed">
+            No journals available for {journalSelectedYear}.
+          </p>
         </div>
       {:else}
-        <div class="text-center py-4 text-sm text-gray-400">
-          Select year and quarter above to download the journal.
+        <div class="space-y-2 max-h-72 overflow-y-auto">
+          {#each journalResults as j}
+            <div
+              class="flex items-center justify-between gap-3 p-3 bg-gray-50 border border-gray-200 rounded-xl"
+            >
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="bg-green-100 p-2 rounded-lg flex-shrink-0">
+                  <Icon
+                    icon="mdi:book-open-page-variant"
+                    class="w-4 h-4 text-green-700"
+                    width="16"
+                    height="16"
+                  />
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-semibold text-gray-800 truncate">
+                    {formatJournalBatch(j.batch)}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    {formatJournalDate(j.journalReleaseDate)}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                on:click={() => payJournal(j)}
+                disabled={payingBatch === j.batch || !j.batch}
+                class="flex items-center gap-1 px-3 py-2 bg-green-700 hover:bg-green-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+              >
+                {#if payingBatch === j.batch}
+                  <Icon icon="line-md:loading-loop" width="16" height="16" />
+                {/if}
+                Pay
+              </button>
+            </div>
+          {/each}
         </div>
       {/if}
     </div>

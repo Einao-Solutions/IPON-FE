@@ -41,6 +41,7 @@
   let missedYearsCount = 0;
   let lateYearsCount = 0;
   let isLateRenewal = false;
+  let isRenewalEligible = false;
   let lateRenewalCost = "";
   let serviceFee = "";
 
@@ -104,6 +105,7 @@
           setTitle: (v) => (title = v),
           setCost: (v) => (cost = v),
           setPaymentId: (v) => (paymentId = v),
+          setServiceCharge: (v) => (serviceFee = v),
           setFileNumber: (v) => (fileNumber = v),
           setFileApplicant: (v) => (fileApplicant = v),
           setFileType: (v) => (fileType = v),
@@ -111,6 +113,9 @@
           setApplicationId: (v) => (applicationId = v),
           setFileTitle: (v) => (fileTitle = v),
           setResponseUrl: (v) => (responseurl = v),
+          isLateRenewal: (v) => (isLateRenewal = v),
+          isRenewalEligible: (v) => (isRenewalEligible = v),
+          setPenaltyFee: (v) => (lateRenewalCost = v),
           setRenewalMeta: (meta) => {
             missedYearsCount = meta.missedYearsCount ?? 0;
             lateYearsCount = meta.lateYearsCount ?? 0;
@@ -178,6 +183,54 @@
   function goBack() {
     window.history.back();
   }
+
+  /* ---------------- AMOUNT BREAKDOWN ---------------- */
+
+  const formatNaira = (value: number) =>
+    value.toLocaleString("en-NG", {
+      style: "currency",
+      currency: "NGN",
+    });
+
+  type BreakdownItem = { label: string; amount: number };
+
+  // Build a line-item breakdown from whatever fee data the handler provided.
+  let breakdownItems: BreakdownItem[] = [];
+  let totalCost = 0;
+
+  $: {
+    totalCost = parseFloat((cost ?? "0").toString()) || 0;
+
+    const penaltyAmount = isLateRenewal ? parseFloat(lateRenewalCost) || 0 : 0;
+    const serviceFeeAmount = parseFloat(serviceFee) || 0;
+    const baseAmount = Math.max(
+      totalCost - penaltyAmount - serviceFeeAmount,
+      0,
+    );
+
+    const items: BreakdownItem[] = [];
+
+    if (baseAmount > 0) {
+      const renewalTypes = ["patentRenewal", "renewal", "designRenewal"];
+      items.push({
+        label: type && renewalTypes.includes(type) ? "Renewal Fee" : "Base Fee",
+        amount: baseAmount,
+      });
+    }
+
+    if (serviceFeeAmount > 0) {
+      items.push({ label: "Service Fee", amount: serviceFeeAmount });
+    }
+
+    if (penaltyAmount > 0) {
+      items.push({ label: "Late Renewal Penalty", amount: penaltyAmount });
+    }
+
+    breakdownItems = items;
+  }
+
+  // Only worth showing a breakdown when there is more than a single line item.
+  $: hasBreakdown = breakdownItems.length > 1;
 </script>
 
 <Toaster />
@@ -213,7 +266,9 @@
         <h2 class="text-lg font-semibold mb-2">
           Your file is not yet due for Renewal
         </h2>
-        <p class="mb-4">Renewal is only available 90 days before the due date.</p>
+        <p class="mb-4">
+          Renewal is only available 90 days before the due date.
+        </p>
         <Button
           class="outline bg-red-500 text-white"
           on:click={() => goto("/home/dashboard")}>Back</Button
@@ -250,51 +305,12 @@
         >
           <!-- Payment Details Grid -->
           <div class="space-y-6 mb-8">
-            <!-- Amount Due - Highlighted -->
-            <!-- {#if type === "renewal" && Number(fileType) === 0 && cost}
-              <div
-                class="mb-4 bg-gray-50 border border-gray-200 rounded-lg p-4"
-              >
-                <div class="font-semibold text-gray-700 mb-2">
-                  Patent Renewal Cost Breakdown
-                </div>
-                <div class="flex flex-col gap-1 text-sm text-gray-600">
-                  <div class="flex justify-between">
-                    <span>(Base Renewal Fee {missedYearsCount} )</span>
-                    <span>
-                      ₦{(missedYearsCount * 11500).toLocaleString("en-NG")}
-                    </span>
-                  </div>
-                  {#if isLateRenewal}
-                    <div class="flex justify-between">
-                      <span
-                        >Late Renewal Penalty ({lateYearsCount} year{lateYearsCount >
-                        1
-                          ? "s"
-                          : ""})</span
-                      >
-                      <span
-                        >₦{(lateYearsCount * 5000).toLocaleString(
-                          "en-NG",
-                        )}</span
-                      >
-                    </div>
-                  {/if}
-                  <div
-                    class="flex justify-between font-bold border-t pt-2 mt-2"
-                  >
-                    <span>Total</span>
-                    <span
-                      >₦{parseFloat(cost ?? "0").toLocaleString("en-NG")}</span
-                    >
-                  </div>
-                </div>
-              </div>
-            {/if} -->
+            <!-- Amount Due - Highlighted with breakdown -->
             <div
-              class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-6 border border-green-200"
+              class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 overflow-hidden"
             >
-              <div class="flex items-center justify-between">
+              <!-- Total row -->
+              <div class="flex items-center justify-between p-6">
                 <div class="flex items-center gap-3">
                   <div
                     class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center"
@@ -309,19 +325,44 @@
                   <span class="text-gray-700 font-medium">Amount Due</span>
                 </div>
                 <span class="text-2xl font-bold text-green-600">
-                  {parseFloat((cost ?? "0").toString()).toLocaleString(
-                    "en-NG",
-                    {
-                      style: "currency",
-                      currency: "NGN",
-                    },
-                  )}
+                  {formatNaira(totalCost)}
                 </span>
               </div>
+
+              {#if hasBreakdown}
+                <!-- Itemized breakdown -->
+                <div class="border-t border-green-200 bg-white/60 px-6 py-4">
+                  <p
+                    class="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-3"
+                  >
+                    Cost Breakdown
+                  </p>
+                  <div class="space-y-2">
+                    {#each breakdownItems as item}
+                      <div
+                        class="flex items-center justify-between text-sm text-gray-600"
+                      >
+                        <span>{item.label}</span>
+                        <span class="font-medium text-gray-900">
+                          {formatNaira(item.amount)}
+                        </span>
+                      </div>
+                    {/each}
+                    <div
+                      class="flex items-center justify-between border-t border-gray-200 pt-2 mt-1 text-sm"
+                    >
+                      <span class="font-semibold text-gray-700">Total</span>
+                      <span class="font-bold text-green-600">
+                        {formatNaira(totalCost)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              {/if}
             </div>
             <!-- Other Payment Details -->
             <div class="grid gap-4">
-              {#if type && ["oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
+              {#if type && ["journal","oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
                 <div
                   class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
                 >

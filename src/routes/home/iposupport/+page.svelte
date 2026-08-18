@@ -6,7 +6,10 @@
 		TicketStates,
 		type TicketSummary,
 		UserRoles,
-		TicketCategory
+		TicketCategory,
+
+        ApplicationType
+
 	} from '$lib/helpers';
 	import { createRender, createTable, Render, Subscribe } from 'svelte-headless-table';
 	import { writable, type Writable } from 'svelte/store';
@@ -19,6 +22,7 @@
 	import DataTableCheckbox from './data-table-checkbox.svelte';
 	import TicketTag from '$lib/components/ui/ticketTag/ticketTag.svelte';
 	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 	import { ChevronsUpDown } from 'lucide-svelte';
 	import ChevronDown from 'lucide-svelte/icons/chevron-down';
 	import { onMount } from 'svelte';
@@ -37,6 +41,7 @@
 	// ── Role helpers ──────────────────────────────────────────────────────────────
 	const SUPPORT_STAFF_ROLES = [
 		UserRoles.Tech,
+		UserRoles.SuperAdmin,
 		UserRoles.TrademarkSupport,
 		UserRoles.PatentDesignSupport
 	];
@@ -54,7 +59,44 @@
 		return hasRole(UserRoles.PatentDesignSupport);
 	}
 	function isTechSupport(): boolean {
-		return hasRole(UserRoles.Tech);
+		return hasRole(UserRoles.Tech) || hasRole(UserRoles.SuperAdmin);
+	}
+	function hasAnyRole(roles: UserRoles[]): boolean {
+		return roles.some((role) => hasRole(role));
+	}
+	const UNIT_OFFICER_ROLES = [
+		UserRoles.TrademarkSearch,
+		UserRoles.TrademarkExaminer,
+		UserRoles.TrademarkOpposition,
+		UserRoles.TrademarkAcceptance,
+		UserRoles.TrademarkCertification,
+		UserRoles.TrademarkPublication,
+		UserRoles.TrademarkRegistrar,
+		UserRoles.ActingTrademarkRegistrar,
+		UserRoles.PatentDesignRegistrar,
+		UserRoles.ActingPatentDesignRegistrar,
+		UserRoles.PatentSearch,
+		UserRoles.PatentExaminer,
+		UserRoles.PatentCertification,
+		UserRoles.AppealExaminer,
+		UserRoles.DesignSearch,
+		UserRoles.DesignExaminer,
+		UserRoles.DesignCertification,
+		UserRoles.TrademarkStaff,
+		UserRoles.PatentStaff,
+		UserRoles.DesignStaff
+	];
+	function isStrictSupportOfficer(): boolean {
+		return isTrademarkSupport() || isPatentDesignSupport();
+	}
+	function isUnitOfficer(): boolean {
+		return hasAnyRole(UNIT_OFFICER_ROLES);
+	}
+	function shouldCreateTechnicalTicketOnly(): boolean {
+		return isStrictSupportOfficer() || isUnitOfficer();
+	}
+	function canAccessIpoSupport(): boolean {
+		return hasRole(UserRoles.User) || hasRole(UserRoles.PermSec) || isTechSupport() || isStrictSupportOfficer() || isUnitOfficer();
 	}
 	// ── Tab system ────────────────────────────────────────────────────────────────
 	type TabDef = {
@@ -67,7 +109,11 @@
 
 	function getTabsForRole(): TabDef[] {
 		if (isTechSupport()) {
-			return [{ id: 'all', label: 'All Tickets', category: null, isEscalation: false }];
+			return [
+				{ id: 'tech', label: 'Technical Support', category: TicketCategory.TechnicalSupport, isEscalation: false },
+				{ id: 'tm', label: 'Trademark Registry', category: TicketCategory.TrademarkRegistry, isEscalation: false },
+				{ id: 'pd', label: 'Patent & Design Registry', category: TicketCategory.PatentDesignRegistry, isEscalation: false }
+			];
 		}
 		if (isTrademarkSupport()) {
 			return [{ id: 'tm', label: 'Trademark Registry', category: TicketCategory.TrademarkRegistry, isEscalation: false }];
@@ -84,12 +130,15 @@
 	let isAdmin: boolean = false;
 	let activeStatusFilter: number | null = null;
 	let activeCategoryPillFilter: TicketCategory | null = null;
+	let activeQueueMode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical' = 'normal';
+	let specialQueueStats: Record<string, number> = {};
 	let showCloseConfirm: boolean = false;
 	let ticketLoading: boolean = false;
 	let selectedResultList: number = 10;
 	let showResultLengthList: boolean = false;
 	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
 	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 0: 1, 2: 2 };
+	const FULL_SUMMARY_FETCH_LIMIT = 100000;
 
 	const userName = ($loggedInUser?.firstName ?? '') + ' ' + ($loggedInUser?.lastName ?? '');
 
@@ -117,6 +166,10 @@
 	let ticketInfo: any = {};
 	let ticketData: any = {};
 	let filterData: any = {};
+	let searchQuery: string = '';
+	let activeSearchTerm: string = '';
+
+	$: showTechSpecialQueues = isTechSupport() && activeTabId === 'tech';
 
 	// ── Reactive hidden columns ───────────────────────────────────────────────────
 	$: {
@@ -204,7 +257,6 @@
 
 		if (!isAdmin) {
 			hideForId['creator'] = false;
-			hideForId['category'] = false;
 		}
 	}
 
@@ -224,36 +276,170 @@
 	}
 
 	// ── Fetch ─────────────────────────────────────────────────────────────────────
-	let techCategoryStats: Record<string, number> = {};
-	let tmCategoryStats: Record<string, number> = {};
-	let pdCategoryStats: Record<string, number> = {};
+	function getActiveTabCategory(): TicketCategory | null {
+		return tabs.find((tab) => tab.id === activeTabId)?.category ?? null;
+	}
+
+	function getSpecialRegistryCategory(): TicketCategory | null {
+		if (activeQueueMode === 'trademarkTechnical') return TicketCategory.TrademarkRegistry;
+		if (activeQueueMode === 'patentDesignTechnical') return TicketCategory.PatentDesignRegistry;
+		return null;
+	}
+
+	function withFullSummaryPage(body: Record<string, any>): Record<string, any> {
+		return { ...body, amount: FULL_SUMMARY_FETCH_LIMIT, startIndex: 0 };
+	}
+
+	function getTicketSummaryBody(status: number | null = activeStatusFilter): Record<string, any> {
+		const userId = ($loggedInUser as any)?.creatorId;
+		const specialRegistryCategory = getSpecialRegistryCategory();
+		const activeTabCategory = getActiveTabCategory();
+		if (specialRegistryCategory !== null) {
+			const body: Record<string, any> = {
+				creatorId: 'null',
+				category: TicketCategory.TechnicalSupport,
+				registryCategory: specialRegistryCategory,
+				raisedByRegistryStaff: true
+			};
+			if (status !== null) body.status = status;
+			return withFullSummaryPage(body);
+		}
+
+		if (isTechSupport()) {
+			const body: Record<string, any> = {
+				creatorId: 'null',
+				category: activeTabCategory ?? TicketCategory.TechnicalSupport
+			};
+			if ((activeTabCategory ?? TicketCategory.TechnicalSupport) === TicketCategory.TechnicalSupport) {
+				body.raisedByRegistryStaff = false;
+			}
+			if (status !== null) body.status = status;
+			return withFullSummaryPage(body);
+		}
+		if (isTrademarkSupport()) {
+			const body: Record<string, any> = { creatorId: 'null', category: TicketCategory.TrademarkRegistry };
+			if (status !== null) body.status = status;
+			return withFullSummaryPage(body);
+		}
+		if (isPatentDesignSupport()) {
+			const body: Record<string, any> = { creatorId: 'null', category: TicketCategory.PatentDesignRegistry };
+			if (status !== null) body.status = status;
+			return withFullSummaryPage(body);
+		}
+
+		const body: Record<string, any> = { creatorId: userId };
+		if (status !== null) body.status = status;
+		return withFullSummaryPage(body);
+	}
+
+	function sortTicketSummaries(raw: any): any {
+		return Array.isArray(raw)
+			? [...raw].sort((a: any, b: any) => {
+					const statusA = STATUS_SORT_ORDER[a?.status] ?? 99;
+					const statusB = STATUS_SORT_ORDER[b?.status] ?? 99;
+					if (statusA !== statusB) return statusA - statusB;
+					const dateA = a?.lastInteraction ? new Date(a.lastInteraction).getTime() : 0;
+					const dateB = b?.lastInteraction ? new Date(b.lastInteraction).getTime() : 0;
+					return dateA - dateB;
+				})
+			: raw;
+	}
+
+	async function fetchTicketSummaries(body: Record<string, any>): Promise<any[]> {
+		const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body)
+		});
+		if (!response.ok) return [];
+		const data = await response.json();
+		return Array.isArray(data) ? data : [];
+	}
+
+	function summarizeTickets(tickets: any[]) {
+		return {
+			total: tickets.length,
+			staff: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingStaff).length,
+			user: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingUser).length,
+			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length
+		};
+	}
+
+	function getSearchField(term: string): Record<string, string> {
+		return /^TKT[-\w]*/i.test(term) ? { ticketNumber: term } : { fileNumber: term };
+	}
+
+	function getSearchRequest(): Record<string, any> | null {
+		const term = activeSearchTerm.trim();
+		if (!term) return null;
+		const searchField = getSearchField(term);
+		const userId = ($loggedInUser as any)?.creatorId;
+
+		return {
+			...searchField,
+			requesterId: userId,
+			isTech: isTechSupport(),
+			supportRegistryCategory: isTrademarkSupport()
+				? TicketCategory.TrademarkRegistry
+				: isPatentDesignSupport()
+				? TicketCategory.PatentDesignRegistry
+				: null,
+			isRegistryOfficer: isUnitOfficer()
+		};
+	}
+
+	async function fetchSearchTickets(status: number | null = activeStatusFilter): Promise<any[]> {
+		const body = getSearchRequest();
+		if (body === null) return [];
+		const response = await fetch(`${baseURL}/api/tickets/Search`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(body)
+		});
+		if (!response.ok) return [];
+		const data = await response.json();
+		const tickets = Array.isArray(data) ? data : [];
+		return status === null ? tickets : tickets.filter((ticket) => ticket?.status === status);
+	}
+
+	async function refreshSearchResults(status: number | null = activeStatusFilter) {
+		const allMatches = await fetchSearchTickets(null);
+		ipoTicketStats.set(summarizeTickets(allMatches));
+		ipoTicketsSummary.set(sortTicketSummaries(await fetchSearchTickets(status)));
+	}
 
 	async function getStats() {
-		const userId = ($loggedInUser as any)?.creatorId;
-		let url: string;
-		if (isTechSupport()) {
-			url = `${baseURL}/api/tickets/GetStats`;
-		} else if (isTrademarkSupport()) {
-			url = `${baseURL}/api/tickets/GetStats?category=${TicketCategory.TrademarkRegistry}`;
-		} else if (isPatentDesignSupport()) {
-			url = `${baseURL}/api/tickets/GetStats?category=${TicketCategory.PatentDesignRegistry}`;
-		} else {
-			url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
-		}
-		const response = await fetch(url, { method: 'GET' });
-		if (response.ok) {
-			ipoTicketStats.set(await response.json());
-		}
+		const tickets = await fetchTicketSummaries(getTicketSummaryBody(null));
+		ipoTicketStats.set(summarizeTickets(tickets));
+	}
 
-		// For Tech: also fetch per-category breakdowns for the extra pills
+	async function getSpecialQueueCount(registryCategory: TicketCategory): Promise<number> {
+		return (await fetchTicketSummaries(withFullSummaryPage({
+			creatorId: 'null',
+			category: TicketCategory.TechnicalSupport,
+			registryCategory,
+			raisedByRegistryStaff: true
+		}))).length;
+	}
+
+	async function getSpecialQueueStats() {
 		if (isTechSupport()) {
-			const [tmRes, pdRes] = await Promise.all([
-				fetch(`${baseURL}/api/tickets/GetStats?category=${TicketCategory.TrademarkRegistry}`),
-				fetch(`${baseURL}/api/tickets/GetStats?category=${TicketCategory.PatentDesignRegistry}`)
+			const [trademark, patentDesign] = await Promise.all([
+				getSpecialQueueCount(TicketCategory.TrademarkRegistry),
+				getSpecialQueueCount(TicketCategory.PatentDesignRegistry)
 			]);
-			if (tmRes.ok) tmCategoryStats = await tmRes.json();
-			if (pdRes.ok) pdCategoryStats = await pdRes.json();
+			specialQueueStats = { trademark, patentDesign };
+			return;
 		}
+		if (isTrademarkSupport()) {
+			specialQueueStats = { technical: await getSpecialQueueCount(TicketCategory.TrademarkRegistry) };
+			return;
+		}
+		if (isPatentDesignSupport()) {
+			specialQueueStats = { technical: await getSpecialQueueCount(TicketCategory.PatentDesignRegistry) };
+			return;
+		}
+		specialQueueStats = {};
 	}
 
 	async function fetchTabTickets(tabId: string) {
@@ -270,25 +456,9 @@
 
 		if ($loggedInUser === null) return;
 
-		const userId = ($loggedInUser as any).creatorId;
-		let body: Record<string, any> = {};
 
-		if (isTechSupport()) {
-			body.creatorId = 'null';
-			if (activeCategoryPillFilter !== null) body.category = activeCategoryPillFilter;
-			if (activeStatusFilter !== null) body.status = activeStatusFilter;
-		} else if (isTrademarkSupport()) {
-			body.creatorId = 'null';
-			body.category = TicketCategory.TrademarkRegistry;
-			if (activeStatusFilter !== null) body.status = activeStatusFilter;
-		} else if (isPatentDesignSupport()) {
-			body.creatorId = 'null';
-			body.category = TicketCategory.PatentDesignRegistry;
-			if (activeStatusFilter !== null) body.status = activeStatusFilter;
-		} else {
-			body.creatorId = userId;
-			if (activeStatusFilter !== null) body.status = activeStatusFilter;
-		}
+		let body: Record<string, any> = getTicketSummaryBody();
+		if (activeCategoryPillFilter !== null) body.category = activeCategoryPillFilter;
 
 		const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			method: 'POST',
@@ -297,25 +467,35 @@
 		});
 		if (response.ok) {
 			const raw = await response.json();
-			const sorted = Array.isArray(raw)
-				? [...raw].sort((a: any, b: any) => {
-						const statusA = STATUS_SORT_ORDER[a?.status] ?? 99;
-						const statusB = STATUS_SORT_ORDER[b?.status] ?? 99;
-						if (statusA !== statusB) return statusA - statusB;
-						const dateA = a?.lastInteraction ? new Date(a.lastInteraction).getTime() : 0;
-						const dateB = b?.lastInteraction ? new Date(b.lastInteraction).getTime() : 0;
-						return dateA - dateB;
-					})
-				: raw;
-			ipoTicketsSummary.set(sorted);
+			ipoTicketsSummary.set(sortTicketSummaries(raw));
 		}
 	}
 
 	async function onTabChange(tabId: string) {
 		activeTabId = tabId;
+		activeQueueMode = 'normal';
+		activeSearchTerm = '';
+		searchQuery = '';
+		activeStatusFilter = isTechSupport() || isAdmin ? 1 : null;
+		activeCategoryPillFilter = null;
 		ipoTicketsSummary.set(null);
 		ticketLoading = true;
+		await getStats();
 		await fetchTabTickets(tabId);
+		ticketLoading = false;
+	}
+
+	async function setQueueMode(mode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical') {
+		activeQueueMode = mode;
+		activeSearchTerm = '';
+		searchQuery = '';
+		activeStatusFilter = null;
+		activeCategoryPillFilter = null;
+		ipoTicketsSummary.set(null);
+		ticketLoading = true;
+		await getSpecialQueueStats();
+		await getStats();
+		await fetchTabTickets(activeTabId);
 		ticketLoading = false;
 	}
 
@@ -323,6 +503,38 @@
 		activeStatusFilter = status;
 		activeCategoryPillFilter = categoryOverride !== undefined ? (categoryOverride ?? null) : null;
 		ticketLoading = true;
+		if (activeSearchTerm.trim()) {
+			await refreshSearchResults(status);
+		} else {
+			await getSpecialQueueStats();
+			await getStats();
+			await fetchTabTickets(activeTabId);
+		}
+		ticketLoading = false;
+	}
+
+	async function searchTickets() {
+		const term = searchQuery.trim();
+		if (!term) {
+			toast.error('Enter a ticket number or file number.', { position: 'top-right' });
+			return;
+		}
+		activeSearchTerm = term;
+		activeStatusFilter = null;
+		activeCategoryPillFilter = null;
+		ipoTicketsSummary.set(null);
+		ticketLoading = true;
+		await refreshSearchResults(null);
+		ticketLoading = false;
+	}
+
+	async function clearSearch() {
+		activeSearchTerm = '';
+		searchQuery = '';
+		ipoTicketsSummary.set(null);
+		ticketLoading = true;
+		await getSpecialQueueStats();
+		await getStats();
 		await fetchTabTickets(activeTabId);
 		ticketLoading = false;
 	}
@@ -361,7 +573,9 @@
 		}
 		ticketData = {
 			onExit: () => { showTicketCreation = false; },
-			open: true
+			open: true,
+			technicalOnly: shouldCreateTechnicalTicketOnly(),
+			requireFileNumber: shouldCreateTechnicalTicketOnly()
 		};
 		showTicketCreation = true;
 	}
@@ -435,13 +649,11 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 	}
 
 	// ── Pill counts (computed from loaded data) ───────────────────────────────────
-	$: trademarkPillCount = tmCategoryStats?.total ?? 0;
-	$: patentPillCount = pdCategoryStats?.total ?? 0;
-	$: _isTechUser = $loggedInUser?.userRoles?.includes(UserRoles.Tech) ?? false;
-
 	function ticketTypeFor(rowId: string): string {
 		const type = ($ipoTicketsSummary as any)?.[rowId]?.ticketType;
+		const applicationType = ($ipoTicketsSummary as any)?.[rowId]?.applicationType;
 		if (type === undefined || type === null) return '—';
+		if (applicationType === ApplicationType.Certificate) return 'Certificate';
 		const labels: Record<number, string> = {
 			0: 'Process Inquiry', 1: 'App Status', 2: 'Follow Up',
 			3: 'Account Access', 4: 'Payment Issue', 5: 'Others'
@@ -452,11 +664,17 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 	// ── Mount ─────────────────────────────────────────────────────────────────────
 	onMount(async () => {
 		await decodeUser();
+		if (!$loggedInUser) return;
+		if (!canAccessIpoSupport()) {
+			await goto('/home/dashboard');
+			return;
+		}
 		isAdmin = hasSupportStaffRole();
 		tabs = getTabsForRole();
 		activeTabId = tabs.length > 0 ? tabs[0].id : '';
 		if (isAdmin) activeStatusFilter = 1;
 		ticketLoading = true;
+		await getSpecialQueueStats();
 		await getStats();
 		await fetchTabTickets(activeTabId);
 		ticketLoading = false;
@@ -537,16 +755,6 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			</span>
 		</button>
 		<!-- Awaiting Staff -->
-		{#if _isTechUser}
-		<button type="button" on:click={() => getSpecific(1, TicketCategory.TechnicalSupport)}
-					class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-						{activeStatusFilter === 1 && activeCategoryPillFilter === TicketCategory.TechnicalSupport ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}">
-					Awaiting Staff
-					<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-950/30 text-[10px] font-semibold">
-						{$ipoTicketStats.staff ?? 0}
-					</span>
-				</button>
-		{:else}
 		<button type="button" on:click={() => getSpecific(1)}
 			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
 				{activeStatusFilter === 1 && activeCategoryPillFilter === null ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}">
@@ -555,7 +763,6 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				{$ipoTicketStats.staff ?? 0}
 			</span>
 		</button>
-		{/if}
 		<!-- Awaiting User -->
 		<button type="button" on:click={() => getSpecific(0)}
 			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
@@ -574,25 +781,35 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				{$ipoTicketStats.closed ?? 0}
 			</span>
 		</button>
-		<!-- Tech-only category pills -->
-		{#if _isTechUser}
-		<div class="w-px bg-slate-200 mx-1 self-stretch"></div>
-		<button type="button" on:click={() => getSpecific(null, TicketCategory.TrademarkRegistry)}
-class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-						{activeCategoryPillFilter === TicketCategory.TrademarkRegistry && activeStatusFilter === null ? 'bg-green-700 text-white' : 'bg-green-100 text-green-800 hover:bg-green-200'}">
-			Trademark Tickets
-<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-green-950/30 text-[10px] font-semibold">
-				{trademarkPillCount}
-			</span>
-		</button>
-		<button type="button" on:click={() => getSpecific(null, TicketCategory.PatentDesignRegistry)}
-class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-						{activeCategoryPillFilter === TicketCategory.PatentDesignRegistry && activeStatusFilter === null ? 'bg-green-700 text-white' : 'bg-green-100 text-green-800 hover:bg-green-200'}">
-			Patent & Design Tickets
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-orange-950/30 text-[10px] font-semibold">
-				{patentPillCount}
-			</span>
-		</button>
+
+		{#if showTechSpecialQueues}
+			<span class="h-6 border-l border-slate-300 mx-1"></span>
+			<button type="button" on:click={() => setQueueMode(activeQueueMode === 'trademarkTechnical' ? 'normal' : 'trademarkTechnical')}
+				class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+					{activeQueueMode === 'trademarkTechnical' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}">
+				Trademark
+				<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold">
+					{specialQueueStats.trademark ?? 0}
+				</span>
+			</button>
+			<button type="button" on:click={() => setQueueMode(activeQueueMode === 'patentDesignTechnical' ? 'normal' : 'patentDesignTechnical')}
+				class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+					{activeQueueMode === 'patentDesignTechnical' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}">
+				Patent & Design
+				<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold">
+					{specialQueueStats.patentDesign ?? 0}
+				</span>
+			</button>
+		{:else if isTrademarkSupport() || isPatentDesignSupport()}
+			<span class="h-6 border-l border-slate-300 mx-1"></span>
+			<button type="button" on:click={() => setQueueMode(activeQueueMode === 'normal' ? (isTrademarkSupport() ? 'trademarkTechnical' : 'patentDesignTechnical') : 'normal')}
+				class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+					{activeQueueMode !== 'normal' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}">
+				Technical
+				<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold">
+					{specialQueueStats.technical ?? 0}
+				</span>
+			</button>
 		{/if}
 	</div>
 
@@ -601,6 +818,24 @@ class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium
 			<Icon icon="line-md:loading-loop" width="2.5rem" height="2.5rem" />
 		</div>
 	{:else}
+		<form class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center" on:submit|preventDefault={searchTickets}>
+			<div class="relative w-full sm:max-w-md">
+				<Icon icon="mdi:magnify" width="1rem" height="1rem" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+				<Input class="pl-9" placeholder="Search ticket number or file number" bind:value={searchQuery} />
+			</div>
+			<div class="flex gap-2">
+				<Button type="submit" size="sm">Search</Button>
+				{#if activeSearchTerm}
+					<Button type="button" variant="outline" size="sm" on:click={clearSearch}>Clear</Button>
+				{/if}
+			</div>
+			{#if activeSearchTerm}
+				<p class="text-xs text-slate-500 sm:ml-2">
+					Showing search results for <span class="font-semibold text-slate-700">{activeSearchTerm}</span>
+				</p>
+			{/if}
+		</form>
+
 		<!-- Table controls -->
 		<div class="flex items-center gap-2 py-2 flex-wrap">
 			{#if $_selectedDataIds && Object.keys($_selectedDataIds).length > 0}

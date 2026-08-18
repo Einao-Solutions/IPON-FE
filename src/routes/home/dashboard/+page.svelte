@@ -118,6 +118,7 @@
       let user = cookieUser.trimStart();
       user = user.slice(5);
       loggedInUser.set(JSON.parse(decodeURIComponent(user)));
+
       // Determine if user should see StaffDashboard (all non-regular user roles except Agent)
       isStaff = !!$loggedInUser?.userRoles?.some((e) =>
         [
@@ -128,6 +129,7 @@
           UserRoles.PatentExaminer,
           UserRoles.PatentCertification,
           UserRoles.PatentDesignRegistrar,
+          UserRoles.ActingPatentDesignRegistrar,
           // Trademark-related roles
           UserRoles.TrademarkSearch,
           UserRoles.TrademarkExaminer,
@@ -135,6 +137,7 @@
           UserRoles.TrademarkAcceptance,
           UserRoles.TrademarkCertification,
           UserRoles.TrademarkRegistrar,
+          UserRoles.ActingTrademarkRegistrar,
           // Design-related roles
           UserRoles.DesignSearch,
           UserRoles.DesignExaminer,
@@ -142,16 +145,16 @@
           // Administrative roles
           UserRoles.Minister,
 
-          // ✅ PermSec removed — they now see UserDashboard like regular users
+          // PermSec removed — they now see UserDashboard like regular users
           // UserRoles.PermSec,
 
           UserRoles.Finance,
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only
 
-          UserRoles.TrademarkStaff, // ✅ added
-          UserRoles.PatentStaff, // ✅ added
-          UserRoles.DesignStaff, // ✅ added
+          UserRoles.TrademarkStaff, 
+          UserRoles.PatentStaff, 
+          UserRoles.DesignStaff, 
         ].includes(e),
       );
     }
@@ -163,9 +166,10 @@
         typecomponent = (await import("../components/UserDashboard.svelte"))
           .default;
       }
-      if (currentUser.lastUpdatedAt == null) {
-        showNoticeModal = true;
-      }
+      // if (currentUser.lastUpdatedAt == null) {
+      //   showNoticeModal = false;
+      // }
+      showNoticeModal = false;
     }
     data = {
       user: $loggedInUser,
@@ -1630,17 +1634,20 @@
       class="relative w-full max-w-[700px] bg-white rounded-xl shadow-2xl overflow-hidden"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="profile-update-title"
+      aria-labelledby="maintenance-notice-title"
     >
       <!-- Header -->
       <div class="flex items-center justify-between px-6 py-4 border-b">
         <div class="flex items-center gap-2">
-          <Icon icon="mdi:account-edit" class="w-6 h-6 text-gray-700" />
+          <Icon
+            icon="mdi:check-circle-outline"
+            class="w-6 h-6 text-green-700"
+          />
           <h2
-            id="profile-update-title"
+            id="maintenance-notice-title"
             class="text-xl md:text-2xl font-semibold"
           >
-            Profile Update Required
+            System Restoration Notice
           </h2>
         </div>
 
@@ -1655,32 +1662,21 @@
 
       <!-- Content -->
       <div class="px-6 py-5 space-y-4 text-gray-700">
-        <p class="text-sm md:text-base">Dear Esteemed Customer,</p>
+        <p class="text-sm md:text-base">Dear Valued User,</p>
 
         <p class="text-sm md:text-base">
-          To improve service delivery and ensure uninterrupted access to all
-          platform features, we kindly request that you review and update your
-          profile information.
+          We are pleased to inform you that the system update has been completed
+          and all portal services have been fully restored.
         </p>
 
         <p class="text-sm md:text-base">
-          Keeping your details accurate helps us process filings, payments,
-          notifications, and official communications more efficiently.
+          You can now enjoy improved performance, enhanced security, and greater
+          reliability across the portal.
         </p>
 
-        <!-- <div class="rounded-lg bg-blue-50 border border-blue-200 p-4">
-          <p class="text-sm md:text-base font-medium text-blue-900">
-            Please confirm or update the following:
-          </p>
-          <ul class="mt-2 list-disc pl-6 text-sm md:text-base text-blue-800 space-y-1">
-            <li>Contact information</li>
-            <li>Organization / Applicant details</li>
-            <li>Address and communication preferences</li>
-          </ul>
-        </div> -->
-
         <p class="text-sm md:text-base">
-          This process only takes a few minutes and helps us serve you better.
+          Thank you for your patience and understanding during the maintenance
+          period.
         </p>
       </div>
 
@@ -1688,18 +1684,7 @@
       <div
         class="px-6 py-4 border-t flex flex-col sm:flex-row gap-3 sm:justify-end"
       >
-        <Button variant="outline" on:click={closeNotice}>
-          Remind Me Later
-        </Button>
-
-        <Button
-          on:click={() => {
-            closeNotice();
-            window.location.href = "/home/profile";
-          }}
-        >
-          Update Profile
-        </Button>
+        <Button variant="outline" on:click={closeNotice}>Close</Button>
       </div>
     </div>
   </div>
@@ -1713,7 +1698,9 @@
       <div
         class="w-full bg-green-800 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
       >
-        <div class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold">
+        <div
+          class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold"
+        >
           View your accepted marks under “Trademark Publication” in Trademark
           Services. <b>◆</b> File opposition via the “Opposition” feature in
           Trademark Services or the “Oppose” button on the Trademark Publication
@@ -1727,16 +1714,6 @@
     </div>
   {/if}
 {/if}
-
-<!-- DEBUG INFO - COMMENTED OUT
-	<div class="p-4 bg-yellow-100 border border-yellow-300 rounded mb-4">
-		<p>Debug Info:</p>
-		<p>canCreateApplication(): {canCreateApplication()}</p>
-		<p>currentView: {currentView}</p>
-		<p>User roles: {JSON.stringify($loggedInUser?.roles)}</p>
-		<p>User ID: {$loggedInUser?.id}</p>
-	</div>
-	-->
 
 <!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
 {#if !isLoading && $loggedInUser && canCreateApplication() && currentView === "main"}
@@ -1912,7 +1889,6 @@
             </div>
           </div>
         </button>
-
       </div>
 
       <!-- Portfolio Summary Section -->
@@ -1982,43 +1958,6 @@
           <UserDashboard user={$loggedInUser} showOnlyStatistics={true} />
         </div>
       </div>
-    </div>
-  </div>
-{:else}
-  <!-- FALLBACK WHEN CONDITIONS NOT MET - COMMENTED OUT FOR CLEAN VIEW
-		<div class="p-4 bg-red-100 border border-red-300 rounded">
-			<h3 class="text-lg font-semibold text-red-800">Dashboard Not Showing</h3>
-			<p class="text-red-600">Conditions not met:</p>
-			<ul class="text-red-600">
-				<li>isLoading: {isLoading}</li>
-				<li>loggedInUser exists: {!!$loggedInUser}</li>
-				<li>canCreateApplication(): {canCreateApplication()}</li>
-				<li>currentView: {currentView}</li>
-				<li>Expected: !isLoading AND loggedInUser AND canCreateApplication() AND currentView = 'main'</li>
-			</ul>
-		</div>
-		-->
-{/if}
-
-{#if $loggedInUser?.userRoles?.includes(UserRoles.TrademarkSupport) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignSupport)}
-  <div class="min-h-[60vh] flex items-center justify-center p-6">
-    <div class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-          <Icon icon="mdi:scale-balance" class="text-green-700" width="1.2rem" height="1.2rem" />
-        </div>
-        <div>
-          <h2 class="text-lg font-semibold text-slate-900">IP Support Dashboard</h2>
-          <p class="text-sm text-slate-600">Open your tickets and actions</p>
-        </div>
-      </div>
-
-      <Button
-        class="w-full bg-green-800 hover:bg-green-700 text-white"
-        on:click={() => goto('/home/iposupport')}
-      >
-        Go to IPO Support
-      </Button>
     </div>
   </div>
 {/if}

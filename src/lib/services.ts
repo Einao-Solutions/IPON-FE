@@ -88,15 +88,6 @@ export const commonServices: IPService[] = [
     category: "agent",
     isCommon: true,
   },
-  // {
-  //   id: "update-file",
-  //   name: "UPDATE FILE",
-  //   description: 'Edit/Update files with status "Awaiting Search"',
-  //   icon: "mdi:update",
-  //   route: "/home/update-files",
-  //   category: "agent",
-  //   isCommon: true,
-  // },
   {
     id: "appeal",
     name: "APPEAL",
@@ -123,6 +114,16 @@ export const commonServices: IPService[] = [
     route: "/home/file-withdrawal",
     category: "filing",
     price: "₦3,500",
+    isCommon: true,
+  },
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: (ipType?: string) =>
+      ipType ? `/home/offline-renewal?ipType=${ipType}` : "/home/offline-renewal",
+    category: "filing",
     isCommon: true,
   },
 ];
@@ -214,15 +215,15 @@ export const trademarkServices: IPService[] = [
     category: "filing",
     price: "₦2,500",
   },
-  {
-    id: "trademark-journal",
-    name: "TRADEMARK PUBLICATIONS",
-    description: "View trademark publications",
-    icon: "mdi:book-open-variant",
-    route: "/home/trademarkpubs",
-    category: "agent",
-    price: "",
-  },
+  // {
+  //   id: "trademark-journal",
+  //   name: "TRADEMARK PUBLICATIONS",
+  //   description: "View trademark publications",
+  //   icon: "mdi:book-open-variant",
+  //   route: "/home/trademarkpubs",
+  //   category: "agent",
+  //   price: "",
+  // },
   {
     id: "status-search",
     name: "STATUS SEARCH",
@@ -305,6 +306,7 @@ export const trademarkServices: IPService[] = [
     route: "/opposition",
     category: "filing",
     price: "₦11,500",
+    maintenance: false,
   },
   {
     id: "restoration",
@@ -313,8 +315,17 @@ export const trademarkServices: IPService[] = [
     icon: "mdi:refresh",
     route: "modal",
     category: "filing",
-    price: "₦13,500",
+    price: "₦3,500",
   },
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: "/home/offline-renewal?ipType=trademark",
+    category: "filing",
+  },
+
   // FINANCIAL CATEGORY
   {
     id: "pay-certificate",
@@ -451,6 +462,15 @@ export const patentServices: IPService[] = [
     category: "filing",
     price: "₦11,500",
     maintenance: false,
+  },
+
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: "/home/offline-renewal?ipType=patent",
+    category: "filing",
   },
 
   // FINANCIAL CATEGORY
@@ -698,6 +718,15 @@ export const designServices: IPService[] = [
     maintenance: false,
   },
 
+  {
+    id: "offline-renewal",
+    name: "RENEWAL HISTORY UPDATE",
+    description: "Submit offline renewal details for history update",
+    icon: "mdi:history",
+    route: "/home/offline-renewal?ipType=design",
+    category: "filing",
+  },
+
   // FINANCIAL CATEGORY
   {
     id: "verify-payment",
@@ -713,16 +742,21 @@ export const designServices: IPService[] = [
 export function getServicesForIPType(
   ipType: "trademark" | "patent" | "design",
 ): IPService[] {
+  let services: IPService[];
   switch (ipType) {
     case "trademark":
-      return trademarkServices;
+      services = trademarkServices;
+      break;
     case "patent":
-      return patentServices;
+      services = patentServices;
+      break;
     case "design":
-      return designServices;
+      services = designServices;
+      break;
     default:
-      return commonServices;
+      services = commonServices;
   }
+  return [...services].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function getServicesByCategory(services: IPService[]) {

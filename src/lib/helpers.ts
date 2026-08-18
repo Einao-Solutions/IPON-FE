@@ -6,10 +6,10 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
+//export const baseURL = "http://localhost:5044";
 export const baseURL = "https://backend.einaotest.com";
 // export const baseURL = "https://integration.iponigeria.com";
-export const localhost = "http://localhost:5044";
+export const localhost = "http://localhost:5044"   
 
 export const nonConventionalDescription =
   "Filing new patent application with protection in Nigeria only.";
@@ -220,6 +220,7 @@ export type PatentData = {
   titleOfTradeMark: string | null;
   trademarkClass: number | null;
   trademarkClassDescription: string | null;
+  trademarkSpecification: string | null;
   additionalDescription: string | null;
   filingCountry: string | null;
   fileOrigin: string | null;
@@ -298,7 +299,10 @@ export enum FormApplicationTypes {
   Restoration = 23,
   CounterStatement = 24,
   StatutoryDeclaration = 25,
+  ChangeOfAgent = 26,
+  OfflineRenewalRequest = 27,
 }
+
 
 export enum ApplicationLetters {
   NewApplicationReceipt = 0,
@@ -422,6 +426,10 @@ export enum ApplicationStatuses {
   PendingRenewal = 35,
   AwaitingOfficeProcess = 36,
   Abandoned = 37,
+  WithdrawalRequested = 38,
+  WithdrawalApproved = 39,
+  BatchedManualPublication = 40,
+  Published = 41,
 }
 export enum PatentTypes {
   Conventional = 0,
@@ -493,6 +501,8 @@ export enum UserRoles {
   DesignStaff,
   TrademarkSupport,
   PatentDesignSupport,
+  ActingTrademarkRegistrar,
+  ActingPatentDesignRegistrar,
 }
 
 export enum FilingType {
@@ -578,7 +588,7 @@ export function getStatusColour(status: ApplicationStatuses | null): string {
     case ApplicationStatuses.RequestWithdrawal:
       return "#e67e22";
     case ApplicationStatuses.NewOpposition:
-      return "#ede064";
+      return "#dc2626";
     case ApplicationStatuses.AwaitingCounter:
       return "rgb(253, 224, 71)";
     case ApplicationStatuses.AwaitingApproval:
@@ -595,6 +605,14 @@ export function getStatusColour(status: ApplicationStatuses | null): string {
       return "#9B870C";
     case ApplicationStatuses.Abandoned:
       return "#fa6d6d";
+    case ApplicationStatuses.WithdrawalRequested:
+      return "#9B870C";
+    case ApplicationStatuses.WithdrawalApproved:
+      return "#5ce45c";
+    case ApplicationStatuses.BatchedManualPublication:
+      return "#5ce45c";
+    case ApplicationStatuses.Published:
+      return "#5ce45c";
     case null:
       return "";
     default:
@@ -660,6 +678,7 @@ export type DataHistory = {
   message: string;
   userId: string;
   user: string;
+  attachmentUrl: string;
 };
 export type ApplicationHistoryType = {
   applicationType: number | null;
@@ -761,8 +780,14 @@ export type TicketSummary = {
   ticketId?: string;
   ticketNumber?: string;
   category?: TicketCategory;
+  registryCategory?: TicketCategory;
+  ticketType?: TicketType;
+  fileNumber?: string;
+  applicationType?: ApplicationType;
+  recordalType?: number;
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
+  raisedByRegistryStaff?: boolean;
   creator: {
     id: string;
     name: string;
@@ -782,10 +807,13 @@ export type TicketInfo = {
   id: string;
   ticketNumber?: string;
   category?: TicketCategory;
+  registryCategory?: TicketCategory;
   ticketType?: TicketType;
   applicationType?: ApplicationType;
   recordalType?: number;
   fileNumber?: string;
+  accountEmail?: string;
+  raisedByRegistryStaff?: boolean;
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
   escalatedAt?: string;
@@ -1052,6 +1080,10 @@ export function mapRoleToString(type: UserRoles) {
       return "Trademark Support";
     case UserRoles.PatentDesignSupport:
       return "Patent/Design Support";
+    case UserRoles.ActingTrademarkRegistrar:
+      return "Acting Trademark Registrar";
+    case UserRoles.ActingPatentDesignRegistrar:
+      return "Acting Patent/Design Registrar";
     default:
       return "Unknown";
   }

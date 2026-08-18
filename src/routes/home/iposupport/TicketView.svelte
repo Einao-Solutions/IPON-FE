@@ -96,6 +96,12 @@ if (parts.length === 1) return parts[0][0].toUpperCase();
 return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
+function getMessageSenderName(message: { senderId?: string; senderName?: string }): string {
+if (message.senderName?.trim()) return message.senderName;
+if (message.senderId === data?.creatorId && data?.creatorName?.trim()) return data.creatorName;
+return '—';
+}
+
 async function confirmAndEscalateTicket() {
 // Confirm with user before performing escalation
 if (!window.confirm(`Confirm escalation to: ${escalationTargets.find((t) => t.value === selectedEscalationTarget)?.label ?? 'the selected team'}?`)) {
@@ -264,7 +270,7 @@ Escalate
 >
 
 	<div
-		class="w-full max-w-5xl max-h-[90vh] rounded-2xl shadow-2xl overflow-hidden bg-slate-50 flex flex-col"
+		class="w-full max-w-7xl h-[92vh] rounded-2xl shadow-2xl overflow-hidden bg-slate-50 flex flex-col"
 	>
 
 
@@ -306,7 +312,7 @@ Escalate
 <div class="flex flex-1 min-h-0 overflow-hidden">
 
 <!-- LEFT: meta panel -->
-<aside class="w-56 flex-shrink-0 border-r bg-white overflow-y-auto flex flex-col max-h-[80vh]">
+<aside class="w-64 flex-shrink-0 border-r bg-white overflow-y-auto flex flex-col">
 <!-- Creator -->
 <div class="px-4 pt-5 pb-4 border-b">
 <div class="flex items-center gap-3">
@@ -331,6 +337,13 @@ Escalate
 <div>
 <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Category</p>
 <p class="text-xs text-slate-700 font-medium">{mapCategoryToString(ticketCategory)}</p>
+</div>
+{/if}
+
+{#if data?.fileNumber}
+<div>
+<p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">File Number</p>
+<p class="text-xs text-slate-700 font-medium break-words">{data.fileNumber}</p>
 </div>
 {/if}
 
@@ -408,39 +421,39 @@ Escalated{ticketEscalatedFromCategory !== null ? ` from ${mapCategoryToString(ti
 </aside>
 
 <!-- RIGHT: conversation + composer -->
-<div class="flex flex-col flex-1 overflow-hidden">
+<div class="flex flex-col flex-1 min-w-0 overflow-hidden">
 <!-- Message thread -->
-<div class="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+<div class="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
 {#if data?.correspondences && data.correspondences.length > 0}
 {#each data.correspondences as message, i}
 {@const isCreator = message.senderId === data.creatorId}
 {@const isSystem = message.senderId === 'system'}
 {#if isSystem}
 <!-- System / escalation message -->
-<div class="flex items-center justify-center gap-2">
+<div class="flex items-center justify-center gap-2 min-w-0">
 <div class="h-px flex-1 bg-slate-200"></div>
-<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 border border-red-200">
+<div class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-100 border border-red-200 max-w-[75%] min-w-0">
 <Icon icon="mdi:arrow-up-circle" width="0.75rem" height="0.75rem" class="text-red-500" />
-<span class="text-[10px] font-medium text-red-700">{message.message}</span>
+<span class="text-[10px] font-medium text-red-700 break-words" style="white-space:break-spaces;overflow-wrap:anywhere;tab-size:4;">{message.message}</span>
 </div>
 <div class="h-px flex-1 bg-slate-200"></div>
 </div>
 {:else}
-<div class="flex {isCreator ? 'flex-row-reverse' : 'flex-row'} items-end gap-2">
+<div class="flex {isCreator ? 'flex-row-reverse' : 'flex-row'} items-end gap-2 min-w-0">
 <!-- Avatar -->
 <div class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold {isCreator ? 'bg-gradient-to-br from-green-500 to-green-800' : 'bg-gradient-to-br from-slate-500 to-slate-700'}">
-{getSenderInitials(message.senderName)}
+{getSenderInitials(getMessageSenderName(message))}
 </div>
 <!-- Bubble -->
-<div class="max-w-[72%] flex flex-col {isCreator ? 'items-end' : 'items-start'}">
+<div class="max-w-[78%] min-w-0 flex flex-col {isCreator ? 'items-end' : 'items-start'}">
 <div class="flex items-center gap-2 mb-1 px-1 text-[10px] text-slate-400">
-<span class="font-medium text-slate-600">{isCreator ? 'You' : message.senderName}</span>
+<span class="font-medium text-slate-600">{getMessageSenderName(message)}</span>
 <span>·</span>
 <span>{relativeTime(message.dateAdded)}</span>
 </div>
-<div class="px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed break-words shadow-sm
+<div class="px-4 py-3 rounded-2xl text-sm leading-relaxed break-words shadow-sm min-w-0
 {isCreator ? 'bg-green-700 text-white rounded-br-sm' : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'}">
-<div>{@html message.message}</div>
+<div class="break-words" style="white-space:break-spaces;overflow-wrap:anywhere;tab-size:4;">{message.message}</div>
 {#if message.attachment}
 <a target="_blank" rel="noopener noreferrer" href={message.attachment}
 class="mt-2 inline-flex items-center gap-1 text-xs font-medium {isCreator ? 'text-green-100 hover:text-white' : 'text-blue-600 hover:underline'}">

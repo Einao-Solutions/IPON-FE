@@ -19,9 +19,65 @@ PatentDesignRecordalType
 
 export let onExit: () => void = () => {};
 export let open: boolean = false;
+export let technicalOnly: boolean = false;
+export let requireFileNumber: boolean = false;
 
-const STAFF_ONLY_TECH_ROLES = [UserRoles.TrademarkStaff, UserRoles.PatentStaff, UserRoles.DesignStaff];
+const STAFF_ONLY_TECH_ROLES = [
+UserRoles.TrademarkStaff,
+UserRoles.PatentStaff,
+UserRoles.DesignStaff,
+UserRoles.TrademarkSupport,
+UserRoles.PatentDesignSupport,
+UserRoles.TrademarkSearch,
+UserRoles.TrademarkExaminer,
+UserRoles.TrademarkOpposition,
+UserRoles.TrademarkAcceptance,
+UserRoles.TrademarkCertification,
+UserRoles.TrademarkPublication,
+UserRoles.TrademarkRegistrar,
+UserRoles.PatentSearch,
+UserRoles.PatentExaminer,
+UserRoles.PatentCertification,
+UserRoles.AppealExaminer,
+UserRoles.DesignSearch,
+UserRoles.DesignExaminer,
+UserRoles.DesignCertification
+];
 $: isStaffOnlyTech = !!$loggedInUser?.userRoles?.some((r) => STAFF_ONLY_TECH_ROLES.includes(r));
+
+const TRADEMARK_OFFICER_ROLES = [
+UserRoles.TrademarkStaff,
+UserRoles.TrademarkSupport,
+UserRoles.TrademarkSearch,
+UserRoles.TrademarkExaminer,
+UserRoles.TrademarkOpposition,
+UserRoles.TrademarkAcceptance,
+UserRoles.TrademarkCertification,
+UserRoles.TrademarkPublication,
+UserRoles.TrademarkRegistrar
+];
+
+const PATENT_DESIGN_OFFICER_ROLES = [
+UserRoles.PatentStaff,
+UserRoles.DesignStaff,
+UserRoles.PatentDesignSupport,
+UserRoles.PatentSearch,
+UserRoles.PatentExaminer,
+UserRoles.PatentCertification,
+UserRoles.AppealExaminer,
+UserRoles.DesignSearch,
+UserRoles.DesignExaminer,
+UserRoles.DesignCertification
+];
+
+$: officerRegistryCategory = $loggedInUser?.userRoles?.some((r) => TRADEMARK_OFFICER_ROLES.includes(r))
+? TicketCategory.TrademarkRegistry
+: $loggedInUser?.userRoles?.some((r) => PATENT_DESIGN_OFFICER_ROLES.includes(r))
+? TicketCategory.PatentDesignRegistry
+: null;
+
+$: recordalRegistryCategory = technicalOnly && officerRegistryCategory !== null ? officerRegistryCategory : selectedCategory;
+$: isRegistryTechnicalFlow = technicalOnly && officerRegistryCategory !== null;
 
 let step: number = 1;
 let selectedTicketType: TicketType | null = null;
@@ -31,15 +87,34 @@ let selectedApplicationType: ApplicationType | null = null;
 let selectedRecordalType: number | null = null;
 let titleOfTicket: string = '';
 let fileNumber: string = '';
+let accountEmail: string = '';
 let reason: string = '';
 let selectedFile: File | null = null;
 let selectedFileName: string = '';
 let isSavingTicket: boolean = false;
+let isValidatingFile: boolean = false;
+let fileValidationMessage: string = '';
+let validatedFileNumber: string = '';
+let validatedFileInfo: any = null;
 let statusMessage: string | null = null;
 
-const techTypes = [
+type TicketTypeOption = {
+value: TicketType;
+label: string;
+icon: string;
+applicationType?: ApplicationType;
+};
+
+const techTypes: TicketTypeOption[] = [
 { value: TicketType.AccountAccess, label: 'Account Access', icon: 'mdi:account-key-outline' },
 { value: TicketType.PaymentIssue, label: 'Payment Issue', icon: 'mdi:credit-card-outline' },
+{ value: TicketType.FollowUp, label: 'Certificate', icon: 'mdi:certificate-outline', applicationType: ApplicationType.Certificate },
+{ value: TicketType.Others, label: 'Others', icon: 'mdi:help-circle-outline' }
+];
+
+const registryTechnicalTypes: TicketTypeOption[] = [
+{ value: TicketType.RegistryProcessInquiry, label: 'Filings', icon: 'mdi:file-document-multiple-outline' },
+{ value: TicketType.FollowUp, label: 'Certificate', icon: 'mdi:certificate-outline', applicationType: ApplicationType.Certificate },
 { value: TicketType.Others, label: 'Others', icon: 'mdi:help-circle-outline' }
 ];
 
@@ -59,7 +134,9 @@ const applicationTypes = [
 { value: ApplicationType.Appeal, label: 'Appeal', icon: 'mdi:scale-balance' }
 ];
 
-$: recordalTypes = selectedCategory === TicketCategory.TrademarkRegistry
+const registryApplicationTypes = applicationTypes.filter((type) => type.value !== ApplicationType.Certificate);
+
+$: recordalTypes = recordalRegistryCategory === TicketCategory.TrademarkRegistry
 ? [
 { value: TrademarkRecordalType.ChangeOfName, label: 'Change of Name' },
 { value: TrademarkRecordalType.ChangeOfAddress, label: 'Change of Address' },
@@ -80,20 +157,42 @@ $: recordalTypes = selectedCategory === TicketCategory.TrademarkRegistry
 { value: PatentDesignRecordalType.Renewal, label: 'Renewal' }
 ];
 
-$: fileNumberLabel = selectedApplicationType === ApplicationType.Opposition ? 'Opposition ID' : 'File Number (optional)';
-$: detailsValid = titleOfTicket.trim().length > 0 && reason.trim().length > 0;
+$: isAccountAccessTicket = isTechType && selectedTicketType === TicketType.AccountAccess;
+$: isCertificateTicket = isTechType && selectedApplicationType === ApplicationType.Certificate;
+$: shouldShowFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue || isCertificateTicket || (!technicalOnly && isTechType && selectedTicketType === TicketType.Others) || !!fileNumber.trim());
+$: mustValidateFileNumber = !isAccountAccessTicket && (!isTechType || requireFileNumber || selectedTicketType === TicketType.PaymentIssue || isCertificateTicket);
+$: requiresAccountEmail = isAccountAccessTicket && !technicalOnly;
+$: fileNumberLabel = selectedApplicationType === ApplicationType.Opposition ? 'Opposition ID' : mustValidateFileNumber ? 'File Number' : 'File Number (optional)';
+$: fileNumberValid = !mustValidateFileNumber || (validatedFileNumber === fileNumber.trim() && !!validatedFileInfo);
+$: accountEmailValid = !requiresAccountEmail || accountEmail.trim().length > 0;
+$: basicDetailsValid = titleOfTicket.trim().length > 0 && reason.trim().length > 0;
+$: detailsValid = basicDetailsValid && fileNumberValid && accountEmailValid;
+$: isRegistryTechnicalOther = isRegistryTechnicalFlow && isTechType && selectedTicketType === TicketType.Others;
 
 $: progressSteps = isTechType
+? isRegistryTechnicalOther
 ? ['Ticket Type', 'Details', 'Review']
+: requireFileNumber
+? selectedApplicationType === ApplicationType.Recordals
+? ['Ticket Type', 'App Type', 'Recordal', 'Details', 'Review']
+: ['Ticket Type', 'App Type', 'Details', 'Review']
+: ['Ticket Type', 'Details', 'Review']
 : selectedApplicationType === ApplicationType.Recordals
 ? ['Ticket Type', 'Registry', 'App Type', 'Recordal', 'Details', 'Review']
 : ['Ticket Type', 'Registry', 'App Type', 'Details', 'Review'];
 
 $: currentProgressIndex = (() => {
 if (isTechType) {
+if (isRegistryTechnicalOther) {
 if (step === 1) return 0;
 if (step === 5) return 1;
 return 2;
+}
+if (step === 1) return 0;
+if (step === 3) return 1;
+if (step === 4) return 2;
+if (step === 5) return requireFileNumber ? selectedApplicationType === ApplicationType.Recordals ? 3 : 2 : 1;
+return requireFileNumber ? selectedApplicationType === ApplicationType.Recordals ? 4 : 3 : 2;
 }
 if (step === 1) return 0;
 if (step === 2) return 1;
@@ -103,13 +202,22 @@ if (step === 5) return selectedApplicationType === ApplicationType.Recordals ? 4
 return selectedApplicationType === ApplicationType.Recordals ? 5 : 4;
 })();
 
-function pickTechType(type: TicketType) {
-selectedTicketType = type;
+function pickTechType(type: TicketTypeOption) {
+selectedTicketType = type.value;
 isTechType = true;
 selectedCategory = TicketCategory.TechnicalSupport;
-selectedApplicationType = null;
+selectedApplicationType = type.applicationType ?? null;
 selectedRecordalType = null;
-step = 5;
+step = selectedApplicationType === ApplicationType.Certificate ? 5 : technicalOnly ? 3 : requireFileNumber ? 3 : 5;
+}
+
+function pickRegistryTechnicalType(type: TicketTypeOption) {
+selectedTicketType = type.value;
+isTechType = true;
+selectedCategory = TicketCategory.TechnicalSupport;
+selectedApplicationType = type.applicationType ?? null;
+selectedRecordalType = null;
+step = type.value === TicketType.Others || selectedApplicationType === ApplicationType.Certificate ? 5 : 3;
 }
 
 function pickRegistryType(type: TicketType) {
@@ -140,12 +248,14 @@ step = 5;
 function goBack() {
 if (step === 6) { step = 5; return; }
 if (step === 5) {
-if (isTechType) { step = 1; return; }
+if (isRegistryTechnicalOther) { step = 1; return; }
+if (isTechType && selectedApplicationType === ApplicationType.Recordals) { step = 4; return; }
+if (isTechType) { step = requireFileNumber ? 3 : 1; return; }
 step = selectedApplicationType === ApplicationType.Recordals ? 4 : 3;
 return;
 }
 if (step === 4) { step = 3; return; }
-if (step === 3) { step = 2; return; }
+if (step === 3) { step = isTechType ? 1 : 2; return; }
 if (step === 2) { step = 1; return; }
 }
 
@@ -176,6 +286,62 @@ selectedFile = input.files[0];
 selectedFileName = input.files[0].name;
 }
 
+async function validateFileNumber(): Promise<boolean> {
+const value = fileNumber.trim();
+if (!value) {
+fileValidationMessage = 'File number is required.';
+validatedFileNumber = '';
+validatedFileInfo = null;
+return false;
+}
+isValidatingFile = true;
+fileValidationMessage = '';
+try {
+const response = await fetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(value)}`);
+if (!response.ok) throw new Error('lookup failed');
+const result = await response.json();
+const file = Array.isArray(result) ? result[0] : result;
+if (file) {
+validatedFileNumber = value;
+validatedFileInfo = file;
+fileValidationMessage = 'File number verified.';
+return true;
+} else {
+validatedFileNumber = '';
+validatedFileInfo = null;
+fileValidationMessage = 'No file was found for this number.';
+return false;
+}
+} catch {
+validatedFileNumber = '';
+validatedFileInfo = null;
+fileValidationMessage = 'Unable to validate this file number.';
+return false;
+} finally {
+isValidatingFile = false;
+}
+}
+
+async function goToReview() {
+if (!detailsValid && !mustValidateFileNumber) return;
+if (mustValidateFileNumber && !fileNumberValid) {
+const valid = await validateFileNumber();
+if (!valid) {
+toast.error('Please enter a valid file number before continuing.', { position: 'top-right' });
+return;
+}
+}
+if (!accountEmailValid) {
+toast.error('Please enter the account email before continuing.', { position: 'top-right' });
+return;
+}
+step = 6;
+}
+
+$: if (fileNumber.trim() !== validatedFileNumber) {
+validatedFileInfo = null;
+}
+
 function clearFile() {
 selectedFile = null;
 selectedFileName = '';
@@ -184,6 +350,14 @@ selectedFileName = '';
 const userName = ($loggedInUser?.firstName ?? '') + ' ' + ($loggedInUser?.lastName ?? '');
 
 async function saveNewTicket() {
+if (mustValidateFileNumber && !fileNumberValid) {
+toast.error('Please validate the file number before submitting.', { position: 'top-right' });
+return;
+}
+if (!accountEmailValid) {
+toast.error('Please enter the account email before submitting.', { position: 'top-right' });
+return;
+}
 isSavingTicket = true;
 let attachmenturl: any = null;
 if (selectedFile) {
@@ -206,15 +380,21 @@ creatorName: userName,
 status: 1,
 category: selectedCategory,
 ticketType: selectedTicketType,
+raisedByRegistryStaff: isRegistryTechnicalFlow,
 correspondences: [
 attachmenturl == null
 ? { message: reason, senderId: $loggedInUser?.creatorId, senderName: userName }
 : { attachment: attachmenturl[0], message: reason, senderId: $loggedInUser?.creatorId, senderName: userName }
 ]
 };
+if (isRegistryTechnicalFlow && officerRegistryCategory !== null) body.registryCategory = officerRegistryCategory;
 if (selectedApplicationType !== null) body.applicationType = selectedApplicationType;
 if (selectedRecordalType !== null) body.recordalType = selectedRecordalType;
 if (fileNumber.trim()) body.fileNumber = fileNumber.trim();
+if (accountEmail.trim()) body.accountEmail = accountEmail.trim();
+if (validatedFileInfo) {
+body.fileId = validatedFileInfo.id ?? validatedFileInfo.Id ?? validatedFileInfo.fileId ?? validatedFileInfo.FileId;
+}
 
 const response = await fetch(`${baseURL}/api/tickets/Create`, {
 method: 'POST',
@@ -236,10 +416,15 @@ selectedApplicationType = null;
 selectedRecordalType = null;
 titleOfTicket = '';
 fileNumber = '';
+accountEmail = '';
 reason = '';
 selectedFile = null;
 selectedFileName = '';
 isSavingTicket = false;
+isValidatingFile = false;
+fileValidationMessage = '';
+validatedFileNumber = '';
+validatedFileInfo = null;
 statusMessage = null;
 open = false;
 onExit();
@@ -253,6 +438,8 @@ return '—';
 }
 
 function ticketTypeLabel(tt: TicketType | null): string {
+if (selectedApplicationType === ApplicationType.Certificate) return 'Certificate';
+if (isRegistryTechnicalFlow && tt === TicketType.RegistryProcessInquiry) return 'Filings';
 return [...techTypes, ...registryTypes].find((t) => t.value === tt)?.label ?? '—';
 }
 
@@ -273,9 +460,9 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 <!-- Header -->
 <div class="flex items-center justify-between px-6 py-4 border-b bg-white">
 <div>
-<h2 class="text-lg font-semibold text-slate-800">New Support Ticket</h2>
+<h2 class="text-lg font-semibold text-slate-800">{technicalOnly ? 'Technical Support' : 'New Support Ticket'}</h2>
 {#if step < 7}
-<p class="text-xs text-muted-foreground mt-0.5">Step {Math.min(step, progressSteps.length)} of {progressSteps.length}</p>
+<p class="text-xs text-muted-foreground mt-0.5">Step {currentProgressIndex + 1} of {progressSteps.length}</p>
 {/if}
 </div>
 <button type="button" class="rounded-md w-8 h-8 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-300 transition-colors" on:click={resetAndClose} aria-label="Close">
@@ -302,12 +489,12 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 
 {#if step === 1}
 <div class="space-y-5">
-{#if !isStaffOnlyTech}
+{#if !isStaffOnlyTech && !technicalOnly}
 <div>
 <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Technical Support</p>
-<div class="grid grid-cols-3 gap-3">
+<div class="grid grid-cols-2 gap-3">
 {#each techTypes as type}
-<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type.value)}>
+<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type)}>
 <span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
 <Icon icon={type.icon} width="1.4rem" height="1.4rem" class="text-green-700" />
 </span>
@@ -336,15 +523,26 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 </div>
 {:else}
 <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">Technical Support</p>
-<div class="grid grid-cols-3 gap-3">
-{#each techTypes as type}
-<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type.value)}>
+<div class="grid {isRegistryTechnicalFlow ? 'grid-cols-3' : 'grid-cols-2'} gap-3">
+{#if isRegistryTechnicalFlow}
+{#each registryTechnicalTypes as type}
+<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickRegistryTechnicalType(type)}>
 <span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
 <Icon icon={type.icon} width="1.4rem" height="1.4rem" class="text-green-700" />
 </span>
 <span class="text-sm font-medium text-slate-700 leading-tight">{type.label}</span>
 </button>
 {/each}
+{:else}
+{#each techTypes as type}
+<button type="button" class="{cardBase} {cardIdle}" on:click={() => pickTechType(type)}>
+<span class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+<Icon icon={type.icon} width="1.4rem" height="1.4rem" class="text-green-700" />
+</span>
+<span class="text-sm font-medium text-slate-700 leading-tight">{type.label}</span>
+</button>
+{/each}
+{/if}
 </div>
 {/if}
 </div>
@@ -374,7 +572,7 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 <div>
 <p class="text-sm text-slate-600 mb-4">What type of application is this about?</p>
 <div class="grid grid-cols-3 gap-3">
-{#each applicationTypes as at}
+{#each registryApplicationTypes as at}
 <button type="button" class="{cardBase} {selectedApplicationType === at.value ? cardActive : cardIdle}" on:click={() => pickApplicationType(at.value)}>
 <span class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
 <Icon icon={at.icon} width="1.3rem" height="1.3rem" class="text-green-700" />
@@ -400,10 +598,27 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 
 {:else if step === 5}
 <div class="space-y-4">
-{#if !isTechType}
+{#if shouldShowFileNumber}
 <div class="space-y-1.5">
-<label class="text-sm font-medium text-slate-700" for="ipo-filenum">{fileNumberLabel}</label>
+<label class="text-sm font-medium text-slate-700" for="ipo-filenum">{fileNumberLabel}{#if mustValidateFileNumber} <span class="text-red-500">*</span>{/if}</label>
+<div class="flex gap-2">
 <Input id="ipo-filenum" placeholder="e.g. TM-2024-00001" bind:value={fileNumber} />
+{#if mustValidateFileNumber}
+<Button type="button" variant="outline" disabled={isValidatingFile || !fileNumber.trim()} on:click={validateFileNumber}>
+{#if isValidatingFile}<Icon icon="eos-icons:loading" width="1rem" height="1rem" class="mr-1" />{/if}
+Validate
+</Button>
+{/if}
+</div>
+{#if fileValidationMessage}
+<p class="text-xs {fileNumberValid ? 'text-green-700' : 'text-red-600'}">{fileValidationMessage}</p>
+{/if}
+</div>
+{/if}
+{#if requiresAccountEmail || (!technicalOnly && isTechType && selectedTicketType === TicketType.Others)}
+<div class="space-y-1.5">
+<label class="text-sm font-medium text-slate-700" for="ipo-account-email">Account Email{#if requiresAccountEmail} <span class="text-red-500">*</span>{:else} <span class="text-xs text-slate-400 font-normal">(optional)</span>{/if}</label>
+<Input id="ipo-account-email" type="email" placeholder="Enter account email" bind:value={accountEmail} />
 </div>
 {/if}
 <div class="space-y-1.5">
@@ -461,7 +676,16 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 {#if fileNumber.trim()}
 <div class="flex justify-between px-4 py-3">
 <span class="text-muted-foreground">{fileNumberLabel}</span>
-<span class="font-medium">{fileNumber}</span>
+<span class="font-medium flex items-center gap-1">
+{#if fileNumberValid}<Icon icon="mdi:check-circle" width="0.9rem" height="0.9rem" class="text-green-600" />{/if}
+{fileNumber}
+</span>
+</div>
+{/if}
+{#if accountEmail.trim()}
+<div class="flex justify-between px-4 py-3">
+<span class="text-muted-foreground">Account Email</span>
+<span class="font-medium">{accountEmail}</span>
 </div>
 {/if}
 <div class="flex justify-between px-4 py-3">
@@ -515,7 +739,7 @@ const cardActive = 'border-green-600 bg-green-50 shadow-md';
 <Button variant="outline" on:click={goBack}>
 <Icon icon="mdi:arrow-left" width="1rem" height="1rem" class="mr-1" /> Back
 </Button>
-<Button disabled={!detailsValid} on:click={() => (step = 6)}>
+<Button disabled={!detailsValid || isValidatingFile} on:click={goToReview}>
 Review <Icon icon="mdi:arrow-right" width="1rem" height="1rem" class="ml-1" />
 </Button>
 {:else if step === 6}

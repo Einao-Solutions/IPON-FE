@@ -64,7 +64,7 @@ export function mapStatusToString(
     case ApplicationStatuses.RequestWithdrawal:
       return "Request Withdrawal";
     case ApplicationStatuses.NewOpposition:
-      return "New Opposition";
+      return "Opposed";
     case ApplicationStatuses.AwaitingCounter:
       return "Awaiting Counter";
     case ApplicationStatuses.AwaitingApproval:
@@ -79,6 +79,14 @@ export function mapStatusToString(
       return "Awaiting Office Process";
     case ApplicationStatuses.Abandoned:
       return "Abandoned";
+    case ApplicationStatuses.WithdrawalRequested:
+      return "Withdrawal Requested";
+    case ApplicationStatuses.WithdrawalApproved:
+      return "Withdrawal Approved";
+    case ApplicationStatuses.BatchedManualPublication:
+      return "Batched Manual Publication";
+    case ApplicationStatuses.Published:
+      return "Published";
     default:
       return "";
   }

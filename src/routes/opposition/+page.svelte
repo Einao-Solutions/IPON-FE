@@ -56,6 +56,30 @@
   let searchInput: string = "";
   let fileInfo: FileInfo | null = null;
 
+  // Maintenance modal state
+  let showMaintenance: boolean = false;
+  let maintenanceServiceName: string = "";
+  function openMaintenance(serviceName: string) {
+    maintenanceServiceName = serviceName;
+    showMaintenance = true;
+  }
+  function closeMaintenance() {
+    showMaintenance = false;
+  }
+  // Handle an opposition option: show maintenance modal if under maintenance,
+  // otherwise run the option's action.
+  function handleOption(
+    serviceName: string,
+    maintenance: boolean,
+    action: () => void,
+  ) {
+    if (maintenance) {
+      openMaintenance(serviceName);
+    } else {
+      action();
+    }
+  }
+
   // Counter Statement state
   let csSearchInput: string = "";
   let csFileInfo: FileInfo | null = null;
@@ -1050,6 +1074,69 @@
 </script>
 
 <Toaster />
+
+{#if showMaintenance}
+  <!-- Maintenance Modal -->
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="opp-maintenance-title"
+  >
+    <!-- Backdrop -->
+    <button
+      type="button"
+      class="absolute inset-0 bg-black/60"
+      aria-label="Close maintenance notice"
+      on:click={closeMaintenance}
+    ></button>
+
+    <!-- Modal -->
+    <div
+      class="relative w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden"
+    >
+      <!-- Header -->
+      <div class="flex items-center justify-between px-6 py-4 border-b">
+        <h2
+          id="opp-maintenance-title"
+          class="text-lg font-semibold text-gray-900"
+        >
+          Service Under Maintenance
+        </h2>
+        <button
+          class="rounded-full p-2 hover:bg-gray-100"
+          aria-label="Close"
+          on:click={closeMaintenance}
+        >
+          <span class="text-gray-700 text-xl leading-none">&times;</span>
+        </button>
+      </div>
+
+      <!-- Content -->
+      <div class="px-6 py-5 space-y-3 text-gray-700">
+        <p class="text-sm">
+          <strong>{maintenanceServiceName}</strong> is temporarily under
+          maintenance.
+        </p>
+        <p class="text-sm">
+          We're working to restore this service as quickly as possible. Thank
+          you for your patience and understanding.
+        </p>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t flex justify-end">
+        <button
+          on:click={closeMaintenance}
+          class="bg-green-600 text-white py-2 px-5 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
 <div class="min-h-screen bg-gray-50 py-8 px-4">
   <div class="max-w-2xl mx-auto">
     {#if currentStep === "landing"}
@@ -1085,7 +1172,7 @@
         <div class="space-y-4">
           <!-- New Opposition -->
           <button
-            on:click={() => (currentStep = "search")}
+            on:click={() => handleOption('New Opposition', false, () => (currentStep = "search"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
             <div class="flex items-center justify-between">
@@ -1103,7 +1190,7 @@
 
           <!-- Counter Statement -->
           <button
-            on:click={() => (currentStep = "cs-search")}
+            on:click={() => handleOption('Counter Statement', false, () => (currentStep = "cs-search"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
             <div class="flex items-center justify-between">
@@ -1121,7 +1208,7 @@
 
           <!-- Statutory -->
           <button
-            on:click={() => (currentStep = "sd-role")}
+            on:click={() => handleOption('Statutory Declaration', false, () => (currentStep = "sd-role"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
             <div class="flex items-center justify-between">
@@ -1139,7 +1226,7 @@
 
           <!-- Amendment -->
           <button
-            on:click={() => goto('/home/amendment')}
+            on:click={() => handleOption('Amendment', false, () => goto('/home/amendment'))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-green-500 hover:bg-green-50 transition-all group"
           >
             <div class="flex items-center justify-between">
@@ -1157,7 +1244,7 @@
 
           <!-- Opposition Withdrawal -->
           <button
-            on:click={() => (currentStep = "withdrawal-search")}
+            on:click={() => handleOption('Opposition Withdrawal', false, () => (currentStep = "withdrawal-search"))}
             class="w-full text-left bg-gray-50 border border-gray-200 rounded-lg p-5 hover:border-orange-500 hover:bg-orange-50 transition-all group"
           >
             <div class="flex items-center justify-between">

@@ -17,11 +17,13 @@
   import { countriesMap } from "$lib/constants";
   import { loggedInToken, loggedInUser } from "$lib/store";
   interface ApplicantInfo {
+    id?: string;
     name: string;
     address?: string;
     email?: string;
     phone?: string;
     country?: string;
+    nationality?: string;
     state?: string;
     city?: string;
   }
@@ -62,7 +64,8 @@
     applicantCities: string[];
     fileTitle?: string | null;
     patentAbstract?: string | null;
-    patentApplicationType?: number | null;
+    patentApplicationType?: number | "";
+    patentType?: number | "";
   }
 
   let fileInfo: PatentFileInfo = {
@@ -99,6 +102,7 @@
   let fileType: FileTypes | null = FileTypes.Patent; // Default to Patent since this page is for patent clerical updates
   const pageData = get(page);
   let patentTypeValue: number | null = null;
+  let isForeignPatentFromSearch = false;
 
   let correspondenceName: string = "";
   let correspondenceAddress: string = "";
@@ -117,6 +121,8 @@
     applicantNationalities: [],
     applicantStates: [],
     applicantCities: [],
+    patentApplicationType: "",
+    patentType: "",
   };
 
   function removeApplicantForm(index: number) {
@@ -145,6 +151,9 @@
       !Number.isNaN(upt) && validUp.includes(upt)
         ? (upt as ClericalUpdateTypes)
         : null;
+
+    isForeignPatentFromSearch =
+      pageData.url.searchParams.get("isForeignPatent") === "true";
 
     await setData(fileNumber, fileType, updateType);
   });
@@ -250,7 +259,7 @@
         firstPriorityInfo = { number: "", country: "", date: "" };
       }
       if (Array.isArray(data.priorityInfo) && data.priorityInfo.length > 0) {
-        priorityInfoList = data.priorityInfo.map((p) => ({ ...p }));
+        priorityInfoList = data.priorityInfo.map((p: PriorityInfo) => ({ ...p }));
       } else {
         priorityInfoList = [{ number: "", country: "", date: "" }];
       }
@@ -264,6 +273,11 @@
 
   function isPCTorConventional() {
     return patentTypeValue === 0 || patentTypeValue === 2;
+  }
+
+  function isForeignPatentFile() {
+    const origin = fileInfo.fileOrigin?.trim() ?? "";
+    return isForeignPatentFromSearch || origin === "Foreign" || origin.toLowerCase().startsWith("f");
   }
 
   function getFormTitle(type: ClericalUpdateTypes): string {
@@ -397,9 +411,20 @@
         return false;
       }
     }
-    if (showTitleOfInventionSection && !newData.fileTitle?.trim()) {
-      error = "Please enter the new Title of Invention.";
-      return false;
+    if (showTitleOfInventionSection) {
+      const hasPatentUpdate =
+        !!newData.fileTitle?.trim() ||
+        !!newData.patentAbstract?.trim() ||
+        newData.patentApplicationType !== "" &&
+          newData.patentApplicationType !== undefined ||
+        isForeignPatentFile() &&
+          newData.patentType !== "" &&
+          newData.patentType !== undefined;
+
+      if (!hasPatentUpdate) {
+        error = "Please enter at least one patent update.";
+        return false;
+      }
     }
     error = null;
     return true;
@@ -428,6 +453,7 @@
         UpdateType: updateType,
         FileType: fileInfo.fileType ?? "",
         PaymentRRR: fileInfo.paymentRRR ?? "",
+        UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
       };
 
       if (updateType === ClericalUpdateTypes.PriorityInfo) {
@@ -475,10 +501,18 @@
         formObj.ApplicantStates = newData.applicantStates;
         formObj.ApplicantCities = newData.applicantCities;
       } else if (updateType === ClericalUpdateTypes.FileTitle) {
-        formObj.FileTitle = newData.fileTitle ?? "";
-        formObj.PatentAbstract = newData.patentAbstract ?? "";
-        formObj.PatentApplicationType =
-          Number(newData.patentApplicationType) ?? null;
+        if (newData.fileTitle?.trim()) {
+          formObj.FileTitle = newData.fileTitle.trim();
+        }
+        if (newData.patentAbstract?.trim()) {
+          formObj.PatentAbstract = newData.patentAbstract.trim();
+        }
+        if (newData.patentApplicationType !== "" && newData.patentApplicationType !== undefined) {
+          formObj.PatentApplicationType = Number(newData.patentApplicationType);
+        }
+        if (isForeignPatentFile() && newData.patentType !== "" && newData.patentType !== undefined) {
+          formObj.PatentType = Number(newData.patentType);
+        }
       }
       if (updateType === ClericalUpdateTypes.CorrespondenceInformation) {
         formObj.CorrespondenceName = correspondenceName;
@@ -641,6 +675,7 @@
       FileType: fileInfo.fileType ?? "",
       PaymentRRR: fileInfo.paymentRRR ?? "",
       RemoveApplicantIds: selectedRemoveIds,
+      UserId: $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
     };
 
     // Save to localStorage for the paid page
@@ -653,6 +688,10 @@
       formData.append("UpdateType", "RemoveApplicant");
       formData.append("FileType", String(fileInfo.fileType ?? ""));
       formData.append("PaymentRRR", fileInfo.paymentRRR ?? "");
+      formData.append(
+        "UserId",
+        $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
+      );
       selectedRemoveIds.forEach((id, i) => {
         formData.append(`RemoveApplicantIds[${i}]`, id);
       });
@@ -1140,7 +1179,7 @@
         </div>
         <div class="mb-6 border border-gray-300 rounded-md overflow-hidden">
           <div class="bg-yellow-200 px-4 py-2 font-medium text-yellow-900">
-            NEW TITLE OF INVENTION & APPLICATION TYPE
+            NEW TITLE OF INVENTION, APPLICATION TYPE & PATENT TYPE
           </div>
           <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -1170,9 +1209,7 @@
                 bind:value={newData.patentApplicationType}
                 class="w-full px-3 py-2 border rounded-md focus:ring-yellow-500 focus:border-yellow-500"
               >
-                <option value="" disabled selected
-                  >Select application type</option
-                >
+                <option value="">Select application type</option>
                 <option value={PatentApplicationTypes.Patent}>Patent</option>
                 <option value={PatentApplicationTypes.Business_Method}
                   >Business Method</option
@@ -1185,6 +1222,29 @@
                 This will replace the current application type shown above.
               </p>
             </div>
+            {#if isForeignPatentFile()}
+              <div>
+                <label
+                  for={`patent-type-update`}
+                  class="block text-sm font-medium text-gray-700 mb-1"
+                  >New Patent Type:</label
+                >
+                <select
+                  bind:value={newData.patentType}
+                  class="w-full px-3 py-2 border rounded-md focus:ring-yellow-500 focus:border-yellow-500"
+                >
+                  <option value="">Select patent type</option>
+                  <option value={PatentTypes.Conventional}>Conventional</option>
+                  <option value={PatentTypes.Non_Conventional}
+                    >Non-Conventional</option
+                  >
+                  <option value={PatentTypes.PCT}>PCT</option>
+                </select>
+                <p class="text-xs text-gray-500 mt-1">
+                  Patent type changes are accepted for foreign patent files.
+                </p>
+              </div>
+            {/if}
           </div>
         </div>
       {/if}
@@ -1212,7 +1272,7 @@
                   class="cursor-pointer font-semibold text-lg bg-gray-200 px-4 py-2 flex items-center justify-between"
                 >
                   <span>Applicant {i + 1}</span>
-                  {#if selectedRemoveIds.includes(applicant.id)}
+                  {#if selectedRemoveIds.includes(applicant.id ?? '')}
                     <span
                       class="ml-2 px-2 py-1 bg-red-100 text-red-700 rounded text-xs"
                       >To be deleted</span
@@ -1330,13 +1390,13 @@
                   type="button"
                   class="mt-4 px-4 py-2 rounded transition-colors
                                         {selectedRemoveIds.includes(
-                    applicant.id,
+                    applicant.id ?? '',
                   )
                     ? 'bg-gray-400 text-white border border-gray-600'
                     : 'bg-red-600 text-white hover:bg-red-700'}"
-                  on:click={() => toggleRemoveApplicant(applicant.id)}
+                  on:click={() => toggleRemoveApplicant(applicant.id ?? '')}
                 >
-                  {selectedRemoveIds.includes(applicant.id)
+                  {selectedRemoveIds.includes(applicant.id ?? '')
                     ? "Undo Remove"
                     : "Delete Applicant"}
                 </button>

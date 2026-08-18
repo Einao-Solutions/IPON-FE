@@ -28,6 +28,9 @@
         UserRoles.SuperAdmin,
         UserRoles.TrademarkRegistrar,
         UserRoles.PatentDesignRegistrar,
+        UserRoles.ActingTrademarkRegistrar,
+        UserRoles.ActingPatentDesignRegistrar,
+        UserRoles.EinaoFinance
       ].includes(role)
     );
 
@@ -38,6 +41,10 @@
   });
 
   function handleCardClick(registry: string) {
+    if (registry === 'Support') {
+      goto('/statistics/support');
+      return;
+    }
     selectedRegistry = registry;
     currentView = "list";
   }

@@ -9,30 +9,70 @@
 	import { Input } from '$lib/components/ui/input';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Sheet from '$lib/components/ui/sheet';
+	import * as Tabs from '$lib/components/ui/tabs';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
-	import { mapDateToString } from '../components/dashboardutils';
+	import { mapDateToString, mapTypeToString } from '../components/dashboardutils';
 	import { toast } from 'svelte-sonner';
 
 	let oppositions: any[] = [];
+	let otherApps: any[] = [];
 	let oppositionsLoading = false;
 	let search = '';
+	let activeTab = 'oppositions';
 
 	let selectedOpposition: any = null;
 	let showOppositionDetail = false;
 	let oppositionDetailLoading = false;
 
+	let showStatusHistory = false;
+	let historyComponent: any = null;
+	let historyData: any = {};
+
+	async function viewHistory(row: any) {
+		if (!historyComponent) {
+			historyComponent = (await import('../components/HistorySheet.svelte')).default;
+		}
+		historyData = {
+			title: 'Status History',
+			description: 'Application status changes',
+			dataList: row.history ?? [],
+			onclose: () => {
+				showStatusHistory = false;
+				historyData = {};
+			},
+			isVisible: true
+		};
+		showStatusHistory = true;
+	}
+
 	onMount(async () => {
-		await loadOppositions();
+		await loadApplications();
 		const oppositionId = $page.url.searchParams.get('oppositionId');
 		if (oppositionId) {
 			viewOppositionDetail('', oppositionId);
 		}
 	});
 
-	async function loadOppositions() {
+	async function loadApplications() {
 		const currentUser = $loggedInUser;
 		if (!currentUser) return;
 		oppositionsLoading = true;
+		try {
+			const [oppItems, otherItems] = await Promise.all([
+				loadOppositions(currentUser),
+				fetchOtherApps(currentUser.id)
+			]);
+			oppositions = oppItems.map((x, i) => ({ ...x, sn: i + 1 }));
+			otherApps = otherItems.map((x, i) => ({ ...x, sn: i + 1 }));
+		} catch (e) {
+			console.error('Failed to load applications', e);
+			toast.error('Failed to load applications');
+		} finally {
+			oppositionsLoading = false;
+		}
+	}
+
+	async function loadOppositions(currentUser: any): Promise<any[]> {
 		try {
 			const isSuperOrTech = currentUser.userRoles?.some((role: number) =>
 				[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
@@ -43,25 +83,45 @@
 			const res = await fetch(url, {
 				headers: { Authorization: `Bearer ${$loggedInToken}` }
 			});
-			if (res.ok) {
-				const body = await res.json();
-				const items = body.data ?? [];
-				oppositions = items.map((x: any, i: number) => ({
-					sn: i + 1,
-					date: x.date,
-					title: x.title,
-					name: x.name,
-					status: x.status,
-					paymentId: x.paymentId,
-					fileId: x.fileId,
-					id: x.id
-				}));
-			}
+			if (!res.ok) return [];
+			const body = await res.json();
+			const items = body.data ?? [];
+			return items.map((x: any) => ({
+				date: x.date,
+				title: x.title,
+				name: x.name,
+				status: x.status,
+				paymentId: x.paymentId,
+				fileId: x.fileId,
+				id: x.id,
+				kind: 'opposition'
+			}));
 		} catch (e) {
 			console.error('Failed to load oppositions', e);
-			toast.error('Failed to load opposition applications');
-		} finally {
-			oppositionsLoading = false;
+			return [];
+		}
+	}
+
+	async function fetchOtherApps(userId: string): Promise<any[]> {
+		try {
+			const res = await fetch(
+				`${baseURL}/api/users/GetOtherApplications?userId=${encodeURIComponent(userId)}`,
+				{ headers: { Authorization: `Bearer ${$loggedInToken}` } }
+			);
+			if (!res.ok) return [];
+			const body = await res.json();
+			const items = Array.isArray(body) ? body : body.data ?? body.applications ?? [];
+			return items.map((x: any) => ({
+				date: x.applicationDate,
+				status: x.currentStatus,
+				paymentId: x.paymentId,
+				id: x.id,
+				applicationType: mapTypeToString(x.applicationType),
+				history: x.statusHistory
+			}));
+		} catch (e) {
+			console.error('Failed to load other applications', e);
+			return [];
 		}
 	}
 
@@ -101,17 +161,20 @@
 		}
 	}
 
-	$: filteredOppositions = search
-		? oppositions.filter((o) => {
-				const t = search.toLowerCase();
-				return (
-					(o.title ?? '').toLowerCase().includes(t) ||
-					(o.fileId ?? '').toLowerCase().includes(t) ||
-					(o.name ?? '').toLowerCase().includes(t) ||
-					(o.paymentId ?? '').toLowerCase().includes(t)
-				);
-		  })
-		: oppositions;
+	function filterList(list: any[]) {
+		if (!search) return list;
+		const t = search.toLowerCase();
+		return list.filter(
+			(o) =>
+				(o.title ?? '').toLowerCase().includes(t) ||
+				(o.fileId ?? '').toLowerCase().includes(t) ||
+				(o.name ?? '').toLowerCase().includes(t) ||
+				(o.paymentId ?? '').toLowerCase().includes(t)
+		);
+	}
+
+	$: filteredOppositions = filterList(oppositions);
+	$: filteredOtherApps = filterList(otherApps);
 </script>
 
 <div class="p-6 space-y-6">
@@ -131,12 +194,15 @@
 			</div>
 			<div>
 				<h1 class="text-2xl font-bold text-slate-900">Other Applications</h1>
-				<p class="text-sm text-slate-500">Opposition applications and other related services</p>
+				<!-- <p class="text-sm text-slate-500">User</p> -->
 			</div>
 		</div>
 		<div class="flex items-center gap-2">
 			<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-				{oppositions.length} Total
+				{oppositions.length} Oppositions
+			</span>
+			<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
+				{otherApps.length} Other
 			</span>
 		</div>
 	</div>
@@ -147,103 +213,187 @@
 			<Icon icon="heroicons:magnifying-glass" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
 			<Input bind:value={search} placeholder="Search by title, file ID, name or payment ID..." class="pl-9" />
 		</div>
-		<Button variant="outline" on:click={() => loadOppositions()}>
+		<Button variant="outline" on:click={() => loadApplications()}>
 			<Icon icon="heroicons:arrow-path" class="w-4 h-4 mr-1.5" />
 			Refresh
 		</Button>
 	</div>
 
-	<!-- Table -->
-	<div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
-		{#if oppositionsLoading}
-			<div class="flex justify-center items-center py-16">
-				<Icon icon="line-md:loading-loop" class="w-8 h-8 text-green-600" />
+	<!-- Tabs -->
+	<Tabs.Root bind:value={activeTab} class="w-full">
+		<Tabs.List class="grid w-full max-w-md grid-cols-2">
+			<Tabs.Trigger value="oppositions">
+				Oppositions ({oppositions.length})
+			</Tabs.Trigger>
+			<Tabs.Trigger value="other">
+				Other Applications ({otherApps.length})
+			</Tabs.Trigger>
+		</Tabs.List>
+
+		<!-- Oppositions Tab -->
+		<Tabs.Content value="oppositions" class="mt-4">
+			<div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+				{#if oppositionsLoading}
+					<div class="flex justify-center items-center py-16">
+						<Icon icon="line-md:loading-loop" class="w-8 h-8 text-green-600" />
+					</div>
+				{:else if filteredOppositions.length === 0}
+					<div class="flex flex-col items-center justify-center py-16 text-center">
+						<Icon icon="mdi:inbox-outline" class="w-12 h-12 text-slate-300 mb-2" />
+						<p class="text-slate-500 text-sm">No opposition applications found.</p>
+					</div>
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="min-w-full text-sm">
+							<thead class="bg-slate-50 text-slate-600">
+								<tr>
+									<th class="px-4 py-3 text-left font-semibold">S/N</th>
+									<th class="px-4 py-3 text-left font-semibold">Date</th>
+									<th class="px-4 py-3 text-left font-semibold">Title</th>
+									<th class="px-4 py-3 text-left font-semibold">File ID</th>
+									<th class="px-4 py-3 text-left font-semibold">Opposer Name</th>
+									<th class="px-4 py-3 text-left font-semibold">Status</th>
+									<th class="px-4 py-3 text-left font-semibold">Payment ID</th>
+									<th class="px-4 py-3 text-left font-semibold">Action</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-slate-100">
+								{#each filteredOppositions as row, i}
+									<tr class="hover:bg-slate-50 transition-colors">
+										<td class="px-4 py-3 text-slate-700">{i + 1}</td>
+										<td class="px-4 py-3 text-slate-700 whitespace-nowrap">{row.date ? mapDateToString(row.date) : '—'}</td>
+										<td class="px-4 py-3 text-slate-700">{row.title ?? '—'}</td>
+										<td class="px-4 py-3 text-slate-700">{row.fileId ?? '—'}</td>
+										<td class="px-4 py-3 text-slate-700">{row.name ?? '—'}</td>
+										<td class="px-4 py-3">
+											{#if row.status === 30 || row.status === 29 || row.status === 31}
+												<span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
+											{:else if row.status === 33}
+												<span class="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
+											{:else if row.status === 36}
+												<span class="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">Awaiting Office Process</span>
+											{:else if row.status === 17}
+												<span class="inline-block px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">Awaiting Resolution</span>
+											{:else if row.status === 19}
+												<span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Resolved</span>
+											{:else if row.status === 37}
+												<span class="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">Abandoned</span>
+											{:else}
+												<AppStatusTag value={row.status} />
+											{/if}
+										</td>
+										<td class="px-4 py-3 text-slate-700">{row.paymentId ?? '—'}</td>
+										<td class="px-4 py-3">
+											{#if row.id}
+												<DropdownMenu.Root>
+													<DropdownMenu.Trigger asChild let:builder>
+														<Button builders={[builder]} size="sm" class="text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
+															More Action
+															<Icon icon="lucide:chevron-down" class="w-3 h-3 ml-1" />
+														</Button>
+													</DropdownMenu.Trigger>
+													<DropdownMenu.Content align="end" class="w-56">
+														<DropdownMenu.Item on:click={() => viewOppositionDetail(row.fileId || '', row.id)}>
+															View Opposition
+														</DropdownMenu.Item>
+														{#if row.status !== 2}
+														<DropdownMenu.Separator />
+														<DropdownMenu.Label>Print</DropdownMenu.Label>
+														<DropdownMenu.Separator />
+														<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?letterType=16&oppositionId=${row.id}`)}>
+															Opposition Acknowledgement Letter
+														</DropdownMenu.Item>
+														{#if row.status !== 30 && row.status !== 29 && row.status !== 31}
+														<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?fileId=${row.fileId}&letterType=93&applicationId=${row.id}`)}>
+															Statutory Declaration Acknowledgement
+														</DropdownMenu.Item>
+														{/if}
+														{/if}
+													</DropdownMenu.Content>
+												</DropdownMenu.Root>
+											{:else}
+												<span class="text-slate-400 text-xs">—</span>
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
 			</div>
-		{:else if filteredOppositions.length === 0}
-			<div class="flex flex-col items-center justify-center py-16 text-center">
-				<Icon icon="mdi:inbox-outline" class="w-12 h-12 text-slate-300 mb-2" />
-				<p class="text-slate-500 text-sm">No opposition applications found.</p>
-			</div>
-		{:else}
-			<div class="overflow-x-auto">
-				<table class="min-w-full text-sm">
-					<thead class="bg-slate-50 text-slate-600">
-						<tr>
-							<th class="px-4 py-3 text-left font-semibold">S/N</th>
-							<th class="px-4 py-3 text-left font-semibold">Date</th>
-							<th class="px-4 py-3 text-left font-semibold">Title</th>
-							<th class="px-4 py-3 text-left font-semibold">File ID</th>
-							<th class="px-4 py-3 text-left font-semibold">Opposer Name</th>
-							<th class="px-4 py-3 text-left font-semibold">Status</th>
-							<th class="px-4 py-3 text-left font-semibold">Payment ID</th>
-							<th class="px-4 py-3 text-left font-semibold">Action</th>
-						</tr>
-					</thead>
-					<tbody class="divide-y divide-slate-100">
-						{#each filteredOppositions as row, i}
-							<tr class="hover:bg-slate-50 transition-colors">
-								<td class="px-4 py-3 text-slate-700">{i + 1}</td>
-								<td class="px-4 py-3 text-slate-700 whitespace-nowrap">{row.date ? mapDateToString(row.date) : '—'}</td>
-								<td class="px-4 py-3 text-slate-700">{row.title ?? '—'}</td>
-								<td class="px-4 py-3 text-slate-700">{row.fileId ?? '—'}</td>
-								<td class="px-4 py-3 text-slate-700">{row.name ?? '—'}</td>
-								<td class="px-4 py-3">
-									{#if row.status === 30 || row.status === 29 || row.status === 31}
-										<span class="inline-block px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Awaiting Counter Statement</span>
-									{:else if row.status === 33}
-										<span class="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full">Awaiting Statutory Declaration</span>
-									{:else if row.status === 36}
-										<span class="inline-block px-2 py-0.5 bg-indigo-100 text-indigo-800 text-xs font-medium rounded-full">Awaiting Office Process</span>
-									{:else if row.status === 17}
-										<span class="inline-block px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">Awaiting Resolution</span>
-									{:else if row.status === 19}
-										<span class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full">Resolved</span>
-									{:else if row.status === 37}
-										<span class="inline-block px-2 py-0.5 bg-red-100 text-red-800 text-xs font-medium rounded-full">Abandoned</span>
-									{:else}
-										<AppStatusTag value={row.status} />
-									{/if}
-								</td>
-								<td class="px-4 py-3 text-slate-700">{row.paymentId ?? '—'}</td>
-								<td class="px-4 py-3">
-									{#if row.id}
-										<DropdownMenu.Root>
-											<DropdownMenu.Trigger asChild let:builder>
-												<Button builders={[builder]} size="sm" class="text-xs bg-primary hover:bg-primary/90 text-primary-foreground">
-													More Action
-													<Icon icon="lucide:chevron-down" class="w-3 h-3 ml-1" />
+		</Tabs.Content>
+
+		<!-- Other Applications Tab -->
+		<Tabs.Content value="other" class="mt-4">
+			<div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+				{#if oppositionsLoading}
+					<div class="flex justify-center items-center py-16">
+						<Icon icon="line-md:loading-loop" class="w-8 h-8 text-blue-600" />
+					</div>
+				{:else if filteredOtherApps.length === 0}
+					<div class="flex flex-col items-center justify-center py-16 text-center">
+						<Icon icon="mdi:inbox-outline" class="w-12 h-12 text-slate-300 mb-2" />
+						<p class="text-slate-500 text-sm">No other applications found.</p>
+					</div>
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="min-w-full text-sm">
+							<thead class="bg-slate-50 text-slate-600">
+								<tr>
+									<th class="px-4 py-3 text-left font-semibold">S/N</th>
+									<th class="px-4 py-3 text-left font-semibold">Date</th>
+									<th class="px-4 py-3 text-left font-semibold">Application Type</th>
+									<th class="px-4 py-3 text-left font-semibold">Status</th>
+									<th class="px-4 py-3 text-left font-semibold">Payment ID</th>
+									<!-- <th class="px-4 py-3 text-left font-semibold">Status History</th> -->
+									<th class="px-4 py-3 text-left font-semibold">Actions</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-slate-100">
+								{#each filteredOtherApps as row, i}
+									<tr class="hover:bg-slate-50 transition-colors">
+										<td class="px-4 py-3 text-slate-700">{i + 1}</td>
+										<td class="px-4 py-3 text-slate-700 whitespace-nowrap">{row.date ? mapDateToString(row.date) : '—'}</td>
+										<td class="px-4 py-3 text-slate-700 capitalize">{row.applicationType ?? '—'}</td>
+										<td class="px-4 py-3">
+											<AppStatusTag value={row.status} />
+										</td>
+										<td class="px-4 py-3 text-slate-700">{row.paymentId ?? '—'}</td>
+										<!-- <td class="px-4 py-3">
+											{#if row.history && row.history.length > 0}
+												<Button
+													variant="outline"
+													size="sm"
+													class="text-xs"
+													on:click={() => viewHistory(row)}
+												>
+													<Icon icon="mdi:history" class="w-4 h-4 mr-1.5" />
+													View History
 												</Button>
-											</DropdownMenu.Trigger>
-											<DropdownMenu.Content align="end" class="w-56">
-												<DropdownMenu.Item on:click={() => viewOppositionDetail(row.fileId || '', row.id)}>
-													View Opposition
-												</DropdownMenu.Item>
-												{#if row.status !== 2}
-												<DropdownMenu.Separator />
-												<DropdownMenu.Label>Print</DropdownMenu.Label>
-												<DropdownMenu.Separator />
-												<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?letterType=16&oppositionId=${row.id}`)}>
-													Opposition Acknowledgement Letter
-												</DropdownMenu.Item>
-												{#if row.status !== 30 && row.status !== 29 && row.status !== 31}
-												<DropdownMenu.Item on:click={() => window.open(`${baseURL}/api/letters/generate?fileId=${row.fileId}&letterType=93&applicationId=${row.id}`)}>
-													Statutory Declaration Acknowledgement
-												</DropdownMenu.Item>
-												{/if}
-												{/if}
-											</DropdownMenu.Content>
-										</DropdownMenu.Root>
-									{:else}
-										<span class="text-slate-400 text-xs">—</span>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+											{:else}
+												<span class="text-slate-400 text-xs">—</span>
+											{/if}
+										</td> -->
+										<td class="px-4 py-3">
+											<DropdownMenu.Root>
+												<DropdownMenu.Trigger class="text-slate-600 hover:text-slate-900">
+													<Icon icon="mdi:dots-vertical" class="w-5 h-5" />
+												</DropdownMenu.Trigger>
+												<DropdownMenu.Content align="end" class="w-48">
+													<DropdownMenu.Item>Journal Request Acknowledgement</DropdownMenu.Item>
+												</DropdownMenu.Content>
+											</DropdownMenu.Root>
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
 			</div>
-		{/if}
-	</div>
+		</Tabs.Content>
+	</Tabs.Root>
 </div>
 
 <!-- Opposition Detail Sheet -->
@@ -310,10 +460,6 @@
 
 				<!-- Opposition Details -->
 				<div class="space-y-4">
-					<div class="border-b border-slate-200 pb-3">
-						<p class="text-xs font-semibold text-slate-500 uppercase">Payment Reference</p>
-						<p class="text-sm text-slate-700 font-mono mt-1">{selectedOpposition.paymentId}</p>
-					</div>
 					<div class="border-b border-slate-200 pb-3">
 						<p class="text-xs font-semibold text-slate-500 uppercase">Opposition Date</p>
 						<p class="text-sm text-slate-700 mt-1">{mapDateToString(selectedOpposition.date)}</p>
@@ -465,3 +611,7 @@
 		{/if}
 	</Sheet.Content>
 </Sheet.Root>
+
+{#if showStatusHistory && historyComponent}
+	<svelte:component this={historyComponent} {...historyData} />
+{/if}

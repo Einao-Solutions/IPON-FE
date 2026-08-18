@@ -483,7 +483,7 @@ export function mapTypeToString(type: number) {
     case 15:
       return "Withdrawal Request";
     case 16:
-      return "New Opposition";
+      return "Opposed";
     case 17:
       return "Amendment";
     case 18:
@@ -498,6 +498,16 @@ export function mapTypeToString(type: number) {
       return "Trademark Reclassification";
     case 23:
       return "Restoration";
+    case 24:
+      return "Counter Statement";
+    case 25:
+      return "Statutory Declaration";
+    case 26:
+      return "Change of Agent";
+    case 27:
+      return "Offline Renewal Request";
+    case 28:
+      return "Trademark Journal Request";
     default:
       return "";
   }
@@ -533,6 +543,7 @@ export function mapDateToStringNoDate(data: string) {
     month: "short",
     day: "numeric",
     weekday: "short",
+    timeZone: "UTC",
   }).format(new Date(data));
 }
 
