@@ -251,6 +251,111 @@
     });
   }
 
+  function normalizeAttachmentUrl(value: any): string | null {
+    if (!value) return null;
+    if (typeof value === "string") {
+      const text = value.trim();
+      if (!text) return null;
+      if (/^(https?:|blob:|data:)/i.test(text)) return text;
+      const maybeBase64 = text.match(/^data:([^;]+);base64,(.+)$/i);
+      if (maybeBase64) return text;
+      if (/^[A-Za-z0-9+/=\r\n]+$/.test(text) && text.length > 100) {
+        return `data:application/pdf;base64,${text}`;
+      }
+      return text;
+    }
+    if (typeof value === "object") {
+      const directUrl =
+        value.url ??
+        value.fileUrl ??
+        value.documentUrl ??
+        value.attachmentUrl ??
+        value.link ??
+        value.path ??
+        value.href ??
+        null;
+      if (directUrl) return normalizeAttachmentUrl(directUrl);
+      const dataValue = value.data ?? value.base64 ?? value.content ?? null;
+      if (typeof dataValue === "string") return normalizeAttachmentUrl(dataValue);
+    }
+    return null;
+  }
+
+  function getAssignmentAttachmentEntries(data: any): Array<{ label: string; url: string }> {
+    const entries: Array<{ label: string; url: string }> = [];
+
+    const addEntry = (label: string, value: any) => {
+      const url = normalizeAttachmentUrl(value);
+      if (url) {
+        entries.push({ label, url });
+      }
+    };
+
+    const scanAttachmentSources = (source: any, labelPrefix = "") => {
+      if (!source || typeof source !== "object") return;
+
+      const deedCandidates = [
+        source.deedOfAgreementUrl,
+        source.assignmentDeedUrl,
+        source.deedOfAssignmentUrl,
+        source.assignmentDeed,
+        source.deed,
+        source.deedOfAgreement,
+        source.assignmentDocumentUrl,
+      ];
+      const letterCandidates = [
+        source.authorizationLetterUrl,
+        source.authorizationLetter,
+        source.letterOfAuthorizationUrl,
+        source.letterOfAuthorization,
+        source.authorization,
+        source.authorizationDocumentUrl,
+      ];
+
+      if (labelPrefix) {
+        deedCandidates.forEach((candidate) => addEntry(`${labelPrefix} Assignment Deed`, candidate));
+        letterCandidates.forEach((candidate) => addEntry(`${labelPrefix} Authorization Letter`, candidate));
+      } else {
+        deedCandidates.forEach((candidate) => addEntry("Assignment Deed", candidate));
+        letterCandidates.forEach((candidate) => addEntry("Authorization Letter", candidate));
+      }
+
+      const attachmentLists = [
+        source.attachments,
+        source.documents,
+        source.files,
+        source.uploads,
+        source.supportingDocuments,
+      ];
+
+      attachmentLists.forEach((list) => {
+        if (!Array.isArray(list)) return;
+        list.forEach((item: any, index: number) => {
+          const url = normalizeAttachmentUrl(item);
+          if (url) {
+            const label = item?.fileName || item?.name || item?.documentName || item?.title || `${labelPrefix || "Attachment"} ${index + 1}`;
+            entries.push({ label, url });
+          }
+        });
+      });
+    };
+
+    if (data) {
+      scanAttachmentSources(data.assignment, "Assignment");
+      scanAttachmentSources(data.newValue);
+      scanAttachmentSources(data.oldValue);
+      scanAttachmentSources(data);
+
+      const legacyNames = [
+        ["Assignment Deed", data.assignmentDeedUrl ?? data.assignmentDeed ?? data.deedOfAgreementUrl ?? data.deedOfAgreement],
+        ["Authorization Letter", data.authorizationLetterUrl ?? data.authorizationLetter ?? data.letterOfAuthorizationUrl ?? data.letterOfAuthorization],
+      ];
+      legacyNames.forEach(([label, value]) => addEntry(String(label), value));
+    }
+
+    return entries.filter((entry, index, arr) => arr.findIndex((item) => item.url === entry.url && item.label === entry.label) === index);
+  }
+
   function dataType(): string {
     const tableFields = ["inventors", "priorityInfo", "applicants"];
     return tableFields.includes(selectedApplication?.fieldToChange ?? "")
@@ -2172,38 +2277,18 @@
                   <Icon icon="mdi:file-document-outline" width="1em" />Document
                 </Button>
               {/if}
-              {#if recordalData.assignment?.deedOfAgreementUrl}
+
+              {#each getAssignmentAttachmentEntries(recordalData) as attachment}
                 <Button
-                  on:click={() => window.open(recordalData.assignment.deedOfAgreementUrl, "_blank")}
+                  on:click={() => window.open(attachment.url, "_blank")}
                   variant="outline"
                   size="sm"
                   class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
                 >
-                  <Icon icon="mdi:file-sign" width="1em" />Assignment Deed
+                  <Icon icon="mdi:file-document-outline" width="1em" />{attachment.label}
                 </Button>
-              {/if}
-              {#if recordalData.assignment?.authorizationLetterUrl}
-                <Button
-                  on:click={() => window.open(recordalData.assignment.authorizationLetterUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                >
-                  <Icon icon="mdi:file-certificate-outline" width="1em" />Authorization
-                </Button>
-              {/if}
-              {#if recordalData.newValue?.attachments && recordalData.newValue.attachments.length > 0}
-                {#each recordalData.newValue.attachments as attachment}
-                  <Button
-                    on:click={() => window.open(attachment.url, "_blank")}
-                    variant="outline"
-                    size="sm"
-                    class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                  >
-                    <Icon icon="mdi:file-document-outline" width="1em" />{attachment.fileName}
-                  </Button>
-                {/each}
-              {/if}
+              {/each}
+
               {#if recordalData.appealDocs && Array.isArray(recordalData.appealDocs)}
                 {#each recordalData.appealDocs as docUrl, index}
                   <Button
@@ -3516,7 +3601,7 @@
                     >
                   {/if}
                   <!-- Design Assignment Application -->
-                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === FileTypes.Design && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.DesignCertification) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === FileTypes.Design && ($loggedInUser?.userRoles?.includes(UserRoles.DesignCertification) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() =>
                         openDesignAssignmentDialog(
@@ -3529,7 +3614,7 @@
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent Assignment Application -->
-                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentCertification) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
+                  {#if application.applicationType === FormApplicationTypes.Assignment && fileData.type === FileTypes.Patent && ($loggedInUser?.userRoles?.includes(UserRoles.PatentCertification) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
                       on:click={() =>
                         openPatentAssignmentDialog(

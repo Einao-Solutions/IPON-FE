@@ -26,7 +26,12 @@
   let showForm = false;
   let filing: any = null;
   let showSuccessModal = false;
+  let successMessage = "";
+  let successDetails = "";
   let showFailureModal = false;
+  let isSubmitting = false;
+  let submissionState: "idle" | "loading" | "success" = "idle";
+  let processingLabel = "";
   let userName = "";
   let notFoundMessage = "";
 
@@ -726,6 +731,11 @@
   // Build and POST a new application history entry
   const addApplicationHistory = async (app: any) => {
     try {
+      console.log("🔵 DEBUG: Add Application clicked with app:", app);
+      console.log("🔵 DEBUG: Filing object:", filing);
+      isSubmitting = true;
+      submissionState = "loading";
+      processingLabel = "Adding application...";
       isLoading = true;
       const body: any = {
         fileNumber: filing.fileId,
@@ -734,7 +744,9 @@
         currentStatus: app.currentStatus ?? ApplicationStatuses.None,
         paymentId: app.paymentId ?? null,
         certificatePaymentId: app.certificatePaymentId ?? null,
+        userId: $loggedInUser?.id || $loggedInUser?.creatorId,
       };
+      console.log("🔵 DEBUG: Request body built:", body);
 
       // Attach recordal-specific newValue/oldValue
       if (app.applicationType === FormApplicationTypes.Assignment) {
@@ -806,21 +818,45 @@
         body: JSON.stringify(body),
       });
 
+      console.log("🔵 DEBUG: API Response status:", res.status, res.statusText);
+      console.log("🔵 DEBUG: API Response ok:", res.ok);
+
       if (res.ok) {
         const created = await res.json();
         filing.applicationHistory = filing.applicationHistory || [];
         filing.applicationHistory = [created, ...filing.applicationHistory];
-        toast.success("Application history added", { position: "top-right" });
+        console.log("✅ SUCCESS: Application history added");
+
+        // Show success modal with details
+        successMessage = "Application Added Successfully! ✅";
+        successDetails = `Application Type: ${mapTypeToString(app.applicationType)}\nDate: ${app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'Today'}\nStatus: ${mapStatusToString(app.currentStatus)}`;
+        submissionState = "success";
+        setTimeout(() => {
+          isSubmitting = false;
+          showSuccessModal = true;
+          submissionState = "idle";
+        }, 900);
+
+        // Auto close after 4 seconds
+        setTimeout(() => {
+          showSuccessModal = false;
+        }, 4000);
       } else {
         const txt = await res.text();
-        console.error("Failed to add application history:", txt);
-        toast.error("Failed to add application", { position: "top-right" });
+        console.error("❌ ERROR: Failed to add application history:", txt);
+        console.error("❌ Response Status:", res.status);
+        isSubmitting = false;
+        toast.error(`Failed to add application: ${txt}`, { position: "top-right" });
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Error adding application", { position: "top-right" });
+      console.error("❌ CATCH ERROR:", err);
+      isSubmitting = false;
+      toast.error("Error adding application: " + (err as Error).message, { position: "top-right" });
     } finally {
       isLoading = false;
+      if (submissionState !== "success") {
+        isSubmitting = false;
+      }
     }
   };
 
@@ -860,6 +896,9 @@
 
   const saveChanges = async () => {
     try {
+      isSubmitting = true;
+      submissionState = "loading";
+      processingLabel = "Saving file update...";
       isLoading = true;
       filing.updatedBy = userName;
 
@@ -880,7 +919,14 @@
 
       if (!res.ok) throw new Error("Update failed");
 
-      showSuccessModal = true;
+      successMessage = "Update Successful!";
+      successDetails = "Your file information has been saved successfully.";
+      submissionState = "success";
+      setTimeout(() => {
+        isSubmitting = false;
+        showSuccessModal = true;
+        submissionState = "idle";
+      }, 900);
 
       setTimeout(() => {
         goto("/home/admin");
@@ -888,10 +934,14 @@
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An unknown error occurred";
+      isSubmitting = false;
       showFailureModal = true;
       console.error("Error updating file:", message);
     } finally {
       isLoading = false;
+      if (submissionState !== "success") {
+        isSubmitting = false;
+      }
     }
   };
 
@@ -1716,7 +1766,10 @@
               <Button
                 size="sm"
                 class="mt-2"
-                on:click={() => addApplicationHistory(newApp)}
+                on:click={() => {
+                  console.log("🟡 Button clicked! newApp:", newApp);
+                  addApplicationHistory(newApp);
+                }}
               >
                 Add Application
               </Button>
@@ -3317,18 +3370,47 @@
   {/if}
 </div>
 
+{#if isSubmitting || submissionState === "success"}
+  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm" transition:fade>
+    <div class="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3 min-w-[260px]">
+      {#if submissionState === "loading"}
+        <div class="spinner"></div>
+        <p class="text-lg font-semibold text-slate-700">{processingLabel || "Processing..."}</p>
+        <p class="text-sm text-slate-500">Please wait while the update completes.</p>
+      {:else}
+        <div class="success-badge">
+          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <p class="text-xl font-bold text-green-700">Success</p>
+        <p class="text-sm text-slate-600">{successMessage || "Update completed successfully."}</p>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 {#if showSuccessModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
+    transition:fade
   >
-    <div class="bg-white p-6 rounded shadow-md text-center w-full max-w-sm">
-      <h2 class="text-xl font-semibold text-green-800">Success!</h2>
-      <p class="mt-2">File updated successfully.</p>
+    <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm border-t-4 border-green-500 animate-pulse-soft">
+      <div class="mb-4">
+        <svg class="w-16 h-16 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+      </div>
+      <h2 class="text-2xl font-bold text-green-700 mb-2">{successMessage || "Update successful"}</h2>
+      <p class="text-gray-600 whitespace-pre-line text-sm mb-4">{successDetails || "Operation completed successfully."}</p>
+      <div class="bg-green-50 border border-green-200 rounded p-3 mb-4">
+        <p class="text-green-800 text-xs font-semibold">✓ Action completed successfully</p>
+      </div>
       <button
-        class="mt-4 bg-green-800 text-white px-4 py-2 rounded hover:bg-green-700"
+        class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
         on:click={() => (showSuccessModal = false)}
       >
-        Close
+        OK, Got It!
       </button>
     </div>
   </div>
@@ -3365,5 +3447,61 @@
 
   details[open] > summary {
     font-weight: bold;
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.95;
+      transform: scale(1.02);
+    }
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .spinner {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 4px solid rgba(16, 185, 129, 0.2);
+    border-top-color: #10b981;
+    animation: spin 0.9s linear infinite;
+  }
+
+  .success-badge {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pop-in 0.4s ease-out;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pop-in {
+    0% {
+      transform: scale(0.7);
+      opacity: 0;
+    }
+    80% {
+      transform: scale(1.08);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
   }
 </style>
