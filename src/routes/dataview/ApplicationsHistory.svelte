@@ -65,6 +65,7 @@
   import DesignMergerDialog from "./Components/DesignMergerDialog.svelte";
   import OwnershipHistoryDialog from "./Components/OwnershipHistoryDialog.svelte";
   import OfflineRenewalDialog from "./Components/OfflineRenewalDialog.svelte";
+  import AssignmentDocuments from "./AssignmentDocuments.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -283,6 +284,7 @@
 
   function getAssignmentAttachmentEntries(data: any): Array<{ label: string; url: string }> {
     const entries: Array<{ label: string; url: string }> = [];
+    const visited = new Set<any>();
 
     const addEntry = (label: string, value: any) => {
       const url = normalizeAttachmentUrl(value);
@@ -292,7 +294,8 @@
     };
 
     const scanAttachmentSources = (source: any, labelPrefix = "") => {
-      if (!source || typeof source !== "object") return;
+      if (!source || typeof source !== "object" || visited.has(source)) return;
+      visited.add(source);
 
       const deedCandidates = [
         source.deedOfAgreementUrl,
@@ -338,12 +341,29 @@
           }
         });
       });
+
+      Object.entries(source).forEach(([key, value]) => {
+        if (typeof value === "string" || (value && typeof value === "object" && !Array.isArray(value))) {
+          const isDocumentField = /(document|attachment|supporting|deed|authorization|upload)/i.test(key);
+          if (isDocumentField) {
+            addEntry(key, value);
+          }
+        }
+
+        if (value && typeof value === "object" && !Array.isArray(value)) {
+          scanAttachmentSources(value, labelPrefix);
+        }
+      });
     };
 
     if (data) {
       scanAttachmentSources(data.assignment, "Assignment");
       scanAttachmentSources(data.newValue);
       scanAttachmentSources(data.oldValue);
+      scanAttachmentSources(data.data);
+      scanAttachmentSources(data.result);
+      scanAttachmentSources(data.application);
+      scanAttachmentSources(data.recordal);
       scanAttachmentSources(data);
 
       const legacyNames = [
@@ -871,7 +891,19 @@
       );
 
       if (response.ok) {
-        recordalData = await response.json();
+        const responseData = await response.json();
+        const historyNewValue = (application as any)?.newValue || {};
+        const responseNewValue = responseData?.newValue || {};
+        recordalData = {
+          ...responseData,
+          newValue: {
+            ...historyNewValue,
+            ...responseNewValue,
+            attachments: responseNewValue.attachments?.length
+              ? responseNewValue.attachments
+              : historyNewValue.attachments,
+          },
+        };
       }
     } catch (error) {
       console.error("Recordal data error:", error);
@@ -2051,6 +2083,12 @@
           <p class="text-xs text-slate-500">Loading application data</p>
         </div>
       {:else if recordalData}
+        {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
+          <AssignmentDocuments
+            fileId={fileData?.fileId ?? fileData?.id}
+            appId={selectedApplication.id}
+          />
+        {:else}
         <div class="space-y-6">
           <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div class="flex items-center justify-between gap-4">
@@ -2304,6 +2342,7 @@
             </div>
           </section>
         </div>
+        {/if}
       {:else}
         <div class="flex flex-col items-center justify-center h-40 gap-2">
           <Icon
@@ -3626,6 +3665,11 @@
                       View Application
                     </DropdownMenu.Item>
                   {/if}
+                  {#if application.applicationType === FormApplicationTypes.Assignment}
+                    <DropdownMenu.Item on:click={() => viewRecordalData(application)}>
+                      View Uploaded Documents
+                    </DropdownMenu.Item>
+                  {/if}
                   <!-- Patent License Application -->
                   {#if application.applicationType === FormApplicationTypes.License && fileData.type === FileTypes.Patent && application.currentStatus != null && [ApplicationStatuses.AwaitingRecordalProcess, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentCertification) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
@@ -3887,7 +3931,30 @@
                     </DropdownMenu.Item>
                   {/if}
 
+
+                  <!-- Recall Application (for all types) -->
+                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some((r) => $loggedInUser.userRoles.includes(r))}
+                    <DropdownMenu.Item on:click={() => changeStatus(application)}>
+                      Recall Application
+                    </DropdownMenu.Item>
+                  {/if}
+
+                  <!-- Verify Payment -->
+                  {#if application.paymentId !== null && application.paymentId !== "Free"}
+                    <DropdownMenu.Item on:click={async () => await checkPayment(application, application.paymentId)}>
+                      Verify Payment ({application.paymentId ?? "-"})
+                    </DropdownMenu.Item>
+                  {/if}
+
+                  <!-- Verify Certificate Payment -->
+                  {#if application.certificatePaymentId != null}
+                    <DropdownMenu.Item on:click={async () => await checkPayment(application, application.certificatePaymentId ?? null)}>
+                      Verify Certificate payment ({application.certificatePaymentId})
+                    </DropdownMenu.Item>
+                  {/if}
+
                   <!-- LETTERS -->
+
                   {#if application.currentStatus !== ApplicationStatuses.AwaitingPayment}
                     <DropdownMenu.Separator />
                     <DropdownMenu.Label>Print</DropdownMenu.Label>
@@ -4073,9 +4140,18 @@
                       {/if}
                     {/if}
                   {/if}<!-- end LETTERS guard -->
+
+                  <!-- View Uploaded Document (for recordal types) -->
+                  {#if [FormApplicationTypes.Assignment, FormApplicationTypes.RegisteredUser, FormApplicationTypes.Merger, FormApplicationTypes.ChangeOfName, FormApplicationTypes.ChangeOfAddress].includes(application.applicationType ?? -1)}
+                    <DropdownMenu.Separator />
+                    <DropdownMenu.Item on:click={() => viewRecordalData(application)}>
+                      View Uploaded Document
+                    </DropdownMenu.Item>
+                  {/if}
                 </DropdownMenu.Group>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
+
           </Table.Cell>
         </Table.Row>
       {/each}

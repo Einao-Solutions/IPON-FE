@@ -29,6 +29,7 @@
   let successMessage = "";
   let successDetails = "";
   let showFailureModal = false;
+  let errorMessage = "";
   let isSubmitting = false;
   let submissionState: "idle" | "loading" | "success" = "idle";
   let processingLabel = "";
@@ -733,99 +734,120 @@
     try {
       console.log("🔵 DEBUG: Add Application clicked with app:", app);
       console.log("🔵 DEBUG: Filing object:", filing);
+      
+      // Validate basic requirements
+      if (!filing?.fileId) {
+        isSubmitting = false;
+        isLoading = false;
+        showFailureModal = true;
+        errorMessage = "❌ FILE ID MISSING\n\nCannot submit without a file ID.";
+        toast.error("File ID is missing", { position: "top-right" });
+        return;
+      }
+      
       isSubmitting = true;
       submissionState = "loading";
       processingLabel = "Adding application...";
       isLoading = true;
-      const body: any = {
-        fileNumber: filing.fileId,
-        applicationType: app.applicationType,
-        applicationDate: app.applicationDate ? new Date(app.applicationDate) : new Date(),
-        currentStatus: app.currentStatus ?? ApplicationStatuses.None,
-        paymentId: app.paymentId ?? null,
-        certificatePaymentId: app.certificatePaymentId ?? null,
-        userId: $loggedInUser?.id || $loggedInUser?.creatorId,
-      };
-      console.log("🔵 DEBUG: Request body built:", body);
 
-      // Attach recordal-specific newValue/oldValue
+      // Determine the correct endpoint based on application type
+      let endpoint = "";
+      let formData = new FormData();
+      
+      // Populate FormData based on application type
       if (app.applicationType === FormApplicationTypes.Assignment) {
-        body.oldValue = {
-          name: assignmentData.assignorName || filing.applicants?.[0]?.name || filing.correspondence?.name || "",
-          email: assignmentData.assignorEmail || filing.applicants?.[0]?.email || filing.correspondence?.email || "",
-          phone: assignmentData.assignorPhone || filing.applicants?.[0]?.phone || "",
-          nationality: assignmentData.assignorNationality || filing.applicants?.[0]?.nationality || "",
-          address: assignmentData.assignorAddress || filing.applicants?.[0]?.address || filing.correspondence?.address || "",
-        };
-        body.newValue = {
-          assigneeName: assignmentData.assigneeName,
-          assigneeEmail: assignmentData.assigneeEmail,
-          assigneePhone: assignmentData.assigneePhone,
-          assigneeNationality: assignmentData.assigneeNationality,
-          assigneeAddress: assignmentData.assigneeAddress,
-        };
-        const deed = await fileToAttachment(assignmentData.assignmentDeed);
-        const auth = await fileToAttachment(assignmentData.authorizationLetter);
-        body.newValue.attachments = [deed, auth].filter(Boolean);
+        endpoint = `/api/files/AssignmentApplication`;
+        formData.append('FileId', filing.fileId);
+        formData.append('AssignorName', assignmentData.assignorName || "");
+        formData.append('AssignorEmail', assignmentData.assignorEmail || "");
+        formData.append('AssignorPhone', assignmentData.assignorPhone || "");
+        formData.append('AssignorNationality', assignmentData.assignorNationality || "");
+        formData.append('AssignorAddress', assignmentData.assignorAddress || "");
+        formData.append('AssigneeName', assignmentData.assigneeName || "");
+        formData.append('AssigneeEmail', assignmentData.assigneeEmail || "");
+        formData.append('AssigneePhone', assignmentData.assigneePhone || "");
+        formData.append('AssigneeNationality', assignmentData.assigneeNationality || "");
+        formData.append('AssigneeAddress', assignmentData.assigneeAddress || "");
+        if (assignmentData.assignmentDeed) {
+          formData.append('AssignmentDeed', assignmentData.assignmentDeed);
+        }
+        if (assignmentData.authorizationLetter) {
+          formData.append('AuthorizationLetter', assignmentData.authorizationLetter);
+        }
+      } 
+      else if (app.applicationType === FormApplicationTypes.RegisteredUser) {
+        endpoint = `/api/files/AddRegisteredUsers`;
+        formData.append('FileId', filing.fileId);
+        formData.append('Name', registeredUserData.name || "");
+        formData.append('Email', registeredUserData.email || "");
+        formData.append('Phone', registeredUserData.phone || "");
+        formData.append('Nationality', registeredUserData.nationality || "");
+        formData.append('Address', registeredUserData.address || "");
+        if (registeredUserData.document) {
+          formData.append('document', registeredUserData.document);
+        }
+      }
+      else if (app.applicationType === FormApplicationTypes.Merger) {
+        endpoint = `/api/files/MergerApplication`;
+        formData.append('FileId', filing.fileId);
+        formData.append('Name', mergerData.name || "");
+        formData.append('Email', mergerData.email || "");
+        formData.append('Phone', mergerData.phone || "");
+        formData.append('Nationality', mergerData.nationality || "");
+        formData.append('Address', mergerData.address || "");
+        if (mergerData.document) {
+          formData.append('document', mergerData.document);
+        }
+      }
+      else if (app.applicationType === FormApplicationTypes.ChangeOfName) {
+        endpoint = `/api/files/ChangeDataRecordal`;
+        formData.append('FileId', filing.fileId);
+        formData.append('NewName', changeOfNameData.newName || "");
+        formData.append('changeType', 'Name');
+        if (changeOfNameData.supportingDocument) {
+          formData.append('document', changeOfNameData.supportingDocument);
+        }
+        formData.append('userId', $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "");
+      }
+      else if (app.applicationType === FormApplicationTypes.ChangeOfAddress) {
+        endpoint = `/api/files/ChangeDataRecordal`;
+        formData.append('FileId', filing.fileId);
+        formData.append('NewAddress', changeOfAddressData.newAddress || "");
+        formData.append('changeType', 'Address');
+        if (changeOfAddressData.supportingDocument) {
+          formData.append('document', changeOfAddressData.supportingDocument);
+        }
+        formData.append('userId', $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "");
+      }
+      else {
+        isSubmitting = false;
+        isLoading = false;
+        showFailureModal = true;
+        errorMessage = `❌ UNKNOWN APPLICATION TYPE\n\nApplication type ${app.applicationType} is not supported.`;
+        toast.error("Unsupported application type", { position: "top-right" });
+        return;
       }
 
-      if (app.applicationType === FormApplicationTypes.RegisteredUser) {
-        body.oldValue = { name: filing.registeredUser?.name || "" };
-        body.newValue = {
-          name: registeredUserData.name,
-          email: registeredUserData.email,
-          phone: registeredUserData.phone,
-          nationality: registeredUserData.nationality,
-          address: registeredUserData.address,
-        };
-        const doc = await fileToAttachment(registeredUserData.document);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
+      // Log detailed request info
+      const apiUrl = `${baseURL}${endpoint}`;
+      console.log("🔵 DEBUG: API URL:", apiUrl);
+      console.log("🔵 DEBUG: FormData entries:");
+      formData.forEach((value, key) => {
+        console.log(`  ${key}: ${value instanceof File ? `File(${value.name})` : value}`);
+      });
 
-      if (app.applicationType === FormApplicationTypes.Merger) {
-        body.oldValue = { name: filing.applicants?.[0]?.name || "" };
-        body.newValue = {
-          name: mergerData.name,
-          email: mergerData.email,
-          phone: mergerData.phone,
-          nationality: mergerData.nationality,
-          address: mergerData.address,
-        };
-        const doc = await fileToAttachment(mergerData.document);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
-
-      if (app.applicationType === FormApplicationTypes.ChangeOfName) {
-        body.oldValue = { name: filing.applicants?.[0]?.name || filing.correspondence?.name || "" };
-        body.newValue = { newName: changeOfNameData.newName };
-        const doc = await fileToAttachment(changeOfNameData.supportingDocument);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
-
-      if (app.applicationType === FormApplicationTypes.ChangeOfAddress) {
-        body.oldValue = { address: filing.correspondence?.address || "" };
-        body.newValue = { newAddress: changeOfAddressData.newAddress };
-        const doc = await fileToAttachment(changeOfAddressData.supportingDocument);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
-
-      const res = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
+      const res = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${$loggedInToken}`,
-        },
-        body: JSON.stringify(body),
+        body: formData,
       });
 
       console.log("🔵 DEBUG: API Response status:", res.status, res.statusText);
       console.log("🔵 DEBUG: API Response ok:", res.ok);
 
       if (res.ok) {
-        const created = await res.json();
+        const created = await res.text();
         filing.applicationHistory = filing.applicationHistory || [];
-        filing.applicationHistory = [created, ...filing.applicationHistory];
-        console.log("✅ SUCCESS: Application history added");
+        console.log("✅ SUCCESS: Application submitted");
 
         // Show success modal with details
         successMessage = "Application Added Successfully! ✅";
@@ -837,21 +859,52 @@
           submissionState = "idle";
         }, 900);
 
-        // Auto close after 4 seconds
+        // Auto close after 4 seconds and close the recordal view if it was open
         setTimeout(() => {
           showSuccessModal = false;
+          // Close the recordal view if it was open during submission
+          if (selectedRecordal) {
+            closeRecordalView();
+          }
         }, 4000);
       } else {
+        let errorMsg = "";
         const txt = await res.text();
+        
         console.error("❌ ERROR: Failed to add application history:", txt);
         console.error("❌ Response Status:", res.status);
+        console.error("❌ Full response:", res);
+        
+        // Handle specific error codes
+        if (res.status === 401) {
+          errorMsg = "❌ AUTHORIZATION ERROR (401)\n\nYour authentication token is invalid or expired. Please log out and log in again to refresh your session.\n\nIf the problem persists, contact your administrator.";
+          console.error("❌ AUTHORIZATION ERROR: Token may be invalid or expired");
+          console.error("🔍 Debug info - Token length:", $loggedInToken?.length);
+          console.error("🔍 Debug info - User:", $loggedInUser);
+        } else if (res.status === 403) {
+          errorMsg = "❌ PERMISSION DENIED (403)\n\nYou don't have permission to perform this action. Please contact your administrator.";
+        } else if (res.status === 404) {
+          errorMsg = "❌ NOT FOUND (404)\n\nThe endpoint was not found. Please contact support.";
+        } else if (res.status === 400) {
+          errorMsg = `❌ VALIDATION ERROR (400)\n\n${txt || "Please check your form data and try again."}`;
+        } else if (res.status >= 500) {
+          errorMsg = "❌ SERVER ERROR\n\nThe server encountered an error. Please try again later.";
+        } else {
+          errorMsg = txt || `❌ ERROR (${res.status})\n\nFailed to add application. Please try again.`;
+        }
+        
+        errorMessage = errorMsg;
         isSubmitting = false;
-        toast.error(`Failed to add application: ${txt}`, { position: "top-right" });
+        showFailureModal = true;
+        toast.error("Submission failed - Check the modal for details", { position: "top-right" });
       }
     } catch (err) {
       console.error("❌ CATCH ERROR:", err);
       isSubmitting = false;
-      toast.error("Error adding application: " + (err as Error).message, { position: "top-right" });
+      showFailureModal = true;
+      const errorMsg = err instanceof Error ? err.message : "An unknown error occurred";
+      errorMessage = `❌ UNEXPECTED ERROR\n\n${errorMsg}\n\nPlease check the browser console for more details.`;
+      toast.error("Unexpected error occurred - Check the modal for details", { position: "top-right" });
     } finally {
       isLoading = false;
       if (submissionState !== "success") {
@@ -864,6 +917,7 @@
   const submitRecordalFromView = async () => {
     if (!selectedRecordal) return;
     const t = selectedRecordal.applicationType;
+    
     // Build a lightweight app object similar to newApp
     const appObj: any = {
       applicationType: t,
@@ -873,7 +927,7 @@
       certificatePaymentId: null,
     };
 
-    // copy view data into the canonical form objects so addApplicationHistory can read them
+    // Copy view data into the canonical form objects so addApplicationHistory can read them
     if (t === FormApplicationTypes.Assignment) {
       assignmentData = { ...assignmentData, ...viewAssignmentData };
     }
@@ -890,8 +944,9 @@
       changeOfAddressData = { ...changeOfAddressData, ...viewChangeOfAddressData };
     }
 
+    // Call addApplicationHistory and let it handle success/failure states
     await addApplicationHistory(appObj);
-    closeRecordalView();
+    // closeRecordalView will be called after success modal closes automatically
   };
 
   const saveChanges = async () => {
@@ -3371,20 +3426,22 @@
 </div>
 
 {#if isSubmitting || submissionState === "success"}
-  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm" transition:fade>
-    <div class="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-3 min-w-[260px]">
+  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
+    <div class="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 min-w-[300px] transform transition-all" style="animation: bounce-in-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
       {#if submissionState === "loading"}
         <div class="spinner"></div>
-        <p class="text-lg font-semibold text-slate-700">{processingLabel || "Processing..."}</p>
-        <p class="text-sm text-slate-500">Please wait while the update completes.</p>
-      {:else}
-        <div class="success-badge">
-          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        <p class="text-lg font-semibold text-slate-700 text-center">{processingLabel || "Processing..."}</p>
+        <p class="text-sm text-slate-500 text-center">Please wait while the update completes.</p>
+      {:else if submissionState === "success"}
+        <div class="success-badge success-icon">
+          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" class="success-checkmark" style="stroke-dasharray: 50; stroke-dashoffset: 50;"></path>
           </svg>
         </div>
-        <p class="text-xl font-bold text-green-700">Success</p>
-        <p class="text-sm text-slate-600">{successMessage || "Update completed successfully."}</p>
+        <div class="success-text">
+          <p class="text-xl font-bold text-green-700 text-center">Success!</p>
+          <p class="text-sm text-slate-600 text-center mt-1">{successMessage || "Update completed successfully."}</p>
+        </div>
       {/if}
     </div>
   </div>
@@ -3392,22 +3449,25 @@
 
 {#if showSuccessModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]"
-    transition:fade
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] backdrop-blur-sm"
+    transition:fade={{ duration: 300 }}
   >
-    <div class="bg-white p-8 rounded-lg shadow-2xl text-center w-full max-w-sm border-t-4 border-green-500 animate-pulse-soft">
-      <div class="mb-4">
-        <svg class="w-16 h-16 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-        </svg>
+    <div class="bg-white p-8 rounded-2xl shadow-2xl text-center w-full max-w-sm border-t-4 border-green-500 transform transition-all" style="animation: bounce-in-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
+      <div class="mb-4 success-icon">
+        <div class="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" class="success-checkmark" style="stroke-dasharray: 50; stroke-dashoffset: 50;"></path>
+          </svg>
+        </div>
       </div>
-      <h2 class="text-2xl font-bold text-green-700 mb-2">{successMessage || "Update successful"}</h2>
-      <p class="text-gray-600 whitespace-pre-line text-sm mb-4">{successDetails || "Operation completed successfully."}</p>
-      <div class="bg-green-50 border border-green-200 rounded p-3 mb-4">
+      <h2 class="text-2xl font-bold text-green-700 mb-2 success-text">Updated Successfully!</h2>
+      <p class="text-gray-600 whitespace-pre-line text-sm mb-4 success-text">{successMessage || "Your application has been submitted."}</p>
+      <p class="text-xs text-gray-500 mb-4 success-text">{successDetails || "Operation completed successfully."}</p>
+      <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 success-text">
         <p class="text-green-800 text-xs font-semibold">✓ Action completed successfully</p>
       </div>
       <button
-        class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+        class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 active:bg-green-800 transition-all duration-200 font-semibold shadow-md hover:shadow-lg success-text"
         on:click={() => (showSuccessModal = false)}
       >
         OK, Got It!
@@ -3418,17 +3478,52 @@
 
 {#if showFailureModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] backdrop-blur-sm"
+    transition:fade={{ duration: 300 }}
   >
-    <div class="bg-white p-6 rounded shadow-md text-center w-full max-w-sm">
-      <h2 class="text-xl font-semibold text-red-600">Update Failed</h2>
-      <p class="mt-2">Something went wrong. Please try again.</p>
-      <button
-        class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        on:click={() => (showFailureModal = false)}
-      >
-        Close
-      </button>
+    <div class="bg-white p-8 rounded-2xl shadow-2xl text-center w-full max-w-md border-t-4 border-red-500 transform transition-all" style="animation: bounce-in-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
+      <div class="mb-4">
+        <div class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+      </div>
+      <h2 class="text-2xl font-bold text-red-700 mb-3">Submission Failed</h2>
+      
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-left">
+        <p class="text-red-800 text-sm font-mono whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+          {errorMessage || "An error occurred while submitting your application. Please try again."}
+        </p>
+      </div>
+
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+        <p class="text-yellow-800 text-xs font-semibold">💡 Troubleshooting Tips:</p>
+        <ul class="text-yellow-700 text-xs mt-2 text-left space-y-1">
+          <li>• Check your internet connection</li>
+          <li>• Open F12 console to see detailed logs</li>
+          <li>• If 401 error: Log out and log in again</li>
+          <li>• Refresh the page if error persists</li>
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <button
+          class="w-full mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
+          on:click={() => (showFailureModal = false)}
+        >
+          Close
+        </button>
+        <button
+          class="w-full mt-2 bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-all duration-200 font-semibold"
+          on:click={() => {
+            showFailureModal = false;
+            goto("/home/admin");
+          }}
+        >
+          Return to Admin
+        </button>
+      </div>
     </div>
   </div>
 {/if}
@@ -3503,5 +3598,60 @@
       transform: scale(1);
       opacity: 1;
     }
+  }
+
+  @keyframes checkmark-draw {
+    0% {
+      stroke-dashoffset: 50;
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-up-fade {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounce-in-scale {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    70% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .success-checkmark {
+    animation: checkmark-draw 0.6s ease-in-out forwards;
+  }
+
+  .success-icon {
+    animation: bounce-in-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .success-text {
+    animation: slide-up-fade 0.5s ease-out 0.2s forwards;
+    opacity: 0;
   }
 </style>
