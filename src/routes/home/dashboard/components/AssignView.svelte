@@ -12,6 +12,7 @@
 	import { loggedInUser } from '$lib/store';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from "$lib/components/ui/dialog"
+	import { goto } from '$app/navigation';
 
 	let isSearching:boolean=false;
 let currentView: number = 0;
@@ -20,7 +21,7 @@ let open: boolean = true;
 let assignForm:AssignForm|undefined=undefined;
 let showAssignForm:boolean=false;
 let assignData={}
-let searchResponse: unknown = null;
+let searchResponse: Record<string, any> | null = null;
 let fileId:string
 let fileType:number
 let applicant:string
@@ -28,6 +29,7 @@ let applicantCountry: string
 let applicantAddress: string
 let applicantNumber:string; let applicantEmail:string
 let fileTitle:string
+const userName = $loggedInUser?.firstName + ' ' + $loggedInUser?.lastName;
 export let closed: () => void;
 async function loadForm() {
 	if (!assignForm) {
@@ -85,6 +87,26 @@ async function fetchResult() {
 	}
 	isSearching=false;
 
+}
+
+async function renewFile() {
+	if (!searchResponse?.id) {
+		toast.error('Unable to renew this file at the moment.', { position: 'top-right' });
+		return;
+	}
+
+	const response = await fetch(
+		`${baseURL}/api/files/DashboardRenewal?fileId=${searchResponse.id}&userId=${$loggedInUser?.creatorId}&userName=${userName}`
+	);
+
+	if (!response.ok) {
+		toast.error('Unable to create renewal payment request.', { position: 'top-right' });
+		return;
+	}
+
+	const paymentInfo = await response.json();
+	const amount = searchResponse.amount;
+	goto(`/payment?type=dashrenewal&paymentId=${paymentInfo.rrr}&fileId=${searchResponse.id}&amount=${amount}&title=${paymentInfo.title}&applicant=${paymentInfo.applicant}&fileNumber=${fileNumber}`);
 }
 
 </script>
