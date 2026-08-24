@@ -41,9 +41,18 @@
     // Get paymentType from URL using get(page)
     const pageData = get(page);
     paymentType = pageData.url.searchParams.get("paymentType") ?? "";
-    const data = JSON.parse(localStorage.getItem("formData") ?? JSON.parse(sessionStorage.getItem("renewalData") ?? "{}"));
+    const localFormData = localStorage.getItem("formData");
+    const renewalData = sessionStorage.getItem("renewalData");
+    const data = localFormData
+      ? JSON.parse(localFormData)
+      : renewalData
+        ? JSON.parse(renewalData)
+        : null;
     console.log("Form Data from localStorage:", data);
-    const appId = localStorage.getItem("appId");
+    const appId =
+      pageData.url.searchParams.get("applicationId") ??
+      pageData.url.searchParams.get("appId") ??
+      localStorage.getItem("appId");
     applicationId = appId;
     let success = false;
     // Only call updateStatus if it's a renewal
@@ -54,6 +63,12 @@
       case "reclassification":
         console.log("Processing reclassification payment");
         success = await updateManual(data, false);
+        break;
+      case "restoration-free":
+        success = true;
+        break;
+      case "restoration":
+        success = await updateRestorationManual();
         break;
       default:
         await awaitingRecordalProcess();
@@ -98,7 +113,8 @@
   async function awaitingRecordalProcess() {
     const stored = localStorage.getItem("formData") ?? "";
     if (!stored) {
-      toast.error("No form data found in localStorage.");
+      // toast.error("No form data found in localStorage.");
+      toast.error("No form data found");
       isStatusUpdating = false;
       return;
     }
@@ -170,6 +186,119 @@
       console.error("Manual update error:", error);
       errorMessage = "Failed to update payment status";
       toast.error("Failed to update payment status");
+      return false;
+    }
+  }
+
+  async function updateRestorationManual(): Promise<boolean> {
+    try {
+      const user = get(loggedInUser);
+      const raw = sessionStorage.getItem("formData");
+      const payload = raw ? JSON.parse(raw) : null;
+
+      const fileId =
+        payload?.FileId ?? payload?.fileId ?? payload?.fileNumber ?? null;
+      const paymentId =
+        payload?.paymentId ?? payload?.rrr ?? $page.url.searchParams.get("rrr");
+      const restorationUserId =
+        payload?.userId ?? user?.id ?? (user as any)?.userId ?? "";
+      const restorationUserName =
+        payload?.userName ??
+        payload?.applicantName ??
+        payload?.applicant ??
+        `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+
+      if (!fileId || !restorationUserId || !paymentId) {
+        toast.error("Missing restoration payment data");
+        return false;
+      }
+
+      const createParams = new URLSearchParams({
+        fileId,
+        userId: restorationUserId,
+        paymentId,
+      });
+
+      const createRes = await fetch(
+        `${baseURL}/api/files/CreateRestorationApplication?${createParams.toString()}`,
+        { method: "POST" },
+      );
+
+      if (!createRes.ok) {
+        const txt = await createRes.text().catch(() => "");
+        let msg = "Failed to create restoration application";
+        try {
+          const jsonErr = txt ? JSON.parse(txt) : null;
+          msg = jsonErr?.message || txt || msg;
+        } catch {
+          msg = txt || msg;
+        }
+        errorMessage = msg;
+        toast.error("Failed to create restoration application");
+        return false;
+      }
+
+      const createText = await createRes.text().catch(() => "");
+      const createPayload = createText ? JSON.parse(createText) : null;
+      const restorationApplicationId =
+        createPayload?.applicationId ??
+        createPayload?.ApplicationId ??
+        payload?.applicationId ??
+        payload?.appId ??
+        $page.url.searchParams.get("applicationId") ??
+        $page.url.searchParams.get("appId") ??
+        localStorage.getItem("appId");
+
+      if (!restorationApplicationId) {
+        toast.error("Missing restoration application id");
+        return false;
+      }
+
+      const params = new URLSearchParams({
+        fileId,
+        applicationId: restorationApplicationId,
+        isCertificate: "false",
+      });
+
+      if (restorationUserId) params.set("userId", restorationUserId);
+      if (restorationUserName) params.set("userName", restorationUserName);
+
+      const res = await fetch(
+        `${baseURL}/api/files/ManualUpdate?${params.toString()}`,
+        {
+          method: "POST",
+        },
+      );
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        let msg = "Failed to update restoration status";
+        try {
+          const jsonErr = txt ? JSON.parse(txt) : null;
+          msg = jsonErr?.message || txt || msg;
+        } catch {
+          msg = txt || msg;
+        }
+        errorMessage = msg;
+        toast.error("Failed to update restoration status");
+        return false;
+      }
+
+      const text = await res.text().catch(() => "");
+      if (text) {
+        try {
+          const updatedData = JSON.parse(text);
+          applicationData.set(updatedData);
+        } catch (err) {
+          console.warn("Manual update restoration: response not JSON:", err);
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Restoration manual update error:", error);
+      errorMessage = "Failed to update restoration status";
+      toast.error("Failed to update restoration status");
       return false;
     }
   }
@@ -255,7 +384,9 @@
           class="text-3xl font-bold text-gray-900 mt-2 mb-4"
           in:fly={{ y: 20, duration: 500 }}
         >
-          Payment Successful
+          {paymentType === "restoration-free"
+            ? "Restoration Successful"
+            : "Payment Successful"}
         </h1>
       {/if}
 
@@ -264,7 +395,9 @@
           class="text-base font-medium text-gray-600 mb-8 max-w-xs mx-auto"
           in:fly={{ y: 15, duration: 500 }}
         >
-          YOUR APPLICATION HAS BEEN RECEIVED AND IS RECEIVING DUE ATTENTION
+          {paymentType === "restoration-free"
+            ? "YOUR FILE RESTORATION HAS BEEN INITIATED AND IS AWAITING RENEWAL APPLICATION"
+            : "YOUR APPLICATION HAS BEEN RECEIVED AND IS RECEIVING DUE ATTENTION"}
         </p>
 
         <div class="mt-4" in:fade={{ duration: 300, delay: 300 }}>
