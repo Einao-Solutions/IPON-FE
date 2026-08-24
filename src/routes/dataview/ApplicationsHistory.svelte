@@ -274,7 +274,7 @@
       if (/^[A-Za-z0-9+/=\r\n]+$/.test(text) && text.length > 100) {
         return `data:application/pdf;base64,${text}`;
       }
-      return text;
+      return `${baseURL.replace(/\/$/, "")}/${text.replace(/^\//, "")}`;
     }
     if (typeof value === "object") {
       const directUrl =
@@ -307,7 +307,22 @@
   }
 
   function getWithdrawalAttachments(details: any, field: string): any[] {
-    const attachments = details?.[field];
+    const fieldAliases: Record<string, string[]> = {
+      withdrawalLetterAttachments: [
+        "withdrawalLetterAttachments",
+        "withdrawalLetter",
+        "WithdrawalLetter",
+      ],
+      supportingDocumentAttachments: [
+        "supportingDocumentAttachments",
+        "supportingDocuments",
+        "SupportingDocuments",
+        "withdrawalSupportingDocuments",
+      ],
+    };
+    const attachments = (fieldAliases[field] ?? [field])
+      .map((name) => details?.[name])
+      .find((value) => Array.isArray(value));
     if (!Array.isArray(attachments)) return [];
     return attachments.flatMap((attachment: any) =>
       Array.isArray(attachment?.url)
@@ -2864,33 +2879,6 @@
         Review and process withdrawal application details.
       </Dialog.Description>
     </Dialog.Header>
-
-    <form class="mx-4 mt-2 space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <div class="flex items-center gap-2 font-semibold text-slate-800">
-        <Icon icon="mdi:clipboard-text-outline" class="text-green-600" />
-        Withdrawal Request Form
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700" for="admin-withdrawal-file-number">File Number</label>
-        <input id="admin-withdrawal-file-number" value={withdrawalFileId} readonly class="mt-1 w-full rounded border bg-gray-100 px-3 py-2 text-gray-700" />
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700" for="admin-withdrawal-letter">Withdrawal Letter <span class="text-red-500">*</span></label>
-        <input id="admin-withdrawal-letter" type="file" accept=".pdf" multiple class="mt-1 block w-full rounded border bg-white px-3 py-2" on:change={(event) => handleWithdrawalFormFiles(event, "letter")} />
-        <p class="mt-1 text-xs text-red-600">Upload your withdrawal letter in PDF format.</p>
-        {#each withdrawalLetterFiles as file}
-          <p class="text-xs text-gray-600">{file.name}</p>
-        {/each}
-      </div>
-      <div>
-        <label class="block text-sm font-semibold text-gray-700" for="admin-withdrawal-supporting">Supporting Documents <span class="text-red-500">*</span></label>
-        <input id="admin-withdrawal-supporting" type="file" accept=".pdf,.jpeg,.jpg" multiple class="mt-1 block w-full rounded border bg-white px-3 py-2" on:change={(event) => handleWithdrawalFormFiles(event, "supporting")} />
-        <p class="mt-1 text-xs text-red-600">Upload any other supporting documents in PDF or JPEG format.</p>
-        {#each withdrawalSupportingFiles as file}
-          <p class="text-xs text-gray-600">{file.name}</p>
-        {/each}
-      </div>
-    </form>
 
     <div class="flex-1 overflow-auto p-4">
       {#if withdrawalLoading}

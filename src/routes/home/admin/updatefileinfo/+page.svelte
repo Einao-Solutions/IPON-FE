@@ -852,6 +852,7 @@
         endpoint = `/api/files/WithdrawalRequest`;
         formData.append('FileId', filing.fileId || withdrawalRequestData.fileNumber || "");
         formData.append('FileType', filing?.type != null ? String(filing.type) : withdrawalRequestData.fileType || "");
+        formData.append('PaymentId', String(app.paymentId ?? ""));
         if (withdrawalRequestData.withdrawalLetter) {
           formData.append('WithdrawalLetter', withdrawalRequestData.withdrawalLetter);
         }
