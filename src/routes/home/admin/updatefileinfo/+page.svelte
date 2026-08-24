@@ -26,7 +26,13 @@
   let showForm = false;
   let filing: any = null;
   let showSuccessModal = false;
+  let successMessage = "";
+  let successDetails = "";
   let showFailureModal = false;
+  let errorMessage = "";
+  let isSubmitting = false;
+  let submissionState: "idle" | "loading" | "success" = "idle";
+  let processingLabel = "";
   let userName = "";
   let notFoundMessage = "";
 
@@ -396,6 +402,13 @@
     );
   };
 
+  // Delete design creator
+  const deleteDesignCreator = (index: number) => {
+    filing.designCreators = filing.designCreators.filter(
+      (_: any, i: number) => i !== index
+    );
+  };
+
   // === ATTACHMENT HANDLING FUNCTIONS ===
 
   // Canonical attachment option lists per file type
@@ -719,100 +732,184 @@
   // Build and POST a new application history entry
   const addApplicationHistory = async (app: any) => {
     try {
+      console.log("🔵 DEBUG: Add Application clicked with app:", app);
+      console.log("🔵 DEBUG: Filing object:", filing);
+      
+      // Validate basic requirements
+      if (!filing?.fileId) {
+        isSubmitting = false;
+        isLoading = false;
+        showFailureModal = true;
+        errorMessage = "❌ FILE ID MISSING\n\nCannot submit without a file ID.";
+        toast.error("File ID is missing", { position: "top-right" });
+        return;
+      }
+      
+      isSubmitting = true;
+      submissionState = "loading";
+      processingLabel = "Adding application...";
       isLoading = true;
-      const body: any = {
-        fileNumber: filing.fileId,
-        applicationType: app.applicationType,
-        applicationDate: app.applicationDate ? new Date(app.applicationDate) : new Date(),
-        currentStatus: app.currentStatus ?? ApplicationStatuses.None,
-        paymentId: app.paymentId ?? null,
-        certificatePaymentId: app.certificatePaymentId ?? null,
-      };
 
-      // Attach recordal-specific newValue/oldValue
+      // Determine the correct endpoint based on application type
+      let endpoint = "";
+      let formData = new FormData();
+      
+      // Populate FormData based on application type
       if (app.applicationType === FormApplicationTypes.Assignment) {
-        body.oldValue = {
-          name: filing.applicants?.[0]?.name || filing.correspondence?.name || "",
-          email: filing.applicants?.[0]?.email || filing.correspondence?.email || "",
-          address: filing.applicants?.[0]?.address || filing.correspondence?.address || "",
-        };
-        body.newValue = {
-          assigneeName: assignmentData.assigneeName,
-          assigneeEmail: assignmentData.assigneeEmail,
-          assigneePhone: assignmentData.assigneePhone,
-          assigneeNationality: assignmentData.assigneeNationality,
-          assigneeAddress: assignmentData.assigneeAddress,
-        };
-        const deed = await fileToAttachment(assignmentData.assignmentDeed);
-        const auth = await fileToAttachment(assignmentData.authorizationLetter);
-        body.newValue.attachments = [deed, auth].filter(Boolean);
+        endpoint = `/api/files/AssignmentApplication`;
+        formData.append('FileId', filing.fileId);
+        formData.append('AssignorName', assignmentData.assignorName || "");
+        formData.append('AssignorEmail', assignmentData.assignorEmail || "");
+        formData.append('AssignorPhone', assignmentData.assignorPhone || "");
+        formData.append('AssignorNationality', assignmentData.assignorNationality || "");
+        formData.append('AssignorAddress', assignmentData.assignorAddress || "");
+        formData.append('AssigneeName', assignmentData.assigneeName || "");
+        formData.append('AssigneeEmail', assignmentData.assigneeEmail || "");
+        formData.append('AssigneePhone', assignmentData.assigneePhone || "");
+        formData.append('AssigneeNationality', assignmentData.assigneeNationality || "");
+        formData.append('AssigneeAddress', assignmentData.assigneeAddress || "");
+        if (assignmentData.assignmentDeed) {
+          formData.append('AssignmentDeed', assignmentData.assignmentDeed);
+        }
+        if (assignmentData.authorizationLetter) {
+          formData.append('AuthorizationLetter', assignmentData.authorizationLetter);
+        }
+      } 
+      else if (app.applicationType === FormApplicationTypes.RegisteredUser) {
+        endpoint = `/api/files/AddRegisteredUsers`;
+        formData.append('FileId', filing.fileId);
+        formData.append('Name', registeredUserData.name || "");
+        formData.append('Email', registeredUserData.email || "");
+        formData.append('Phone', registeredUserData.phone || "");
+        formData.append('Nationality', registeredUserData.nationality || "");
+        formData.append('Address', registeredUserData.address || "");
+        if (registeredUserData.document) {
+          formData.append('document', registeredUserData.document);
+        }
+      }
+      else if (app.applicationType === FormApplicationTypes.Merger) {
+        endpoint = `/api/files/MergerApplication`;
+        formData.append('FileId', filing.fileId);
+        formData.append('Name', mergerData.name || "");
+        formData.append('Email', mergerData.email || "");
+        formData.append('Phone', mergerData.phone || "");
+        formData.append('Nationality', mergerData.nationality || "");
+        formData.append('Address', mergerData.address || "");
+        if (mergerData.document) {
+          formData.append('document', mergerData.document);
+        }
+      }
+      else if (app.applicationType === FormApplicationTypes.ChangeOfName) {
+        endpoint = `/api/files/ChangeDataRecordal`;
+        formData.append('FileId', filing.fileId);
+        formData.append('NewName', changeOfNameData.newName || "");
+        formData.append('changeType', 'Name');
+        if (changeOfNameData.supportingDocument) {
+          formData.append('document', changeOfNameData.supportingDocument);
+        }
+        formData.append('userId', $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "");
+      }
+      else if (app.applicationType === FormApplicationTypes.ChangeOfAddress) {
+        endpoint = `/api/files/ChangeDataRecordal`;
+        formData.append('FileId', filing.fileId);
+        formData.append('NewAddress', changeOfAddressData.newAddress || "");
+        formData.append('changeType', 'Address');
+        if (changeOfAddressData.supportingDocument) {
+          formData.append('document', changeOfAddressData.supportingDocument);
+        }
+        formData.append('userId', $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "");
+      }
+      else {
+        isSubmitting = false;
+        isLoading = false;
+        showFailureModal = true;
+        errorMessage = `❌ UNKNOWN APPLICATION TYPE\n\nApplication type ${app.applicationType} is not supported.`;
+        toast.error("Unsupported application type", { position: "top-right" });
+        return;
       }
 
-      if (app.applicationType === FormApplicationTypes.RegisteredUser) {
-        body.oldValue = { name: filing.registeredUser?.name || "" };
-        body.newValue = {
-          name: registeredUserData.name,
-          email: registeredUserData.email,
-          phone: registeredUserData.phone,
-          nationality: registeredUserData.nationality,
-          address: registeredUserData.address,
-        };
-        const doc = await fileToAttachment(registeredUserData.document);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
-
-      if (app.applicationType === FormApplicationTypes.Merger) {
-        body.oldValue = { name: filing.applicants?.[0]?.name || "" };
-        body.newValue = {
-          name: mergerData.name,
-          email: mergerData.email,
-          phone: mergerData.phone,
-          dateOfMerger: mergerData.dateOfMerger,
-          nationality: mergerData.nationality,
-          address: mergerData.address,
-        };
-        const doc = await fileToAttachment(mergerData.document);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
-
-      if (app.applicationType === FormApplicationTypes.ChangeOfName) {
-        body.oldValue = { name: filing.applicants?.[0]?.name || filing.correspondence?.name || "" };
-        body.newValue = { newName: changeOfNameData.newName };
-        const doc = await fileToAttachment(changeOfNameData.supportingDocument);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
-
-      if (app.applicationType === FormApplicationTypes.ChangeOfAddress) {
-        body.oldValue = { address: filing.correspondence?.address || "" };
-        body.newValue = { newAddress: changeOfAddressData.newAddress };
-        const doc = await fileToAttachment(changeOfAddressData.supportingDocument);
-        body.newValue.attachments = [doc].filter(Boolean);
-      }
-
-      const res = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${$loggedInToken}`,
-        },
-        body: JSON.stringify(body),
+      // Log detailed request info
+      const apiUrl = `${baseURL}${endpoint}`;
+      console.log("🔵 DEBUG: API URL:", apiUrl);
+      console.log("🔵 DEBUG: FormData entries:");
+      formData.forEach((value, key) => {
+        console.log(`  ${key}: ${value instanceof File ? `File(${value.name})` : value}`);
       });
 
+      const res = await fetch(apiUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      console.log("🔵 DEBUG: API Response status:", res.status, res.statusText);
+      console.log("🔵 DEBUG: API Response ok:", res.ok);
+
       if (res.ok) {
-        const created = await res.json();
+        const created = await res.text();
         filing.applicationHistory = filing.applicationHistory || [];
-        filing.applicationHistory = [created, ...filing.applicationHistory];
-        toast.success("Application history added", { position: "top-right" });
+        console.log("✅ SUCCESS: Application submitted");
+
+        // Show success modal with details
+        successMessage = "Application Added Successfully! ✅";
+        successDetails = `Application Type: ${mapTypeToString(app.applicationType)}\nDate: ${app.applicationDate ? new Date(app.applicationDate).toLocaleDateString() : 'Today'}\nStatus: ${mapStatusToString(app.currentStatus)}`;
+        submissionState = "success";
+        setTimeout(() => {
+          isSubmitting = false;
+          showSuccessModal = true;
+          submissionState = "idle";
+        }, 900);
+
+        // Auto close after 4 seconds and close the recordal view if it was open
+        setTimeout(() => {
+          showSuccessModal = false;
+          // Close the recordal view if it was open during submission
+          if (selectedRecordal) {
+            closeRecordalView();
+          }
+        }, 4000);
       } else {
+        let errorMsg = "";
         const txt = await res.text();
-        console.error("Failed to add application history:", txt);
-        toast.error("Failed to add application", { position: "top-right" });
+        
+        console.error("❌ ERROR: Failed to add application history:", txt);
+        console.error("❌ Response Status:", res.status);
+        console.error("❌ Full response:", res);
+        
+        // Handle specific error codes
+        if (res.status === 401) {
+          errorMsg = "❌ AUTHORIZATION ERROR (401)\n\nYour authentication token is invalid or expired. Please log out and log in again to refresh your session.\n\nIf the problem persists, contact your administrator.";
+          console.error("❌ AUTHORIZATION ERROR: Token may be invalid or expired");
+          console.error("🔍 Debug info - Token length:", $loggedInToken?.length);
+          console.error("🔍 Debug info - User:", $loggedInUser);
+        } else if (res.status === 403) {
+          errorMsg = "❌ PERMISSION DENIED (403)\n\nYou don't have permission to perform this action. Please contact your administrator.";
+        } else if (res.status === 404) {
+          errorMsg = "❌ NOT FOUND (404)\n\nThe endpoint was not found. Please contact support.";
+        } else if (res.status === 400) {
+          errorMsg = `❌ VALIDATION ERROR (400)\n\n${txt || "Please check your form data and try again."}`;
+        } else if (res.status >= 500) {
+          errorMsg = "❌ SERVER ERROR\n\nThe server encountered an error. Please try again later.";
+        } else {
+          errorMsg = txt || `❌ ERROR (${res.status})\n\nFailed to add application. Please try again.`;
+        }
+        
+        errorMessage = errorMsg;
+        isSubmitting = false;
+        showFailureModal = true;
+        toast.error("Submission failed - Check the modal for details", { position: "top-right" });
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Error adding application", { position: "top-right" });
+      console.error("❌ CATCH ERROR:", err);
+      isSubmitting = false;
+      showFailureModal = true;
+      const errorMsg = err instanceof Error ? err.message : "An unknown error occurred";
+      errorMessage = `❌ UNEXPECTED ERROR\n\n${errorMsg}\n\nPlease check the browser console for more details.`;
+      toast.error("Unexpected error occurred - Check the modal for details", { position: "top-right" });
     } finally {
       isLoading = false;
+      if (submissionState !== "success") {
+        isSubmitting = false;
+      }
     }
   };
 
@@ -820,6 +917,7 @@
   const submitRecordalFromView = async () => {
     if (!selectedRecordal) return;
     const t = selectedRecordal.applicationType;
+    
     // Build a lightweight app object similar to newApp
     const appObj: any = {
       applicationType: t,
@@ -829,7 +927,7 @@
       certificatePaymentId: null,
     };
 
-    // copy view data into the canonical form objects so addApplicationHistory can read them
+    // Copy view data into the canonical form objects so addApplicationHistory can read them
     if (t === FormApplicationTypes.Assignment) {
       assignmentData = { ...assignmentData, ...viewAssignmentData };
     }
@@ -846,12 +944,16 @@
       changeOfAddressData = { ...changeOfAddressData, ...viewChangeOfAddressData };
     }
 
+    // Call addApplicationHistory and let it handle success/failure states
     await addApplicationHistory(appObj);
-    closeRecordalView();
+    // closeRecordalView will be called after success modal closes automatically
   };
 
   const saveChanges = async () => {
     try {
+      isSubmitting = true;
+      submissionState = "loading";
+      processingLabel = "Saving file update...";
       isLoading = true;
       filing.updatedBy = userName;
 
@@ -872,7 +974,14 @@
 
       if (!res.ok) throw new Error("Update failed");
 
-      showSuccessModal = true;
+      successMessage = "Update Successful!";
+      successDetails = "Your file information has been saved successfully.";
+      submissionState = "success";
+      setTimeout(() => {
+        isSubmitting = false;
+        showSuccessModal = true;
+        submissionState = "idle";
+      }, 900);
 
       setTimeout(() => {
         goto("/home/admin");
@@ -880,10 +989,14 @@
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "An unknown error occurred";
+      isSubmitting = false;
       showFailureModal = true;
       console.error("Error updating file:", message);
     } finally {
       isLoading = false;
+      if (submissionState !== "success") {
+        isSubmitting = false;
+      }
     }
   };
 
@@ -1506,23 +1619,23 @@
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                        <input type="text" class="input" readonly value={assignmentData.assignorName} />
+                        <input type="text" class="input" bind:value={assignmentData.assignorName} />
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" class="input" readonly value={assignmentData.assignorEmail} />
+                        <input type="email" class="input" bind:value={assignmentData.assignorEmail} />
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                        <input type="tel" class="input" readonly value={assignmentData.assignorPhone} />
+                        <input type="tel" class="input" bind:value={assignmentData.assignorPhone} />
                       </div>
                       <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
-                        <input type="text" class="input" readonly value={assignmentData.assignorNationality} />
+                        <input type="text" class="input" bind:value={assignmentData.assignorNationality} />
                       </div>
                       <div class="md:col-span-2">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                        <textarea class="input min-h-20" readonly>{assignmentData.assignorAddress}</textarea>
+                        <textarea class="input min-h-20" bind:value={assignmentData.assignorAddress}></textarea>
                       </div>
                     </div>
                   </div>
@@ -1543,17 +1656,9 @@
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Nationality: <span class="text-red-500">*</span></label>
                     <input type="text" class="input" bind:value={assignmentData.assigneeNationality} placeholder="Enter assignee nationality" required />
                   </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Country</label>
-                    <input type="text" class="input" readonly value={assignmentData.assigneeCountry} />
-                  </div>
                   <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignee Address: <span class="text-red-500">*</span></label>
                     <textarea class="input min-h-20" bind:value={assignmentData.assigneeAddress} placeholder="Enter assignee address" required></textarea>
-                  </div>
-                  <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Assignment</label>
-                    <input type="text" class="input" readonly value={assignmentData.dateOfAssignment} />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Assignment Deed (PDF):</label>
@@ -1616,10 +1721,6 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Phone: <span class="text-red-500">*</span></label>
                     <input type="tel" class="input" bind:value={mergerData.phone} placeholder="Enter phone" required />
-                  </div>
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Merger: <span class="text-red-500">*</span></label>
-                    <input type="date" class="input" bind:value={mergerData.dateOfMerger} required />
                   </div>
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nationality: <span class="text-red-500">*</span></label>
@@ -1720,7 +1821,10 @@
               <Button
                 size="sm"
                 class="mt-2"
-                on:click={() => addApplicationHistory(newApp)}
+                on:click={() => {
+                  console.log("🟡 Button clicked! newApp:", newApp);
+                  addApplicationHistory(newApp);
+                }}
               >
                 Add Application
               </Button>
@@ -1757,15 +1861,15 @@
                   <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <h4 class="font-semibold mb-3">Assignor</h4>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Name</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorName || viewAssignmentData.assignorName || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorName} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorEmail || viewAssignmentData.assignorEmail || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorEmail} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorPhone || viewAssignmentData.assignorPhone || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorPhone} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assignorNationality || viewAssignmentData.assignorNationality || ''} />
+                    <input class="input mb-2" bind:value={viewAssignmentData.assignorNationality} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                    <textarea class="input" readonly>{selectedRecordal.hist.assignment?.assignorAddress || viewAssignmentData.assignorAddress || ''}</textarea>
+                    <textarea class="input" bind:value={viewAssignmentData.assignorAddress}></textarea>
                   </section>
 
                   <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -1778,12 +1882,8 @@
                     <input class="input mb-2" bind:value={viewAssignmentData.assigneePhone} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
                     <input class="input mb-2" bind:value={viewAssignmentData.assigneeNationality} />
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.assigneeCountry || viewAssignmentData.assigneeCountry || ''} />
                     <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                     <textarea class="input mb-2" bind:value={viewAssignmentData.assigneeAddress}></textarea>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Date of Assignment</label>
-                    <input class="input mb-2" readonly value={selectedRecordal.hist.assignment?.dateOfAssignment || viewAssignmentData.dateOfAssignment || ''} />
                   </section>
                 </div>
 
@@ -1846,8 +1946,6 @@
                   <input class="input mb-2" bind:value={viewMergerData.name} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input class="input mb-2" bind:value={viewMergerData.email} />
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Date of Merger</label>
-                  <input type="date" class="input mb-2" bind:value={viewMergerData.dateOfMerger} />
                   <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
                   <textarea class="input mb-2" bind:value={viewMergerData.address}></textarea>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Deed (PDF)</label>
@@ -2667,17 +2765,21 @@
                 <div
                   class="bg-white border border-slate-200 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow"
                 >
-                  <!-- <div class="mb-4 flex justify-between items-center bg-slate-50 p-3 rounded-md">
-                    <label for="creator-{index}-heading" class="text-base font-semibold text-slate-800">Creator {index + 1}</label>
-                    <Button 
-                      variant="destructive" 
+                  <div class="mb-4 flex justify-between items-center bg-slate-50 p-3 rounded-md">
+                    <label
+                      for="creator-{index}-heading"
+                      class="text-base font-semibold text-slate-800"
+                      >Creator {index + 1}</label
+                    >
+                    <Button
+                      variant="destructive"
                       size="sm"
                       on:click={() => deleteDesignCreator(index)}
                       class="text-xs"
                     >
                       Delete
                     </Button>
-                  </div> -->
+                  </div>
 
                   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -3323,18 +3425,52 @@
   {/if}
 </div>
 
+{#if isSubmitting || submissionState === "success"}
+  <div class="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm" transition:fade={{ duration: 200 }}>
+    <div class="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 min-w-[300px] transform transition-all" style="animation: bounce-in-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
+      {#if submissionState === "loading"}
+        <div class="spinner"></div>
+        <p class="text-lg font-semibold text-slate-700 text-center">{processingLabel || "Processing..."}</p>
+        <p class="text-sm text-slate-500 text-center">Please wait while the update completes.</p>
+      {:else if submissionState === "success"}
+        <div class="success-badge success-icon">
+          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" class="success-checkmark" style="stroke-dasharray: 50; stroke-dashoffset: 50;"></path>
+          </svg>
+        </div>
+        <div class="success-text">
+          <p class="text-xl font-bold text-green-700 text-center">Success!</p>
+          <p class="text-sm text-slate-600 text-center mt-1">{successMessage || "Update completed successfully."}</p>
+        </div>
+      {/if}
+    </div>
+  </div>
+{/if}
+
 {#if showSuccessModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] backdrop-blur-sm"
+    transition:fade={{ duration: 300 }}
   >
-    <div class="bg-white p-6 rounded shadow-md text-center w-full max-w-sm">
-      <h2 class="text-xl font-semibold text-green-800">Success!</h2>
-      <p class="mt-2">File updated successfully.</p>
+    <div class="bg-white p-8 rounded-2xl shadow-2xl text-center w-full max-w-sm border-t-4 border-green-500 transform transition-all" style="animation: bounce-in-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
+      <div class="mb-4 success-icon">
+        <div class="w-20 h-20 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" class="success-checkmark" style="stroke-dasharray: 50; stroke-dashoffset: 50;"></path>
+          </svg>
+        </div>
+      </div>
+      <h2 class="text-2xl font-bold text-green-700 mb-2 success-text">Updated Successfully!</h2>
+      <p class="text-gray-600 whitespace-pre-line text-sm mb-4 success-text">{successMessage || "Your application has been submitted."}</p>
+      <p class="text-xs text-gray-500 mb-4 success-text">{successDetails || "Operation completed successfully."}</p>
+      <div class="bg-green-50 border border-green-200 rounded-lg p-3 mb-4 success-text">
+        <p class="text-green-800 text-xs font-semibold">✓ Action completed successfully</p>
+      </div>
       <button
-        class="mt-4 bg-green-800 text-white px-4 py-2 rounded hover:bg-green-700"
+        class="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 active:bg-green-800 transition-all duration-200 font-semibold shadow-md hover:shadow-lg success-text"
         on:click={() => (showSuccessModal = false)}
       >
-        Close
+        OK, Got It!
       </button>
     </div>
   </div>
@@ -3342,17 +3478,52 @@
 
 {#if showFailureModal}
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+    class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] backdrop-blur-sm"
+    transition:fade={{ duration: 300 }}
   >
-    <div class="bg-white p-6 rounded shadow-md text-center w-full max-w-sm">
-      <h2 class="text-xl font-semibold text-red-600">Update Failed</h2>
-      <p class="mt-2">Something went wrong. Please try again.</p>
-      <button
-        class="mt-4 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-        on:click={() => (showFailureModal = false)}
-      >
-        Close
-      </button>
+    <div class="bg-white p-8 rounded-2xl shadow-2xl text-center w-full max-w-md border-t-4 border-red-500 transform transition-all" style="animation: bounce-in-scale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;">
+      <div class="mb-4">
+        <div class="w-20 h-20 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+          <svg class="w-12 h-12 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+      </div>
+      <h2 class="text-2xl font-bold text-red-700 mb-3">Submission Failed</h2>
+      
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4 text-left">
+        <p class="text-red-800 text-sm font-mono whitespace-pre-wrap break-words max-h-32 overflow-y-auto">
+          {errorMessage || "An error occurred while submitting your application. Please try again."}
+        </p>
+      </div>
+
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+        <p class="text-yellow-800 text-xs font-semibold">💡 Troubleshooting Tips:</p>
+        <ul class="text-yellow-700 text-xs mt-2 text-left space-y-1">
+          <li>• Check your internet connection</li>
+          <li>• Open F12 console to see detailed logs</li>
+          <li>• If 401 error: Log out and log in again</li>
+          <li>• Refresh the page if error persists</li>
+        </ul>
+      </div>
+
+      <div class="space-y-2">
+        <button
+          class="w-full mt-4 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 active:bg-red-800 transition-all duration-200 font-semibold shadow-md hover:shadow-lg"
+          on:click={() => (showFailureModal = false)}
+        >
+          Close
+        </button>
+        <button
+          class="w-full mt-2 bg-gray-200 text-gray-800 px-6 py-2 rounded-lg hover:bg-gray-300 transition-all duration-200 font-semibold"
+          on:click={() => {
+            showFailureModal = false;
+            goto("/home/admin");
+          }}
+        >
+          Return to Admin
+        </button>
+      </div>
     </div>
   </div>
 {/if}
@@ -3371,5 +3542,116 @@
 
   details[open] > summary {
     font-weight: bold;
+  }
+
+  @keyframes pulse-soft {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.95;
+      transform: scale(1.02);
+    }
+  }
+
+  .animate-pulse-soft {
+    animation: pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .spinner {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 4px solid rgba(16, 185, 129, 0.2);
+    border-top-color: #10b981;
+    animation: spin 0.9s linear infinite;
+  }
+
+  .success-badge {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pop-in 0.4s ease-out;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes pop-in {
+    0% {
+      transform: scale(0.7);
+      opacity: 0;
+    }
+    80% {
+      transform: scale(1.08);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes checkmark-draw {
+    0% {
+      stroke-dashoffset: 50;
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-up-fade {
+    0% {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes bounce-in-scale {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    70% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .success-checkmark {
+    animation: checkmark-draw 0.6s ease-in-out forwards;
+  }
+
+  .success-icon {
+    animation: bounce-in-scale 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  }
+
+  .success-text {
+    animation: slide-up-fade 0.5s ease-out 0.2s forwards;
+    opacity: 0;
   }
 </style>

@@ -525,7 +525,12 @@ export function fileTypeToString(file: number) {
       return "";
   }
 }
-export function mapDateToString(data: string) {
+export function mapDateToString(data: string | Date | null | undefined) {
+  const value = data == null ? null : new Date(data);
+  if (!value || Number.isNaN(value.getTime())) {
+    return "—";
+  }
+
   return Intl.DateTimeFormat("en-NG", {
     year: "numeric",
     month: "short",
@@ -534,17 +539,22 @@ export function mapDateToString(data: string) {
     hour: "numeric",
     minute: "numeric",
     timeZone: "UTC",
-  }).format(new Date(data));
+  }).format(value);
 }
 
-export function mapDateToStringNoDate(data: string) {
+export function mapDateToStringNoDate(data: string | Date | null | undefined) {
+  const value = data == null ? null : new Date(data);
+  if (!value || Number.isNaN(value.getTime())) {
+    return "—";
+  }
+
   return Intl.DateTimeFormat("en-NG", {
     year: "numeric",
     month: "short",
     day: "numeric",
     weekday: "short",
     timeZone: "UTC",
-  }).format(new Date(data));
+  }).format(value);
 }
 
 export function mapPatentAppTypeToString(data: number) {

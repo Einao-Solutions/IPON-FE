@@ -72,6 +72,9 @@
 		UserRoles.TrademarkCertification,
 		UserRoles.TrademarkPublication,
 		UserRoles.TrademarkRegistrar,
+		UserRoles.ActingTrademarkRegistrar,
+		UserRoles.PatentDesignRegistrar,
+		UserRoles.ActingPatentDesignRegistrar,
 		UserRoles.PatentSearch,
 		UserRoles.PatentExaminer,
 		UserRoles.PatentCertification,
@@ -93,7 +96,7 @@
 		return isStrictSupportOfficer() || isUnitOfficer();
 	}
 	function canAccessIpoSupport(): boolean {
-		return hasRole(UserRoles.User) || isTechSupport() || isStrictSupportOfficer() || isUnitOfficer();
+		return hasRole(UserRoles.User) || hasRole(UserRoles.PermSec) || isTechSupport() || isStrictSupportOfficer() || isUnitOfficer();
 	}
 	// ── Tab system ────────────────────────────────────────────────────────────────
 	type TabDef = {

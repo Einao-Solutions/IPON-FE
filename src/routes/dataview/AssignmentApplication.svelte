@@ -19,13 +19,12 @@
 	import { applicationData, assignmentData, loggedInUser, metaDataInfo } from '$lib/store';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapStatusStringToStatus } from '$lib/designutils';
-	import dayjs from 'dayjs';
+	import AssignmentDocuments from './AssignmentDocuments.svelte';
 
 	export let allApplications:ApplicationHistoryType[];
 	export let isAdmin:boolean=false;
 	export let fileData;
 	let selectedApplication:ApplicationHistoryType|null=null;
-	let selectedAssignment
 	let showStatusHistory:boolean=false;
 	let historyComponent:HistorySheet|null=null;
 	let isNewStatusLoading:boolean=false;
@@ -186,7 +185,6 @@ let options:ApplicationStatuses[] =[];
 	function viewData(application){
 		currApp=application
 		showDataComparison=true;
-		selectedAssignment = application.assignment;
 	}
 
 	async function updateAssignment(){
@@ -311,45 +309,11 @@ let options:ApplicationStatuses[] =[];
 </AlertDialog.Root>
 
 <Dialog.Root bind:open ="{showDataComparison}" >
-	<Dialog.Content class="overflow-y-auto h-3/4" >
+	<Dialog.Content class="max-w-5xl overflow-y-auto" >
 		<Dialog.Header>
-			<Dialog.Title>
-				Assignor and Assignee details
-			</Dialog.Title>
+			<Dialog.Title>Assignment Documents</Dialog.Title>
 		</Dialog.Header>
-		<br/>
-		<div class="space-y-2">
-			<p class="font-medium p-1">Date of Assignment</p>
-			<p>{dayjs(selectedAssignment.dateOfAssignment).format('MMM D, YYYY')}</p>
-			<p class="font-medium p-1">Assignor Details</p>
-			<div class="border rounded-md p-2">
-			<p class="font-medium">Assignor Name</p>
-			<p>{selectedAssignment.assignorName}</p>
-			</div>
-			<div class="border rounded-md p-2">
-			<p class="font-medium">Assignor Address</p>
-			<p>{selectedAssignment.assignorAddress}</p>
-		</div>
-			<div class="border rounded-md p-2">
-				<p class="font-medium">Assignor Country</p>
-				<p>{selectedAssignment.assignorCountry}</p>
-			</div>
-			<p class="font-medium p-1">Assignee Details</p>
-			<div class="border rounded-md p-2">
-				<p class="font-medium">Assignee Name</p>
-				<p>{selectedAssignment.assigneeName}</p>
-			</div>
-			<div class="border rounded-md p-2">
-				<p class="font-medium">Assignee Address</p>
-				<p>{selectedAssignment.assigneeAddress}</p>
-			</div>
-			<div class="border rounded-md p-2">
-				<p class="font-medium">Assignee Country</p>
-				<p>{selectedAssignment.assigneeCountry}</p>
-			</div>
-				<a class="flex border p-2 rounded-md" href="{selectedAssignment.authorizationLetterUrl}" target="_blank">Letter of authorization</a>
-				<a class="flex border p-2 rounded-md" href="{selectedAssignment.deedOfAgreementUrl}" target="_blank">Deed of agreement</a>
-		</div>
+		<AssignmentDocuments fileId={fileData.fileId ?? fileData.id} appId={currApp.id} />
 	</Dialog.Content>
 </Dialog.Root>
 {#if showStatusHistory}
@@ -418,7 +382,7 @@ let options:ApplicationStatuses[] =[];
 					<Table.Cell class="w-1">{i+1}</Table.Cell>
 					<Table.Cell class="w-32" >{mapDateToString(application.applicationDate)}</Table.Cell>
 					<Table.Cell>
-						<Button variant="outline" on:click={()=>viewData(application)} >View data</Button></Table.Cell>
+						<Button variant="outline" on:click={()=>viewData(application)} >View documents</Button></Table.Cell>
 					<Table.Cell>
 						<AppStatusTag value="{application.currentStatus}" /></Table.Cell>
 					<!--			<Table.Cell class="{isAdmin?'':'hidden'}">-->

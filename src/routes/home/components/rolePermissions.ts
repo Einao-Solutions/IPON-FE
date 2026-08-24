@@ -672,8 +672,18 @@ export const ROLE_DISPLAY_CONFIG: Record<UserRoles, RoleDisplayInfo> = {
 		department: 'Trademark Department',
 		fileTypes: [FileTypes.Trademark]
 	},
+	[UserRoles.ActingTrademarkRegistrar]: {
+		title: 'Acting Trademark Registrar',
+		department: 'Trademark Department',
+		fileTypes: [FileTypes.Trademark]
+	},
 	[UserRoles.PatentDesignRegistrar]: {
 		title: 'Patent & Design Registrar',
+		department: 'Patent & Design Department',
+		fileTypes: [FileTypes.Patent, FileTypes.Design]
+	},
+	[UserRoles.ActingPatentDesignRegistrar]: {
+		title: 'Acting Patent & Design Registrar',
 		department: 'Patent & Design Department',
 		fileTypes: [FileTypes.Patent, FileTypes.Design]
 	},
@@ -765,19 +775,22 @@ export function getUserPrimaryFileType(roles: UserRoles[]): FileTypes | null {
 	if (roles.some(r => [
 		UserRoles.TrademarkSearch, UserRoles.TrademarkExaminer, UserRoles.TrademarkPublication,
 		UserRoles.TrademarkOpposition, UserRoles.TrademarkAcceptance, UserRoles.TrademarkCertification,
-		UserRoles.TrademarkStaff  // ✅ added
+		UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar,
+		UserRoles.TrademarkStaff  
 	].includes(r))) {
 		return FileTypes.Trademark;
 	}
 	if (roles.some(r => [
 		UserRoles.PatentSearch, UserRoles.PatentExaminer, UserRoles.PatentCertification,
-		UserRoles.PatentStaff  // ✅ added
+		UserRoles.PatentDesignRegistrar, UserRoles.ActingPatentDesignRegistrar,
+		UserRoles.PatentStaff 
 	].includes(r))) {
 		return FileTypes.Patent;
 	}
 	if (roles.some(r => [
 		UserRoles.DesignSearch, UserRoles.DesignExaminer, UserRoles.DesignCertification,
-		UserRoles.DesignStaff  // ✅ added
+		UserRoles.PatentDesignRegistrar, UserRoles.ActingPatentDesignRegistrar,
+		UserRoles.DesignStaff  
 	].includes(r))) {
 		return FileTypes.Design;
 	}
