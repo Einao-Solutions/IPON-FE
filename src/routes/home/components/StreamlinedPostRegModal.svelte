@@ -330,25 +330,71 @@
 
       // Handle restoration separately - skip renewal logic
       if (restoration) {
-        const renewalCost = await fetch(
-          `${baseURL}/api/files/RestorationRequest?fileId=${fileNumber}&userId=${$loggedInUser?.id}`,
+        const userId = $loggedInUser?.id;
+        if (!userId) {
+          error = "Unable to identify user for restoration.";
+          return;
+        }
+
+        // Free restoration mode: create record immediately and go straight to success page.
+        const fallbackPaymentId = `FREE-RESTORATION-${Date.now()}`;
+        const createParams = new URLSearchParams({
+          fileId: fileNumber,
+          userId,
+          paymentId: fallbackPaymentId,
+        });
+
+        const createRes = await fetch(
+          `${baseURL}/api/files/CreateRestorationApplication?${createParams.toString()}`,
+          { method: "POST" },
         );
-        const renewalData = await renewalCost.json();
-        if (!renewalCost.ok) {
+
+        if (!createRes.ok) {
+          const errText = await createRes.text().catch(() => "");
+          console.warn("CreateRestorationApplication failed:", errText);
           error = "This file is not eligible for restoration.";
           return;
         }
+
+        const createdData = await createRes.json().catch(() => ({}));
+        const createdApplicationId =
+          createdData?.applicationId ?? createdData?.ApplicationId ?? "";
+
         sessionStorage.setItem(
-          "formData",
+          "restorationResult",
           JSON.stringify({
-            ...renewalData,
+            ...createdData,
             fileId: fileNumber,
             applicantName:
               fileResult.fileApplicant ??
               `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
           }),
         );
-        await goto(`/payment?type=restoration`);
+
+        await goto(
+          `/home/postregistration/paid?paymentType=restoration-free${createdApplicationId ? `&applicationId=${encodeURIComponent(createdApplicationId)}` : ""}`,
+        );
+
+        // Paid restoration flow (disabled for now - keep for quick re-enable later).
+        // const renewalCost = await fetch(
+        //   `${baseURL}/api/files/RestorationRequest?fileId=${fileNumber}&userId=${$loggedInUser?.id}`,
+        // );
+        // const renewalData = await renewalCost.json();
+        // if (!renewalCost.ok) {
+        //   error = "This file is not eligible for restoration.";
+        //   return;
+        // }
+        // sessionStorage.setItem(
+        //   "formData",
+        //   JSON.stringify({
+        //     ...renewalData,
+        //     fileId: fileNumber,
+        //     applicantName:
+        //       fileResult.fileApplicant ??
+        //       `${$loggedInUser?.firstName} ${$loggedInUser?.lastName}`,
+        //   }),
+        // );
+        // await goto(`/payment?type=restoration`);
         return;
       }
 

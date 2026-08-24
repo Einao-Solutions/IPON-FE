@@ -129,6 +129,7 @@
           UserRoles.PatentExaminer,
           UserRoles.PatentCertification,
           UserRoles.PatentDesignRegistrar,
+          UserRoles.ActingPatentDesignRegistrar,
           // Trademark-related roles
           UserRoles.TrademarkSearch,
           UserRoles.TrademarkExaminer,
@@ -136,6 +137,7 @@
           UserRoles.TrademarkAcceptance,
           UserRoles.TrademarkCertification,
           UserRoles.TrademarkRegistrar,
+          UserRoles.ActingTrademarkRegistrar,
           // Design-related roles
           UserRoles.DesignSearch,
           UserRoles.DesignExaminer,

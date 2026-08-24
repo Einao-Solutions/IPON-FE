@@ -490,8 +490,14 @@ async function restoration(ctx: PaymentContext): Promise<void> {
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
   ctx.state.setFileApplicant(parsed?.applicantName ?? "");
+  const restorationApplicationId =
+    parsed?.applicationId ?? parsed?.appId ?? params.get("applicationId");
+  ctx.state.setApplicationId(restorationApplicationId ?? null);
+  const applicationQuery = restorationApplicationId
+    ? `&applicationId=${encodeURIComponent(restorationApplicationId)}`
+    : "";
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=restoration`,
+    `https://${ctx.page.url.host}/home/postregistration/paid?paymentType=restoration${applicationQuery}`,
   );
 } 
 async function simpleRedirectHandler(
