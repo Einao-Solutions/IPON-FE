@@ -305,6 +305,35 @@
     document: null as File | null,
   };
 
+  let withdrawalRequestData = {
+    fileNumber: "",
+    fileType: "",
+    withdrawalLetter: null as File | null,
+    supportingDocuments: [] as File[],
+  };
+
+  const handleWithdrawalRequestLetterUpload = (event: Event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input?.files?.[0];
+    if (!file) return;
+    withdrawalRequestData.withdrawalLetter = file;
+  };
+
+  const handleWithdrawalRequestSupportingDocsUpload = (event: Event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    const files = Array.from(input?.files ?? []);
+    if (!files.length) return;
+    withdrawalRequestData.supportingDocuments = [
+      ...withdrawalRequestData.supportingDocuments,
+      ...files,
+    ];
+  };
+
+  const removeWithdrawalRequestSupportingFile = (index: number) => {
+    withdrawalRequestData.supportingDocuments =
+      withdrawalRequestData.supportingDocuments.filter((_, i) => i !== index);
+  };
+
   // Change of Name form data
   let changeOfNameData = {
     newName: "",
@@ -818,6 +847,17 @@
           formData.append('document', changeOfAddressData.supportingDocument);
         }
         formData.append('userId', $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "");
+      }
+      else if (app.applicationType === FormApplicationTypes.WithdrawalRequest) {
+        endpoint = `/api/files/WithdrawalRequest`;
+        formData.append('FileId', filing.fileId || withdrawalRequestData.fileNumber || "");
+        formData.append('FileType', filing?.type != null ? String(filing.type) : withdrawalRequestData.fileType || "");
+        if (withdrawalRequestData.withdrawalLetter) {
+          formData.append('WithdrawalLetter', withdrawalRequestData.withdrawalLetter);
+        }
+        for (const file of withdrawalRequestData.supportingDocuments) {
+          formData.append('SupportingDocuments', file);
+        }
       }
       else {
         isSubmitting = false;
@@ -1607,6 +1647,59 @@
             </div>
           </div>
 
+          <!-- ===== WITHDRAWAL REQUEST FORM ===== -->
+          {#if newApp.applicationType === FormApplicationTypes.WithdrawalRequest && filing?.fileId}
+            <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
+              <div class="bg-red-100 px-4 py-2 font-semibold text-red-900">Withdrawal Request</div>
+              <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">File Number <span class="text-red-500">*</span></label>
+                  <input
+                    type="text"
+                    class="input w-full"
+                    value={filing.fileId}
+                    readonly
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Application Type</label>
+                  <input
+                    type="text"
+                    class="input w-full"
+                    value={mapTypeToString(FormApplicationTypes.WithdrawalRequest)}
+                    readonly
+                  />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Withdrawal Letter <span class="text-red-500">*</span></label>
+                  <input type="file" accept=".pdf" class="input w-full" on:change={handleWithdrawalRequestLetterUpload} />
+                  <p class="mt-1 text-xs text-red-600">Upload your withdrawal letter in PDF format.</p>
+                  {#if withdrawalRequestData.withdrawalLetter}
+                    <p class="text-xs text-gray-600 mt-2">{withdrawalRequestData.withdrawalLetter.name}</p>
+                  {/if}
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Documents <span class="text-red-500">*</span></label>
+                  <input type="file" accept=".pdf,.jpeg,.jpg" multiple class="input w-full" on:change={handleWithdrawalRequestSupportingDocsUpload} />
+                  <p class="mt-1 text-xs text-red-600">Upload any supporting documents in PDF or JPEG format.</p>
+                  {#if withdrawalRequestData.supportingDocuments.length}
+                    <ul class="mt-2 space-y-1 text-xs text-gray-600 list-disc list-inside">
+                      {#each withdrawalRequestData.supportingDocuments as file, index}
+                        <li class="flex items-center justify-between gap-2">
+                          <span>{file.name}</span>
+                          <button type="button" class="text-red-600 hover:text-red-800" on:click={() => removeWithdrawalRequestSupportingFile(index)}>
+                            Remove
+                          </button>
+                        </li>
+                      {/each}
+                    </ul>
+                  {/if}
+                </div>
+              </div>
+            </div>
+          {/if}
+
           <!-- ===== RECORDAL-SPECIFIC FORMS ===== -->
           {#if isRecordalType && filing?.fileId}
             <!-- Assignment Application (type 5) -->
@@ -1771,6 +1864,7 @@
                 </div>
               </div>
             {/if}
+
           {/if}
 
           <!-- ===== EXISTING SIMPLE FORM (below recordal forms) ===== -->
@@ -1992,6 +2086,7 @@
                 </div>
               </div>
             {/if}
+
           </div>
         {/if}
 

@@ -131,6 +131,17 @@
   let withdrawalSubmitting = false;
   let withdrawalFileId = "";
   let withdrawalApplicationId = "";
+  let withdrawalLetterFiles: File[] = [];
+  let withdrawalSupportingFiles: File[] = [];
+
+  function handleWithdrawalFormFiles(event: Event, type: "letter" | "supporting") {
+    const files = Array.from((event.currentTarget as HTMLInputElement).files ?? []);
+    if (type === "letter") {
+      withdrawalLetterFiles = [...withdrawalLetterFiles, ...files];
+    } else {
+      withdrawalSupportingFiles = [...withdrawalSupportingFiles, ...files];
+    }
+  }
 
   // Patent Assignment Modal State
   let showPatentAssignmentDialog = false;
@@ -280,6 +291,29 @@
       if (typeof dataValue === "string") return normalizeAttachmentUrl(dataValue);
     }
     return null;
+  }
+
+  function getWithdrawalAttachmentUrl(attachment: any): string | null {
+    if (Array.isArray(attachment?.url)) return null;
+    return normalizeAttachmentUrl(
+      attachment?.url ??
+        attachment?.fileUrl ??
+        attachment?.documentUrl ??
+        attachment?.attachmentUrl ??
+        attachment?.content ??
+        attachment?.data ??
+        attachment,
+    );
+  }
+
+  function getWithdrawalAttachments(details: any, field: string): any[] {
+    const attachments = details?.[field];
+    if (!Array.isArray(attachments)) return [];
+    return attachments.flatMap((attachment: any) =>
+      Array.isArray(attachment?.url)
+        ? attachment.url.map((url: string) => ({ ...attachment, url }))
+        : [attachment],
+    );
   }
 
   function getAssignmentAttachmentEntries(data: any): Array<{ label: string; url: string }> {
@@ -1604,13 +1638,23 @@
     withdrawalComment = "";
     withdrawalFileId = fileId;
     withdrawalApplicationId = applicationId;
+    withdrawalLetterFiles = [];
+    withdrawalSupportingFiles = [];
     showWithdrawalDialog = true;
     try {
       const res = await fetch(
         `${baseURL}/api/files/withdrawal-details/${encodeURIComponent(fileId)}`,
       );
-      if (!res.ok) throw new Error("Could not fetch details");
-      withdrawalDetails = await res.json();
+      if (!res.ok) {
+        // Keep the existing history record visible while the details endpoint is unavailable.
+        withdrawalDetails = {
+          ...(allApplications.find((history) => history.id === applicationId) ?? {}),
+          fileId,
+        };
+        withdrawalError = null;
+      } else {
+        withdrawalDetails = await res.json();
+      }
     } catch (e) {
       const err = e as Error;
       withdrawalError = err.message || "Error loading details";
@@ -2821,6 +2865,33 @@
       </Dialog.Description>
     </Dialog.Header>
 
+    <form class="mx-4 mt-2 space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+      <div class="flex items-center gap-2 font-semibold text-slate-800">
+        <Icon icon="mdi:clipboard-text-outline" class="text-green-600" />
+        Withdrawal Request Form
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700" for="admin-withdrawal-file-number">File Number</label>
+        <input id="admin-withdrawal-file-number" value={withdrawalFileId} readonly class="mt-1 w-full rounded border bg-gray-100 px-3 py-2 text-gray-700" />
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700" for="admin-withdrawal-letter">Withdrawal Letter <span class="text-red-500">*</span></label>
+        <input id="admin-withdrawal-letter" type="file" accept=".pdf" multiple class="mt-1 block w-full rounded border bg-white px-3 py-2" on:change={(event) => handleWithdrawalFormFiles(event, "letter")} />
+        <p class="mt-1 text-xs text-red-600">Upload your withdrawal letter in PDF format.</p>
+        {#each withdrawalLetterFiles as file}
+          <p class="text-xs text-gray-600">{file.name}</p>
+        {/each}
+      </div>
+      <div>
+        <label class="block text-sm font-semibold text-gray-700" for="admin-withdrawal-supporting">Supporting Documents <span class="text-red-500">*</span></label>
+        <input id="admin-withdrawal-supporting" type="file" accept=".pdf,.jpeg,.jpg" multiple class="mt-1 block w-full rounded border bg-white px-3 py-2" on:change={(event) => handleWithdrawalFormFiles(event, "supporting")} />
+        <p class="mt-1 text-xs text-red-600">Upload any other supporting documents in PDF or JPEG format.</p>
+        {#each withdrawalSupportingFiles as file}
+          <p class="text-xs text-gray-600">{file.name}</p>
+        {/each}
+      </div>
+    </form>
+
     <div class="flex-1 overflow-auto p-4">
       {#if withdrawalLoading}
         <div class="flex items-center gap-2 text-green-600 py-8 justify-center">
@@ -2865,15 +2936,53 @@
             </div>
           </div>
 
+          <!-- Submitted Withdrawal Form -->
+          <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold">
+              <Icon icon="mdi:clipboard-text-outline" class="text-green-600" />
+              Submitted Withdrawal Form
+            </h3>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <Label class="font-semibold">File Number:</Label>
+                <p class="mt-1 rounded border bg-gray-50 p-2">
+                  {withdrawalDetails.fileId || withdrawalFileId || "N/A"}
+                </p>
+              </div>
+              <div>
+                <Label class="font-semibold">File Type:</Label>
+                <p class="mt-1 rounded border bg-gray-50 p-2">
+                  {withdrawalDetails.fileType || withdrawalDetails.fileTypes || "N/A"}
+                </p>
+              </div>
+              <div>
+                <Label class="font-semibold">Withdrawal Request Date:</Label>
+                <p class="mt-1 rounded border bg-gray-50 p-2">
+                  {withdrawalDetails.withdrawalRequestDate
+                    ? new Date(withdrawalDetails.withdrawalRequestDate).toLocaleString()
+                    : "N/A"}
+                </p>
+              </div>
+              {#if withdrawalDetails.rrr || withdrawalDetails.paymentId}
+                <div>
+                  <Label class="font-semibold">Payment Reference:</Label>
+                  <p class="mt-1 rounded border bg-gray-50 p-2">
+                    {withdrawalDetails.rrr || withdrawalDetails.paymentId}
+                  </p>
+                </div>
+              {/if}
+            </div>
+          </div>
+
           <!-- Withdrawal Letter Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block flex items-center gap-2">
               <Icon icon="mdi:file-document" class="text-green-600" />
               Withdrawal Letter Attachments:
             </Label>
-            {#if withdrawalDetails.withdrawalLetterAttachments && withdrawalDetails.withdrawalLetterAttachments.length}
+            {#if getWithdrawalAttachments(withdrawalDetails, "withdrawalLetterAttachments").length}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {#each withdrawalDetails.withdrawalLetterAttachments as attachment, index}
+                {#each getWithdrawalAttachments(withdrawalDetails, "withdrawalLetterAttachments") as attachment, index}
                   <div
                     class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
@@ -2883,34 +2992,13 @@
                           {attachment.name || `Withdrawal Letter ${index + 1}`}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails
-                            .withdrawalLetterAttachments.length}
+                          Document {index + 1}
                         </div>
                       </div>
                       <div class="flex-shrink-0">
-                        {#if Array.isArray(attachment.url)}
-                          {#each attachment.url as url, urlIndex}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener"
-                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                            >
-                              <Icon
-                                icon="mdi:file-eye"
-                                width="1.2em"
-                                height="1.2em"
-                              />
-                              <span
-                                >View {attachment.url.length > 1
-                                  ? urlIndex + 1
-                                  : ""}</span
-                              >
-                            </a>
-                          {/each}
-                        {:else}
+                        {#if getWithdrawalAttachmentUrl(attachment)}
                           <a
-                            href={attachment.url}
+                            href={getWithdrawalAttachmentUrl(attachment) ?? undefined}
                             target="_blank"
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
@@ -2949,9 +3037,9 @@
               <Icon icon="mdi:file-multiple" class="text-green-600" />
               Supporting Document Attachments:
             </Label>
-            {#if withdrawalDetails.supportingDocumentAttachments && withdrawalDetails.supportingDocumentAttachments.length}
+            {#if getWithdrawalAttachments(withdrawalDetails, "supportingDocumentAttachments").length}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {#each withdrawalDetails.supportingDocumentAttachments as attachment, index}
+                {#each getWithdrawalAttachments(withdrawalDetails, "supportingDocumentAttachments") as attachment, index}
                   <div
                     class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
@@ -2962,34 +3050,13 @@
                             `Supporting Document ${index + 1}`}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails
-                            .supportingDocumentAttachments.length}
+                          Document {index + 1}
                         </div>
                       </div>
                       <div class="flex-shrink-0">
-                        {#if Array.isArray(attachment.url)}
-                          {#each attachment.url as url, urlIndex}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener"
-                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                            >
-                              <Icon
-                                icon="mdi:file-eye"
-                                width="1.2em"
-                                height="1.2em"
-                              />
-                              <span
-                                >View {attachment.url.length > 1
-                                  ? urlIndex + 1
-                                  : ""}</span
-                              >
-                            </a>
-                          {/each}
-                        {:else}
+                        {#if getWithdrawalAttachmentUrl(attachment)}
                           <a
-                            href={attachment.url}
+                            href={getWithdrawalAttachmentUrl(attachment) ?? undefined}
                             target="_blank"
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
@@ -3824,7 +3891,7 @@
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Withdrawal App -->
-                  {#if application.applicationType === FormApplicationTypes.WithdrawalRequest && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
+                  {#if Number(application.applicationType) === FormApplicationTypes.WithdrawalRequest && Number(application.currentStatus) === ApplicationStatuses.RequestWithdrawal}
                     <!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.userRoles)}</pre>`} -->
                     {#if fileData.type === 0 && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                       <DropdownMenu.Item
