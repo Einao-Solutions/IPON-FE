@@ -260,7 +260,7 @@
     }
 
     try {
-      const response = await fetch(`${baseURL}/api/auth/resend-verification`, {
+      const response = await fetch(`${baseURL}/api/auth/ResendVerificationEmail`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: emailToVerify }),

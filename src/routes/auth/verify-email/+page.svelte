@@ -31,7 +31,7 @@
       return;
     }
 
-    const verifyUrl = `${baseURL}/api/auth/verify-email?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+    const verifyUrl = `${baseURL}/api/auth/VerifyEmail?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
 
     try {
       const getResponse = await fetch(verifyUrl, {
