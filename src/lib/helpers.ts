@@ -41,7 +41,7 @@ export type InventorValidator = {
   country: boolean | null;
   city: boolean | null;
   phone: boolean | null;
-  email: boolean | null;
+  email: boolean | null
   address: boolean | null;
 };
 export type DesignCreator = {
@@ -129,8 +129,6 @@ export const PatentSections = [
     name: "priority",
     description: "Priority Info",
     icon: "pepicons-print:letter",
-  },
-  {
     name: "attachments",
     description: "Attachments",
     icon: "teenyicons:attachment-outline",

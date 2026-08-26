@@ -6,8 +6,6 @@
 
   import {
     type ApplicationHistoryType,
-    type OppositionHistoryType,
-    type TreatAppealType,
     ApplicationStatuses,
     baseURL,
     FileTypes,
@@ -16,7 +14,6 @@
     UserRoles,
   } from "$lib/helpers";
   import HistorySheet from "../home/components/HistorySheet.svelte";
-  import { getHistoryData, getLetterName } from "./datahelpers";
   import { toast } from "svelte-sonner";
   import { Toaster } from "$lib/components/ui/sonner";
   import CorrespondenceComparison from "../updatesmade/CorrespondenceComparison.svelte";
@@ -39,17 +36,10 @@
     applicationData,
     loggedInUser,
     metaDataInfo,
-    newApplicationType,
     viewUpdatesMade,
   } from "$lib/store";
-  import { get } from "svelte/store";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { mapStatusStringToStatus } from "$lib/designutils";
-  import { Item } from "$lib/components/ui/accordion";
-  import DropdownMenuItem from "$lib/components/ui/dropdown-menu/dropdown-menu-item.svelte";
-  import OppositionHistory from "./OppositionHistory.svelte";
-  import DialogContent from "$lib/components/ui/dialog/dialog-content.svelte";
-  import { useAnimation } from "svelte-motion";
   import PatentAssignmentDialog from "./Components/PatentAssignmentDialog.svelte";
   import PatentLicenseDialog from "./Components/PatentLicenseDialog.svelte";
   import DesignLicenseDialog from "./Components/DesignLicenseDialog.svelte";
@@ -96,14 +86,11 @@
   let status = "";
   let validateRRR = "";
   let paymentDescription = "";
-  let show_updating: boolean = false;
   let manualUpdate: ApplicationHistoryType | null = null;
   let showManualUpdate = false;
   let updateCert = false;
-  let showCancel = false;
   let reason = "";
   let isCertificate = false;
-  let possibleOptions = [];
 
   // Publication Status Update
   let showPublicationDialog = false;
@@ -131,6 +118,17 @@
   let withdrawalSubmitting = false;
   let withdrawalFileId = "";
   let withdrawalApplicationId = "";
+  let withdrawalLetterFiles: File[] = [];
+  let withdrawalSupportingFiles: File[] = [];
+
+  function handleWithdrawalFormFiles(event: Event, type: "letter" | "supporting") {
+    const files = Array.from((event.currentTarget as HTMLInputElement).files ?? []);
+    if (type === "letter") {
+      withdrawalLetterFiles = [...withdrawalLetterFiles, ...files];
+    } else {
+      withdrawalSupportingFiles = [...withdrawalSupportingFiles, ...files];
+    }
+  }
 
   // Patent Assignment Modal State
   let showPatentAssignmentDialog = false;
@@ -228,11 +226,6 @@
   // Appeal Requests
   let appealDocs: string[] = [];
   let showAppealRequest = false;
-  let appeal: TreatAppealType = {
-    id: "",
-    reason: null,
-    IsTreated: false,
-  };
   const name = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
   // let appealReason = '';
   // let submittingAppeal = false;
@@ -263,7 +256,7 @@
       if (/^[A-Za-z0-9+/=\r\n]+$/.test(text) && text.length > 100) {
         return `data:application/pdf;base64,${text}`;
       }
-      return text;
+      return `${baseURL.replace(/\/$/, "")}/${text.replace(/^\//, "")}`;
     }
     if (typeof value === "object") {
       const directUrl =
@@ -280,6 +273,44 @@
       if (typeof dataValue === "string") return normalizeAttachmentUrl(dataValue);
     }
     return null;
+  }
+
+  function getWithdrawalAttachmentUrl(attachment: any): string | null {
+    if (Array.isArray(attachment?.url)) return null;
+    return normalizeAttachmentUrl(
+      attachment?.url ??
+        attachment?.fileUrl ??
+        attachment?.documentUrl ??
+        attachment?.attachmentUrl ??
+        attachment?.content ??
+        attachment?.data ??
+        attachment,
+    );
+  }
+
+  function getWithdrawalAttachments(details: any, field: string): any[] {
+    const fieldAliases: Record<string, string[]> = {
+      withdrawalLetterAttachments: [
+        "withdrawalLetterAttachments",
+        "withdrawalLetter",
+        "WithdrawalLetter",
+      ],
+      supportingDocumentAttachments: [
+        "supportingDocumentAttachments",
+        "supportingDocuments",
+        "SupportingDocuments",
+        "withdrawalSupportingDocuments",
+      ],
+    };
+    const attachments = (fieldAliases[field] ?? [field])
+      .map((name) => details?.[name])
+      .find((value) => Array.isArray(value));
+    if (!Array.isArray(attachments)) return [];
+    return attachments.flatMap((attachment: any) =>
+      Array.isArray(attachment?.url)
+        ? attachment.url.map((url: string) => ({ ...attachment, url }))
+        : [attachment],
+    );
   }
 
   function getAssignmentAttachmentEntries(data: any): Array<{ label: string; url: string }> {
@@ -381,13 +412,6 @@
     return tableFields.includes(selectedApplication?.fieldToChange ?? "")
       ? "table"
       : selectedApplication?.fieldToChange || "";
-  }
-
-  function showTreatApplication(application: ApplicationHistoryType) {
-    return (
-      application?.currentStatus != null &&
-      [0, 1].includes(application.currentStatus) == false
-    );
   }
 
   // ======================
@@ -639,6 +663,38 @@
   // ======================
   // Payment Functions
   // ======================
+  function clearPaymentDetails() {
+    amount = "";
+    paymentDate = "";
+    status = "";
+    paymentDescription = "";
+  }
+
+  function resetPaymentActions() {
+    showManualUpdate = false;
+    updateCert = false;
+  }
+
+  function setPaymentActionsForStatus(
+    application: ApplicationHistoryType,
+    paymentStatus: string,
+  ) {
+    resetPaymentActions();
+    if (paymentStatus !== "00") return;
+
+    if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
+      showManualUpdate = true;
+      return;
+    }
+
+    if (
+      application.currentStatus === ApplicationStatuses.AwaitingCertification ||
+      application.currentStatus === ApplicationStatuses.Publication
+    ) {
+      updateCert = true;
+    }
+  }
+
   async function checkPayment(
     application: ApplicationHistoryType,
     id: string | null,
@@ -648,9 +704,6 @@
       return;
     }
 
-    isCertificate =
-      fileData.applicationHistory[0].certificatePaymentId === id ||
-      application.applicationType === FormApplicationTypes.Certification;
     isCertificate =
       fileData.applicationHistory[0].certificatePaymentId === id ||
       application.applicationType === FormApplicationTypes.Certification;
@@ -667,13 +720,8 @@
       if (!text) {
         showToast("error", "No payment information returned");
         remita_confirmation = "verify_update";
-        amount = "";
-        paymentDate = "";
-        status = "";
-        paymentDescription = "";
-        showManualUpdate = false;
-        updateCert = false;
-        showCancel = true;
+        clearPaymentDetails();
+        resetPaymentActions();
         return;
       }
 
@@ -683,13 +731,8 @@
       } catch {
         showToast("error", "Invalid response from payment service");
         remita_confirmation = "verify_update";
-        amount = "";
-        paymentDate = "";
-        status = "";
-        paymentDescription = "";
-        showManualUpdate = false;
-        updateCert = false;
-        showCancel = true;
+        clearPaymentDetails();
+        resetPaymentActions();
         return;
       }
 
@@ -700,28 +743,7 @@
         paymentDesc: paymentDescription,
       } = result);
       remita_confirmation = "verify_update";
-
-      if (status === "00") {
-        if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
-          showManualUpdate = true;
-          updateCert = false;
-        } else if (
-          application.currentStatus ===
-            ApplicationStatuses.AwaitingCertification ||
-          application.currentStatus === ApplicationStatuses.Publication
-        ) {
-          updateCert = true;
-          showManualUpdate = false;
-        } else {
-          showManualUpdate = false;
-          updateCert = false;
-        }
-      } else {
-        showManualUpdate = false;
-        updateCert = false;
-      }
-      showCancel = !(showManualUpdate || updateCert);
-      showCancel = !updateCert;
+      setPaymentActionsForStatus(application, status);
     } catch (error) {
       console.error("Payment check error:", error);
       showToast("error", "Failed to verify payment");
@@ -795,14 +817,12 @@
     application: ApplicationHistoryType,
     appType: number,
     letterType: number,
-    useFileId = false,
   ) {
     if (application.applicationType !== appType) {
       showMissingDetailsForm();
       return;
     }
 
-    const fileIdProp = useFileId ? "fileId" : "id";
     window.open(
       `${baseURL}/api/letters/generate?fileId=${fileData.fileId}&letterType=${letterType}&applicationId=${application.id}`,
     );
@@ -812,7 +832,7 @@
   const recordalCertificate = (app: ApplicationHistoryType) =>
     generateLetter(app, 8, 10);
   const certificate = (app: ApplicationHistoryType) =>
-    generateLetter(app, 0, 3, true);
+    generateLetter(app, 0, 3);
   const recordalAck = (app: ApplicationHistoryType) =>
     generateLetter(app, 2, 9);
   const renewalAcknowledgement = (app: ApplicationHistoryType) =>
@@ -822,33 +842,33 @@
   const regUserAcknowledgement = (app: ApplicationHistoryType) =>
     generateLetter(app, 7, 29);
   const assignmentAck = (app: ApplicationHistoryType) =>
-    generateLetter(app, 5, 12, true);
+    generateLetter(app, 5, 12);
   const changeNameAck = (app: ApplicationHistoryType) =>
     generateLetter(app, 9, 32);
   const changeNameReceipt = (app: ApplicationHistoryType) =>
     generateLetter(app, 9, 34);
   const changeAddressAck = (app: ApplicationHistoryType) =>
-    generateLetter(app, 10, 31, true);
+    generateLetter(app, 10, 31);
   const changeAddressReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 10, 33, true);
+    generateLetter(app, 10, 33);
   const mergerReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 8, 25, true);
+    generateLetter(app, 8, 25);
   const regUsersReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 7, 28, true);
+    generateLetter(app, 7, 28);
   const renewalReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 1, 5, true);
+    generateLetter(app, 1, 5);
   const assignmentReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 5, 11, true);
+    generateLetter(app, 5, 11);
   const clericalUpdateReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 11, 35, true);
+    generateLetter(app, 11, 35);
   const newTradeReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 0, 37, true);
+    generateLetter(app, 0, 37);
   const clericalUpdateAck = (app: ApplicationHistoryType) =>
-    generateLetter(app, 11, 36, true);
+    generateLetter(app, 11, 36);
   const renewalCertificate = (app: ApplicationHistoryType) =>
-    generateLetter(app, 1, 7, true);
+    generateLetter(app, 1, 7);
   const certAcknowledgement = (app: ApplicationHistoryType) =>
-    generateLetter(app, 0, 21, true);
+    generateLetter(app, 0, 21);
 
   // ======================
   // Recordal Functions
@@ -1189,23 +1209,6 @@
   // Status Management
   // ======================
   function changeStatus(application: ApplicationHistoryType) {
-    selectedApplication = application;
-    showUpdateStatusForm = true;
-  }
-
-  function showTreatDialog(application: ApplicationHistoryType) {
-    if (application.currentStatus == ApplicationStatuses.AwaitingSearch) {
-      possibleOptions = [
-        ApplicationStatuses.AwaitingExaminer,
-        ApplicationStatuses.FormalityFail,
-      ];
-    }
-    if (application.currentStatus == ApplicationStatuses.AwaitingExaminer) {
-      possibleOptions = [
-        ApplicationStatuses.Active,
-        ApplicationStatuses.Rejected,
-      ];
-    }
     selectedApplication = application;
     showUpdateStatusForm = true;
   }
@@ -1604,13 +1607,23 @@
     withdrawalComment = "";
     withdrawalFileId = fileId;
     withdrawalApplicationId = applicationId;
+    withdrawalLetterFiles = [];
+    withdrawalSupportingFiles = [];
     showWithdrawalDialog = true;
     try {
       const res = await fetch(
         `${baseURL}/api/files/withdrawal-details/${encodeURIComponent(fileId)}`,
       );
-      if (!res.ok) throw new Error("Could not fetch details");
-      withdrawalDetails = await res.json();
+      if (!res.ok) {
+        // Keep the existing history record visible while the details endpoint is unavailable.
+        withdrawalDetails = {
+          ...(allApplications.find((history) => history.id === applicationId) ?? {}),
+          fileId,
+        };
+        withdrawalError = null;
+      } else {
+        withdrawalDetails = await res.json();
+      }
     } catch (e) {
       const err = e as Error;
       withdrawalError = err.message || "Error loading details";
@@ -1652,16 +1665,37 @@
     }
   }
 
+  type DialogStateSetter = {
+    setFileId: (value: string) => void;
+    setApplicationId: (value: string) => void;
+    setStatus: (value: number | null) => void;
+    setOpen: (value: boolean) => void;
+  };
+
+  function openStatusDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+    setters: DialogStateSetter,
+  ) {
+    setters.setFileId(fileId);
+    setters.setApplicationId(applicationId);
+    setters.setStatus(status);
+    setters.setOpen(true);
+  }
+
   // Open patent assignment dialog
   function openPatentAssignmentDialog(
     fileId: string,
     applicationId: string,
     status: number,
   ) {
-    patentAssignmentFileId = fileId;
-    patentAssignmentApplicationId = applicationId;
-    patentAssignmentStatus = status;
-    showPatentAssignmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentAssignmentFileId = value),
+      setApplicationId: (value) => (patentAssignmentApplicationId = value),
+      setStatus: (value) => (patentAssignmentStatus = value),
+      setOpen: (value) => (showPatentAssignmentDialog = value),
+    });
   }
 
   // Open patent license dialog
@@ -1670,10 +1704,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentLicenseFileId = fileId;
-    patentLicenseApplicationId = applicationId;
-    patentLicenseStatus = status;
-    showPatentLicenseDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentLicenseFileId = value),
+      setApplicationId: (value) => (patentLicenseApplicationId = value),
+      setStatus: (value) => (patentLicenseStatus = value),
+      setOpen: (value) => (showPatentLicenseDialog = value),
+    });
   }
 
   // Open design license dialog
@@ -1682,10 +1718,12 @@
     applicationId: string,
     status: number,
   ) {
-    designLicenseFileId = fileId;
-    designLicenseApplicationId = applicationId;
-    designLicenseStatus = status;
-    showDesignLicenseDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designLicenseFileId = value),
+      setApplicationId: (value) => (designLicenseApplicationId = value),
+      setStatus: (value) => (designLicenseStatus = value),
+      setOpen: (value) => (showDesignLicenseDialog = value),
+    });
   }
 
   // Open patent merger dialog
@@ -1694,10 +1732,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentMergerFileId = fileId;
-    patentMergerApplicationId = applicationId;
-    patentMergerStatus = status;
-    showPatentMergerDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentMergerFileId = value),
+      setApplicationId: (value) => (patentMergerApplicationId = value),
+      setStatus: (value) => (patentMergerStatus = value),
+      setOpen: (value) => (showPatentMergerDialog = value),
+    });
   }
 
   // Open design merger dialog
@@ -1706,10 +1746,12 @@
     applicationId: string,
     status: number,
   ) {
-    designMergerFileId = fileId;
-    designMergerApplicationId = applicationId;
-    designMergerStatus = status;
-    showDesignMergerDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designMergerFileId = value),
+      setApplicationId: (value) => (designMergerApplicationId = value),
+      setStatus: (value) => (designMergerStatus = value),
+      setOpen: (value) => (showDesignMergerDialog = value),
+    });
   }
 
   // Open patent mortgage dialog
@@ -1718,10 +1760,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentMortgageFileId = fileId;
-    patentMortgageApplicationId = applicationId;
-    patentMortgageStatus = status;
-    showPatentMortgageDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentMortgageFileId = value),
+      setApplicationId: (value) => (patentMortgageApplicationId = value),
+      setStatus: (value) => (patentMortgageStatus = value),
+      setOpen: (value) => (showPatentMortgageDialog = value),
+    });
   }
 
   // Open design assignment dialog
@@ -1730,10 +1774,12 @@
     applicationId: string,
     status: number,
   ) {
-    designAssignmentFileId = fileId;
-    designAssignmentApplicationId = applicationId;
-    designAssignmentStatus = status;
-    showDesignAssignmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designAssignmentFileId = value),
+      setApplicationId: (value) => (designAssignmentApplicationId = value),
+      setStatus: (value) => (designAssignmentStatus = value),
+      setOpen: (value) => (showDesignAssignmentDialog = value),
+    });
   }
 
   // Open design mortgage dialog
@@ -1742,10 +1788,12 @@
     applicationId: string,
     status: number,
   ) {
-    designMortgageFileId = fileId;
-    designMortgageApplicationId = applicationId;
-    designMortgageStatus = status;
-    showDesignMortgageDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designMortgageFileId = value),
+      setApplicationId: (value) => (designMortgageApplicationId = value),
+      setStatus: (value) => (designMortgageStatus = value),
+      setOpen: (value) => (showDesignMortgageDialog = value),
+    });
   }
 
   // Open design CTC dialog
@@ -1754,10 +1802,12 @@
     applicationId: string,
     status: number,
   ) {
-    designCTCFileId = fileId;
-    designCTCApplicationId = applicationId;
-    designCTCStatus = status;
-    showDesignCTCDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designCTCFileId = value),
+      setApplicationId: (value) => (designCTCApplicationId = value),
+      setStatus: (value) => (designCTCStatus = value),
+      setOpen: (value) => (showDesignCTCDialog = value),
+    });
   }
 
   // Open patent CTC dialog
@@ -1766,10 +1816,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentCTCFileId = fileId;
-    patentCTCApplicationId = applicationId;
-    patentCTCStatus = status;
-    showPatentCTCDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentCTCFileId = value),
+      setApplicationId: (value) => (patentCTCApplicationId = value),
+      setStatus: (value) => (patentCTCStatus = value),
+      setOpen: (value) => (showPatentCTCDialog = value),
+    });
   }
 
   // Open trademark CTC dialog
@@ -1778,10 +1830,12 @@
     applicationId: string,
     status: number,
   ) {
-    trademarkCTCFileId = fileId;
-    trademarkCTCApplicationId = applicationId;
-    trademarkCTCStatus = status;
-    showTrademarkCTCDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (trademarkCTCFileId = value),
+      setApplicationId: (value) => (trademarkCTCApplicationId = value),
+      setStatus: (value) => (trademarkCTCStatus = value),
+      setOpen: (value) => (showTrademarkCTCDialog = value),
+    });
   }
 
   function openOfflineRenewalDialog(applicationId: string, status: number) {
@@ -1796,10 +1850,12 @@
     applicationId: string,
     status: number,
   ) {
-    designAmendmentFileId = fileId;
-    designAmendmentApplicationId = applicationId;
-    designAmendmentStatus = status;
-    showDesignAmendmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designAmendmentFileId = value),
+      setApplicationId: (value) => (designAmendmentApplicationId = value),
+      setStatus: (value) => (designAmendmentStatus = value),
+      setOpen: (value) => (showDesignAmendmentDialog = value),
+    });
   }
 
   // Open patent amendment dialog
@@ -1808,10 +1864,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentAmendmentFileId = fileId;
-    patentAmendmentApplicationId = applicationId;
-    patentAmendmentStatus = status;
-    showPatentAmendmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentAmendmentFileId = value),
+      setApplicationId: (value) => (patentAmendmentApplicationId = value),
+      setStatus: (value) => (patentAmendmentStatus = value),
+      setOpen: (value) => (showPatentAmendmentDialog = value),
+    });
   }
 </script>
 
@@ -2865,15 +2923,53 @@
             </div>
           </div>
 
+          <!-- Submitted Withdrawal Form -->
+          <div class="rounded-lg border border-slate-200 bg-white p-4">
+            <h3 class="mb-3 flex items-center gap-2 text-lg font-semibold">
+              <Icon icon="mdi:clipboard-text-outline" class="text-green-600" />
+              Submitted Withdrawal Form
+            </h3>
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div>
+                <Label class="font-semibold">File Number:</Label>
+                <p class="mt-1 rounded border bg-gray-50 p-2">
+                  {withdrawalDetails.fileId || withdrawalFileId || "N/A"}
+                </p>
+              </div>
+              <div>
+                <Label class="font-semibold">File Type:</Label>
+                <p class="mt-1 rounded border bg-gray-50 p-2">
+                  {withdrawalDetails.fileType || withdrawalDetails.fileTypes || "N/A"}
+                </p>
+              </div>
+              <div>
+                <Label class="font-semibold">Withdrawal Request Date:</Label>
+                <p class="mt-1 rounded border bg-gray-50 p-2">
+                  {withdrawalDetails.withdrawalRequestDate
+                    ? new Date(withdrawalDetails.withdrawalRequestDate).toLocaleString()
+                    : "N/A"}
+                </p>
+              </div>
+              {#if withdrawalDetails.rrr || withdrawalDetails.paymentId}
+                <div>
+                  <Label class="font-semibold">Payment Reference:</Label>
+                  <p class="mt-1 rounded border bg-gray-50 p-2">
+                    {withdrawalDetails.rrr || withdrawalDetails.paymentId}
+                  </p>
+                </div>
+              {/if}
+            </div>
+          </div>
+
           <!-- Withdrawal Letter Attachments -->
           <div class="mb-6">
             <Label class="font-semibold mb-3 block flex items-center gap-2">
               <Icon icon="mdi:file-document" class="text-green-600" />
               Withdrawal Letter Attachments:
             </Label>
-            {#if withdrawalDetails.withdrawalLetterAttachments && withdrawalDetails.withdrawalLetterAttachments.length}
+            {#if getWithdrawalAttachments(withdrawalDetails, "withdrawalLetterAttachments").length}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {#each withdrawalDetails.withdrawalLetterAttachments as attachment, index}
+                {#each getWithdrawalAttachments(withdrawalDetails, "withdrawalLetterAttachments") as attachment, index}
                   <div
                     class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
@@ -2883,34 +2979,13 @@
                           {attachment.name || `Withdrawal Letter ${index + 1}`}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails
-                            .withdrawalLetterAttachments.length}
+                          Document {index + 1}
                         </div>
                       </div>
                       <div class="flex-shrink-0">
-                        {#if Array.isArray(attachment.url)}
-                          {#each attachment.url as url, urlIndex}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener"
-                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                            >
-                              <Icon
-                                icon="mdi:file-eye"
-                                width="1.2em"
-                                height="1.2em"
-                              />
-                              <span
-                                >View {attachment.url.length > 1
-                                  ? urlIndex + 1
-                                  : ""}</span
-                              >
-                            </a>
-                          {/each}
-                        {:else}
+                        {#if getWithdrawalAttachmentUrl(attachment)}
                           <a
-                            href={attachment.url}
+                            href={getWithdrawalAttachmentUrl(attachment) ?? undefined}
                             target="_blank"
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
@@ -2949,9 +3024,9 @@
               <Icon icon="mdi:file-multiple" class="text-green-600" />
               Supporting Document Attachments:
             </Label>
-            {#if withdrawalDetails.supportingDocumentAttachments && withdrawalDetails.supportingDocumentAttachments.length}
+            {#if getWithdrawalAttachments(withdrawalDetails, "supportingDocumentAttachments").length}
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {#each withdrawalDetails.supportingDocumentAttachments as attachment, index}
+                {#each getWithdrawalAttachments(withdrawalDetails, "supportingDocumentAttachments") as attachment, index}
                   <div
                     class="border rounded-lg p-3 bg-gray-100 hover:bg-gray-200 transition-colors"
                   >
@@ -2962,34 +3037,13 @@
                             `Supporting Document ${index + 1}`}
                         </div>
                         <div class="text-xs text-gray-500 mt-1">
-                          Document {index + 1} of {withdrawalDetails
-                            .supportingDocumentAttachments.length}
+                          Document {index + 1}
                         </div>
                       </div>
                       <div class="flex-shrink-0">
-                        {#if Array.isArray(attachment.url)}
-                          {#each attachment.url as url, urlIndex}
-                            <a
-                              href={url}
-                              target="_blank"
-                              rel="noopener"
-                              class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
-                            >
-                              <Icon
-                                icon="mdi:file-eye"
-                                width="1.2em"
-                                height="1.2em"
-                              />
-                              <span
-                                >View {attachment.url.length > 1
-                                  ? urlIndex + 1
-                                  : ""}</span
-                              >
-                            </a>
-                          {/each}
-                        {:else}
+                        {#if getWithdrawalAttachmentUrl(attachment)}
                           <a
-                            href={attachment.url}
+                            href={getWithdrawalAttachmentUrl(attachment) ?? undefined}
                             target="_blank"
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
@@ -3605,7 +3659,7 @@
                     >
                   {/if}
                   <!-- Change Status (Admin only) -->
-                  {#if application.applicationType === FormApplicationTypes.NewApplication}
+                  <!-- {#if application.applicationType === FormApplicationTypes.NewApplication}
                     {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
                       <DropdownMenu.Item
                         on:click={() => changeStatus(application)}
@@ -3613,7 +3667,7 @@
                       >
                       <DropdownMenu.Separator />
                     {/if}
-                  {/if}
+                  {/if} -->
                   <!-- Data Update Application -->
                   {#if application.applicationType === 2}
                     <DropdownMenu.Item
@@ -3623,14 +3677,14 @@
                     >
                   {/if}
                   <!-- verify payments -->
-                  {#if application.paymentId !== null && application.paymentId !== "Free"}
+                  <!-- {#if application.paymentId !== null && application.paymentId !== "Free"}
                     <DropdownMenu.Item
                       on:click={async () =>
                         await checkPayment(application, application.paymentId)}
                       >Verify Payment ({application.paymentId ??
                         "-"})</DropdownMenu.Item
                     >
-                  {/if}
+                  {/if} -->
                   <!-- View Recordal Data (Trademarks Only) -->
                   {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType ?? -1))}
                     <DropdownMenu.Item
@@ -3795,17 +3849,6 @@
                       View Application
                     </DropdownMenu.Item>
                   {/if} -->
-                  <!-- Verify new app payment -->
-                  {#if application.applicationType === FormApplicationTypes.NewApplication && application.certificatePaymentId != null}
-                    <DropdownMenu.Item
-                      on:click={async () =>
-                        await checkPayment(
-                          application,
-                          application.certificatePaymentId ?? null,
-                        )}
-                      >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item
-                    >
-                  {/if}
                   <!-- Appeal Request -->
                   {#if application.applicationType === FormApplicationTypes.AppealRequest}
                     <DropdownMenu.Item
@@ -3824,7 +3867,7 @@
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Withdrawal App -->
-                  {#if application.applicationType === FormApplicationTypes.WithdrawalRequest && application.currentStatus === ApplicationStatuses.RequestWithdrawal}
+                  {#if Number(application.applicationType) === FormApplicationTypes.WithdrawalRequest && Number(application.currentStatus) === ApplicationStatuses.RequestWithdrawal}
                     <!-- {@html `<pre>fileData.type: ${fileData.type}, roles: ${JSON.stringify($loggedInUser?.userRoles)}</pre>`} -->
                     {#if fileData.type === 0 && ($loggedInUser?.userRoles?.includes(UserRoles.PatentExaminer) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                       <DropdownMenu.Item

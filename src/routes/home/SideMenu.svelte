@@ -34,7 +34,7 @@
   let journalSelectedYear: number;
   let journalAllYears: number[] = Array(journalCurrentYear + 1 - 2020)
     .fill(0)
-    .map((_, i) => 2020 + i);
+    .map((_, i) => journalCurrentYear - i);
 
   type PublicationJournal = {
     id?: string | number;
@@ -171,11 +171,11 @@
             UserRoles.User,
           ],
         },
-        {
-          icon: "mdi:file-document-multiple-outline",
-          name: "Publications",
-          location: "trademarkpubs/publish",
-        },
+        // {
+        //   icon: "mdi:file-document-multiple-outline",
+        //   name: "Publications",
+        //   location: "trademarkpubs/publish",
+        // },
         // {
         //   icon: "mdi:publish",
         //   name: "Publication list",

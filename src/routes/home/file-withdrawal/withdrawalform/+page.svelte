@@ -10,6 +10,7 @@ let fileType = '';
 let withdrawalLetterFiles: File[] = [];
 let supportingDocsFiles: File[] = [];
 let isSubmitting = false;
+let submitState: 'idle' | 'loading' | 'success' = 'idle';
 let error: string | null = null;
 let success: string | null = null;
 
@@ -49,8 +50,8 @@ async function handleSubmit() {
         return;
     }
     isSubmitting = true;
+    submitState = 'loading';
     try {
-        // Get cost for withdrawal process
         const response = await fetch(
             `${baseURL}/api/files/GetFileWithdrawalCost?fileId=${encodeURIComponent(fileNumber)}&fileType=${fileType}`,
             { method: 'GET' }
@@ -58,39 +59,62 @@ async function handleSubmit() {
 
         if (!response.ok) {
             error = 'Failed to get payment details.';
-            isSubmitting = false;
             return;
         }
+
         const data = await response.json();
         const cost = data?.amount;
         const paymentId = data?.rrr;
 
-        console.log('cost is', cost);
-        console.log('paymentId is', paymentId);
-
-        if (cost && paymentId) {
-            // Convert files to attachment structure
-            console.log('cost is', cost);
-            console.log('paymentId is', paymentId);
-            const withdrawalLetterAttachments = await filesToAttachment("withdrawal_letter", withdrawalLetterFiles);
-            const supportingDocsAttachments = await filesToAttachment("supporting_documents", supportingDocsFiles);
-
-            // Save to sessionStorage
-            sessionStorage.setItem('withdrawalData', JSON.stringify(data));
-            // sessionStorage.setItem('withdrawal_fileNumber', fileNumber);
-            // sessionStorage.setItem('withdrawal_fileType', fileType);
-            // sessionStorage.setItem('withdrawal_cost', cost);
-            // sessionStorage.setItem('withdrawal_rrr', paymentId);
-            // sessionStorage.setItem('withdrawal_withdrawalLetter', JSON.stringify(withdrawalLetterAttachments));
-            // sessionStorage.setItem('withdrawal_supportingDocs', JSON.stringify(supportingDocsAttachments));
-            // sessionStorage.setItem('applicantName', data?.applicantName || '');
-
-            await goto(`/payment?type=filewithdrawal&rrr=${paymentId}&amount=${cost}&fileNumber=${encodeURIComponent(fileNumber)}`);
-        } else {
+        if (!cost || !paymentId) {
             error = 'Could not retrieve payment details.';
+            return;
         }
+
+        const requestForm = new FormData();
+        requestForm.append('FileId', fileNumber);
+        requestForm.append('FileType', fileType);
+        requestForm.append('WithdrawalLetter', withdrawalLetterFiles[0]);
+        supportingDocsFiles.forEach((file) => {
+            requestForm.append('SupportingDocuments', file);
+        });
+
+        const saveResponse = await fetch(`${baseURL}/api/files/WithdrawalRequest`, {
+            method: 'POST',
+            body: requestForm,
+        });
+
+        let saveResult: any = null;
+        try {
+            saveResult = await saveResponse.json();
+        } catch {
+            saveResult = null;
+        }
+
+        if (!saveResponse.ok) {
+            error = saveResult?.message || 'Failed to submit withdrawal request.';
+            return;
+        }
+
+        sessionStorage.setItem(
+            'withdrawalData',
+            JSON.stringify({
+                ...data,
+                fileId: fileNumber,
+                fileType,
+                applicantName: data?.applicantName || '',
+            }),
+        );
+
+        success = 'Withdrawal request submitted successfully.';
+        submitState = 'success';
+        setTimeout(() => {
+            goto(`/payment?type=filewithdrawal&rrr=${encodeURIComponent(paymentId)}&amount=${encodeURIComponent(cost)}&fileNumber=${encodeURIComponent(fileNumber)}`);
+        }, 1200);
     } catch (e) {
-        error = 'An error occurred while submitting.';
+        const message = e instanceof Error ? e.message : 'An error occurred while submitting.';
+        error = message;
+        submitState = 'idle';
     } finally {
         isSubmitting = false;
     }
@@ -194,18 +218,23 @@ async function handleSubmit() {
             {/if}
         </div>
         {#if error}
-            <div class="mb-2 text-red-600 text-sm text-center">{error}</div>
+            <div class="mb-2 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-red-700 text-sm text-center">{error}</div>
         {/if}
         {#if success}
-            <div class="mb-2 text-green-800 text-sm text-center">{success}</div>
+            <div class="mb-3 flex items-center justify-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-3 text-sm font-medium text-green-800 shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-green-600" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-7.5 7.5a1 1 0 01-1.414 0l-3.5-3.5a1 1 0 111.414-1.414L8.5 11.586l6.793-6.793a1 1 0 011.414 0z" clip-rule="evenodd" />
+                </svg>
+                <span>{success}</span>
+            </div>
         {/if}
         <div class="flex">
             <button
                 type="submit"
-                class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold text-base hover:bg-red-700 transition"
-                disabled={isSubmitting}
+                class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold text-base hover:bg-red-700 transition disabled:cursor-not-allowed disabled:opacity-70"
+                disabled={isSubmitting || submitState === 'success'}
             >
-                {isSubmitting ? 'Submitting...' : 'Submit'}
+                {submitState === 'loading' ? 'Submitting...' : submitState === 'success' ? 'Submitted' : 'Submit'}
             </button>
         </div>
     </form>
