@@ -6,8 +6,6 @@
 
   import {
     type ApplicationHistoryType,
-    type OppositionHistoryType,
-    type TreatAppealType,
     ApplicationStatuses,
     baseURL,
     FileTypes,
@@ -16,7 +14,6 @@
     UserRoles,
   } from "$lib/helpers";
   import HistorySheet from "../home/components/HistorySheet.svelte";
-  import { getHistoryData, getLetterName } from "./datahelpers";
   import { toast } from "svelte-sonner";
   import { Toaster } from "$lib/components/ui/sonner";
   import CorrespondenceComparison from "../updatesmade/CorrespondenceComparison.svelte";
@@ -39,17 +36,10 @@
     applicationData,
     loggedInUser,
     metaDataInfo,
-    newApplicationType,
     viewUpdatesMade,
   } from "$lib/store";
-  import { get } from "svelte/store";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { mapStatusStringToStatus } from "$lib/designutils";
-  import { Item } from "$lib/components/ui/accordion";
-  import DropdownMenuItem from "$lib/components/ui/dropdown-menu/dropdown-menu-item.svelte";
-  import OppositionHistory from "./OppositionHistory.svelte";
-  import DialogContent from "$lib/components/ui/dialog/dialog-content.svelte";
-  import { useAnimation } from "svelte-motion";
   import PatentAssignmentDialog from "./Components/PatentAssignmentDialog.svelte";
   import PatentLicenseDialog from "./Components/PatentLicenseDialog.svelte";
   import DesignLicenseDialog from "./Components/DesignLicenseDialog.svelte";
@@ -96,14 +86,11 @@
   let status = "";
   let validateRRR = "";
   let paymentDescription = "";
-  let show_updating: boolean = false;
   let manualUpdate: ApplicationHistoryType | null = null;
   let showManualUpdate = false;
   let updateCert = false;
-  let showCancel = false;
   let reason = "";
   let isCertificate = false;
-  let possibleOptions = [];
 
   // Publication Status Update
   let showPublicationDialog = false;
@@ -239,11 +226,6 @@
   // Appeal Requests
   let appealDocs: string[] = [];
   let showAppealRequest = false;
-  let appeal: TreatAppealType = {
-    id: "",
-    reason: null,
-    IsTreated: false,
-  };
   const name = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
   // let appealReason = '';
   // let submittingAppeal = false;
@@ -430,13 +412,6 @@
     return tableFields.includes(selectedApplication?.fieldToChange ?? "")
       ? "table"
       : selectedApplication?.fieldToChange || "";
-  }
-
-  function showTreatApplication(application: ApplicationHistoryType) {
-    return (
-      application?.currentStatus != null &&
-      [0, 1].includes(application.currentStatus) == false
-    );
   }
 
   // ======================
@@ -688,6 +663,38 @@
   // ======================
   // Payment Functions
   // ======================
+  function clearPaymentDetails() {
+    amount = "";
+    paymentDate = "";
+    status = "";
+    paymentDescription = "";
+  }
+
+  function resetPaymentActions() {
+    showManualUpdate = false;
+    updateCert = false;
+  }
+
+  function setPaymentActionsForStatus(
+    application: ApplicationHistoryType,
+    paymentStatus: string,
+  ) {
+    resetPaymentActions();
+    if (paymentStatus !== "00") return;
+
+    if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
+      showManualUpdate = true;
+      return;
+    }
+
+    if (
+      application.currentStatus === ApplicationStatuses.AwaitingCertification ||
+      application.currentStatus === ApplicationStatuses.Publication
+    ) {
+      updateCert = true;
+    }
+  }
+
   async function checkPayment(
     application: ApplicationHistoryType,
     id: string | null,
@@ -697,9 +704,6 @@
       return;
     }
 
-    isCertificate =
-      fileData.applicationHistory[0].certificatePaymentId === id ||
-      application.applicationType === FormApplicationTypes.Certification;
     isCertificate =
       fileData.applicationHistory[0].certificatePaymentId === id ||
       application.applicationType === FormApplicationTypes.Certification;
@@ -716,13 +720,8 @@
       if (!text) {
         showToast("error", "No payment information returned");
         remita_confirmation = "verify_update";
-        amount = "";
-        paymentDate = "";
-        status = "";
-        paymentDescription = "";
-        showManualUpdate = false;
-        updateCert = false;
-        showCancel = true;
+        clearPaymentDetails();
+        resetPaymentActions();
         return;
       }
 
@@ -732,13 +731,8 @@
       } catch {
         showToast("error", "Invalid response from payment service");
         remita_confirmation = "verify_update";
-        amount = "";
-        paymentDate = "";
-        status = "";
-        paymentDescription = "";
-        showManualUpdate = false;
-        updateCert = false;
-        showCancel = true;
+        clearPaymentDetails();
+        resetPaymentActions();
         return;
       }
 
@@ -749,28 +743,7 @@
         paymentDesc: paymentDescription,
       } = result);
       remita_confirmation = "verify_update";
-
-      if (status === "00") {
-        if (application.currentStatus === ApplicationStatuses.AwaitingPayment) {
-          showManualUpdate = true;
-          updateCert = false;
-        } else if (
-          application.currentStatus ===
-            ApplicationStatuses.AwaitingCertification ||
-          application.currentStatus === ApplicationStatuses.Publication
-        ) {
-          updateCert = true;
-          showManualUpdate = false;
-        } else {
-          showManualUpdate = false;
-          updateCert = false;
-        }
-      } else {
-        showManualUpdate = false;
-        updateCert = false;
-      }
-      showCancel = !(showManualUpdate || updateCert);
-      showCancel = !updateCert;
+      setPaymentActionsForStatus(application, status);
     } catch (error) {
       console.error("Payment check error:", error);
       showToast("error", "Failed to verify payment");
@@ -844,14 +817,12 @@
     application: ApplicationHistoryType,
     appType: number,
     letterType: number,
-    useFileId = false,
   ) {
     if (application.applicationType !== appType) {
       showMissingDetailsForm();
       return;
     }
 
-    const fileIdProp = useFileId ? "fileId" : "id";
     window.open(
       `${baseURL}/api/letters/generate?fileId=${fileData.fileId}&letterType=${letterType}&applicationId=${application.id}`,
     );
@@ -861,7 +832,7 @@
   const recordalCertificate = (app: ApplicationHistoryType) =>
     generateLetter(app, 8, 10);
   const certificate = (app: ApplicationHistoryType) =>
-    generateLetter(app, 0, 3, true);
+    generateLetter(app, 0, 3);
   const recordalAck = (app: ApplicationHistoryType) =>
     generateLetter(app, 2, 9);
   const renewalAcknowledgement = (app: ApplicationHistoryType) =>
@@ -871,33 +842,33 @@
   const regUserAcknowledgement = (app: ApplicationHistoryType) =>
     generateLetter(app, 7, 29);
   const assignmentAck = (app: ApplicationHistoryType) =>
-    generateLetter(app, 5, 12, true);
+    generateLetter(app, 5, 12);
   const changeNameAck = (app: ApplicationHistoryType) =>
     generateLetter(app, 9, 32);
   const changeNameReceipt = (app: ApplicationHistoryType) =>
     generateLetter(app, 9, 34);
   const changeAddressAck = (app: ApplicationHistoryType) =>
-    generateLetter(app, 10, 31, true);
+    generateLetter(app, 10, 31);
   const changeAddressReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 10, 33, true);
+    generateLetter(app, 10, 33);
   const mergerReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 8, 25, true);
+    generateLetter(app, 8, 25);
   const regUsersReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 7, 28, true);
+    generateLetter(app, 7, 28);
   const renewalReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 1, 5, true);
+    generateLetter(app, 1, 5);
   const assignmentReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 5, 11, true);
+    generateLetter(app, 5, 11);
   const clericalUpdateReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 11, 35, true);
+    generateLetter(app, 11, 35);
   const newTradeReceipt = (app: ApplicationHistoryType) =>
-    generateLetter(app, 0, 37, true);
+    generateLetter(app, 0, 37);
   const clericalUpdateAck = (app: ApplicationHistoryType) =>
-    generateLetter(app, 11, 36, true);
+    generateLetter(app, 11, 36);
   const renewalCertificate = (app: ApplicationHistoryType) =>
-    generateLetter(app, 1, 7, true);
+    generateLetter(app, 1, 7);
   const certAcknowledgement = (app: ApplicationHistoryType) =>
-    generateLetter(app, 0, 21, true);
+    generateLetter(app, 0, 21);
 
   // ======================
   // Recordal Functions
@@ -1238,23 +1209,6 @@
   // Status Management
   // ======================
   function changeStatus(application: ApplicationHistoryType) {
-    selectedApplication = application;
-    showUpdateStatusForm = true;
-  }
-
-  function showTreatDialog(application: ApplicationHistoryType) {
-    if (application.currentStatus == ApplicationStatuses.AwaitingSearch) {
-      possibleOptions = [
-        ApplicationStatuses.AwaitingExaminer,
-        ApplicationStatuses.FormalityFail,
-      ];
-    }
-    if (application.currentStatus == ApplicationStatuses.AwaitingExaminer) {
-      possibleOptions = [
-        ApplicationStatuses.Active,
-        ApplicationStatuses.Rejected,
-      ];
-    }
     selectedApplication = application;
     showUpdateStatusForm = true;
   }
@@ -1711,16 +1665,37 @@
     }
   }
 
+  type DialogStateSetter = {
+    setFileId: (value: string) => void;
+    setApplicationId: (value: string) => void;
+    setStatus: (value: number | null) => void;
+    setOpen: (value: boolean) => void;
+  };
+
+  function openStatusDialog(
+    fileId: string,
+    applicationId: string,
+    status: number,
+    setters: DialogStateSetter,
+  ) {
+    setters.setFileId(fileId);
+    setters.setApplicationId(applicationId);
+    setters.setStatus(status);
+    setters.setOpen(true);
+  }
+
   // Open patent assignment dialog
   function openPatentAssignmentDialog(
     fileId: string,
     applicationId: string,
     status: number,
   ) {
-    patentAssignmentFileId = fileId;
-    patentAssignmentApplicationId = applicationId;
-    patentAssignmentStatus = status;
-    showPatentAssignmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentAssignmentFileId = value),
+      setApplicationId: (value) => (patentAssignmentApplicationId = value),
+      setStatus: (value) => (patentAssignmentStatus = value),
+      setOpen: (value) => (showPatentAssignmentDialog = value),
+    });
   }
 
   // Open patent license dialog
@@ -1729,10 +1704,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentLicenseFileId = fileId;
-    patentLicenseApplicationId = applicationId;
-    patentLicenseStatus = status;
-    showPatentLicenseDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentLicenseFileId = value),
+      setApplicationId: (value) => (patentLicenseApplicationId = value),
+      setStatus: (value) => (patentLicenseStatus = value),
+      setOpen: (value) => (showPatentLicenseDialog = value),
+    });
   }
 
   // Open design license dialog
@@ -1741,10 +1718,12 @@
     applicationId: string,
     status: number,
   ) {
-    designLicenseFileId = fileId;
-    designLicenseApplicationId = applicationId;
-    designLicenseStatus = status;
-    showDesignLicenseDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designLicenseFileId = value),
+      setApplicationId: (value) => (designLicenseApplicationId = value),
+      setStatus: (value) => (designLicenseStatus = value),
+      setOpen: (value) => (showDesignLicenseDialog = value),
+    });
   }
 
   // Open patent merger dialog
@@ -1753,10 +1732,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentMergerFileId = fileId;
-    patentMergerApplicationId = applicationId;
-    patentMergerStatus = status;
-    showPatentMergerDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentMergerFileId = value),
+      setApplicationId: (value) => (patentMergerApplicationId = value),
+      setStatus: (value) => (patentMergerStatus = value),
+      setOpen: (value) => (showPatentMergerDialog = value),
+    });
   }
 
   // Open design merger dialog
@@ -1765,10 +1746,12 @@
     applicationId: string,
     status: number,
   ) {
-    designMergerFileId = fileId;
-    designMergerApplicationId = applicationId;
-    designMergerStatus = status;
-    showDesignMergerDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designMergerFileId = value),
+      setApplicationId: (value) => (designMergerApplicationId = value),
+      setStatus: (value) => (designMergerStatus = value),
+      setOpen: (value) => (showDesignMergerDialog = value),
+    });
   }
 
   // Open patent mortgage dialog
@@ -1777,10 +1760,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentMortgageFileId = fileId;
-    patentMortgageApplicationId = applicationId;
-    patentMortgageStatus = status;
-    showPatentMortgageDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentMortgageFileId = value),
+      setApplicationId: (value) => (patentMortgageApplicationId = value),
+      setStatus: (value) => (patentMortgageStatus = value),
+      setOpen: (value) => (showPatentMortgageDialog = value),
+    });
   }
 
   // Open design assignment dialog
@@ -1789,10 +1774,12 @@
     applicationId: string,
     status: number,
   ) {
-    designAssignmentFileId = fileId;
-    designAssignmentApplicationId = applicationId;
-    designAssignmentStatus = status;
-    showDesignAssignmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designAssignmentFileId = value),
+      setApplicationId: (value) => (designAssignmentApplicationId = value),
+      setStatus: (value) => (designAssignmentStatus = value),
+      setOpen: (value) => (showDesignAssignmentDialog = value),
+    });
   }
 
   // Open design mortgage dialog
@@ -1801,10 +1788,12 @@
     applicationId: string,
     status: number,
   ) {
-    designMortgageFileId = fileId;
-    designMortgageApplicationId = applicationId;
-    designMortgageStatus = status;
-    showDesignMortgageDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designMortgageFileId = value),
+      setApplicationId: (value) => (designMortgageApplicationId = value),
+      setStatus: (value) => (designMortgageStatus = value),
+      setOpen: (value) => (showDesignMortgageDialog = value),
+    });
   }
 
   // Open design CTC dialog
@@ -1813,10 +1802,12 @@
     applicationId: string,
     status: number,
   ) {
-    designCTCFileId = fileId;
-    designCTCApplicationId = applicationId;
-    designCTCStatus = status;
-    showDesignCTCDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designCTCFileId = value),
+      setApplicationId: (value) => (designCTCApplicationId = value),
+      setStatus: (value) => (designCTCStatus = value),
+      setOpen: (value) => (showDesignCTCDialog = value),
+    });
   }
 
   // Open patent CTC dialog
@@ -1825,10 +1816,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentCTCFileId = fileId;
-    patentCTCApplicationId = applicationId;
-    patentCTCStatus = status;
-    showPatentCTCDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentCTCFileId = value),
+      setApplicationId: (value) => (patentCTCApplicationId = value),
+      setStatus: (value) => (patentCTCStatus = value),
+      setOpen: (value) => (showPatentCTCDialog = value),
+    });
   }
 
   // Open trademark CTC dialog
@@ -1837,10 +1830,12 @@
     applicationId: string,
     status: number,
   ) {
-    trademarkCTCFileId = fileId;
-    trademarkCTCApplicationId = applicationId;
-    trademarkCTCStatus = status;
-    showTrademarkCTCDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (trademarkCTCFileId = value),
+      setApplicationId: (value) => (trademarkCTCApplicationId = value),
+      setStatus: (value) => (trademarkCTCStatus = value),
+      setOpen: (value) => (showTrademarkCTCDialog = value),
+    });
   }
 
   function openOfflineRenewalDialog(applicationId: string, status: number) {
@@ -1855,10 +1850,12 @@
     applicationId: string,
     status: number,
   ) {
-    designAmendmentFileId = fileId;
-    designAmendmentApplicationId = applicationId;
-    designAmendmentStatus = status;
-    showDesignAmendmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (designAmendmentFileId = value),
+      setApplicationId: (value) => (designAmendmentApplicationId = value),
+      setStatus: (value) => (designAmendmentStatus = value),
+      setOpen: (value) => (showDesignAmendmentDialog = value),
+    });
   }
 
   // Open patent amendment dialog
@@ -1867,10 +1864,12 @@
     applicationId: string,
     status: number,
   ) {
-    patentAmendmentFileId = fileId;
-    patentAmendmentApplicationId = applicationId;
-    patentAmendmentStatus = status;
-    showPatentAmendmentDialog = true;
+    openStatusDialog(fileId, applicationId, status, {
+      setFileId: (value) => (patentAmendmentFileId = value),
+      setApplicationId: (value) => (patentAmendmentApplicationId = value),
+      setStatus: (value) => (patentAmendmentStatus = value),
+      setOpen: (value) => (showPatentAmendmentDialog = value),
+    });
   }
 </script>
 
@@ -3660,7 +3659,7 @@
                     >
                   {/if}
                   <!-- Change Status (Admin only) -->
-                  {#if application.applicationType === FormApplicationTypes.NewApplication}
+                  <!-- {#if application.applicationType === FormApplicationTypes.NewApplication}
                     {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
                       <DropdownMenu.Item
                         on:click={() => changeStatus(application)}
@@ -3668,7 +3667,7 @@
                       >
                       <DropdownMenu.Separator />
                     {/if}
-                  {/if}
+                  {/if} -->
                   <!-- Data Update Application -->
                   {#if application.applicationType === 2}
                     <DropdownMenu.Item
@@ -3678,14 +3677,14 @@
                     >
                   {/if}
                   <!-- verify payments -->
-                  {#if application.paymentId !== null && application.paymentId !== "Free"}
+                  <!-- {#if application.paymentId !== null && application.paymentId !== "Free"}
                     <DropdownMenu.Item
                       on:click={async () =>
                         await checkPayment(application, application.paymentId)}
                       >Verify Payment ({application.paymentId ??
                         "-"})</DropdownMenu.Item
                     >
-                  {/if}
+                  {/if} -->
                   <!-- View Recordal Data (Trademarks Only) -->
                   {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType ?? -1))}
                     <DropdownMenu.Item
@@ -3850,17 +3849,6 @@
                       View Application
                     </DropdownMenu.Item>
                   {/if} -->
-                  <!-- Verify new app payment -->
-                  {#if application.applicationType === FormApplicationTypes.NewApplication && application.certificatePaymentId != null}
-                    <DropdownMenu.Item
-                      on:click={async () =>
-                        await checkPayment(
-                          application,
-                          application.certificatePaymentId ?? null,
-                        )}
-                      >Verify Certificate payment ({application.certificatePaymentId})</DropdownMenu.Item
-                    >
-                  {/if}
                   <!-- Appeal Request -->
                   {#if application.applicationType === FormApplicationTypes.AppealRequest}
                     <DropdownMenu.Item
@@ -4113,7 +4101,7 @@
                           generateLetter(application, 9, 34);
                         }}>Change of Name Receipt</DropdownMenu.Item
                       >
-                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                      {#if application.currentStatus === ApplicationStatuses.Approved || application.currentStatus === ApplicationStatuses.AutoApproved}
                         <DropdownMenu.Item
                           on:click={() => {
                             generateLetter(application, 9, 48);
@@ -4133,7 +4121,7 @@
                           generateLetter(application, 10, 33);
                         }}>Change of Address Receipt</DropdownMenu.Item
                       >
-                      {#if application.currentStatus === ApplicationStatuses.Approved}
+                      {#if application.currentStatus === ApplicationStatuses.Approved || application.currentStatus === ApplicationStatuses.AutoApproved}
                         <DropdownMenu.Item
                           on:click={() => {
                             generateLetter(application, 10, 49);

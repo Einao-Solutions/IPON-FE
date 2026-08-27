@@ -170,17 +170,17 @@ function validateEmail(): boolean {
 	});
 
 	function useDefault() {
-		if ($loggedInUser.defaultCorrespondence===undefined || $loggedInUser.defaultCorrespondence.name==="")
-		{
-			toast.info("no correspondence configured, edit in profile", { position:'top-right' })
+		const user = $loggedInUser;
+		if (!user) {
+			toast.info('no logged in user found', { position: 'top-right' });
+			return;
 		}
-		else {
-			name = $loggedInUser?.firstName + " " + $loggedInUser?.lastName;
-			address = $loggedInUser?.Address ?? "";
-			phoneNumber = $loggedInUser?.Phone ?? "";
-			email = $loggedInUser?.email ?? "";
-			state = $loggedInUser?.state ?? "";
-		}
+
+		name = user.name || `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || null;
+		address = user.address ?? null;
+		phoneNumber = user.phoneNumber ?? null;
+		email = user.email ?? null;
+		state = user.state ?? null;
 	}
 function ResetCorr()
 {
@@ -289,7 +289,7 @@ function ResetCorr()
 	</div>
 </div>
 
-<style>
+<style lang="postcss">
 	.input {
 		@apply p-3 border rounded-md w-full;
 	}
