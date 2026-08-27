@@ -821,10 +821,15 @@
       else if (app.applicationType === FormApplicationTypes.Merger) {
         endpoint = `/api/files/MergerApplication`;
         formData.append('FileId', filing.fileId);
+        formData.append('rrr', app.paymentId || "");
         formData.append('Name', mergerData.name || "");
         formData.append('Email', mergerData.email || "");
         formData.append('Phone', mergerData.phone || "");
         formData.append('Nationality', mergerData.nationality || "");
+        formData.append(
+          'MergerDate',
+          mergerData.dateOfMerger || app.applicationDate || new Date().toISOString(),
+        );
         formData.append('Address', mergerData.address || "");
         if (mergerData.document) {
           formData.append('document', mergerData.document);
@@ -900,6 +905,45 @@
 
       if (res.ok) {
         const created = await res.text();
+        if (app.applicationType === FormApplicationTypes.Merger) {
+          const historyResponse = await fetch(
+            `${baseURL}/api/admin/CreateApplicationHistory`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${$loggedInToken}`,
+              },
+              body: JSON.stringify({
+                fileNumber: filing.fileId,
+                applicationDate: app.applicationDate
+                  ? new Date(app.applicationDate).toISOString()
+                  : new Date().toISOString(),
+                applicationType: app.applicationType,
+                currentStatus: app.currentStatus,
+                userId: $loggedInUser?.id ?? app.userId ?? null,
+                paymentId: app.paymentId || null,
+                certificatePaymentId: app.certificatePaymentId || null,
+                newValue: {
+                  name: mergerData.name,
+                  email: mergerData.email,
+                  phone: mergerData.phone,
+                  nationality: mergerData.nationality,
+                  address: mergerData.address,
+                  dateOfMerger: mergerData.dateOfMerger || app.applicationDate || new Date().toISOString(),
+                },
+              }),
+            },
+          );
+
+          if (!historyResponse.ok) {
+            const historyError = await historyResponse.text();
+            console.error("Merger history creation failed:", historyError);
+            throw new Error(
+              `Merger application saved, but application history could not be created (${historyResponse.status}): ${historyError}`,
+            );
+          }
+        }
         filing.applicationHistory = filing.applicationHistory || [];
         console.log("✅ SUCCESS: Application submitted");
 
