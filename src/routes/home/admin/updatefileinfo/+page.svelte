@@ -782,6 +782,8 @@
       // Determine the correct endpoint based on application type
       let endpoint = "";
       let formData = new FormData();
+      let requestBody: BodyInit = formData;
+      let requestHeaders: HeadersInit | undefined;
       
       // Populate FormData based on application type
       if (app.applicationType === FormApplicationTypes.Assignment) {
@@ -861,12 +863,22 @@
         }
       }
       else {
-        isSubmitting = false;
-        isLoading = false;
-        showFailureModal = true;
-        errorMessage = `❌ UNKNOWN APPLICATION TYPE\n\nApplication type ${app.applicationType} is not supported.`;
-        toast.error("Unsupported application type", { position: "top-right" });
-        return;
+        endpoint = `/api/admin/CreateApplicationHistory`;
+        requestHeaders = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${$loggedInToken}`,
+        };
+        requestBody = JSON.stringify({
+          fileNumber: filing.fileId,
+          applicationDate: app.applicationDate
+            ? new Date(app.applicationDate).toISOString()
+            : new Date().toISOString(),
+          applicationType: app.applicationType,
+          currentStatus: app.currentStatus,
+          userId: $loggedInUser?.id ?? app.userId ?? null,
+          paymentId: app.paymentId || null,
+          certificatePaymentId: app.certificatePaymentId || null,
+        });
       }
 
       // Log detailed request info
@@ -879,7 +891,8 @@
 
       const res = await fetch(apiUrl, {
         method: "POST",
-        body: formData,
+        headers: requestHeaders,
+        body: requestBody,
       });
 
       console.log("🔵 DEBUG: API Response status:", res.status, res.statusText);
