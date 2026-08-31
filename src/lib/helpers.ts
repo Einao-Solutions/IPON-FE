@@ -129,6 +129,8 @@ export const PatentSections = [
     name: "priority",
     description: "Priority Info",
     icon: "pepicons-print:letter",
+  },
+  {
     name: "attachments",
     description: "Attachments",
     icon: "teenyicons:attachment-outline",
