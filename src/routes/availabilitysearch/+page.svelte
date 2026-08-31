@@ -4,7 +4,7 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
-	import { baseURL, UserRoles } from '$lib/helpers';
+	import { baseURL, normalizeImageUrl, UserRoles } from '$lib/helpers';
 	import { Cell } from '$lib/components/ui/calendar';
 	import { mapDateToString } from '../home/components/dashboardutils';
 	import { loggedInUser } from '$lib/store';
@@ -290,7 +290,7 @@
 										{#if Number(result.tradeMarkLogo) === 1}
 											<span class="text-sm text-gray-600 italic">Wordmark</span>
 										{:else}
-											<img src={result.logoUrl} alt="Representation" class="h-8 w-8 object-contain rounded" />
+											<img src={normalizeImageUrl(result.logoUrl)} alt="Representation" class="h-8 w-8 object-contain rounded" />
 										{/if}
 									</Table.Cell>
 								</Table.Row>
@@ -326,7 +326,7 @@
 									{#if Number(result.tradeMarkLogo) === 1}
 										<span class="text-sm text-gray-600 italic">Wordmark</span>
 									{:else}
-										<img src={result.logoUrl} alt="Representation" class="max-h-12 max-w-full object-contain" />
+										<img src={normalizeImageUrl(result.logoUrl)} alt="Representation" class="max-h-12 max-w-full object-contain" />
 									{/if}
 								</div>
 
