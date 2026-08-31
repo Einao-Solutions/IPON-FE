@@ -12,6 +12,7 @@
   import { goto } from "$app/navigation";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
+  import { setAuthCookies as persistAuthCookies } from "$lib/auth-session";
   // show a maintenance popup on page load
   let showMaintenance: boolean = false;
   let maintenanceMessage: string =
@@ -77,19 +78,11 @@
   }
 
   function setAuthCookies(data: AuthResponse) {
-    const maxAge = 7 * 24 * 60 * 60; // 7 days
-    document.cookie = `auth_token=${data.token}; path=/; max-age=${maxAge}; secure; samesite=strict`;
-
-    // map AuthUser to the UsersType-ish shape used across the app
     const userForStore = data.user;
 
-    // update in-memory stores for immediate use
     loggedInToken.set(data.token);
     loggedInUser.set(data.user);
-
-    // also persist user object as a cookie (encoded)
-    const encoded = encodeURIComponent(JSON.stringify(userForStore));
-    document.cookie = `user=${encoded}; path=/; max-age=${maxAge}; secure; samesite=strict`;
+    persistAuthCookies(data.token, userForStore);
   }
 
   function shouldOpenIpoSupport(user: UsersType | null | undefined): boolean {

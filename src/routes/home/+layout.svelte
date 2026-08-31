@@ -8,6 +8,7 @@
   import NotificationBell from "./NotificationBell.svelte";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
+  import { clearAuthCookies } from "$lib/auth-session";
 
   $: userName = "";
   let filterFiles: any = null;
@@ -51,8 +52,7 @@
   let filterData = {};
 
   function logout() {
-    document.cookie = "auth_token=; path=/; max-age=0";
-    document.cookie = "user=; path=/; max-age=0";
+    clearAuthCookies();
     loggedInToken.set(null);
     loggedInUser.set(null);
     sessionStorage.clear();
