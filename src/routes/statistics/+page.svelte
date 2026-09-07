@@ -18,20 +18,20 @@
       goto("/auth");
       return;
     }
-    
-    const hasAccess = $loggedInUser.userRoles?.some(role =>
+
+    const hasAccess = $loggedInUser.userRoles?.some((role) =>
       [
-        UserRoles.Finance,
-        UserRoles.PermSec,
-        UserRoles.Minister,
+        // UserRoles.Finance,
+        // UserRoles.PermSec,
+        // UserRoles.Minister,
         UserRoles.Tech,
         UserRoles.SuperAdmin,
-        UserRoles.TrademarkRegistrar,
-        UserRoles.PatentDesignRegistrar,
-        UserRoles.ActingTrademarkRegistrar,
-        UserRoles.ActingPatentDesignRegistrar,
-        UserRoles.EinaoFinance
-      ].includes(role)
+        // UserRoles.TrademarkRegistrar,
+        // UserRoles.PatentDesignRegistrar,
+        // UserRoles.ActingTrademarkRegistrar,
+        // UserRoles.ActingPatentDesignRegistrar,
+        UserRoles.EinaoFinance,
+      ].includes(role),
     );
 
     if (!hasAccess) {
@@ -41,8 +41,8 @@
   });
 
   function handleCardClick(registry: string) {
-    if (registry === 'Support') {
-      goto('/statistics/support');
+    if (registry === "Support") {
+      goto("/statistics/support");
       return;
     }
     selectedRegistry = registry;
@@ -59,7 +59,9 @@
   }
 </script>
 
-<div class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-screen rounded-xl p-6 shadow-xl border border-slate-200/60">
+<div
+  class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-screen rounded-xl p-6 shadow-xl border border-slate-200/60"
+>
   <div class="max-w-7xl mx-auto flex flex-col">
     <!-- Header Section with Back Button -->
     <div class="mb-5 flex-shrink-0">
@@ -75,7 +77,9 @@
       {/if}
 
       <div class="flex items-center space-x-3 mb-1">
-        <div class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+        <div
+          class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg"
+        >
           <Icon icon="mdi:chart-bar" class="text-white text-xl" />
         </div>
         <div>
@@ -83,10 +87,9 @@
             Intellectual Property Office Nigeria
           </h1>
           <p class="text-slate-600 text-sm">
-            {currentView === "cards" 
+            {currentView === "cards"
               ? "Select a category to view detailed statistics"
-              : `${selectedRegistry} Statistics - Select a section to view details`
-            }
+              : `${selectedRegistry} Statistics - Select a section to view details`}
           </p>
         </div>
       </div>
@@ -95,16 +98,18 @@
     <!-- Main Content Area -->
     {#if currentView === "cards"}
       <!-- Cards View -->
-      <StatisticsCardsView 
+      <StatisticsCardsView
         userRoles={$loggedInUser?.userRoles || []}
         onCardClick={handleCardClick}
       />
     {:else if currentView === "list"}
       <!-- Accordion List View -->
-      <div class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-6 shadow-sm">
-        <StatisticsListView 
+      <div
+        class="bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-6 shadow-sm"
+      >
+        <StatisticsListView
           userRoles={$loggedInUser?.userRoles || []}
-          selectedRegistry={selectedRegistry}
+          {selectedRegistry}
           onBack={handleBackToCards}
         />
       </div>
