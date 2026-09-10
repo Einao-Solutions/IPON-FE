@@ -13,7 +13,9 @@ export const localhost = "http://localhost:5044";
 
 export function normalizeImageUrl(
   input: string | null | undefined,
-  currentOrigin: string = typeof window !== "undefined" ? window.location.origin : baseURL,
+  currentOrigin: string = typeof window !== "undefined"
+    ? window.location.origin
+    : baseURL,
 ): string | null {
   if (!input) return null;
 
@@ -29,7 +31,9 @@ export function normalizeImageUrl(
   try {
     const parsed = new URL(value);
     const targetOrigin = new URL(currentOrigin);
-    const isLocalBackend = ["localhost", "127.0.0.1"].includes(parsed.hostname.toLowerCase());
+    const isLocalBackend = ["localhost", "127.0.0.1"].includes(
+      parsed.hostname.toLowerCase(),
+    );
 
     if (isLocalBackend) {
       parsed.protocol = targetOrigin.protocol;
@@ -77,7 +81,7 @@ export type InventorValidator = {
   country: boolean | null;
   city: boolean | null;
   phone: boolean | null;
-  email: boolean | null
+  email: boolean | null;
   address: boolean | null;
 };
 export type DesignCreator = {
@@ -338,7 +342,6 @@ export enum FormApplicationTypes {
   ChangeOfAgent = 26,
   OfflineRenewalRequest = 27,
 }
-
 
 export enum ApplicationLetters {
   NewApplicationReceipt = 0,
