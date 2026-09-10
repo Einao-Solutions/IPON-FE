@@ -22,41 +22,51 @@ onMount(async () => {
     }
 
     try {
-        const fileNumber = sessionStorage.getItem('withdrawal_fileNumber');
-        const rrr = sessionStorage.getItem('withdrawal_rrr');
-        const withdrawalLetterRaw = sessionStorage.getItem('withdrawal_withdrawalLetter');
-        const supportingDocsRaw = sessionStorage.getItem('withdrawal_supportingDocs');
+        const sessionData = sessionStorage.getItem('withdrawalPaymentData');
+        const paymentData = sessionData ? JSON.parse(sessionData) : null;
+        const fileNumber = paymentData?.fileId || sessionStorage.getItem('withdrawal_fileNumber');
+        const rrr = paymentData?.rrr || sessionStorage.getItem('withdrawal_rrr');
+        const fileType = paymentData?.fileType || sessionStorage.getItem('withdrawal_fileType');
+        const withdrawalLetterRaw = paymentData?.withdrawalLetter || [];
+        const supportingDocsRaw = paymentData?.supportingDocuments || [];
 
-        const withdrawalLetter = withdrawalLetterRaw ? JSON.parse(withdrawalLetterRaw) : [];
-        const supportingDocs = supportingDocsRaw ? JSON.parse(supportingDocsRaw) : [];
-
-        if (!fileNumber || !rrr || !withdrawalLetter.length || !supportingDocs.length) {
+        if (!fileNumber || !rrr || !withdrawalLetterRaw.length || !supportingDocsRaw.length) {
             error = "Missing data for withdrawal request.";
             isLoading = false;
             return;
         }
 
-        const dto = {
-            FileId: fileNumber,
-            PaymentRRR: rrr,
-            WithdrawalDate: new Date().toISOString(),
-            WithdrawalRequestDate: new Date().toISOString(),
-            WithdrawalLetter: withdrawalLetter,
-            WithdrawalSupportingDocuments: supportingDocs,
-            UserId: user?.id || null  
+        const toFile = async (item: { name: string; type: string; dataUrl: string }) => {
+            const response = await fetch(item.dataUrl);
+            const blob = await response.blob();
+            return new File([blob], item.name, { type: item.type || 'application/pdf' });
         };
 
-        const response = await fetch(`${baseURL}/api/files/withdrawal-request`, {
+        const withdrawalLetter = await toFile(withdrawalLetterRaw[0]);
+        const supportingDocs = await Promise.all(
+            supportingDocsRaw.map((item: { name: string; type: string; dataUrl: string }) => toFile(item)),
+        );
+
+        const requestForm = new FormData();
+        requestForm.append('FileId', fileNumber);
+        requestForm.append('FileType', String(fileType ?? '2'));
+        requestForm.append('PaymentRRR', rrr);
+        requestForm.append('WithdrawalLetter', withdrawalLetter);
+        supportingDocs.forEach((file) => {
+            requestForm.append('SupportingDocuments', file);
+        });
+
+        const response = await fetch(`${baseURL}/api/files/WithdrawalRequest`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dto)
+            body: requestForm,
         });
 
         if (!response.ok) {
             error = "Failed to submit withdrawal request.";
         } else {
             success = "Withdrawal request submitted successfully.";
-            // Optionally clear sessionStorage here
+            sessionStorage.removeItem('withdrawalPaymentData');
+            sessionStorage.removeItem('withdrawalData');
             sessionStorage.removeItem('withdrawal_fileNumber');
             sessionStorage.removeItem('withdrawal_cost');
             sessionStorage.removeItem('withdrawal_rrr');

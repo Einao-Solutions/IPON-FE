@@ -4,7 +4,7 @@
     import { Toaster } from 'svelte-sonner';
     import { Button } from '$lib/components/ui/button/index';
     import * as Table from '$lib/components/ui/table/index';
-    import { baseURL } from '$lib/helpers';
+    import { baseURL, normalizeImageUrl } from '$lib/helpers';
     import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
     import * as Dialog from '$lib/components/ui/dialog/index';
 
@@ -142,7 +142,7 @@
                         <Table.Cell class="text-center wide-cell">{fileData.tradeMarkClass}</Table.Cell>
                         <Table.Cell class="text-center wide-cell">
                             {#if fileData.logoUrl}
-                                <img src={fileData.logoUrl} alt="Logo" class="h-12 mx-auto" />
+                                <img src={normalizeImageUrl(fileData.logoUrl)} alt="Logo" class="h-12 mx-auto" />
                             {:else}
                                 N/A
                             {/if}
@@ -156,7 +156,7 @@
                         <Table.Cell class="text-center wide-cell">{fileData.designType ?? 'N/A'}</Table.Cell>
                         <Table.Cell class="text-center wide-cell">
                             {#if fileData.logoUrl}
-                                <img src={fileData.logoUrl} alt="Logo" class="h-12 mx-auto" />
+                                <img src={normalizeImageUrl(fileData.logoUrl)} alt="Logo" class="h-12 mx-auto" />
                             {:else}
                                 N/A
                             {/if}

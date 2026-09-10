@@ -31,6 +31,7 @@
   import * as valid from "validator";
   import { mapAccountTypeToString } from "$lib/helpers";
   import type { User } from "lucide-svelte";
+  import { clearAuthCookies } from "$lib/auth-session";
 
   let selectedSignature: File | undefined = undefined;
   let selectedSignatureUrl: undefined | string = undefined;
@@ -68,8 +69,7 @@
   });
 
   function logout() {
-    document.cookie = "auth_token=; path=/; max-age=0";
-    document.cookie = "user=; path=/; max-age=0";
+    clearAuthCookies();
     loggedInToken.set(null);
     loggedInUser.set(null);
     goto("/auth");

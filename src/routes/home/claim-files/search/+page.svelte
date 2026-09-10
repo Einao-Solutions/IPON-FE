@@ -107,9 +107,9 @@
 			}
 			//console.log($loggedInUser.name);
 			if (searchParams) {
-				// Fetch search results from the backend
+				// Claim-file searches use the standard file-number lookup.
 				const response = await fetch(
-					`${baseURL}/api/migration/GetMarkInfo?regNumber=${searchParams.query}`
+					`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchParams.query.trim())}`
 				);
 
 				// Get the response text first
@@ -122,7 +122,16 @@
 						results = [];
 					} else {
 						try {
-							results = JSON.parse(responseText);
+							const fileRecords = JSON.parse(responseText);
+							const files = Array.isArray(fileRecords) ? fileRecords : [fileRecords];
+							results = files.map((file) => ({
+								...file,
+								title: file.title ?? file.titleOfTradeMark ?? file.titleOfInvention ?? file.titleOfDesign ?? '',
+								class: file.class ?? file.tradeMarkClass ?? file.designClass ?? null,
+								markType: file.markType ?? file.trademarkType ?? 0,
+								filingDate: file.filingDate ?? file.applicationDate ?? '',
+								fileNumber: file.fileNumber ?? file.fileId ?? null
+							}));
 							// mark = await response.json();
 
 							sessionStorage.setItem('markInfo', JSON.stringify(results));

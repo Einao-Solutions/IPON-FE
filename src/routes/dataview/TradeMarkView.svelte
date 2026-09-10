@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type PatentData, GetCountryImageLink, MapAttachmentToString } from '$lib/helpers';
+	import { type PatentData, GetCountryImageLink, MapAttachmentToString, baseURL } from '$lib/helpers';
 	import * as Card from '$lib/components/ui/card';
 	import * as Table from '$lib/components/ui/table';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -18,12 +18,30 @@
 	let isImage: boolean = false;
 	let showPreview: boolean = false;
 	let previewUrl: string | null = null;
+	let displayAttachments: { name: string; url: string[] }[] = [];
 
 	applicationData.subscribe((dt) => {
 		data = dt;
 	});
+	$: displayAttachments = (data?.attachments ?? []).reduce(
+		(unique: { name: string; url: string[] }[], attachment: { name: string; url: string[] }) => {
+			const existingIndex = unique.findIndex((item) => item.name === attachment.name);
+			if (existingIndex === -1) {
+				unique.push(attachment);
+			} else {
+				unique[existingIndex] = attachment;
+			}
+			return unique;
+		},
+		[]
+	);
+	function resolveAttachmentUrl(url: string): string {
+		if (/^https?:\/\//i.test(url)) return url;
+		if (url.startsWith('/')) return `${baseURL}${url}`;
+		return `${baseURL}/api/files/GetAttachment?fileId=${encodeURIComponent(url)}`;
+	}
 	function viewAttachment(attachment: { name: string; url: string }) {
-		previewUrl = attachment.url;
+		previewUrl = resolveAttachmentUrl(attachment.url);
 		const extention = previewUrl.slice(previewUrl.lastIndexOf('.'), previewUrl.length);
 		isImage = extention === '.png' || extention === '.jpg' || extention === '.jpeg';
 		showPreview = true;
@@ -33,7 +51,7 @@
 <Dialog.Root bind:open={showPreview}>
 	<Dialog.Content class="h-full w-3/4">
 		{#if isImage}
-			<img src={previewUrl} alt="testing" />
+			<img src={previewUrl} alt="Trademark representation" />
 		{:else}
 			<iframe src={previewUrl} width="95%" height="100%" title="-"></iframe>
 		{/if}
@@ -189,7 +207,7 @@
 			<Card.Title>Attachments</Card.Title>
 		</Card.Header>
 		<Card.Content>
-			{#each (data?.attachments ?? []) as attachment}
+			{#each displayAttachments as attachment}
 				<div
 					class="rounded-md border gap-6 flex items-center p-1.5 sm:w-1/2 w-full mb-2 justify-between"
 				>
@@ -203,7 +221,7 @@
 								<Icon icon="lets-icons:view-alt-light" width="1.2rem" height="1.2rem" />
 								<p>{attachment.url.indexOf(link) + 1}</p>
 							</Button>
-							<Button href={link} target="_blank" variant="outline">
+							<Button href={resolveAttachmentUrl(link)} target="_blank" variant="outline">
 								<Icon icon="ri:external-link-line" width="1.2rem" height="1.2rem" />
 								<p>{attachment.url.indexOf(link) + 1}</p>
 							</Button>

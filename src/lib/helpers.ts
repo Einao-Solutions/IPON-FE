@@ -9,7 +9,47 @@ import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
  export const baseURL = "http://localhost:5044";
 // export const baseURL = "https://testbackend.iponigeria.com";
 // export const baseURL = "https://integration.iponigeria.com";
-export const localhost = "http://localhost:5044"   
+export const localhost = "http://localhost:5044";
+
+export function normalizeImageUrl(
+  input: string | null | undefined,
+  currentOrigin: string = typeof window !== "undefined"
+    ? window.location.origin
+    : baseURL,
+): string | null {
+  if (!input) return null;
+
+  const value = String(input).trim();
+  if (!value || value === "null" || value === "undefined") {
+    return null;
+  }
+
+  if (/^(blob:|data:)/i.test(value)) {
+    return value;
+  }
+
+  try {
+    const parsed = new URL(value);
+    const targetOrigin = new URL(currentOrigin);
+    const isLocalBackend = ["localhost", "127.0.0.1"].includes(
+      parsed.hostname.toLowerCase(),
+    );
+
+    if (isLocalBackend) {
+      parsed.protocol = targetOrigin.protocol;
+      parsed.hostname = targetOrigin.hostname;
+      parsed.port = targetOrigin.port;
+      return parsed.toString();
+    }
+
+    return value;
+  } catch {
+    if (value.startsWith("/")) {
+      return `${currentOrigin.replace(/\/$/, "")}${value}`;
+    }
+    return value;
+  }
+}
 
 export const nonConventionalDescription =
   "Filing new patent application with protection in Nigeria only.";
@@ -41,7 +81,7 @@ export type InventorValidator = {
   country: boolean | null;
   city: boolean | null;
   phone: boolean | null;
-  email: boolean | null
+  email: boolean | null;
   address: boolean | null;
 };
 export type DesignCreator = {
@@ -129,6 +169,8 @@ export const PatentSections = [
     name: "priority",
     description: "Priority Info",
     icon: "pepicons-print:letter",
+  },
+  {
     name: "attachments",
     description: "Attachments",
     icon: "teenyicons:attachment-outline",
@@ -300,7 +342,6 @@ export enum FormApplicationTypes {
   ChangeOfAgent = 26,
   OfflineRenewalRequest = 27,
 }
-
 
 export enum ApplicationLetters {
   NewApplicationReceipt = 0,

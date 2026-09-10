@@ -238,7 +238,12 @@ export async function startNotificationHub(): Promise<void> {
   if (starting) return starting;
 
   const userId = currentUserId();
-  if (!userId) return;
+  const token = get(loggedInToken);
+
+  if (!userId || !token) {
+    notificationsConnected.set(false);
+    return;
+  }
 
   connection = new HubConnectionBuilder()
     .withUrl(HUB_URL, {

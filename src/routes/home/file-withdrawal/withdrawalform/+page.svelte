@@ -14,10 +14,95 @@ let submitState: 'idle' | 'loading' | 'success' = 'idle';
 let error: string | null = null;
 let success: string | null = null;
 
+function normalizeFileType(value: string | null | undefined): string | null {
+    if (!value) return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const normalized = trimmed.toLowerCase();
+
+    if (['patent', '0', 'patent application'].includes(normalized)) return '0';
+    if (['design', '1', 'design application'].includes(normalized)) return '1';
+    if (['trademark', 'trade mark', 'trade-mark', 'trademark application', 'tm', '2'].includes(normalized)) return '2';
+    if (/^\d+$/.test(trimmed)) return trimmed;
+
+    return trimmed;
+}
+
+function getFileTypeVariants(value: string | null | undefined): string[] {
+    const normalized = normalizeFileType(value);
+    const variants = new Set<string>();
+
+    if (normalized === '0') {
+        variants.add('0');
+        variants.add('Patent');
+        variants.add('patent');
+    } else if (normalized === '1') {
+        variants.add('1');
+        variants.add('Design');
+        variants.add('design');
+    } else if (normalized === '2') {
+        variants.add('2');
+        variants.add('TradeMark');
+        variants.add('Trademark');
+        variants.add('trademark');
+        variants.add('trade mark');
+        variants.add('trade-mark');
+    } else if (value) {
+        const lower = value.trim().toLowerCase();
+        variants.add(value.trim());
+
+        if (['trademark', 'trade mark', 'trade-mark', 'tm', 'trademark application'].includes(lower)) {
+            variants.add('TradeMark');
+            variants.add('Trademark');
+            variants.add('trademark');
+            variants.add('2');
+        }
+    }
+
+    return Array.from(variants);
+}
+
+async function fetchWithdrawalCost(fileNumber: string, normalizedFileType: string) {
+    const candidates = getFileTypeVariants(normalizedFileType);
+
+    for (const candidate of candidates) {
+        try {
+            const response = await fetch(
+                `${baseURL}/api/files/GetFileWithdrawalCost?fileId=${encodeURIComponent(fileNumber)}&fileType=${encodeURIComponent(candidate)}`,
+                { method: 'GET' }
+            );
+
+            if (!response.ok) {
+                continue;
+            }
+
+            const data = await response.json();
+            const cost = data?.amount;
+            const paymentId = data?.rrr;
+            if (cost && paymentId) {
+                return { data, cost, paymentId, fileType: candidate };
+            }
+        } catch {
+            // try next candidate
+        }
+    }
+
+    return null;
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result ?? ''));
+        reader.onerror = () => reject(new Error(`Failed to read file: ${file.name}`));
+        reader.readAsDataURL(file);
+    });
+}
+
 onMount(() => {
     const url = new URL(window.location.href);
     fileNumber = url.searchParams.get('fileNumber') ?? '';
-    fileType = url.searchParams.get('fileType') ?? '';
+    fileType = normalizeFileType(url.searchParams.get('fileType')) ?? '';
 });
 
 function handleWithdrawalLetterChange(event: Event) {
@@ -45,72 +130,59 @@ function removeSupportingDocsFile(idx: number) {
 async function handleSubmit() {
     error = null;
     success = null;
-    if (!fileNumber || !fileType || withdrawalLetterFiles.length === 0 || supportingDocsFiles.length === 0) {
+
+    const normalizedFileType = normalizeFileType(fileType);
+    if (!fileNumber || !normalizedFileType || withdrawalLetterFiles.length === 0 || supportingDocsFiles.length === 0) {
         error = 'All fields are required. Please upload both the withdrawal letter and supporting documents.';
         return;
     }
+
     isSubmitting = true;
     submitState = 'loading';
     try {
-        const response = await fetch(
-            `${baseURL}/api/files/GetFileWithdrawalCost?fileId=${encodeURIComponent(fileNumber)}&fileType=${fileType}`,
-            { method: 'GET' }
-        );
-
-        if (!response.ok) {
+        const costResponse = await fetchWithdrawalCost(fileNumber, normalizedFileType);
+        if (!costResponse) {
             error = 'Failed to get payment details.';
             return;
         }
 
-        const data = await response.json();
-        const cost = data?.amount;
-        const paymentId = data?.rrr;
+        const { data, cost, paymentId, fileType: acceptedFileType } = costResponse;
 
-        if (!cost || !paymentId) {
-            error = 'Could not retrieve payment details.';
-            return;
-        }
+        const withdrawalRequestData = {
+            ...data,
+            fileId: fileNumber,
+            fileType: acceptedFileType,
+            applicantName: data?.applicantName || '',
+            amount: String(cost),
+            rrr: paymentId,
+            withdrawalLetter: await Promise.all(
+                withdrawalLetterFiles.map(async (file) => ({
+                    name: file.name,
+                    type: file.type,
+                    dataUrl: await fileToDataUrl(file),
+                })),
+            ),
+            supportingDocuments: await Promise.all(
+                supportingDocsFiles.map(async (file) => ({
+                    name: file.name,
+                    type: file.type,
+                    dataUrl: await fileToDataUrl(file),
+                })),
+            ),
+        };
 
-        const requestForm = new FormData();
-        requestForm.append('FileId', fileNumber);
-        requestForm.append('FileType', fileType);
-        requestForm.append('WithdrawalLetter', withdrawalLetterFiles[0]);
-        supportingDocsFiles.forEach((file) => {
-            requestForm.append('SupportingDocuments', file);
-        });
+        sessionStorage.setItem('withdrawalData', JSON.stringify({
+            ...data,
+            fileId: fileNumber,
+            fileType: acceptedFileType,
+            applicantName: data?.applicantName || '',
+            amount: String(cost),
+            rrr: paymentId,
+        }));
+        sessionStorage.setItem('withdrawalPaymentData', JSON.stringify(withdrawalRequestData));
 
-        const saveResponse = await fetch(`${baseURL}/api/files/WithdrawalRequest`, {
-            method: 'POST',
-            body: requestForm,
-        });
-
-        let saveResult: any = null;
-        try {
-            saveResult = await saveResponse.json();
-        } catch {
-            saveResult = null;
-        }
-
-        if (!saveResponse.ok) {
-            error = saveResult?.message || 'Failed to submit withdrawal request.';
-            return;
-        }
-
-        sessionStorage.setItem(
-            'withdrawalData',
-            JSON.stringify({
-                ...data,
-                fileId: fileNumber,
-                fileType,
-                applicantName: data?.applicantName || '',
-            }),
-        );
-
-        success = 'Withdrawal request submitted successfully.';
         submitState = 'success';
-        setTimeout(() => {
-            goto(`/payment?type=filewithdrawal&rrr=${encodeURIComponent(paymentId)}&amount=${encodeURIComponent(cost)}&fileNumber=${encodeURIComponent(fileNumber)}`);
-        }, 1200);
+        await goto(`/payment?type=filewithdrawal&rrr=${encodeURIComponent(paymentId)}&amount=${encodeURIComponent(cost)}&fileNumber=${encodeURIComponent(fileNumber)}`);
     } catch (e) {
         const message = e instanceof Error ? e.message : 'An error occurred while submitting.';
         error = message;

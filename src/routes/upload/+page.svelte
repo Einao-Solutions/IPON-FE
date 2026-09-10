@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { baseURL } from "$lib/helpers";
+  import { baseURL, normalizeImageUrl } from "$lib/helpers";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { mapTypeToString } from "../home/components/dashboardutils";
   import { toast } from "svelte-sonner";
@@ -149,7 +149,7 @@
               <div class="result-logo">
                 {#if result.logoUrl}
                   <img
-                    src={result.logoUrl}
+                    src={normalizeImageUrl(result.logoUrl)}
                     alt={result.titleOfTradeMark ||
                       result.titleOfInvention ||
                       result.titleOfDesign}

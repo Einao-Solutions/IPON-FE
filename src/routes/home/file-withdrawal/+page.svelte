@@ -23,11 +23,25 @@
     
     // Get context from URL parameters (client-side only)
     let ipType = 'patent';
-    let fileType = 'Patent';
+    let fileType = '0';
+
+    function normalizeFileType(value: string | null | undefined): string {
+        if (!value) return '0';
+        const trimmed = value.trim();
+        if (!trimmed) return '0';
+
+        const normalized = trimmed.toLowerCase();
+        if (['patent', '0', 'patent application'].includes(normalized)) return '0';
+        if (['design', '1', 'design application'].includes(normalized)) return '1';
+        if (['trademark', 'trade mark', 'trade-mark', 'tm', '2'].includes(normalized)) return '2';
+        if (/^\d+$/.test(trimmed)) return trimmed;
+
+        return trimmed;
+    }
     
     $: if (browser) {
         ipType = $page.url.searchParams.get('ipType') || 'patent';
-        fileType = ipType === 'trademark' ? 'Trademark' : ipType === 'patent' ? 'Patent' : 'Design';
+        fileType = normalizeFileType(ipType);
         console.log('File Withdrawal - URL param ipType:', $page.url.searchParams.get('ipType'), 'ipType:', ipType);
     }
 
