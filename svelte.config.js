@@ -140,8 +140,9 @@ const config = {
         "/home/other-applications",
         "/home/iposupport",
         "/home/offline-renewal",
-        "/home/offline-renewal/search",
-        "/home/offline-renewal/submit"
+        "/home/offline-renewal/search",
+        "/home/offline-renewal/submit",
+        "/auth/verify-email",
       ],
     },
   },
