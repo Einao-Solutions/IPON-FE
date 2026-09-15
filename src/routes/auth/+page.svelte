@@ -55,6 +55,7 @@
   let showVerificationEmail: boolean = false;
   let isLoading: boolean = false;
   let resetEmail: string | undefined = undefined;
+  let signupEmail: string = "";
   let showPassword: boolean = false;
   let showConfirmPassword: boolean = false;
   let acceptedTerms: boolean = false;
@@ -200,16 +201,19 @@
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         // await sendVerificationEmail(createUser.email, data.user.id);
+
+        signupEmail = createUser.email.trim();
+        email = signupEmail;
 
         toast.success("Registration Successful", {
           position: "top-right",
-          description: `Account Created successfully`,
+          description: "Account created successfully. Please verify your email.",
         });
 
-        currentScreen = 0;
-        // showVerificationEmail = true;
+        currentScreen = 3;
+        showVerificationEmail = false;
 
         // Clear form
         createUser = {
@@ -235,6 +239,39 @@
       });
     } finally {
       isLoading = false;
+    }
+  }
+
+  async function requestVerificationEmail(targetEmail: string) {
+    const emailToVerify = targetEmail.trim();
+
+    if (!emailToVerify || !validateEmail(emailToVerify)) {
+      toast.error("Please provide a valid email address", {
+        position: "top-right",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${baseURL}/api/auth/ResendVerificationEmail`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailToVerify }),
+      });
+
+      if (response.ok) {
+        toast.success("Verification email resent", {
+          position: "top-right",
+        });
+      } else {
+        toast.error("Failed to resend verification email", {
+          position: "top-right",
+        });
+      }
+    } catch (error) {
+      toast.error("An error occurred", {
+        position: "top-right",
+      });
     }
   }
 
@@ -352,34 +389,11 @@
   }
 
   async function resendVerificationEmail() {
-    if (!email || !validateEmail(email)) {
-      toast.error("Please provide a valid email address", {
-        position: "top-right",
-      });
-      return;
-    }
+    await requestVerificationEmail(email);
+  }
 
-    try {
-      const response = await fetch(`${baseURL}/api/auth/resend-verification`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-
-      if (response.ok) {
-        toast.success("Verification email resent", {
-          position: "top-right",
-        });
-      } else {
-        toast.error("Failed to resend verification email", {
-          position: "top-right",
-        });
-      }
-    } catch (error) {
-      toast.error("An error occurred", {
-        position: "top-right",
-      });
-    }
+  async function resendSignupVerificationEmail() {
+    await requestVerificationEmail(signupEmail);
   }
 </script>
 
@@ -879,6 +893,42 @@
                   />
                 {/if}
                 Send Reset Link
+              </Button>
+            </div>
+          </div>
+        {:else if currentScreen === 3}
+          <!-- Verify Email Prompt -->
+          <div class="space-y-6 text-center">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+              <Icon
+                icon="mdi:email-check-outline"
+                class="text-green-700"
+                width="2rem"
+                height="2rem"
+              />
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold text-slate-900">Verify your email</h2>
+              <p class="mt-2 text-sm text-slate-600">
+                We sent a verification link to
+                <span class="font-semibold text-slate-800">{signupEmail}</span>.
+                Open that link to activate your account.
+              </p>
+            </div>
+
+            <div class="space-y-3">
+              <Button
+                class="w-full bg-green-700 hover:bg-green-800 text-white"
+                on:click={resendSignupVerificationEmail}
+              >
+                Resend verification email
+              </Button>
+              <Button
+                variant="outline"
+                class="w-full"
+                on:click={() => (currentScreen = 0)}
+              >
+                Back to sign in
               </Button>
             </div>
           </div>
