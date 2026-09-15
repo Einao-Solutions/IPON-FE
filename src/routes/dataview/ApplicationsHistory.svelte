@@ -388,6 +388,11 @@
     };
 
     if (data) {
+      // Seed the generic "documentUrl" field first with a friendly label so
+      // it wins the URL-based de-dup below instead of showing twice under
+      // both a generic key-derived label and this one.
+      addEntry("Document", data.documentUrl);
+
       scanAttachmentSources(data.assignment, "Assignment");
       scanAttachmentSources(data.newValue);
       scanAttachmentSources(data.oldValue);
@@ -404,7 +409,9 @@
       legacyNames.forEach(([label, value]) => addEntry(String(label), value));
     }
 
-    return entries.filter((entry, index, arr) => arr.findIndex((item) => item.url === entry.url && item.label === entry.label) === index);
+    // De-dupe by URL only: the same underlying file is often discoverable
+    // under several different field names, but it's still just one document.
+    return entries.filter((entry, index, arr) => arr.findIndex((item) => item.url === entry.url) === index);
   }
 
   function dataType(): string {
@@ -879,6 +886,15 @@
     showRecordalDialog = true;
     recordalLoading = true;
 
+    // Seed with whatever the history record itself already has (oldValue/
+    // newValue) so the details still render even if the dedicated
+    // Get<Type>Application lookup below fails or can't find a linked
+    // document (e.g. entries created via the admin fallback, which don't
+    // share an id with the recordal's own document-storage entity).
+    const historyOldValue = (application as any)?.oldValue || {};
+    const historyNewValue = (application as any)?.newValue || {};
+    recordalData = { oldValue: historyOldValue, newValue: historyNewValue };
+
     try {
       let endpoint = "";
       switch (application.applicationType) {
@@ -906,16 +922,16 @@
           return;
       }
 
+      const lookupAppId = historyNewValue?.recordalAppId || application.id;
       const response = await fetch(
-        `${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${application.id}`,
+        `${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${lookupAppId}`,
       );
 
-      if (response.ok) {
-        const responseData = await response.json();
-        const historyNewValue = (application as any)?.newValue || {};
+      const applyResponseData = (responseData: any) => {
         const responseNewValue = responseData?.newValue || {};
         recordalData = {
           ...responseData,
+          oldValue: { ...historyOldValue, ...(responseData?.oldValue || {}) },
           newValue: {
             ...historyNewValue,
             ...responseNewValue,
@@ -924,6 +940,48 @@
               : historyNewValue.attachments,
           },
         };
+      };
+
+      if (response.ok) {
+        applyResponseData(await response.json());
+      } else if (!historyNewValue?.recordalAppId) {
+        // Older entries created before we started saving the real recordal
+        // id never got one saved — try asking the backend for this file's
+        // records without an appId, and match the right one back by name/
+        // date so old entries can still recover their real data/document.
+        console.log(
+          `🔵 DEBUG: ${endpoint} 404'd for saved id, retrying with fileId only to recover old entry`,
+        );
+        try {
+          const listResponse = await fetch(`${baseURL}${endpoint}?fileId=${fileData.fileId}`);
+          if (listResponse.ok) {
+            const listData = await listResponse.json();
+            const candidates: any[] = Array.isArray(listData) ? listData : [listData];
+            console.log("🔵 DEBUG: Candidate recordal records for recovery:", candidates);
+            const matchesHistory = (candidate: any) => {
+              const nv = candidate?.newValue || candidate;
+              const nameMatch =
+                historyNewValue?.name &&
+                nv?.name &&
+                String(nv.name).trim().toLowerCase() === String(historyNewValue.name).trim().toLowerCase();
+              const emailMatch =
+                historyNewValue?.email &&
+                nv?.email &&
+                String(nv.email).trim().toLowerCase() === String(historyNewValue.email).trim().toLowerCase();
+              return Boolean(nameMatch || emailMatch);
+            };
+            const matched = candidates.find(matchesHistory) ?? (candidates.length === 1 ? candidates[0] : null);
+            if (matched) {
+              applyResponseData(matched);
+            } else {
+              console.log("🔵 DEBUG: Could not confidently match an old recordal record — nothing to recover.");
+            }
+          } else {
+            console.log(`🔵 DEBUG: fileId-only retry also failed (${listResponse.status}) — no way to recover this old entry.`);
+          }
+        } catch (recoveryError) {
+          console.error("Recordal recovery attempt failed:", recoveryError);
+        }
       }
     } catch (error) {
       console.error("Recordal data error:", error);
@@ -2141,12 +2199,6 @@
           <p class="text-xs text-slate-500">Loading application data</p>
         </div>
       {:else if recordalData}
-        {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
-          <AssignmentDocuments
-            fileId={fileData?.fileId ?? fileData?.id}
-            appId={selectedApplication.id}
-          />
-        {:else}
         <div class="space-y-6">
           <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div class="flex items-center justify-between gap-4">
@@ -2155,7 +2207,7 @@
                   Form Header
                 </p>
                 <p class="text-sm text-slate-700 mt-1">
-                  {recordalData.oldValue?.title || recordalData.newValue?.title || "—"}
+                  {recordalData.oldValue?.title || recordalData.newValue?.title || fileData?.titleOfTradeMark || fileData?.titleOfInvention || fileData?.titleOfDesign || "—"}
                 </p>
               </div>
               <div class="text-right text-xs text-slate-500">
@@ -2167,11 +2219,11 @@
               <div class="space-y-3">
                 <div>
                   <div class="text-xs text-slate-500">File Number</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.fileNumber || "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.fileNumber || fileData?.fileId || "—"}</div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Product Class</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.productClass ?? "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.productClass ?? fileData?.trademarkClass ?? "—"}</div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">RTM Number</div>
@@ -2181,29 +2233,29 @@
               <div class="space-y-3">
                 <div>
                   <div class="text-xs text-slate-500">Current Applicant</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.name || "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.name || fileData?.applicants?.[0]?.name || fileData?.correspondence?.name || "—"}</div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Email</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.email || "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.email || fileData?.applicants?.[0]?.email || fileData?.correspondence?.email || "—"}</div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Phone</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.phone || "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.phone || fileData?.applicants?.[0]?.phone || fileData?.correspondence?.phone || "—"}</div>
                 </div>
               </div>
               <div class="space-y-3 md:col-span-2">
                 <div>
                   <div class="text-xs text-slate-500">Address</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.address || "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.address || fileData?.applicants?.[0]?.address || fileData?.correspondence?.address || "—"}</div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Country</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.country || "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.country || fileData?.applicants?.[0]?.country || "—"}</div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Nationality</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.nationality || "—"}</div>
+                  <div class="text-sm text-slate-900">{recordalData.oldValue?.nationality || fileData?.correspondence?.nationality || "—"}</div>
                 </div>
               </div>
             </div>
@@ -2363,17 +2415,6 @@
               Attachments
             </p>
             <div class="mt-3 flex flex-wrap gap-2">
-              {#if recordalData.documentUrl}
-                <Button
-                  on:click={() => window.open(recordalData.documentUrl, "_blank")}
-                  variant="outline"
-                  size="sm"
-                  class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
-                >
-                  <Icon icon="mdi:file-document-outline" width="1em" />Document
-                </Button>
-              {/if}
-
               {#each getAssignmentAttachmentEntries(recordalData) as attachment}
                 <Button
                   on:click={() => window.open(attachment.url, "_blank")}
@@ -2400,7 +2441,6 @@
             </div>
           </section>
         </div>
-        {/if}
       {:else}
         <div class="flex flex-col items-center justify-center h-40 gap-2">
           <Icon
@@ -3686,7 +3726,7 @@
                     >
                   {/if} -->
                   <!-- View Recordal Data (Trademarks Only) -->
-                  {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType ?? -1))}
+                  {#if fileData.type === FileTypes.Trademark && ((Array.isArray($loggedInUser?.userRoles) && ($loggedInUser.userRoles.includes(UserRoles.Tech) || $loggedInUser.userRoles.includes(UserRoles.TrademarkCertification) || $loggedInUser.userRoles.includes(UserRoles.SuperAdmin)) && application.applicationType === 5) || [8, 7, 9, 10].includes(application.applicationType ?? -1))}
                     <DropdownMenu.Item
                       on:click={() => {
                         viewRecordalData(application);
@@ -3717,11 +3757,6 @@
                         )}
                     >
                       View Application
-                    </DropdownMenu.Item>
-                  {/if}
-                  {#if application.applicationType === FormApplicationTypes.Assignment}
-                    <DropdownMenu.Item on:click={() => viewRecordalData(application)}>
-                      View Uploaded Documents
                     </DropdownMenu.Item>
                   {/if}
                   <!-- Patent License Application -->
@@ -4183,14 +4218,6 @@
                       {/if}
                     {/if}
                   {/if}<!-- end LETTERS guard -->
-
-                  <!-- View Uploaded Document (for recordal types) -->
-                  {#if [FormApplicationTypes.Assignment, FormApplicationTypes.RegisteredUser, FormApplicationTypes.Merger, FormApplicationTypes.ChangeOfName, FormApplicationTypes.ChangeOfAddress].includes(application.applicationType ?? -1)}
-                    <DropdownMenu.Separator />
-                    <DropdownMenu.Item on:click={() => viewRecordalData(application)}>
-                      View Uploaded Document
-                    </DropdownMenu.Item>
-                  {/if}
                 </DropdownMenu.Group>
               </DropdownMenu.Content>
             </DropdownMenu.Root>

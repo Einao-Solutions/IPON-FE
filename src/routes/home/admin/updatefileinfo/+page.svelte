@@ -294,6 +294,22 @@
     document: null as File | null,
   };
 
+  // Ownership Change form data
+  let ownershipData = {
+    previousName: "",
+    previousId: "",
+    previousEmail: "",
+    previousPhone: "",
+    previousAddress: "",
+    previousState: "",
+    newName: "",
+    newId: "",
+    newEmail: "",
+    newPhone: "",
+    newAddress: "",
+    newState: "",
+  };
+
   // Merger form data
   let mergerData = {
     name: "",
@@ -347,7 +363,7 @@
   };
 
   // Helper to check if selected type is a recordal type
-  $: isRecordalType = [5, 7, 8, 9, 10].includes(newApp.applicationType);
+  $: isRecordalType = [5, 6, 7, 8, 9, 10].includes(newApp.applicationType);
 
   //add app history
   let newApp: AppHistory = {
@@ -758,6 +774,62 @@
     return { fileName: file.name, contentType: file.type || "application/octet-stream", data: base64 };
   };
 
+  // Some dedicated recordal endpoints (e.g. Merger) don't create their own
+  // linked ApplicationHistory record — used as a fallback only when a
+  // refetch shows the backend didn't create one on its own.
+  function buildFallbackRecordalHistoryValues(
+    applicationType: number,
+  ): { oldValue?: unknown; newValue?: unknown } {
+    switch (applicationType) {
+      case FormApplicationTypes.Assignment:
+        return {
+          oldValue: {
+            name: assignmentData.assignorName,
+            email: assignmentData.assignorEmail,
+            phone: assignmentData.assignorPhone,
+            nationality: assignmentData.assignorNationality,
+            address: assignmentData.assignorAddress,
+          },
+          newValue: {
+            name: assignmentData.assigneeName,
+            email: assignmentData.assigneeEmail,
+            phone: assignmentData.assigneePhone,
+            nationality: assignmentData.assigneeNationality,
+            address: assignmentData.assigneeAddress,
+            country: assignmentData.assigneeCountry,
+            dateOfAssignment: assignmentData.dateOfAssignment || new Date().toISOString(),
+          },
+        };
+      case FormApplicationTypes.RegisteredUser:
+        return {
+          newValue: {
+            name: registeredUserData.name,
+            email: registeredUserData.email,
+            phone: registeredUserData.phone,
+            nationality: registeredUserData.nationality,
+            address: registeredUserData.address,
+          },
+        };
+      case FormApplicationTypes.Merger:
+        return {
+          newValue: {
+            name: mergerData.name,
+            email: mergerData.email,
+            phone: mergerData.phone,
+            nationality: mergerData.nationality,
+            address: mergerData.address,
+            dateOfMerger: mergerData.dateOfMerger || new Date().toISOString(),
+          },
+        };
+      case FormApplicationTypes.ChangeOfName:
+        return { newValue: { newName: changeOfNameData.newName } };
+      case FormApplicationTypes.ChangeOfAddress:
+        return { newValue: { newAddress: changeOfAddressData.newAddress } };
+      default:
+        return {};
+    }
+  }
+
   // Build and POST a new application history entry
   const addApplicationHistory = async (app: any) => {
     try {
@@ -779,6 +851,12 @@
       processingLabel = "Adding application...";
       isLoading = true;
 
+      // Snapshot existing history ids so we can spot the record the backend
+      // creates for dedicated recordal endpoints (Assignment, Merger, etc.).
+      const existingHistoryIds = new Set(
+        (filing.applicationHistory || []).map((h: any) => h.id),
+      );
+
       // Determine the correct endpoint based on application type
       let endpoint = "";
       let formData = new FormData();
@@ -799,6 +877,12 @@
         formData.append('AssigneePhone', assignmentData.assigneePhone || "");
         formData.append('AssigneeNationality', assignmentData.assigneeNationality || "");
         formData.append('AssigneeAddress', assignmentData.assigneeAddress || "");
+        formData.append('CurrentStatus', String(app.currentStatus ?? ""));
+        formData.append(
+          'ApplicationDate',
+          app.applicationDate ? new Date(app.applicationDate).toISOString() : new Date().toISOString(),
+        );
+        formData.append('PaymentId', app.paymentId || "");
         if (assignmentData.assignmentDeed) {
           formData.append('AssignmentDeed', assignmentData.assignmentDeed);
         }
@@ -814,6 +898,12 @@
         formData.append('Phone', registeredUserData.phone || "");
         formData.append('Nationality', registeredUserData.nationality || "");
         formData.append('Address', registeredUserData.address || "");
+        formData.append('CurrentStatus', String(app.currentStatus ?? ""));
+        formData.append(
+          'ApplicationDate',
+          app.applicationDate ? new Date(app.applicationDate).toISOString() : new Date().toISOString(),
+        );
+        formData.append('PaymentId', app.paymentId || "");
         if (registeredUserData.document) {
           formData.append('document', registeredUserData.document);
         }
@@ -840,6 +930,11 @@
         formData.append('FileId', filing.fileId);
         formData.append('NewName', changeOfNameData.newName || "");
         formData.append('changeType', 'Name');
+        formData.append('CurrentStatus', String(app.currentStatus ?? ""));
+        formData.append(
+          'ApplicationDate',
+          app.applicationDate ? new Date(app.applicationDate).toISOString() : new Date().toISOString(),
+        );
         if (changeOfNameData.supportingDocument) {
           formData.append('document', changeOfNameData.supportingDocument);
         }
@@ -850,6 +945,11 @@
         formData.append('FileId', filing.fileId);
         formData.append('NewAddress', changeOfAddressData.newAddress || "");
         formData.append('changeType', 'Address');
+        formData.append('CurrentStatus', String(app.currentStatus ?? ""));
+        formData.append(
+          'ApplicationDate',
+          app.applicationDate ? new Date(app.applicationDate).toISOString() : new Date().toISOString(),
+        );
         if (changeOfAddressData.supportingDocument) {
           formData.append('document', changeOfAddressData.supportingDocument);
         }
@@ -868,7 +968,7 @@
         }
       }
       else {
-        endpoint = `/api/admin/CreateApplicationHistory`;
+        endpoint = `/api/admin/ApplicationHistory`;
         requestHeaders = {
           "Content-Type": "application/json",
           Authorization: `Bearer ${$loggedInToken}`,
@@ -883,16 +983,46 @@
           userId: $loggedInUser?.id ?? app.userId ?? null,
           paymentId: app.paymentId || null,
           certificatePaymentId: app.certificatePaymentId || null,
+          ...(app.applicationType === FormApplicationTypes.Ownership
+            ? {
+                oldValue: {
+                  name: ownershipData.previousName,
+                  id: ownershipData.previousId,
+                  email: ownershipData.previousEmail,
+                  phone: ownershipData.previousPhone,
+                  address: ownershipData.previousAddress,
+                  state: ownershipData.previousState,
+                },
+                newValue: {
+                  name: ownershipData.newName,
+                  id: ownershipData.newId,
+                  email: ownershipData.newEmail,
+                  phone: ownershipData.newPhone,
+                  address: ownershipData.newAddress,
+                  state: ownershipData.newState,
+                },
+              }
+            : {}),
         });
+      }
+
+      // Ensure the auth token is always attached, even for FormData-based
+      // branches above that don't explicitly set requestHeaders.
+      if (!requestHeaders) {
+        requestHeaders = { Authorization: `Bearer ${$loggedInToken}` };
       }
 
       // Log detailed request info
       const apiUrl = `${baseURL}${endpoint}`;
       console.log("🔵 DEBUG: API URL:", apiUrl);
-      console.log("🔵 DEBUG: FormData entries:");
-      formData.forEach((value, key) => {
-        console.log(`  ${key}: ${value instanceof File ? `File(${value.name})` : value}`);
-      });
+      if (typeof requestBody === "string") {
+        console.log("🔵 DEBUG: JSON request body:", requestBody);
+      } else {
+        console.log("🔵 DEBUG: FormData entries:");
+        formData.forEach((value, key) => {
+          console.log(`  ${key}: ${value instanceof File ? `File(${value.name})` : value}`);
+        });
+      }
 
       const res = await fetch(apiUrl, {
         method: "POST",
@@ -905,10 +1035,71 @@
 
       if (res.ok) {
         const created = await res.text();
-        if (app.applicationType === FormApplicationTypes.Merger) {
-          const historyResponse = await fetch(
-            `${baseURL}/api/admin/CreateApplicationHistory`,
-            {
+        // Only the generic JSON branch above (types with no dedicated
+        // recordal endpoint) actually returns the created history record.
+        // Assignment/RegisteredUser/Merger/ChangeOfName/ChangeOfAddress post
+        // straight to their own dedicated endpoint (matching the regular
+        // non-admin flow) — the backend links the submitted details to the
+        // history entry on its own, so we must NOT create a second,
+        // disconnected history record here or "view application" ends up
+        // pointing at an empty duplicate.
+        if (!endpoint.startsWith("/api/files/")) {
+          let historyRecord: any = null;
+          try {
+            historyRecord = created ? JSON.parse(created) : null;
+          } catch {
+            historyRecord = null;
+          }
+          filing.applicationHistory = filing.applicationHistory || [];
+          if (historyRecord) {
+            // Show the new entry immediately without requiring a refetch.
+            filing.applicationHistory = [historyRecord, ...filing.applicationHistory];
+          }
+        } else if (app.applicationType === FormApplicationTypes.Merger) {
+          // Merger's dedicated endpoint never links a history record at all
+          // (confirmed: GetMergerApplication 404s for any id we try) — so
+          // don't bother trying to detect/patch one. Always create the
+          // history record directly via the generic endpoint, which already
+          // reliably respects the chosen status.
+          //
+          // MergerApplication's response returns its OWN real id, e.g.
+          // {"success":true,"appId":"21c0e777-..."} — THIS is the id
+          // GetMergerApplication actually needs, not our fallback history
+          // record's id. Save it onto newValue so "View Application" can
+          // pass the right id through.
+          console.log("🔵 DEBUG: MergerApplication raw response body:", created);
+          let mergerRecordalAppId: string | undefined;
+          const mergerDocumentFields: Record<string, unknown> = {};
+          const scanForDocumentFields = (obj: any, depth = 0) => {
+            if (!obj || typeof obj !== "object" || depth > 4) return;
+            for (const [key, value] of Object.entries(obj)) {
+              if (typeof value === "string" && /url|document|deed|attachment/i.test(key)) {
+                mergerDocumentFields[key] = value;
+              } else if (
+                typeof value === "string" &&
+                mergerRecordalAppId === undefined &&
+                /^appid$|^id$/i.test(key)
+              ) {
+                mergerRecordalAppId = value;
+              } else if (value && typeof value === "object") {
+                scanForDocumentFields(value, depth + 1);
+              }
+            }
+          };
+          try {
+            const parsedCreated = created ? JSON.parse(created) : null;
+            scanForDocumentFields(parsedCreated);
+          } catch {
+            // response wasn't JSON — nothing to extract
+          }
+          console.log("🔵 DEBUG: Extracted merger document fields:", mergerDocumentFields);
+          console.log("🔵 DEBUG: Extracted merger recordal appId:", mergerRecordalAppId);
+
+          try {
+            const fallbackValues = buildFallbackRecordalHistoryValues(app.applicationType) as {
+              newValue?: Record<string, unknown>;
+            };
+            const createRes = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -924,27 +1115,122 @@
                 userId: $loggedInUser?.id ?? app.userId ?? null,
                 paymentId: app.paymentId || null,
                 certificatePaymentId: app.certificatePaymentId || null,
+                ...fallbackValues,
                 newValue: {
-                  name: mergerData.name,
-                  email: mergerData.email,
-                  phone: mergerData.phone,
-                  nationality: mergerData.nationality,
-                  address: mergerData.address,
-                  dateOfMerger: mergerData.dateOfMerger || app.applicationDate || new Date().toISOString(),
+                  ...(fallbackValues.newValue || {}),
+                  ...mergerDocumentFields,
+                  ...(mergerRecordalAppId ? { recordalAppId: mergerRecordalAppId } : {}),
                 },
               }),
-            },
-          );
+            });
+            if (createRes.ok) {
+              const createdText = await createRes.text();
+              try {
+                const createdEntry = createdText ? JSON.parse(createdText) : null;
+                filing.applicationHistory = filing.applicationHistory || [];
+                if (createdEntry) {
+                  filing.applicationHistory = [createdEntry, ...filing.applicationHistory];
+                }
+              } catch {
+                // ignore parse failure, list will just refresh next load
+              }
+            } else {
+              console.error("Merger history creation failed:", await createRes.text());
+            }
+          } catch (createErr) {
+            console.error("Failed to create merger application history:", createErr);
+          }
+        } else {
+          // Dedicated recordal endpoint: some backends (e.g. Assignment)
+          // create their own linked history record but always default its
+          // status ("Awaiting Payment"); others don't create one at all.
+          // Re-fetch to see what actually landed, then either fix the
+          // status (existing entry) or create the missing one ourselves
+          // (no entry found) so it always shows up in the list.
+          try {
+            const refetch = await fetch(
+              `${baseURL}/api/files/GetAllFileDetails?fileNumber=${encodeURIComponent(filing.fileId)}`,
+            );
+            if (refetch.ok) {
+              const refetchedData = await refetch.json();
+              const refetchedFiling = Array.isArray(refetchedData) ? refetchedData[0] : refetchedData;
+              let refreshedHistory: any[] = refetchedFiling?.applicationHistory ?? [];
+              const newEntry = refreshedHistory.find(
+                (h: any) => !existingHistoryIds.has(h.id) && h.applicationType === app.applicationType,
+              );
 
-          if (!historyResponse.ok) {
-            const historyError = await historyResponse.text();
-            console.error("Merger history creation failed:", historyError);
-            throw new Error(
-              `Merger application saved, but application history could not be created (${historyResponse.status}): ${historyError}`,
+              if (!newEntry) {
+                // Backend didn't create a linked history record for this
+                // recordal type — create it explicitly.
+                const createRes = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${$loggedInToken}`,
+                  },
+                  body: JSON.stringify({
+                    fileNumber: filing.fileId,
+                    applicationDate: app.applicationDate
+                      ? new Date(app.applicationDate).toISOString()
+                      : new Date().toISOString(),
+                    applicationType: app.applicationType,
+                    currentStatus: app.currentStatus,
+                    userId: $loggedInUser?.id ?? app.userId ?? null,
+                    paymentId: app.paymentId || null,
+                    certificatePaymentId: app.certificatePaymentId || null,
+                    ...buildFallbackRecordalHistoryValues(app.applicationType),
+                  }),
+                });
+                if (createRes.ok) {
+                  const createdText = await createRes.text();
+                  try {
+                    const createdEntry = createdText ? JSON.parse(createdText) : null;
+                    if (createdEntry) {
+                      refreshedHistory = [createdEntry, ...refreshedHistory];
+                    }
+                  } catch {
+                    // ignore parse failure, list will just refresh next load
+                  }
+                } else {
+                  console.error(
+                    "Fallback application history creation failed:",
+                    await createRes.text(),
+                  );
+                }
+              } else if (app.currentStatus != null && newEntry.currentStatus !== app.currentStatus) {
+                const patchRes = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
+                  method: "PATCH",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${$loggedInToken}`,
+                  },
+                  body: JSON.stringify({
+                    fileNumber: filing.fileId,
+                    applicationId: newEntry.id,
+                    applicationDate: newEntry.applicationDate ? new Date(newEntry.applicationDate) : null,
+                    applicationType: newEntry.applicationType,
+                    currentStatus: app.currentStatus,
+                    paymentId: newEntry.paymentId ?? null,
+                    certificatePaymentId: newEntry.certificatePaymentId ?? null,
+                  }),
+                });
+                if (patchRes.ok) {
+                  newEntry.currentStatus = app.currentStatus;
+                } else {
+                  console.error("Failed to override recordal status:", await patchRes.text());
+                }
+              }
+
+              filing.applicationHistory = refreshedHistory;
+            }
+          } catch (refetchErr) {
+            console.error(
+              "Failed to refresh application history after recordal submission:",
+              refetchErr,
             );
           }
         }
-        filing.applicationHistory = filing.applicationHistory || [];
+
         console.log("✅ SUCCESS: Application submitted");
 
         // Show success modal with details
@@ -1066,7 +1352,10 @@
 
       const res = await fetch(`${baseURL}/api/files/update-filing`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${$loggedInToken}`,
+        },
         body: JSON.stringify(payload),
       });
 
@@ -1851,6 +2140,66 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Supporting Document (PDF):</label>
                     <input type="file" accept=".pdf" class="input" on:change={handleRegisteredUserDocUpload} />
+                  </div>
+                </div>
+              </div>
+            {/if}
+
+            <!-- Ownership Change (type 6) -->
+            {#if newApp.applicationType === 6}
+              <div class="border border-slate-300 rounded-lg overflow-hidden mt-4">
+                <div class="bg-blue-100 px-4 py-2 font-semibold text-blue-900">Ownership Change</div>
+                <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="md:col-span-2 font-semibold text-slate-700">Previous Agent / Owner</div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={ownershipData.previousName} placeholder="Enter previous owner name" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ID:</label>
+                    <input type="text" class="input" bind:value={ownershipData.previousId} placeholder="Enter previous owner ID" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+                    <input type="email" class="input" bind:value={ownershipData.previousEmail} placeholder="Enter previous owner email" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone:</label>
+                    <input type="tel" class="input" bind:value={ownershipData.previousPhone} placeholder="Enter previous owner phone" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
+                    <textarea class="input" bind:value={ownershipData.previousAddress} placeholder="Enter previous owner address"></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">State:</label>
+                    <input type="text" class="input" bind:value={ownershipData.previousState} placeholder="Enter previous owner state" />
+                  </div>
+
+                  <div class="md:col-span-2 font-semibold text-slate-700 mt-2">New Agent / Owner</div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Name: <span class="text-red-500">*</span></label>
+                    <input type="text" class="input" bind:value={ownershipData.newName} placeholder="Enter new owner name" required />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ID:</label>
+                    <input type="text" class="input" bind:value={ownershipData.newId} placeholder="Enter new owner ID" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email:</label>
+                    <input type="email" class="input" bind:value={ownershipData.newEmail} placeholder="Enter new owner email" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone:</label>
+                    <input type="tel" class="input" bind:value={ownershipData.newPhone} placeholder="Enter new owner phone" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Address:</label>
+                    <textarea class="input" bind:value={ownershipData.newAddress} placeholder="Enter new owner address"></textarea>
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">State:</label>
+                    <input type="text" class="input" bind:value={ownershipData.newState} placeholder="Enter new owner state" />
                   </div>
                 </div>
               </div>
