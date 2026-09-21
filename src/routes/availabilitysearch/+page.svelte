@@ -4,7 +4,7 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import Icon from '@iconify/svelte';
 	import { onMount } from 'svelte';
-	import { ApplicationLetters, baseURL, normalizeImageUrl, UserRoles } from '$lib/helpers';
+	import { baseURL, normalizeImageUrl, UserRoles } from '$lib/helpers';
 	import { Cell } from '$lib/components/ui/calendar';
 	import { mapDateToString } from '../home/components/dashboardutils';
 	import { loggedInUser } from '$lib/store';
@@ -12,10 +12,6 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import * as Dialog from '$lib/components/ui/dialog';
-
-	const AVAILABILITY_SEARCH_LETTER_TYPE = ApplicationLetters.AvailabilitySearchReceipt;
 
 	interface SearchResult {
 		titleOfTradeMark: string;
@@ -41,24 +37,11 @@
 	let fileNumber: string | null = null;
 	let viewMode: 'list' | 'grid' = 'list'; // New state for view toggle
 
-	// Payment summary for this search request
-	let paymentId: string | null = null;
-	let appId: string | null = null;
-	let searchDate: string | null = null;
-	let applicationStatus: 'confirming' | 'completed' | 'failed' | null = null;
-	let showVerifyPaymentDialog = false;
-	let verifyPaymentLoading = false;
-	let verifyPaymentResult: any = null;
-	let verifyPaymentError: string | null = null;
-
 	onMount(async () => {
 		try {
 			// Retrieve search parameters from sessionStorage
 			const storedParams = sessionStorage.getItem('searchParams');
 			searchParams = storedParams ? JSON.parse(storedParams) : null;
-			searchDate = (searchParams as any)?.submittedAt ?? null;
-			paymentId = $page.url.searchParams.get('rrr');
-			appId = $page.url.searchParams.get('appId') ?? (searchParams as any)?.appId ?? null;
 			
 			// Retrieve saved view mode from localStorage
 			const savedViewMode = localStorage.getItem('searchResultsViewMode');
@@ -76,8 +59,13 @@
 				}
 			}
 
-			if (paymentId && appId && $loggedInUser?.id) {
-				await confirmAvailabilitySearchPayment();
+			// Confirm the payment so the "Other Applications" history flips from Awaiting Payment to Auto-Approved
+			const rrr = $page.url.searchParams.get('rrr');
+			const appId = $page.url.searchParams.get('appId') ?? (searchParams as any)?.appId ?? null;
+			if (rrr && appId && $loggedInUser?.id) {
+				await confirmAvailabilitySearchPayment(appId, $loggedInUser.id);
+			} else if (rrr && !appId) {
+				console.warn('Availability search payment confirmation skipped: appId is missing.');
 			}
 
 			if (searchParams) {
@@ -103,19 +91,30 @@
 		}
 	});
 
-	async function confirmAvailabilitySearchPayment() {
-		applicationStatus = 'confirming';
-		try {
-			const res = await fetch(`${baseURL}/api/files/UpdateAvailabilitySearchPayment`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ appId, userId: $loggedInUser?.id })
-			});
-			const body = res.ok ? await res.json() : null;
-			applicationStatus = body?.success ? 'completed' : 'failed';
-		} catch (err) {
-			console.error('Failed to confirm availability search payment:', err);
-			applicationStatus = 'failed';
+	// Retries because Remita's own status check can briefly lag right after the redirect back
+	async function confirmAvailabilitySearchPayment(appId: string, userId: string) {
+		const maxAttempts = 3;
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				const res = await fetch(`${baseURL}/api/files/UpdateAvailabilitySearchPayment`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ appId, userId })
+				});
+				const body = await res.json().catch(() => null);
+				if (res.ok && body?.success) {
+					return;
+				}
+				console.warn(
+					`Availability search payment confirmation attempt ${attempt} failed:`,
+					body?.message ?? res.status
+				);
+			} catch (err) {
+				console.error(`Availability search payment confirmation attempt ${attempt} errored:`, err);
+			}
+			if (attempt < maxAttempts) {
+				await new Promise((resolve) => setTimeout(resolve, 2000));
+			}
 		}
 	}
 
@@ -134,38 +133,6 @@
 		if (similarity >= 60) return 'bg-orange-100 text-orange-800 border-orange-200';
 		if (similarity >= 40) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
 		return 'bg-green-100 text-green-800 border-green-200';
-	}
-
-	function openVerifyPaymentDialog() {
-		verifyPaymentError = null;
-		verifyPaymentResult = null;
-		showVerifyPaymentDialog = true;
-		verifyRemitaPayment();
-	}
-
-	async function verifyRemitaPayment() {
-		if (!paymentId) {
-			verifyPaymentError = 'No payment reference available for this search.';
-			return;
-		}
-		verifyPaymentLoading = true;
-		verifyPaymentError = null;
-		try {
-			const response = await fetch(`${baseURL}/api/payments/check?id=${paymentId}`);
-			if (!response.ok) throw new Error('Verification failed');
-			verifyPaymentResult = await response.json();
-		} catch (err) {
-			verifyPaymentError = 'Failed to verify payment. Please try again.';
-		} finally {
-			verifyPaymentLoading = false;
-		}
-	}
-
-	function printAcknowledgement() {
-		if (!paymentId) return;
-		window.open(
-			`${baseURL}/api/letters/generate?letterType=${AVAILABILITY_SEARCH_LETTER_TYPE}&rrr=${paymentId}`
-		);
 	}
 
 	function handlePrint() {
@@ -211,69 +178,6 @@
 			<p class="text-sm text-gray-600">Generated on {getCurrentDate()}</p>
 		</div>
 	</div>
-
-	<!-- Application Summary -->
-	{#if searchParams}
-		<div class="bg-white rounded-md shadow overflow-hidden no-print">
-			<Table.Root>
-				<Table.Header>
-					<Table.Row>
-						<Table.Head class="w-16">S/N</Table.Head>
-						<Table.Head>Date</Table.Head>
-						<Table.Head>Title</Table.Head>
-						<Table.Head>Payment ID</Table.Head>
-						<Table.Head>Application Status</Table.Head>
-						<Table.Head class="w-24">More Action</Table.Head>
-					</Table.Row>
-				</Table.Header>
-				<Table.Body>
-					<Table.Row>
-						<Table.Cell class="font-medium">1</Table.Cell>
-						<Table.Cell>{searchDate ? mapDateToString(searchDate) : '—'}</Table.Cell>
-						<Table.Cell>{searchParams.query ?? '—'}</Table.Cell>
-						<Table.Cell>{paymentId ?? '—'}</Table.Cell>
-						<Table.Cell>
-							{#if applicationStatus === 'confirming'}
-								<span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
-									<Icon icon="line-md:loading-loop" width="0.9rem" height="0.9rem" />
-									Confirming
-								</span>
-							{:else if applicationStatus === 'completed'}
-								<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-									Auto-Approved
-								</span>
-							{:else if applicationStatus === 'failed'}
-								<span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-									Failed
-								</span>
-							{:else}
-								<span class="text-sm text-gray-500">—</span>
-							{/if}
-						</Table.Cell>
-						<Table.Cell>
-							{#if paymentId}
-								<DropdownMenu.Root>
-									<DropdownMenu.Trigger class="text-slate-600 hover:text-slate-900">
-										<Icon icon="mdi:dots-vertical" width="1.25rem" height="1.25rem" />
-									</DropdownMenu.Trigger>
-									<DropdownMenu.Content align="end" class="w-48">
-										<DropdownMenu.Item on:click={openVerifyPaymentDialog}>
-											Verify Payment
-										</DropdownMenu.Item>
-										<DropdownMenu.Item on:click={printAcknowledgement}>
-											Print
-										</DropdownMenu.Item>
-									</DropdownMenu.Content>
-								</DropdownMenu.Root>
-							{:else}
-								<span class="text-sm text-gray-400">—</span>
-							{/if}
-						</Table.Cell>
-					</Table.Row>
-				</Table.Body>
-			</Table.Root>
-		</div>
-	{/if}
 
 	<!-- Search Criteria Display -->
 	{#if searchParams}
@@ -492,49 +396,6 @@
 		</div>
 	{/if}
 </div>
-
-<!-- Verify Payment Dialog -->
-<Dialog.Root bind:open={showVerifyPaymentDialog}>
-	<Dialog.Content class="max-w-md">
-		<Dialog.Header>
-			<Dialog.Title>Verify Payment</Dialog.Title>
-			<Dialog.Description>
-				Payment reference: {paymentId ?? '—'}
-			</Dialog.Description>
-		</Dialog.Header>
-		{#if verifyPaymentLoading}
-			<div class="flex justify-center items-center py-8">
-				<Icon icon="line-md:loading-loop" width="2rem" height="2rem" class="text-green-600" />
-			</div>
-		{:else if verifyPaymentError}
-			<div class="p-3 bg-red-50 border border-red-200 rounded-md">
-				<p class="text-sm text-red-600">{verifyPaymentError}</p>
-			</div>
-		{:else if verifyPaymentResult}
-			<div class="space-y-2 text-sm">
-				<div class="flex justify-between">
-					<span class="text-gray-500">Status:</span>
-					<span class="font-medium">{verifyPaymentResult.status === '00' ? 'Successful' : verifyPaymentResult.status ?? '—'}</span>
-				</div>
-				<div class="flex justify-between">
-					<span class="text-gray-500">Amount:</span>
-					<span class="font-medium">{verifyPaymentResult.amount ?? '—'}</span>
-				</div>
-				<div class="flex justify-between">
-					<span class="text-gray-500">Payment Date:</span>
-					<span class="font-medium">{verifyPaymentResult.paymentDate ? mapDateToString(verifyPaymentResult.paymentDate) : '—'}</span>
-				</div>
-				<div class="flex justify-between">
-					<span class="text-gray-500">Payer:</span>
-					<span class="font-medium">{verifyPaymentResult.payerName ?? '—'}</span>
-				</div>
-			</div>
-		{/if}
-		<Dialog.Footer>
-			<Button variant="outline" on:click={() => (showVerifyPaymentDialog = false)}>Close</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
 
 <style>
 	.line-clamp-2 {
