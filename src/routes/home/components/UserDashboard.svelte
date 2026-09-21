@@ -3,6 +3,7 @@
   import { DashStats, loggedInToken, loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
   import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
   import {
     baseURL,
     type DashBoardStats,
@@ -13,10 +14,28 @@
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { mapTypeToString } from "./dashboardutils";
   import * as Accordion from "$lib/components/ui/accordion";
+  import * as Dialog from "$lib/components/ui/dialog";
   export let user: UsersType;
   export let showOnlyTotals: boolean = false;
   export let showOnlyStatistics: boolean = false;
   let isLoading: boolean = true;
+
+  // "Other Applications" now offers a choice between Availability Search and Opposition history
+  let showOtherAppsChoice = false;
+
+  function openOtherAppsChoice(): void {
+    showOtherAppsChoice = true;
+  }
+
+  function chooseOpposition(): void {
+    showOtherAppsChoice = false;
+    goto("/home/other-applications?tab=oppositions");
+  }
+
+  function chooseAvailabilitySearch(): void {
+    showOtherAppsChoice = false;
+    goto("/home/other-applications?tab=availabilitysearch");
+  }
 
   // Separate state for user dashboard to avoid conflicts with staff dashboard
   let userDashStats: DashBoardStats | null = null;
@@ -466,9 +485,10 @@
         </a>
 
         <!-- Other Applications Total -->
-        <a
-          href="/home/other-applications"
-          class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden"
+        <button
+          type="button"
+          on:click={openOtherAppsChoice}
+          class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden w-full text-left"
         >
           <div class="flex items-center space-x-4">
             <div
@@ -498,7 +518,7 @@
               />
             </div>
           </div>
-        </a>
+        </button>
       </div>
     {/if}
 
@@ -1077,9 +1097,10 @@
         </Accordion.Item>
       </Accordion.Root>
       <!-- Other Applications Link -->
-      <a
-        href="/home/other-applications"
-        class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden mt-4"
+      <button
+        type="button"
+        on:click={openOtherAppsChoice}
+        class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden mt-4 w-full text-left"
       >
         <div class="flex items-center space-x-4">
           <div
@@ -1107,11 +1128,40 @@
             />
           </div>
         </div>
-      </a>
+      </button>
       <!-- End of detailed statistics view -->
     {/if}
   {/if}
 </div>
+
+<Dialog.Root bind:open={showOtherAppsChoice}>
+  <Dialog.Content class="max-w-md">
+    <Dialog.Header>
+      <Dialog.Title>Other Applications</Dialog.Title>
+      <Dialog.Description>
+        Choose the application you'd like to proceed with.
+      </Dialog.Description>
+    </Dialog.Header>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
+      <button
+        type="button"
+        on:click={chooseAvailabilitySearch}
+        class="flex flex-col items-center gap-2 p-4 border border-slate-200 rounded-xl hover:border-green-400 hover:bg-green-50 transition-colors"
+      >
+        <Icon icon="mdi:file-search-outline" class="text-2xl text-green-800" />
+        <span class="text-sm font-medium text-slate-800">Availability Search</span>
+      </button>
+      <button
+        type="button"
+        on:click={chooseOpposition}
+        class="flex flex-col items-center gap-2 p-4 border border-slate-200 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition-colors"
+      >
+        <Icon icon="mdi:gavel" class="text-2xl text-orange-700" />
+        <span class="text-sm font-medium text-slate-800">Opposition</span>
+      </button>
+    </div>
+  </Dialog.Content>
+</Dialog.Root>
 
 <style>
   /* Dashboard wrapper */

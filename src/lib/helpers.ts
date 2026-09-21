@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
-export const baseURL = "https://testbackend.iponigeria.com"; 
+export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://testbackend.iponigeria.com"; 
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -341,6 +341,8 @@ export enum FormApplicationTypes {
   StatutoryDeclaration = 25,
   ChangeOfAgent = 26,
   OfflineRenewalRequest = 27,
+  TrademarkJournalRequest = 28,
+  AvailabilitySearch = 29,
 }
 
 export enum ApplicationLetters {
@@ -424,6 +426,7 @@ export enum ApplicationLetters {
   DesignMergerReceipt = 87,
   DesignCtcReceipt = 88,
   DesignAmendmentReceipt = 89,
+  AvailabilitySearchReceipt = 95,
 }
 
 export enum ApplicationStatuses {

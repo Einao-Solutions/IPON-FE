@@ -298,8 +298,22 @@ async function filewithdrawal(ctx: PaymentContext) {
   );
 }
 
-async function availabilitysearch(ctx: PaymentContext) {
-  return simpleRedirectHandler(ctx, "/availabilitysearch");
+async function availabilitysearch(ctx: PaymentContext): Promise<void> {
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const raw = sessionStorage.getItem("searchParams");
+  const parsed = raw ? JSON.parse(raw) : null;
+  const appId = parsed?.appId ?? null;
+
+  ctx.state.setTitle("Availability Search Payment");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/availabilitysearch?rrr=${rrr}${appId ? `&appId=${appId}` : ""}`,
+  );
 }
 
 async function journal(ctx: PaymentContext): Promise<void> {

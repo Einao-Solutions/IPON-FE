@@ -18,6 +18,8 @@
 		classId: number | undefined;
 		fileType: string;
 		type: string;
+		submittedAt: string;
+		appId?: string;
 	}
 
 	// Class of goods options
@@ -160,7 +162,8 @@
 				query: searchQuery,
 				classId: selectedClass,
 				fileType: selectedfileType,
-				type: 'availabilitysearch'
+				type: 'availabilitysearch',
+				submittedAt: new Date().toISOString()
 			};
 			// console.log('searchParams', searchParams);
 			// Store search parameters
@@ -173,7 +176,7 @@
 				// console.log('applicantEmail', applicantEmail);
 				
 				const res = await fetch(
-					`${baseURL}/api/files/AvailabilitySearchCost?name=${applicantName}&email=${applicantEmail}`,
+					`${baseURL}/api/files/AvailabilitySearchCost?name=${applicantName}&email=${applicantEmail}&userId=${$loggedInUser?.id}&searchTerm=${encodeURIComponent(searchQuery)}&classNo=${selectedClass ?? ''}&fileType=${selectedfileType}`,
 					{}
 				);
 
@@ -186,6 +189,9 @@
 				paymentId = response.rrr;
 				console.log('Amount:', cost);
 				console.log('RRR:', paymentId);
+				// Persist appId so the payment confirmation step can mark this search completed
+				searchParams.appId = response.appId;
+				sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
 				// Redirect to payment page
 				 await goto(`/payment/?type=availabilitysearch&rrr=${paymentId}&amount=${cost}`);
 
