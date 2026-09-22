@@ -341,6 +341,8 @@ export enum FormApplicationTypes {
   StatutoryDeclaration = 25,
   ChangeOfAgent = 26,
   OfflineRenewalRequest = 27,
+  TrademarkJournalRequest = 28,
+  AvailabilitySearch = 29,
 }
 
 export enum ApplicationLetters {
@@ -424,6 +426,7 @@ export enum ApplicationLetters {
   DesignMergerReceipt = 87,
   DesignCtcReceipt = 88,
   DesignAmendmentReceipt = 89,
+  AvailabilitySearchReceipt = 95,
 }
 
 export enum ApplicationStatuses {

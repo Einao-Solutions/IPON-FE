@@ -10,6 +10,7 @@
 	import { loggedInUser } from '$lib/store';
 	import { parseLoggedInUser } from '../dataview/datahelpers';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 
 	interface SearchResult {
@@ -58,6 +59,15 @@
 				}
 			}
 
+			// Confirm the payment so the "Other Applications" history flips from Awaiting Payment to Auto-Approved
+			const rrr = $page.url.searchParams.get('rrr');
+			const appId = $page.url.searchParams.get('appId') ?? (searchParams as any)?.appId ?? null;
+			if (rrr && appId && $loggedInUser?.id) {
+				await confirmAvailabilitySearchPayment(appId, $loggedInUser.id);
+			} else if (rrr && !appId) {
+				console.warn('Availability search payment confirmation skipped: appId is missing.');
+			}
+
 			if (searchParams) {
 				// Fetch search results from the backend
 				const response = await fetch(
@@ -80,6 +90,33 @@
 			isLoading = false;
 		}
 	});
+
+	// Retries because Remita's own status check can briefly lag right after the redirect back
+	async function confirmAvailabilitySearchPayment(appId: string, userId: string) {
+		const maxAttempts = 3;
+		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+			try {
+				const res = await fetch(`${baseURL}/api/files/UpdateAvailabilitySearchPayment`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ appId, userId })
+				});
+				const body = await res.json().catch(() => null);
+				if (res.ok && body?.success) {
+					return;
+				}
+				console.warn(
+					`Availability search payment confirmation attempt ${attempt} failed:`,
+					body?.message ?? res.status
+				);
+			} catch (err) {
+				console.error(`Availability search payment confirmation attempt ${attempt} errored:`, err);
+			}
+			if (attempt < maxAttempts) {
+				await new Promise((resolve) => setTimeout(resolve, 2000));
+			}
+		}
+	}
 
 	function goBack() {
 		window.history.back();

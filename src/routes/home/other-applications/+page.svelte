@@ -3,22 +3,32 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
-	import { baseURL, UserRoles } from '$lib/helpers';
+	import { baseURL, UserRoles, ApplicationLetters } from '$lib/helpers';
 	import { loggedInToken, loggedInUser } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Sheet from '$lib/components/ui/sheet';
 	import * as Tabs from '$lib/components/ui/tabs';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapDateToString, mapTypeToString } from '../components/dashboardutils';
 	import { toast } from 'svelte-sonner';
 
+	const AVAILABILITY_SEARCH_TYPE = 29;
+
 	let oppositions: any[] = [];
 	let otherApps: any[] = [];
+	let availabilitySearches: any[] = [];
 	let oppositionsLoading = false;
 	let search = '';
 	let activeTab = 'oppositions';
+
+	let showVerifyPaymentDialog = false;
+	let verifyPaymentLoading = false;
+	let verifyPaymentResult: any = null;
+	let verifyPaymentError: string | null = null;
+	let verifyPaymentRRR: string | null = null;
 
 	let selectedOpposition: any = null;
 	let showOppositionDetail = false;
@@ -46,6 +56,10 @@
 	}
 
 	onMount(async () => {
+		const tabParam = $page.url.searchParams.get('tab');
+		if (tabParam === 'availabilitysearch' || tabParam === 'other' || tabParam === 'oppositions') {
+			activeTab = tabParam;
+		}
 		await loadApplications();
 		const oppositionId = $page.url.searchParams.get('oppositionId');
 		if (oppositionId) {
@@ -63,7 +77,12 @@
 				fetchOtherApps(currentUser.id)
 			]);
 			oppositions = oppItems.map((x, i) => ({ ...x, sn: i + 1 }));
-			otherApps = otherItems.map((x, i) => ({ ...x, sn: i + 1 }));
+			availabilitySearches = otherItems
+				.filter((x) => x.applicationTypeRaw === AVAILABILITY_SEARCH_TYPE)
+				.map((x, i) => ({ ...x, sn: i + 1 }));
+			otherApps = otherItems
+				.filter((x) => x.applicationTypeRaw !== AVAILABILITY_SEARCH_TYPE)
+				.map((x, i) => ({ ...x, sn: i + 1 }));
 		} catch (e) {
 			console.error('Failed to load applications', e);
 			toast.error('Failed to load applications');
@@ -116,7 +135,9 @@
 				status: x.currentStatus,
 				paymentId: x.paymentId,
 				id: x.id,
+				applicationTypeRaw: x.applicationType,
 				applicationType: mapTypeToString(x.applicationType),
+				title: x.title ?? null,
 				history: x.statusHistory
 			}));
 		} catch (e) {
@@ -175,6 +196,40 @@
 
 	$: filteredOppositions = filterList(oppositions);
 	$: filteredOtherApps = filterList(otherApps);
+	$: filteredAvailabilitySearches = filterList(availabilitySearches);
+
+	function openVerifyPaymentDialog(rrr: string | null | undefined) {
+		verifyPaymentRRR = rrr ?? null;
+		verifyPaymentError = null;
+		verifyPaymentResult = null;
+		showVerifyPaymentDialog = true;
+		verifyRemitaPayment();
+	}
+
+	async function verifyRemitaPayment() {
+		if (!verifyPaymentRRR) {
+			verifyPaymentError = 'No payment reference available for this application.';
+			return;
+		}
+		verifyPaymentLoading = true;
+		verifyPaymentError = null;
+		try {
+			const response = await fetch(`${baseURL}/api/payments/check?id=${verifyPaymentRRR}`);
+			if (!response.ok) throw new Error('Verification failed');
+			verifyPaymentResult = await response.json();
+		} catch (e) {
+			verifyPaymentError = 'Failed to verify payment. Please try again.';
+		} finally {
+			verifyPaymentLoading = false;
+		}
+	}
+
+	function printAvailabilitySearchReceipt(rrr: string | null | undefined) {
+		if (!rrr) return;
+		window.open(
+			`${baseURL}/api/letters/generate?letterType=${ApplicationLetters.AvailabilitySearchReceipt}&rrr=${rrr}`
+		);
+	}
 </script>
 
 <div class="p-6 space-y-6">
@@ -201,6 +256,9 @@
 			<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
 				{oppositions.length} Oppositions
 			</span>
+			<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
+				{availabilitySearches.length} Availability Searches
+			</span>
 			<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
 				{otherApps.length} Other
 			</span>
@@ -221,9 +279,12 @@
 
 	<!-- Tabs -->
 	<Tabs.Root bind:value={activeTab} class="w-full">
-		<Tabs.List class="grid w-full max-w-md grid-cols-2">
+		<Tabs.List class="grid w-full max-w-lg grid-cols-3">
 			<Tabs.Trigger value="oppositions">
 				Oppositions ({oppositions.length})
+			</Tabs.Trigger>
+			<Tabs.Trigger value="availabilitysearch">
+				Availability Searches ({availabilitySearches.length})
 			</Tabs.Trigger>
 			<Tabs.Trigger value="other">
 				Other Applications ({otherApps.length})
@@ -309,6 +370,69 @@
 														</DropdownMenu.Item>
 														{/if}
 														{/if}
+													</DropdownMenu.Content>
+												</DropdownMenu.Root>
+											{:else}
+												<span class="text-slate-400 text-xs">—</span>
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
+			</div>
+		</Tabs.Content>
+
+		<!-- Availability Searches Tab -->
+		<Tabs.Content value="availabilitysearch" class="mt-4">
+			<div class="rounded-xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+				{#if oppositionsLoading}
+					<div class="flex justify-center items-center py-16">
+						<Icon icon="line-md:loading-loop" class="w-8 h-8 text-purple-600" />
+					</div>
+				{:else if filteredAvailabilitySearches.length === 0}
+					<div class="flex flex-col items-center justify-center py-16 text-center">
+						<Icon icon="mdi:inbox-outline" class="w-12 h-12 text-slate-300 mb-2" />
+						<p class="text-slate-500 text-sm">No availability searches found.</p>
+					</div>
+				{:else}
+					<div class="overflow-x-auto">
+						<table class="min-w-full text-sm">
+							<thead class="bg-slate-50 text-slate-600">
+								<tr>
+									<th class="px-4 py-3 text-left font-semibold">S/N</th>
+									<th class="px-4 py-3 text-left font-semibold">Date</th>
+									<th class="px-4 py-3 text-left font-semibold">Title</th>
+									<th class="px-4 py-3 text-left font-semibold">Payment ID</th>
+									<th class="px-4 py-3 text-left font-semibold">Application Status</th>
+									<th class="px-4 py-3 text-left font-semibold">More Action</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-slate-100">
+								{#each filteredAvailabilitySearches as row, i}
+									<tr class="hover:bg-slate-50 transition-colors">
+										<td class="px-4 py-3 text-slate-700">{i + 1}</td>
+										<td class="px-4 py-3 text-slate-700 whitespace-nowrap">{row.date ? mapDateToString(row.date) : '—'}</td>
+										<td class="px-4 py-3 text-slate-700">{row.title ?? '—'}</td>
+										<td class="px-4 py-3 text-slate-700">{row.paymentId ?? '—'}</td>
+										<td class="px-4 py-3">
+											<AppStatusTag value={row.status} />
+										</td>
+										<td class="px-4 py-3">
+											{#if row.paymentId}
+												<DropdownMenu.Root>
+													<DropdownMenu.Trigger class="text-slate-600 hover:text-slate-900">
+														<Icon icon="mdi:dots-vertical" class="w-5 h-5" />
+													</DropdownMenu.Trigger>
+													<DropdownMenu.Content align="end" class="w-48">
+														<DropdownMenu.Item on:click={() => openVerifyPaymentDialog(row.paymentId)}>
+															Verify Payment
+														</DropdownMenu.Item>
+														<DropdownMenu.Item on:click={() => printAvailabilitySearchReceipt(row.paymentId)}>
+															Print
+														</DropdownMenu.Item>
 													</DropdownMenu.Content>
 												</DropdownMenu.Root>
 											{:else}
@@ -611,6 +735,49 @@
 		{/if}
 	</Sheet.Content>
 </Sheet.Root>
+
+<!-- Verify Payment Dialog -->
+<Dialog.Root bind:open={showVerifyPaymentDialog}>
+	<Dialog.Content class="max-w-md">
+		<Dialog.Header>
+			<Dialog.Title>Verify Payment</Dialog.Title>
+			<Dialog.Description>
+				Payment reference: {verifyPaymentRRR ?? '—'}
+			</Dialog.Description>
+		</Dialog.Header>
+		{#if verifyPaymentLoading}
+			<div class="flex justify-center items-center py-8">
+				<Icon icon="line-md:loading-loop" class="w-8 h-8 text-green-600" />
+			</div>
+		{:else if verifyPaymentError}
+			<div class="p-3 bg-red-50 border border-red-200 rounded-md">
+				<p class="text-sm text-red-600">{verifyPaymentError}</p>
+			</div>
+		{:else if verifyPaymentResult}
+			<div class="space-y-2 text-sm">
+				<div class="flex justify-between">
+					<span class="text-gray-500">Status:</span>
+					<span class="font-medium">{verifyPaymentResult.status === '00' ? 'Successful' : verifyPaymentResult.status ?? '—'}</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-500">Amount:</span>
+					<span class="font-medium">{verifyPaymentResult.amount ?? '—'}</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-500">Payment Date:</span>
+					<span class="font-medium">{verifyPaymentResult.paymentDate ? mapDateToString(verifyPaymentResult.paymentDate) : '—'}</span>
+				</div>
+				<div class="flex justify-between">
+					<span class="text-gray-500">Payer:</span>
+					<span class="font-medium">{verifyPaymentResult.payerName ?? '—'}</span>
+				</div>
+			</div>
+		{/if}
+		<Dialog.Footer>
+			<Button variant="outline" on:click={() => (showVerifyPaymentDialog = false)}>Close</Button>
+		</Dialog.Footer>
+	</Dialog.Content>
+</Dialog.Root>
 
 {#if showStatusHistory && historyComponent}
 	<svelte:component this={historyComponent} {...historyData} />

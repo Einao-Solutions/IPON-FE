@@ -508,6 +508,8 @@ export function mapTypeToString(type: number) {
       return "Offline Renewal Request";
     case 28:
       return "Trademark Journal Request";
+    case 29:
+      return "Availability Search";
     default:
       return "";
   }
