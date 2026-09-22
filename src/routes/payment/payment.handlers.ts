@@ -270,9 +270,23 @@ async function statussearch(ctx: PaymentContext) {
 }
 
 async function publicationstatusupdate(ctx: PaymentContext) {
-  return simpleRedirectHandler(
-    ctx,
-    "/home/publications/publicationstatusupdate/result",
+  const params = ctx.page.url.searchParams;
+  const cost = params.get("amount");
+  const rrr = params.get("rrr");
+  const fileNumber = params.get("fileNumber");
+
+  if (!cost || !rrr) throw new Error("Missing payment data");
+
+  const user = get(ctx.loggedInUser);
+  const applicantName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+
+  ctx.state.setTitle("Payment");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(rrr);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setFileApplicant(applicantName);
+  ctx.state.setResponseUrl(
+    `https://${ctx.page.url.host}/home/publications/publicationstatusupdate/result?rrr=${rrr}`,
   );
 }
 
