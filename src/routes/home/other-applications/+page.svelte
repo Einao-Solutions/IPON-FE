@@ -74,7 +74,7 @@
 		try {
 			const [oppItems, otherItems] = await Promise.all([
 				loadOppositions(currentUser),
-				fetchOtherApps(currentUser.id)
+				fetchOtherApps(currentUser)
 			]);
 			oppositions = oppItems.map((x, i) => ({ ...x, sn: i + 1 }));
 			availabilitySearches = otherItems
@@ -121,12 +121,15 @@
 		}
 	}
 
-	async function fetchOtherApps(userId: string): Promise<any[]> {
+	async function fetchOtherApps(currentUser: any): Promise<any[]> {
 		try {
-			const res = await fetch(
-				`${baseURL}/api/users/GetOtherApplications?userId=${encodeURIComponent(userId)}`,
-				{ headers: { Authorization: `Bearer ${$loggedInToken}` } }
+			const isSuperOrTech = currentUser.userRoles?.some((role: number) =>
+				[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
 			);
+			const url = isSuperOrTech
+				? `${baseURL}/api/users/GetOtherApplications`
+				: `${baseURL}/api/users/GetOtherApplications?userId=${encodeURIComponent(currentUser.id)}`;
+			const res = await fetch(url, { headers: { Authorization: `Bearer ${$loggedInToken}` } });
 			if (!res.ok) return [];
 			const body = await res.json();
 			const items = Array.isArray(body) ? body : body.data ?? body.applications ?? [];
