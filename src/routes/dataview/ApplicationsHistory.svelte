@@ -121,8 +121,13 @@
   let withdrawalLetterFiles: File[] = [];
   let withdrawalSupportingFiles: File[] = [];
 
-  function handleWithdrawalFormFiles(event: Event, type: "letter" | "supporting") {
-    const files = Array.from((event.currentTarget as HTMLInputElement).files ?? []);
+  function handleWithdrawalFormFiles(
+    event: Event,
+    type: "letter" | "supporting",
+  ) {
+    const files = Array.from(
+      (event.currentTarget as HTMLInputElement).files ?? [],
+    );
     if (type === "letter") {
       withdrawalLetterFiles = [...withdrawalLetterFiles, ...files];
     } else {
@@ -270,7 +275,8 @@
         null;
       if (directUrl) return normalizeAttachmentUrl(directUrl);
       const dataValue = value.data ?? value.base64 ?? value.content ?? null;
-      if (typeof dataValue === "string") return normalizeAttachmentUrl(dataValue);
+      if (typeof dataValue === "string")
+        return normalizeAttachmentUrl(dataValue);
     }
     return null;
   }
@@ -313,7 +319,9 @@
     );
   }
 
-  function getAssignmentAttachmentEntries(data: any): Array<{ label: string; url: string }> {
+  function getAssignmentAttachmentEntries(
+    data: any,
+  ): Array<{ label: string; url: string }> {
     const entries: Array<{ label: string; url: string }> = [];
     const visited = new Set<any>();
 
@@ -347,11 +355,19 @@
       ];
 
       if (labelPrefix) {
-        deedCandidates.forEach((candidate) => addEntry(`${labelPrefix} Assignment Deed`, candidate));
-        letterCandidates.forEach((candidate) => addEntry(`${labelPrefix} Authorization Letter`, candidate));
+        deedCandidates.forEach((candidate) =>
+          addEntry(`${labelPrefix} Assignment Deed`, candidate),
+        );
+        letterCandidates.forEach((candidate) =>
+          addEntry(`${labelPrefix} Authorization Letter`, candidate),
+        );
       } else {
-        deedCandidates.forEach((candidate) => addEntry("Assignment Deed", candidate));
-        letterCandidates.forEach((candidate) => addEntry("Authorization Letter", candidate));
+        deedCandidates.forEach((candidate) =>
+          addEntry("Assignment Deed", candidate),
+        );
+        letterCandidates.forEach((candidate) =>
+          addEntry("Authorization Letter", candidate),
+        );
       }
 
       const attachmentLists = [
@@ -367,15 +383,26 @@
         list.forEach((item: any, index: number) => {
           const url = normalizeAttachmentUrl(item);
           if (url) {
-            const label = item?.fileName || item?.name || item?.documentName || item?.title || `${labelPrefix || "Attachment"} ${index + 1}`;
+            const label =
+              item?.fileName ||
+              item?.name ||
+              item?.documentName ||
+              item?.title ||
+              `${labelPrefix || "Attachment"} ${index + 1}`;
             entries.push({ label, url });
           }
         });
       });
 
       Object.entries(source).forEach(([key, value]) => {
-        if (typeof value === "string" || (value && typeof value === "object" && !Array.isArray(value))) {
-          const isDocumentField = /(document|attachment|supporting|deed|authorization|upload)/i.test(key);
+        if (
+          typeof value === "string" ||
+          (value && typeof value === "object" && !Array.isArray(value))
+        ) {
+          const isDocumentField =
+            /(document|attachment|supporting|deed|authorization|upload)/i.test(
+              key,
+            );
           if (isDocumentField) {
             addEntry(key, value);
           }
@@ -403,15 +430,30 @@
       scanAttachmentSources(data);
 
       const legacyNames = [
-        ["Assignment Deed", data.assignmentDeedUrl ?? data.assignmentDeed ?? data.deedOfAgreementUrl ?? data.deedOfAgreement],
-        ["Authorization Letter", data.authorizationLetterUrl ?? data.authorizationLetter ?? data.letterOfAuthorizationUrl ?? data.letterOfAuthorization],
+        [
+          "Assignment Deed",
+          data.assignmentDeedUrl ??
+            data.assignmentDeed ??
+            data.deedOfAgreementUrl ??
+            data.deedOfAgreement,
+        ],
+        [
+          "Authorization Letter",
+          data.authorizationLetterUrl ??
+            data.authorizationLetter ??
+            data.letterOfAuthorizationUrl ??
+            data.letterOfAuthorization,
+        ],
       ];
       legacyNames.forEach(([label, value]) => addEntry(String(label), value));
     }
 
     // De-dupe by URL only: the same underlying file is often discoverable
     // under several different field names, but it's still just one document.
-    return entries.filter((entry, index, arr) => arr.findIndex((item) => item.url === entry.url) === index);
+    return entries.filter(
+      (entry, index, arr) =>
+        arr.findIndex((item) => item.url === entry.url) === index,
+    );
   }
 
   function dataType(): string {
@@ -494,7 +536,9 @@
     for (const [key, value] of Object.entries(obj)) {
       if (value == null || value === "") continue;
       const normalizedKey = mappings[key] ?? key;
-      target[`${prefix}${normalizedKey.charAt(0).toUpperCase()}${normalizedKey.slice(1)}`] = value;
+      target[
+        `${prefix}${normalizedKey.charAt(0).toUpperCase()}${normalizedKey.slice(1)}`
+      ] = value;
     }
   }
 
@@ -507,19 +551,32 @@
 
     if (application?.applicationType === FormApplicationTypes.Assignment) {
       const assignment = data.assignment || {};
-      if (assignment.assignorName) normalized.assignorName = assignment.assignorName;
-      if (assignment.assignorEmail) normalized.assignorEmail = assignment.assignorEmail;
-      if (assignment.assignorPhone) normalized.assignorPhone = assignment.assignorPhone;
-      if (assignment.assignorNationality) normalized.assignorNationality = assignment.assignorNationality;
-      if (assignment.assignorAddress) normalized.assignorAddress = assignment.assignorAddress;
-      if (assignment.assignorCountry) normalized.assignorCountry = assignment.assignorCountry;
-      if (assignment.assigneeName) normalized.assigneeName = assignment.assigneeName;
-      if (assignment.assigneeEmail) normalized.assigneeEmail = assignment.assigneeEmail;
-      if (assignment.assigneePhone) normalized.assigneePhone = assignment.assigneePhone;
-      if (assignment.assigneeNationality) normalized.assigneeNationality = assignment.assigneeNationality;
-      if (assignment.assigneeAddress) normalized.assigneeAddress = assignment.assigneeAddress;
-      if (assignment.assigneeCountry) normalized.assigneeCountry = assignment.assigneeCountry;
-      if (assignment.dateOfAssignment) normalized.dateOfAssignment = assignment.dateOfAssignment;
+      if (assignment.assignorName)
+        normalized.assignorName = assignment.assignorName;
+      if (assignment.assignorEmail)
+        normalized.assignorEmail = assignment.assignorEmail;
+      if (assignment.assignorPhone)
+        normalized.assignorPhone = assignment.assignorPhone;
+      if (assignment.assignorNationality)
+        normalized.assignorNationality = assignment.assignorNationality;
+      if (assignment.assignorAddress)
+        normalized.assignorAddress = assignment.assignorAddress;
+      if (assignment.assignorCountry)
+        normalized.assignorCountry = assignment.assignorCountry;
+      if (assignment.assigneeName)
+        normalized.assigneeName = assignment.assigneeName;
+      if (assignment.assigneeEmail)
+        normalized.assigneeEmail = assignment.assigneeEmail;
+      if (assignment.assigneePhone)
+        normalized.assigneePhone = assignment.assigneePhone;
+      if (assignment.assigneeNationality)
+        normalized.assigneeNationality = assignment.assigneeNationality;
+      if (assignment.assigneeAddress)
+        normalized.assigneeAddress = assignment.assigneeAddress;
+      if (assignment.assigneeCountry)
+        normalized.assigneeCountry = assignment.assigneeCountry;
+      if (assignment.dateOfAssignment)
+        normalized.dateOfAssignment = assignment.dateOfAssignment;
     }
 
     if (data.oldValue) {
@@ -953,31 +1010,46 @@
           `🔵 DEBUG: ${endpoint} 404'd for saved id, retrying with fileId only to recover old entry`,
         );
         try {
-          const listResponse = await fetch(`${baseURL}${endpoint}?fileId=${fileData.fileId}`);
+          const listResponse = await fetch(
+            `${baseURL}${endpoint}?fileId=${fileData.fileId}`,
+          );
           if (listResponse.ok) {
             const listData = await listResponse.json();
-            const candidates: any[] = Array.isArray(listData) ? listData : [listData];
-            console.log("🔵 DEBUG: Candidate recordal records for recovery:", candidates);
+            const candidates: any[] = Array.isArray(listData)
+              ? listData
+              : [listData];
+            console.log(
+              "🔵 DEBUG: Candidate recordal records for recovery:",
+              candidates,
+            );
             const matchesHistory = (candidate: any) => {
               const nv = candidate?.newValue || candidate;
               const nameMatch =
                 historyNewValue?.name &&
                 nv?.name &&
-                String(nv.name).trim().toLowerCase() === String(historyNewValue.name).trim().toLowerCase();
+                String(nv.name).trim().toLowerCase() ===
+                  String(historyNewValue.name).trim().toLowerCase();
               const emailMatch =
                 historyNewValue?.email &&
                 nv?.email &&
-                String(nv.email).trim().toLowerCase() === String(historyNewValue.email).trim().toLowerCase();
+                String(nv.email).trim().toLowerCase() ===
+                  String(historyNewValue.email).trim().toLowerCase();
               return Boolean(nameMatch || emailMatch);
             };
-            const matched = candidates.find(matchesHistory) ?? (candidates.length === 1 ? candidates[0] : null);
+            const matched =
+              candidates.find(matchesHistory) ??
+              (candidates.length === 1 ? candidates[0] : null);
             if (matched) {
               applyResponseData(matched);
             } else {
-              console.log("🔵 DEBUG: Could not confidently match an old recordal record — nothing to recover.");
+              console.log(
+                "🔵 DEBUG: Could not confidently match an old recordal record — nothing to recover.",
+              );
             }
           } else {
-            console.log(`🔵 DEBUG: fileId-only retry also failed (${listResponse.status}) — no way to recover this old entry.`);
+            console.log(
+              `🔵 DEBUG: fileId-only retry also failed (${listResponse.status}) — no way to recover this old entry.`,
+            );
           }
         } catch (recoveryError) {
           console.error("Recordal recovery attempt failed:", recoveryError);
@@ -1675,7 +1747,8 @@
       if (!res.ok) {
         // Keep the existing history record visible while the details endpoint is unavailable.
         withdrawalDetails = {
-          ...(allApplications.find((history) => history.id === applicationId) ?? {}),
+          ...(allApplications.find((history) => history.id === applicationId) ??
+            {}),
           fileId,
         };
         withdrawalError = null;
@@ -2070,7 +2143,7 @@
                 Confirm Payment
               </Button>
             {/if}
-            {#if $loggedInUser?.userRoles.includes(UserRoles.Tech || UserRoles.SuperAdmin) && updateCert}
+            {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.Tech, UserRoles.SuperAdmin, UserRoles.User].some( (r) => $loggedInUser.userRoles.includes(r), ) && updateCert}
               <Button
                 on:click={() =>
                   updateCertPaymentStatus(validateRRR, fileData.fileId)}
@@ -2203,59 +2276,108 @@
           <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <div class="flex items-center justify-between gap-4">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
                   Form Header
                 </p>
                 <p class="text-sm text-slate-700 mt-1">
-                  {recordalData.oldValue?.title || recordalData.newValue?.title || fileData?.titleOfTradeMark || fileData?.titleOfInvention || fileData?.titleOfDesign || "—"}
+                  {recordalData.oldValue?.title ||
+                    recordalData.newValue?.title ||
+                    fileData?.titleOfTradeMark ||
+                    fileData?.titleOfInvention ||
+                    fileData?.titleOfDesign ||
+                    "—"}
                 </p>
               </div>
               <div class="text-right text-xs text-slate-500">
                 <div>File ID: {fileData?.fileId ?? "—"}</div>
-                <div>Type: {recordalData.oldValue?.fileType || recordalData.newValue?.fileType || "—"}</div>
+                <div>
+                  Type: {recordalData.oldValue?.fileType ||
+                    recordalData.newValue?.fileType ||
+                    "—"}
+                </div>
               </div>
             </div>
             <div class="grid grid-cols-1 gap-4 mt-4 md:grid-cols-2">
               <div class="space-y-3">
                 <div>
                   <div class="text-xs text-slate-500">File Number</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.fileNumber || fileData?.fileId || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.fileNumber ||
+                      fileData?.fileId ||
+                      "—"}
+                  </div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Product Class</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.productClass ?? fileData?.trademarkClass ?? "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.productClass ??
+                      fileData?.trademarkClass ??
+                      "—"}
+                  </div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">RTM Number</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.rtmNumber || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.rtmNumber || "—"}
+                  </div>
                 </div>
               </div>
               <div class="space-y-3">
                 <div>
                   <div class="text-xs text-slate-500">Current Applicant</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.name || fileData?.applicants?.[0]?.name || fileData?.correspondence?.name || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.name ||
+                      fileData?.applicants?.[0]?.name ||
+                      fileData?.correspondence?.name ||
+                      "—"}
+                  </div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Email</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.email || fileData?.applicants?.[0]?.email || fileData?.correspondence?.email || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.email ||
+                      fileData?.applicants?.[0]?.email ||
+                      fileData?.correspondence?.email ||
+                      "—"}
+                  </div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Phone</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.phone || fileData?.applicants?.[0]?.phone || fileData?.correspondence?.phone || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.phone ||
+                      fileData?.applicants?.[0]?.phone ||
+                      fileData?.correspondence?.phone ||
+                      "—"}
+                  </div>
                 </div>
               </div>
               <div class="space-y-3 md:col-span-2">
                 <div>
                   <div class="text-xs text-slate-500">Address</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.address || fileData?.applicants?.[0]?.address || fileData?.correspondence?.address || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.address ||
+                      fileData?.applicants?.[0]?.address ||
+                      fileData?.correspondence?.address ||
+                      "—"}
+                  </div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Country</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.country || fileData?.applicants?.[0]?.country || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.country ||
+                      fileData?.applicants?.[0]?.country ||
+                      "—"}
+                  </div>
                 </div>
                 <div>
                   <div class="text-xs text-slate-500">Nationality</div>
-                  <div class="text-sm text-slate-900">{recordalData.oldValue?.nationality || fileData?.correspondence?.nationality || "—"}</div>
+                  <div class="text-sm text-slate-900">
+                    {recordalData.oldValue?.nationality ||
+                      fileData?.correspondence?.nationality ||
+                      "—"}
+                  </div>
                 </div>
               </div>
             </div>
@@ -2264,77 +2386,148 @@
           <section class="grid gap-6 lg:grid-cols-2">
             {#if selectedApplication?.applicationType === FormApplicationTypes.Assignment}
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
                   Assignor
                 </p>
                 <div class="mt-4 space-y-3 text-sm text-slate-900">
                   <div>
                     <div class="text-xs text-slate-500">Name</div>
-                    <div>{recordalData.assignment?.assignorName || recordalData.oldValue?.name || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assignorName ||
+                        recordalData.oldValue?.name ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Email</div>
-                    <div>{recordalData.assignment?.assignorEmail || recordalData.oldValue?.email || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assignorEmail ||
+                        recordalData.oldValue?.email ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Phone</div>
-                    <div>{recordalData.assignment?.assignorPhone || recordalData.oldValue?.phone || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assignorPhone ||
+                        recordalData.oldValue?.phone ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Nationality</div>
-                    <div>{recordalData.assignment?.assignorNationality || recordalData.oldValue?.nationality || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assignorNationality ||
+                        recordalData.oldValue?.nationality ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Address</div>
-                    <div>{recordalData.assignment?.assignorAddress || recordalData.oldValue?.address || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assignorAddress ||
+                        recordalData.oldValue?.address ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Country</div>
-                    <div>{recordalData.assignment?.assignorCountry || recordalData.oldValue?.country || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assignorCountry ||
+                        recordalData.oldValue?.country ||
+                        "—"}
+                    </div>
                   </div>
                 </div>
               </div>
               <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
                   Assignee / New Value
                 </p>
                 <div class="mt-4 space-y-3 text-sm text-slate-900">
                   <div>
                     <div class="text-xs text-slate-500">Name</div>
-                    <div>{recordalData.assignment?.assigneeName || recordalData.newValue?.assigneeName || recordalData.newValue?.name || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assigneeName ||
+                        recordalData.newValue?.assigneeName ||
+                        recordalData.newValue?.name ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Email</div>
-                    <div>{recordalData.assignment?.assigneeEmail || recordalData.newValue?.assigneeEmail || recordalData.newValue?.email || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assigneeEmail ||
+                        recordalData.newValue?.assigneeEmail ||
+                        recordalData.newValue?.email ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Phone</div>
-                    <div>{recordalData.assignment?.assigneePhone || recordalData.newValue?.assigneePhone || recordalData.newValue?.phone || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assigneePhone ||
+                        recordalData.newValue?.assigneePhone ||
+                        recordalData.newValue?.phone ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Nationality</div>
-                    <div>{recordalData.assignment?.assigneeNationality || recordalData.newValue?.assigneeNationality || recordalData.newValue?.nationality || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assigneeNationality ||
+                        recordalData.newValue?.assigneeNationality ||
+                        recordalData.newValue?.nationality ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Address</div>
-                    <div>{recordalData.assignment?.assigneeAddress || recordalData.newValue?.assigneeAddress || recordalData.newValue?.address || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assigneeAddress ||
+                        recordalData.newValue?.assigneeAddress ||
+                        recordalData.newValue?.address ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Country</div>
-                    <div>{recordalData.assignment?.assigneeCountry || recordalData.newValue?.assigneeCountry || recordalData.newValue?.country || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.assigneeCountry ||
+                        recordalData.newValue?.assigneeCountry ||
+                        recordalData.newValue?.country ||
+                        "—"}
+                    </div>
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">Date of Assignment</div>
-                    <div>{recordalData.assignment?.dateOfAssignment || recordalData.newValue?.dateOfAssignment || "—"}</div>
+                    <div>
+                      {recordalData.assignment?.dateOfAssignment ||
+                        recordalData.newValue?.dateOfAssignment ||
+                        "—"}
+                    </div>
                   </div>
                 </div>
               </div>
             {:else if selectedApplication?.applicationType === FormApplicationTypes.RegisteredUser || selectedApplication?.applicationType === FormApplicationTypes.Merger}
-              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                  {selectedApplication?.applicationType === FormApplicationTypes.Merger ? "Merger" : "Registered User"} Details
+              <div
+                class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2"
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
+                  {selectedApplication?.applicationType ===
+                  FormApplicationTypes.Merger
+                    ? "Merger"
+                    : "Registered User"} Details
                 </p>
-                <div class="mt-4 grid gap-4 md:grid-cols-2 text-sm text-slate-900">
+                <div
+                  class="mt-4 grid gap-4 md:grid-cols-2 text-sm text-slate-900"
+                >
                   <div>
                     <div class="text-xs text-slate-500">Name</div>
                     <div>{recordalData.newValue?.name || "—"}</div>
@@ -2364,8 +2557,12 @@
                 </div>
               </div>
             {:else if selectedApplication?.applicationType === FormApplicationTypes.ChangeOfName}
-              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <div
+                class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2"
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
                   Change of Name Details
                 </p>
                 <div class="mt-4 space-y-4 text-sm text-slate-900">
@@ -2375,13 +2572,21 @@
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">New Name</div>
-                    <div>{recordalData.newValue?.newName || recordalData.newValue?.name || "—"}</div>
+                    <div>
+                      {recordalData.newValue?.newName ||
+                        recordalData.newValue?.name ||
+                        "—"}
+                    </div>
                   </div>
                 </div>
               </div>
             {:else if selectedApplication?.applicationType === FormApplicationTypes.ChangeOfAddress}
-              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              <div
+                class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2"
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
                   Change of Address Details
                 </p>
                 <div class="mt-4 space-y-4 text-sm text-slate-900">
@@ -2391,13 +2596,23 @@
                   </div>
                   <div>
                     <div class="text-xs text-slate-500">New Address</div>
-                    <div>{recordalData.newValue?.newAddress || recordalData.newValue?.address || "—"}</div>
+                    <div>
+                      {recordalData.newValue?.newAddress ||
+                        recordalData.newValue?.address ||
+                        "—"}
+                    </div>
                   </div>
                 </div>
               </div>
             {:else}
-              <div class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Recordal Details</p>
+              <div
+                class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2"
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
+                  Recordal Details
+                </p>
                 <div class="mt-4 space-y-3 text-sm text-slate-900">
                   {#each Object.entries(recordalData.newValue || {}) as [key, value]}
                     <div class="grid grid-cols-2 gap-4">
@@ -2411,7 +2626,9 @@
           </section>
 
           <section class="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <p
+              class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+            >
               Attachments
             </p>
             <div class="mt-3 flex flex-wrap gap-2">
@@ -2422,7 +2639,10 @@
                   size="sm"
                   class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
                 >
-                  <Icon icon="mdi:file-document-outline" width="1em" />{attachment.label}
+                  <Icon
+                    icon="mdi:file-document-outline"
+                    width="1em"
+                  />{attachment.label}
                 </Button>
               {/each}
 
@@ -2434,7 +2654,8 @@
                     size="sm"
                     class="gap-1 text-xs border-slate-300 hover:bg-slate-50"
                   >
-                    <Icon icon="mdi:file-document-outline" width="1em" />Appeal {index + 1}
+                    <Icon icon="mdi:file-document-outline" width="1em" />Appeal {index +
+                      1}
                   </Button>
                 {/each}
               {/if}
@@ -2979,14 +3200,18 @@
               <div>
                 <Label class="font-semibold">File Type:</Label>
                 <p class="mt-1 rounded border bg-gray-50 p-2">
-                  {withdrawalDetails.fileType || withdrawalDetails.fileTypes || "N/A"}
+                  {withdrawalDetails.fileType ||
+                    withdrawalDetails.fileTypes ||
+                    "N/A"}
                 </p>
               </div>
               <div>
                 <Label class="font-semibold">Withdrawal Request Date:</Label>
                 <p class="mt-1 rounded border bg-gray-50 p-2">
                   {withdrawalDetails.withdrawalRequestDate
-                    ? new Date(withdrawalDetails.withdrawalRequestDate).toLocaleString()
+                    ? new Date(
+                        withdrawalDetails.withdrawalRequestDate,
+                      ).toLocaleString()
                     : "N/A"}
                 </p>
               </div>
@@ -3025,7 +3250,8 @@
                       <div class="flex-shrink-0">
                         {#if getWithdrawalAttachmentUrl(attachment)}
                           <a
-                            href={getWithdrawalAttachmentUrl(attachment) ?? undefined}
+                            href={getWithdrawalAttachmentUrl(attachment) ??
+                              undefined}
                             target="_blank"
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
@@ -3083,7 +3309,8 @@
                       <div class="flex-shrink-0">
                         {#if getWithdrawalAttachmentUrl(attachment)}
                           <a
-                            href={getWithdrawalAttachmentUrl(attachment) ?? undefined}
+                            href={getWithdrawalAttachmentUrl(attachment) ??
+                              undefined}
                             target="_blank"
                             rel="noopener"
                             class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors inline-flex items-center gap-2 shadow-sm whitespace-nowrap"
@@ -3943,7 +4170,11 @@
                   <!-- Offline Renewal — Patent & Design -->
                   {#if application.applicationType === FormApplicationTypes.OfflineRenewalRequest && application.currentStatus != null && [ApplicationStatuses.AwaitingRenewalConfirmation, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && (fileData.type === FileTypes.Patent || fileData.type === FileTypes.Design) && ($loggedInUser?.userRoles?.includes(UserRoles.PatentCertification) || $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openOfflineRenewalDialog(application.id, application.currentStatus ?? 0)}
+                      on:click={() =>
+                        openOfflineRenewalDialog(
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
                     >
                       View Application
                     </DropdownMenu.Item>
@@ -3951,7 +4182,11 @@
                   <!-- Offline Renewal — Trademark -->
                   {#if application.applicationType === FormApplicationTypes.OfflineRenewalRequest && application.currentStatus != null && [ApplicationStatuses.AwaitingRenewalConfirmation, ApplicationStatuses.Approved, ApplicationStatuses.Rejected].includes(application.currentStatus) && fileData.type === FileTypes.Trademark && ($loggedInUser?.userRoles?.includes(UserRoles.TrademarkCertification) || $loggedInUser?.userRoles?.includes(UserRoles.TrademarkRegistrar) || $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin))}
                     <DropdownMenu.Item
-                      on:click={() => openOfflineRenewalDialog(application.id, application.currentStatus ?? 0)}
+                      on:click={() =>
+                        openOfflineRenewalDialog(
+                          application.id,
+                          application.currentStatus ?? 0,
+                        )}
                     >
                       View Application
                     </DropdownMenu.Item>
@@ -4009,24 +4244,34 @@
                     </DropdownMenu.Item>
                   {/if}
 
-
                   <!-- Recall Application (for all types) -->
-                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some((r) => $loggedInUser.userRoles.includes(r))}
-                    <DropdownMenu.Item on:click={() => changeStatus(application)}>
+                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                    <DropdownMenu.Item
+                      on:click={() => changeStatus(application)}
+                    >
                       Recall Application
                     </DropdownMenu.Item>
                   {/if}
 
                   <!-- Verify Payment -->
                   {#if application.paymentId !== null && application.paymentId !== "Free"}
-                    <DropdownMenu.Item on:click={async () => await checkPayment(application, application.paymentId)}>
+                    <DropdownMenu.Item
+                      on:click={async () =>
+                        await checkPayment(application, application.paymentId)}
+                    >
                       Verify Payment ({application.paymentId ?? "-"})
                     </DropdownMenu.Item>
                   {/if}
 
                   <!-- Verify Certificate Payment -->
                   {#if application.certificatePaymentId != null}
-                    <DropdownMenu.Item on:click={async () => await checkPayment(application, application.certificatePaymentId ?? null)}>
+                    <DropdownMenu.Item
+                      on:click={async () =>
+                        await checkPayment(
+                          application,
+                          application.certificatePaymentId ?? null,
+                        )}
+                    >
                       Verify Certificate payment ({application.certificatePaymentId})
                     </DropdownMenu.Item>
                   {/if}
@@ -4221,7 +4466,6 @@
                 </DropdownMenu.Group>
               </DropdownMenu.Content>
             </DropdownMenu.Root>
-
           </Table.Cell>
         </Table.Row>
       {/each}
