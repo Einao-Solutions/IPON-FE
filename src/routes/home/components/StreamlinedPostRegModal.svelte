@@ -434,8 +434,22 @@
         await goto(`/payment?type=trademarkRenewal`);
       } else if (isDesign) {
         // Design renewal logic
+        sessionStorage.removeItem("renewalData");
+        const renewalCostUrl = new URL(`${baseURL}/api/files/RenewalCost`);
+        renewalCostUrl.searchParams.set("fileNumber", fileNumber);
+        renewalCostUrl.searchParams.set("fileType", String(FileTypes.Design));
+        renewalCostUrl.searchParams.set("userId", String($loggedInUser?.id));
+        renewalCostUrl.searchParams.set("timestamp", String(Date.now()));
         const renewalCost = await fetch(
-          `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Design}&userId=${$loggedInUser?.id}`,
+          renewalCostUrl.toString(),
+          {
+            cache: "no-store",
+            headers: {
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
+            },
+          },
         );
         const renewalData = await renewalCost.json();
         sessionStorage.setItem(
