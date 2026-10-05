@@ -19,20 +19,7 @@
       return;
     }
 
-    const hasAccess = $loggedInUser.userRoles?.some((role) =>
-      [
-        // UserRoles.Finance,
-        // UserRoles.PermSec,
-        // UserRoles.Minister,
-        UserRoles.Tech,
-        UserRoles.SuperAdmin,
-        // UserRoles.TrademarkRegistrar,
-        // UserRoles.PatentDesignRegistrar,
-        // UserRoles.ActingTrademarkRegistrar,
-        // UserRoles.ActingPatentDesignRegistrar,
-        UserRoles.EinaoFinance,
-      ].includes(role),
-    );
+    const hasAccess = $loggedInUser.userRoles?.includes(UserRoles.SuperAdmin);
 
     if (!hasAccess) {
       // Redirect unauthorized users
