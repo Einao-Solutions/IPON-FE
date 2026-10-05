@@ -77,7 +77,44 @@ export interface ApiResponse<T> {
     error?: string;
 }
 
+export interface PerformanceRange {
+    startYear?: number;
+    endYear?: number;
+    startDate?: string;
+    endDate?: string;
+}
+
+export interface PerformancePeriodRequest extends PerformanceRange {
+    periodType: string;
+    periodValue: string;
+    year: number;
+}
+
+export interface UnitPerformanceComparisonData {
+    registryType: string;
+    periods: UnitPerformanceData[];
+}
+
 class StatisticsApiService {
+    private buildPeriodParams(periodType: string, periodValue: string, year: number, range?: PerformanceRange) {
+        const params = new URLSearchParams({ periodType, periodValue, year: year.toString() });
+        if (periodType === 'year-range') {
+            if (!range || !Number.isInteger(range.startYear) || !Number.isInteger(range.endYear) || range.startYear! > range.endYear!) {
+                throw new Error('Please select a valid year range');
+            }
+            params.set('startYear', range.startYear!.toString());
+            params.set('endYear', range.endYear!.toString());
+        } else if (periodType === 'date-range') {
+            const isValidDate = (value?: string) => Boolean(value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value);
+            if (!isValidDate(range?.startDate) || !isValidDate(range?.endDate) || range!.startDate! > range!.endDate!) {
+                throw new Error('Please select a valid date range');
+            }
+            params.set('startDate', range!.startDate!);
+            params.set('endDate', range!.endDate!);
+        }
+        return params;
+    }
+
     private getAuthHeaders() {
         const token = get(loggedInToken);
         return {
@@ -126,17 +163,14 @@ class StatisticsApiService {
         unitId: number,
         periodType: string,
         periodValue: string,
-        year: number
+        year: number,
+        range?: PerformanceRange
     ): Promise<StaffPerformanceData> {
         try {
             const mappedType = this.mapRegistryType(registryType);
-            const params = new URLSearchParams({
-                registryType: mappedType,
-                unitId: unitId.toString(),
-                periodType,
-                periodValue,
-                year: year.toString()
-            });
+            const params = this.buildPeriodParams(periodType, periodValue, year, range);
+            params.set('registryType', mappedType);
+            params.set('unitId', unitId.toString());
 
             const response = await fetch(
                 `${baseURL}/api/statistics/performance/staff?${params.toString()}`,
@@ -162,20 +196,36 @@ class StatisticsApiService {
         }
     }
 
+    async compareUnitPerformance(registryType: string, periods: PerformancePeriodRequest[]): Promise<UnitPerformanceComparisonData> {
+        if (periods.length < 2 || periods.length > 5) {
+            throw new Error('Please select between 2 and 5 periods to compare');
+        }
+        const response = await fetch(`${baseURL}/api/statistics/performance/units/compare`, {
+            method: 'POST',
+            headers: this.getAuthHeaders(),
+            body: JSON.stringify({
+                registryType: this.mapRegistryType(registryType),
+                periods: periods.map(period => ({ type: period.periodType, ...period }))
+            })
+        });
+        const result: ApiResponse<UnitPerformanceComparisonData> = await response.json();
+        if (!response.ok || !result.success || !result.data) {
+            throw new Error(result.error || 'Failed to fetch unit performance comparison');
+        }
+        return result.data;
+    }
+
     async getUnitPerformance(
         registryType: string,
         periodType: string,
         periodValue: string,
-        year: number
+        year: number,
+        range?: PerformanceRange
     ): Promise<UnitPerformanceData> {
         try {
             const mappedType = this.mapRegistryType(registryType);
-            const params = new URLSearchParams({
-                registryType: mappedType,
-                periodType,
-                periodValue,
-                year: year.toString()
-            });
+            const params = this.buildPeriodParams(periodType, periodValue, year, range);
+            params.set('registryType', mappedType);
 
             const response = await fetch(
                 `${baseURL}/api/statistics/performance/units?${params.toString()}`,

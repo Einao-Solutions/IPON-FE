@@ -353,42 +353,31 @@
   });
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="support-workspace min-h-screen bg-gray-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- Header -->
-    <div class="flex items-center mb-6">
-      <button on:click={goBack} class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
+    <div class="report-header flex items-center mb-6">
+      <button on:click={goBack} class="report-back flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors">
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
         <span class="text-sm font-medium">
-          {registryType ? `Back to ${registryType} Statistics` : "Back to Statistics"}
+          Statistics
         </span>
       </button>
-      <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">Support Statistics</h1>
-      <div class="w-[200px]"></div>
+      <div class="report-heading">
+        <h1 class="text-2xl font-semibold text-gray-900">Executive Dashboard - Support Statistics</h1>
+        <p class="scope-context"><Icon icon="mdi:headset" class="w-3.5 h-3.5" />Support Officer Performance{#if selectedScope} · {currentScopeInfo?.label ?? selectedScope} Scope{/if}</p>
+      </div>
     </div>
 
     <!-- Filter Section -->
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
+    <div class="filter-toolbar bg-white border border-gray-200 rounded-lg p-4 mb-6">
 
-      <div class="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
-        <div class="flex items-start gap-4 flex-1">
-          <div class="flex-shrink-0 w-14 h-14 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
-            <Icon icon="mdi:headset" class="w-7 h-7 text-white" />
-          </div>
-          <div class="flex-1">
-            <h2 class="text-2xl font-bold text-gray-900 mb-1">Support Officer Performance</h2>
-            <p class="text-sm text-gray-600">
-              {#if selectedScope}
-                {currentScopeInfo?.label ?? selectedScope} Scope — Response rates, closure rates &amp; officer scores
-              {:else}
-                Select a scope to view support ticket statistics
-              {/if}
-            </p>
-          </div>
-        </div>
+      <div class="filter-heading flex items-center justify-between gap-4">
+        <h2 class="filter-title"><Icon icon="lucide:sliders-horizontal" class="w-4 h-4" />Report Filters</h2>
         <button
           on:click={toggleCompareMode}
+          aria-pressed={compareMode}
           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all flex-shrink-0
             {compareMode ? 'bg-green-600 text-white border-green-600 shadow-sm' : 'bg-white text-gray-600 border-gray-300 hover:border-green-400 hover:text-green-600'}"
         >
@@ -397,20 +386,21 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-1 {compareMode ? 'lg:grid-cols-[2fr_1fr]' : ''} gap-6">
-        <div class="space-y-4">
+      <div class="filter-layout">
+        <div class="filter-fields" class:month-range-fields={selectedPeriodType === 'month-range'}>
 
           <!-- Scope selector — tab picker for multi-scope roles, locked badge for single-scope -->
           {#if availableScopes.length > 1}
-            <div>
+            <div class="scope-picker">
               <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 <Icon icon="mdi:filter-outline" class="w-4 h-4 text-gray-500" />
                 Scope
               </div>
-              <div class="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg">
+              <div class="scope-types flex flex-wrap gap-1 bg-gray-100 p-1 rounded-lg">
                 {#each availableScopes as scope}
                   <button
                     on:click={() => { selectedScope = scope.value; results = null; }}
+                    aria-pressed={selectedScope === scope.value}
                     class="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap
                       {selectedScope === scope.value ? 'bg-white text-green-700 shadow-sm font-semibold' : 'text-gray-600 hover:text-gray-900'}"
                   >
@@ -421,7 +411,7 @@
               </div>
             </div>
           {:else if isScopeLocked && currentScopeInfo}
-            <div class="flex items-center gap-2">
+            <div class="scope-picker flex items-center gap-2">
               <span class="text-sm font-semibold text-gray-700">Scope:</span>
               <span class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
                 <Icon icon={currentScopeInfo.icon} class="w-4 h-4" />
@@ -431,16 +421,17 @@
           {/if}
 
           <!-- Period Type -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+          <div class="period-top-row">
+            <div class="period-type-field">
               <div class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 <Icon icon="lucide:calendar" class="w-4 h-4 text-gray-500" />
                 Period Type
               </div>
-              <div class="inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg flex-wrap">
+              <div class="period-types inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg flex-wrap">
                 {#each PERIOD_TYPES as type}
                   <button
                     on:click={() => handlePeriodTypeChange(type)}
+                    aria-pressed={selectedPeriodType === type}
                     class="flex-1 px-2 py-2 rounded-md text-xs font-medium transition-all whitespace-nowrap
                       {selectedPeriodType === type ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}"
                   >
@@ -467,7 +458,7 @@
           </div>
 
           <!-- Period value selectors -->
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="period-values-row">
             {#if selectedPeriodType === "month"}
               <div>
                 <div class="text-sm font-semibold text-gray-700 mb-2 block">Month</div>
@@ -537,8 +528,8 @@
         </div>
 
         {#if compareMode}
-          <div class="flex flex-col">
-            <div class="bg-gray-50 border-2 border-green-300 rounded-lg p-4 h-full flex flex-col gap-3">
+          <div class="comparison-side flex flex-col">
+            <div class="comparison-panel bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-3">
               <div class="flex items-center gap-3 mb-1">
                 <Icon icon="lucide:layers" class="w-5 h-5 text-green-600" />
                 <span class="text-sm font-semibold text-gray-700">Comparison Periods</span>
@@ -555,9 +546,9 @@
               {#if comparisonPeriods.length > 0}
                 <div class="flex flex-col gap-2 mt-1">
                   {#each comparisonPeriods as period, index}
-                    <div class="flex items-center justify-between px-3 py-2 rounded-lg text-white text-xs font-medium" style="background-color: {PERIOD_COLORS[index % PERIOD_COLORS.length]}">
+                    <div class="comparison-period flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium">
                       <span>{period.displayLabel}</span>
-                      <button on:click={() => removePeriod(period._id)} class="ml-2 hover:opacity-70">
+                      <button on:click={() => removePeriod(period._id)} class="ml-2 hover:opacity-70" title={`Remove ${period.displayLabel}`} aria-label={`Remove ${period.displayLabel}`}>
                         <Icon icon="mdi:close" class="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -579,7 +570,7 @@
       </div>
 
       <!-- Action Button -->
-      <div class="mt-6 flex justify-end gap-3">
+      <div class="filter-actions flex justify-end gap-3">
         {#if compareMode}
           <button
             on:click={fetchComparison}
@@ -625,14 +616,14 @@
         {#if compareMode || periodIndex === 0}
           <div class="mb-6">
             {#if compareMode}
-              <div class="flex items-center gap-2 mb-3">
+              <div class="period-heading flex items-center gap-2 mb-3">
                 <div class="w-3 h-3 rounded-full" style="background-color: {PERIOD_COLORS[periodIndex % PERIOD_COLORS.length]}"></div>
                 <h3 class="text-base font-semibold text-gray-700">{period.label}</h3>
                 <span class="text-xs text-gray-400">{formatDate(period.startDate)} — {formatDate(period.endDate)}</span>
               </div>
             {/if}
 
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div class="summary-band grid grid-cols-2 md:grid-cols-5 gap-4">
               <!-- Total — slate/ash -->
               <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
                 <div class="flex items-center gap-2 mb-3">
@@ -707,7 +698,7 @@
 
       <!-- Charts — single period mode only -->
       {#if !compareMode && firstPeriod && top10Officers.length > 0}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="charts-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 class="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
               <Icon icon="mdi:podium" class="w-4 h-4 text-green-600" />
@@ -732,7 +723,7 @@
 
       <!-- Period comparison table — compare mode -->
       {#if compareMode && results.periods.length > 1}
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+        <div class="report-table comparison-summary bg-white border border-gray-200 overflow-hidden mb-6">
           <div class="px-6 py-4 border-b border-gray-100">
             <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <Icon icon="lucide:git-compare" class="w-4 h-4 text-green-600" />
@@ -795,8 +786,8 @@
       {/if}
 
       <!-- Officers Table -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+      <div class="report-table officers-table bg-white border border-gray-200 overflow-hidden mb-6">
+        <div class="officers-heading px-6 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
           <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <Icon icon="mdi:account-group" class="w-4 h-4 text-green-600" />
             Officer Performance
@@ -805,7 +796,7 @@
             {/if}
           </h3>
           {#if !compareMode}
-            <div class="relative w-60">
+            <div class="officer-search relative w-60">
               <Icon icon="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
@@ -967,3 +958,92 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .support-workspace { --report-green: #265640; color: #202923; background: linear-gradient(180deg, #f0f4f1 0, #fafafa 320px); letter-spacing: 0; }
+  .report-header { gap: 20px; flex-wrap: wrap; padding-bottom: 22px; border-bottom: 1px solid #d4e2da; }
+  .report-back { padding: 9px 14px; border: 1px solid #d1d9d4; border-radius: 6px; }
+  .report-heading { flex: 1; min-width: 180px; }
+  .report-heading h1 { line-height: 1.3; }
+  .scope-context { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; margin-top: 4px; color: #4d6959; font-size: 13px; }
+  .filter-toolbar { border-color: #d7e0da; border-radius: 6px; }
+  .filter-heading { margin-bottom: 18px; flex-wrap: wrap; }
+  .filter-title { display: flex; align-items: center; gap: 7px; color: #2d5840; font-size: 13px; font-weight: 600; }
+  .filter-heading > button { padding: 8px 12px; border-width: 1px; font-size: 13px; }
+  .filter-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .filter-fields.month-range-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .period-top-row, .period-values-row { display: contents; }
+  .filter-fields > div > div { min-width: 0; }
+  .scope-picker, .period-type-field { grid-column: 1 / -1; }
+  .scope-types { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .scope-types button { justify-content: center; padding: 8px; font-size: 13px; }
+  .scope-types button[aria-pressed='true'] { background: var(--report-green); color: #fff; box-shadow: none; }
+  .filter-toolbar select { height: 42px; padding-top: 8px; padding-bottom: 8px; border-width: 1px; border-radius: 6px; font-size: 13px; }
+  .filter-toolbar button { border-radius: 6px; }
+  .filter-toolbar button.bg-green-600 { background: var(--report-green); border-color: var(--report-green); }
+  .filter-toolbar button.bg-green-600:hover { background: #1e4432; }
+  .period-types { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .period-types button { min-width: 0; min-height: 34px; padding: 6px 8px; white-space: normal; }
+  .period-types button[aria-pressed='true'] { background: var(--report-green); color: #fff; box-shadow: none; }
+  .comparison-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; border-color: #dce4de; background: #f5f8f6; }
+  .comparison-panel > div:first-child { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+  .comparison-panel > button:first-of-type { grid-column: 2; grid-row: 1; width: auto; padding: 8px 12px; font-size: 12px; }
+  .comparison-panel > button:last-of-type { grid-column: 3; grid-row: 1; width: auto; margin-top: 0; padding: 8px 12px; font-size: 12px; }
+  .comparison-panel > div:nth-child(3) { display: flex; flex-direction: row; flex-wrap: wrap; grid-column: 1 / -1; gap: 8px; }
+  .comparison-panel > p { grid-column: 1 / -1; }
+  .comparison-period { gap: 10px; background: #e9f0eb; color: var(--report-green); border-left: 3px solid #718f7c; }
+  .comparison-period span { overflow-wrap: anywhere; }
+  .filter-actions { margin-top: 16px; }
+  .filter-actions > button { padding: 10px 20px; font-size: 14px; }
+  .period-heading { flex-wrap: wrap; }
+  .period-heading > div:first-child { width: 8px; height: 8px; background: #718f7c !important; }
+  .summary-band { gap: 0; border-top: 1px solid #dce4de; border-bottom: 1px solid #dce4de; background: #fff; }
+  .summary-band > div { min-width: 0; padding: 18px 16px; border: 0; border-right: 1px solid #dce4de; border-radius: 0; background: transparent; box-shadow: none; }
+  .summary-band > div:last-child { border-right: 0; }
+  .summary-band > div > div:first-child { gap: 8px; margin-bottom: 10px; }
+  .summary-band > div > div:first-child > div { background: #e5ede7; border-radius: 6px; }
+  .summary-band > div > div:first-child > span { color: #5c6861; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .summary-band > div > p:first-of-type { font-size: 26px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .summary-band > div:nth-child(-n+3) > p:first-of-type { color: var(--report-green); }
+  .summary-band > div > p:last-child:not(:first-of-type) { color: #68766d; }
+  .summary-band > div > div:last-child:not(:first-child) { height: 4px; }
+  .charts-grid > div { min-width: 0; padding: 20px; border-radius: 6px; border-color: #dde5df; box-shadow: none; }
+  .charts-grid h3 { color: var(--report-green); font-size: 14px; }
+  .report-table { border-radius: 6px; border-color: #dde5df; }
+  .report-table > div:first-child { padding: 14px 18px; background: #f5f8f6; }
+  .report-table h3 { color: var(--report-green); }
+  .report-table table { min-width: 880px; font-variant-numeric: tabular-nums; }
+  .report-table thead tr { background: var(--report-green); }
+  .report-table thead th { color: #f5f8f6; font-weight: 500; font-size: 12px; text-transform: none; letter-spacing: 0; white-space: nowrap; }
+  .report-table th, .report-table td { padding: 14px 16px; }
+  .report-table tbody td:nth-child(3) > span, .report-table tbody td:nth-child(4) > span { padding: 0; border-radius: 0; background: transparent; color: var(--report-green); font-size: 13px; }
+  .officers-table tbody td:nth-child(2) > p:first-child { color: var(--report-green); }
+  .officers-table tbody td:first-child { width: 40px; }
+  .officer-search { width: 280px; max-width: 100%; }
+  .officer-search input { border-radius: 6px; }
+  button:focus-visible { outline: 2px solid #477b5d; outline-offset: 2px; }
+  @media (max-width: 900px) {
+    .period-types, .scope-types { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .filter-fields.month-range-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 700px) {
+    .report-header { gap: 12px; }
+    .report-heading { min-width: 140px; flex-basis: 100%; order: -1; }
+    .report-heading h1 { font-size: 20px; }
+    .report-back { padding: 8px; }
+    .filter-fields, .filter-fields.month-range-fields { grid-template-columns: minmax(0, 1fr); }
+    .comparison-panel { grid-template-columns: minmax(0, 1fr) auto; }
+    .comparison-panel > div:first-child { grid-column: 1 / -1; }
+    .comparison-panel > button:first-of-type { grid-column: 1; grid-row: 2; }
+    .comparison-panel > button:last-of-type { grid-column: 2; grid-row: 2; }
+    .summary-band > div { padding: 16px 12px; }
+    .summary-band > div:nth-child(even) { border-right: 0; }
+    .summary-band > div:last-child { grid-column: 1 / -1; }
+    .charts-grid { gap: 16px; }
+    .charts-grid > div { padding: 16px; }
+    .officer-search { width: 100%; }
+    .report-table th, .report-table td { padding: 12px; }
+  }
+  @media (max-width: 480px) { .period-types, .scope-types { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
