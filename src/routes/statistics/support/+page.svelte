@@ -327,29 +327,13 @@
     if (!user) { goto("/auth"); return; }
 
     userRolesLocal = user.userRoles ?? [];
-    const isSuperAdminOrTech = userRolesLocal.includes(UserRoles.SuperAdmin) ||
-      userRolesLocal.includes(UserRoles.PermSec) ||
-      userRolesLocal.includes(UserRoles.Tech);
-    const isTrademarkReg = userRolesLocal.includes(UserRoles.TrademarkRegistrar) ||
-      userRolesLocal.includes(UserRoles.ActingTrademarkRegistrar);
-    const isPatentDesignReg = userRolesLocal.includes(UserRoles.PatentDesignRegistrar) ||
-      userRolesLocal.includes(UserRoles.ActingPatentDesignRegistrar);
-
-    if (!isSuperAdminOrTech && !isTrademarkReg && !isPatentDesignReg) {
+    if (!userRolesLocal.includes(UserRoles.SuperAdmin)) {
       goto("/home/dashboard");
       return;
     }
 
-    if (isSuperAdminOrTech) {
-      availableScopes = ALL_SCOPES; // all five: Trademark, Patent, Design, Technical, Overview
-      isScopeLocked = false;
-    } else if (isTrademarkReg) {
-      availableScopes = [ALL_SCOPES[0]]; // Trademark only — locked
-      isScopeLocked = true;
-    } else if (isPatentDesignReg) {
-      availableScopes = [ALL_SCOPES[1], ALL_SCOPES[2]]; // Patent and Design — can switch
-      isScopeLocked = false;
-    }
+    availableScopes = ALL_SCOPES;
+    isScopeLocked = false;
 
     registryType = $page.url.searchParams.get("registryType") ?? "";
     const scopeParam = $page.url.searchParams.get("scope") ?? "";

@@ -38,37 +38,8 @@
 
   $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
 
-  $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
-                    userRoles.includes(UserRoles.Minister) || 
-                    userRoles.includes(UserRoles.SuperAdmin);
-
-  $: isFinanceOnly = (userRoles.includes(UserRoles.Finance) || isEinaoFinance) && !isFullAccess;
-
-  $: isEinaoFinance = userRoles.includes(UserRoles.EinaoFinance);
-
-  $: isActingTrademarkRegistrar = userRoles.includes(UserRoles.ActingTrademarkRegistrar);
-  $: isActingPatentDesignRegistrar = userRoles.includes(UserRoles.ActingPatentDesignRegistrar);
-  $: isActingRegistrarSupportOnly = isActingTrademarkRegistrar || isActingPatentDesignRegistrar;
-
-  $: canSeeTrademarkSupport = selectedRegistry === 'Trademark' && (
-    userRoles.includes(UserRoles.SuperAdmin) ||
-    userRoles.includes(UserRoles.PermSec) ||
-    userRoles.includes(UserRoles.Tech) ||
-    userRoles.includes(UserRoles.TrademarkRegistrar) ||
-    userRoles.includes(UserRoles.ActingTrademarkRegistrar)
-  );
-
-  $: canSeePatentDesignSupport = (selectedRegistry === 'Patent' || selectedRegistry === 'Design') && (
-    userRoles.includes(UserRoles.SuperAdmin) ||
-    userRoles.includes(UserRoles.PermSec) ||
-    userRoles.includes(UserRoles.Tech) ||
-    userRoles.includes(UserRoles.PatentDesignRegistrar) ||
-    userRoles.includes(UserRoles.ActingPatentDesignRegistrar)
-  );
-
-  $: showSupportSection = canSeeTrademarkSupport || canSeePatentDesignSupport;
-
-  $: sections = getSectionsForRole(isFinanceOnly, showSupportSection, isActingRegistrarSupportOnly);
+  $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
+  $: sections = isSuperAdmin ? getSectionsForRole(false, true, false) : [];
 
   function getSectionsForRole(financeOnly: boolean, includeSupport: boolean, actingSupportOnly: boolean) {
     const sections = [];
@@ -271,8 +242,6 @@
                   Choose a financial view to analyze {selectedRegistry} registry data:
                 </p>
 
-                {#if isEinaoFinance}
-                  <!-- ✅ EinaoFinance ONLY sees this — one card, no green card -->
                   <button
                     on:click={navigateToTechFeeStatistics}
                     class="group relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-blue-50 border-2 border-blue-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-blue-300/60 text-left w-full"
@@ -295,8 +264,6 @@
                       </div>
                     </div>
                   </button>
-                {:else}
-                  <!-- Finance role sees the green Revenue card -->
                   <button
                     on:click={navigateToFinancialStatistics}
                     class="group relative overflow-hidden bg-gradient-to-br from-green-50 via-white to-green-50 border-2 border-green-200/40 rounded-xl p-6 hover:shadow-xl hover:shadow-green-500/20 transition-all duration-300 hover:scale-[1.02] hover:border-green-300/60 text-left w-full"
@@ -316,8 +283,6 @@
                       </div>
                     </div>
                   </button>
-                {/if}
-
               </div>
               <!-- Tech Fee Revenue Statistics — STRICTLY EinaoFinance role ONLY -->
               <!-- {#if isEinaoFinance}

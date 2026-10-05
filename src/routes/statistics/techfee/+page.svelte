@@ -516,10 +516,10 @@
     }
 
     // ✅ Fix — use correct casing that matches your store
-    const hasAccess = user.userRoles?.includes(UserRoles.EinaoFinance);
+    const hasAccess = user.userRoles?.includes(UserRoles.SuperAdmin);
 
     if (!hasAccess) {
-      toast.error("Access denied — EINAO Finance role required");
+      toast.error("Access denied — SuperAdmin role required");
       goto("/statistics");
       return;
     }

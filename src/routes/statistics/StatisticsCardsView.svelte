@@ -5,37 +5,12 @@
   export let userRoles: number[] = [];
   export let onCardClick: (registry: string) => void;
 
-  $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
-                    userRoles.includes(UserRoles.Minister) || 
-                    userRoles.includes(UserRoles.SuperAdmin);
-
-  $: showTrademark = isFullAccess || 
-                     userRoles.includes(UserRoles.TrademarkRegistrar) || 
-                     userRoles.includes(UserRoles.ActingTrademarkRegistrar) || 
-                     userRoles.includes(UserRoles.Finance) ||
-                     userRoles.includes(UserRoles.EinaoFinance);
-
-  $: showPatent = isFullAccess || 
-                  userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.ActingPatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance) ||
-                  userRoles.includes(UserRoles.EinaoFinance);
-
-  $: showDesign = isFullAccess || 
-                  userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.ActingPatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance) ||
-                  userRoles.includes(UserRoles.EinaoFinance);
-
-  $: showSupport = userRoles.includes(UserRoles.SuperAdmin) ||
-                   userRoles.includes(UserRoles.PermSec) ||
-                   userRoles.includes(UserRoles.Tech);
-
-  $: supportBadge = userRoles.includes(UserRoles.PermSec) &&
-    !userRoles.includes(UserRoles.SuperAdmin) &&
-    !userRoles.includes(UserRoles.Tech)
-    ? "PermSec"
-    : "Admin & Tech";
+  $: isFullAccess = userRoles.includes(UserRoles.SuperAdmin);
+  $: showTrademark = isFullAccess;
+  $: showPatent = isFullAccess;
+  $: showDesign = isFullAccess;
+  $: showSupport = isFullAccess;
+  $: supportBadge = "SuperAdmin";
 
   $: visibleCount = [showTrademark, showPatent, showDesign].filter(Boolean).length;
   $: gridCols = visibleCount === 1 ? "md:grid-cols-1 max-w-md mx-auto" 
