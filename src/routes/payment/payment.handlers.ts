@@ -171,12 +171,13 @@ async function newapplication(ctx: PaymentContext): Promise<void> {
 /* ---------------- UPDATE ---------------- */
 
 async function update(ctx: PaymentContext): Promise<void> {
-  const appData = get(applicationData);
+  const appData = get(ctx.applicationData);
   if (!appData) throw new Error("Missing application data");
 
   if (!appData.correspondence) throw new Error("Missing correspondence data");
 
-  const changeType = ctx.params.get("patentChangeType") ?? "";
+  const changeType = ctx.page.url.searchParams.get("patentChangeType") ?? "";
+  const user = get(ctx.loggedInUser);
 
   const res = await fetch(`${baseURL}/api/files/updatecost`, {
     method: "POST",
@@ -184,7 +185,7 @@ async function update(ctx: PaymentContext): Promise<void> {
     body: JSON.stringify({
       number: appData.correspondence.phone,
       email: appData.correspondence.email,
-      name: get(loggedInUser)?.firstName + " " + get(loggedInUser)?.lastName,
+      name: user?.firstName + " " + user?.lastName,
       fileType: appData.type,
       patentchangeType: changeType,
     }),
@@ -201,7 +202,7 @@ async function update(ctx: PaymentContext): Promise<void> {
   ctx.state.setFileApplicant(appData.applicants?.[0]?.name ?? "");
   ctx.state.setFileType(appData.type ?? undefined);
   ctx.state.setResponseUrl(
-    `https://${ctx.baseUrl}/payment/status?rrr=${result.rrr}&paymentType=update&fileId=${appData.id}`,
+    `https://${ctx.page.url.host}/payment/status?rrr=${result.rrr}&paymentType=update&fileId=${appData.id}`,
   );
 }
 

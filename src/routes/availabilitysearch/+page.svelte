@@ -7,7 +7,10 @@
 	import { baseURL, normalizeImageUrl, UserRoles } from '$lib/helpers';
 	import { Cell } from '$lib/components/ui/calendar';
 	import { mapDateToString } from '../home/components/dashboardutils';
-	import { loggedInUser } from '$lib/store';
+	import { loggedInUser, loggedInToken } from '$lib/store';
+	import { Toaster } from '$lib/components/ui/sonner';
+	import { toast } from 'svelte-sonner';
+	import { requestOtherApplicationsRefresh } from '$lib/utils/otherApplicationsRefresh';
 	import { parseLoggedInUser } from '../dataview/datahelpers';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
@@ -78,10 +81,17 @@
 					if (rrr && appId && $loggedInUser?.id) {
 						try {
 							await confirmAvailabilitySearchPayment(appId, $loggedInUser.id);
+							paymentConfirmationError = null;
+							toast.success(
+								'Payment confirmed. A confirmation email has been sent to your registered address.'
+							);
+							requestOtherApplicationsRefresh();
 						} catch (err) {
 							console.error('Availability search payment confirmation failed:', err);
-							paymentConfirmationError =
-								'Search results loaded, but payment status could not be updated. Please refresh Other Applications later.';
+							const reason = err instanceof Error ? err.message : '';
+							paymentConfirmationError = `Search results loaded, but the payment could not be confirmed${
+								reason ? `: ${reason}` : '.'
+							}`;
 						}
 					} else if (rrr) {
 						console.warn(
@@ -104,6 +114,8 @@
 		}
 	});
 
+	class NonRetryableConfirmationError extends Error {}
+
 	// Retries because Remita's own status check can briefly lag right after the redirect back
 	async function confirmAvailabilitySearchPayment(appId: string, userId: string): Promise<void> {
 		const maxAttempts = 3;
@@ -112,15 +124,28 @@
 			try {
 				const res = await fetch(`${baseURL}/api/files/UpdateAvailabilitySearchPayment`, {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${$loggedInToken}`
+					},
 					body: JSON.stringify({ appId, userId })
 				});
-				const body = await res.json();
+				const body = await res.json().catch(() => null);
 				if (res.ok && body?.success) {
 					return;
 				}
-				lastError = body?.message ?? `Payment confirmation failed (${res.status}).`;
+				if (res.status === 401) {
+					throw new NonRetryableConfirmationError('Session expired, please log in again.');
+				}
+				if (res.status === 403) {
+					throw new NonRetryableConfirmationError('You are not allowed to confirm this payment.');
+				}
+				lastError =
+					typeof body?.message === 'string' && body.message
+						? body.message
+						: `Payment confirmation failed (${res.status}).`;
 			} catch (err) {
+				if (err instanceof NonRetryableConfirmationError) throw err;
 				console.error(`Availability search payment confirmation attempt ${attempt} errored:`, err);
 				lastError = err instanceof Error ? err.message : 'Payment confirmation request failed.';
 			}
@@ -421,6 +446,8 @@
 		</div>
 	{/if}
 </div>
+
+<Toaster />
 
 <style>
 	.balloon {

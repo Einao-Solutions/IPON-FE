@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
 	import {
 		baseURL,
@@ -27,6 +28,8 @@
 	} from '$lib/utils/availabilitySearchReceipt';
 	import { getOtherApplicationsUrl } from '$lib/utils/otherApplications';
 	import { clearAuthCookies } from '$lib/auth-session';
+	import { Toaster } from '$lib/components/ui/sonner';
+	import { otherApplicationsRefresh } from '$lib/utils/otherApplicationsRefresh';
 
 	let oppositions: any[] = [];
 	let otherApps: any[] = [];
@@ -69,16 +72,28 @@
 		showStatusHistory = true;
 	}
 
-	onMount(async () => {
-		await loadApplications();
-		const oppositionId = $page.url.searchParams.get('oppositionId');
-		if (oppositionId) {
-			viewOppositionDetail('', oppositionId);
-		}
+	onMount(() => {
+		// Refetch (instead of trusting the current list) when a payment or notification changes statuses.
+		let seenRefresh = $otherApplicationsRefresh;
+		const unsubscribe = otherApplicationsRefresh.subscribe((value) => {
+			if (value !== seenRefresh) {
+				seenRefresh = value;
+				loadApplications();
+			}
+		});
+		(async () => {
+			await loadApplications();
+			const oppositionId = $page.url.searchParams.get('oppositionId');
+			if (oppositionId) {
+				viewOppositionDetail('', oppositionId);
+			}
+		})();
+		return unsubscribe;
 	});
 
 	// Re-applies tab/query when the header search navigates while this page is already open.
-	$: applyUrlParams($page.url.searchParams);
+	// Browser-only: url.searchParams cannot be read while prerendering.
+	$: if (browser) applyUrlParams($page.url.searchParams);
 
 	function applyUrlParams(params: URLSearchParams) {
 		const tabParam = params.get('tab');
@@ -928,3 +943,5 @@
 {#if showStatusHistory && historyComponent}
 	<svelte:component this={historyComponent} {...historyData} />
 {/if}
+
+<Toaster />
