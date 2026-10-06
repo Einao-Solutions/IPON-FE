@@ -621,45 +621,35 @@
   });
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="finance-workspace min-h-screen bg-gray-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
     <!-- Header -->
-    <div class="flex items-center mb-6">
+    <div class="report-header flex items-center mb-6">
       <button
         on:click={() => goto(`/statistics?registry=${registryType}`)}
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="report-back flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
-        <span class="text-sm font-medium">Back to Financial Statistics</span>
+        <span class="text-sm font-medium">Statistics</span>
       </button>
-      <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">
-        Financial Statistics
-      </h1>
-      <div class="w-[200px]"></div>
+      <div class="report-heading">
+        <h1 class="text-2xl font-semibold text-gray-900">Executive Dashboard - Financial Statistics</h1>
+        <p class="registry-context"><Icon icon="lucide:building-2" class="w-3.5 h-3.5" />{registryType} Registry</p>
+      </div>
+      {#if results && results.periods.length > 0}
+        <button on:click={() => window.print()} class="report-print" title="Print report"><Icon icon="lucide:printer" class="w-4 h-4" />Print Report</button>
+      {/if}
     </div>
 
     <!-- Filter Section -->
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
+    <div class="filter-toolbar bg-white border border-gray-200 rounded-lg p-4 mb-6">
       <div
-        class="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-gray-200"
+        class="filter-heading flex items-center justify-between gap-4"
       >
-        <div class="flex items-start gap-4 flex-1">
-          <div
-            class="flex-shrink-0 w-14 h-14 bg-green-600 rounded-lg flex items-center justify-center shadow-sm"
-          >
-            <Icon icon="lucide:bar-chart-2" class="w-7 h-7 text-white" />
-          </div>
-          <div class="flex-1">
-            <h2 class="text-2xl font-bold text-gray-900 mb-1">
-              Revenue Statistics
-            </h2>
-            <p class="text-sm text-gray-600">
-              {registryType} Registry — View government fees and payment volumes
-            </p>
-          </div>
-        </div>
+        <h2 class="filter-title"><Icon icon="lucide:sliders-horizontal" class="w-4 h-4" />Reporting Period</h2>
         <button
           on:click={toggleCompareMode}
+          aria-pressed={compareMode}
           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all flex-shrink-0
             {compareMode
             ? 'bg-green-600 text-white border-green-600 shadow-sm'
@@ -670,14 +660,10 @@
         </button>
       </div>
 
-      <div
-        class="grid grid-cols-1 {compareMode
-          ? 'lg:grid-cols-[2fr_1fr]'
-          : ''} gap-6"
-      >
-        <div class="space-y-4">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+      <div class="filter-layout">
+        <div class="filter-fields" class:month-range-fields={selectedPeriodType === 'month-range'}>
+          <div class="period-top-row">
+            <div class="period-type-field">
               <label
                 class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2"
               >
@@ -685,11 +671,12 @@
                 Period Type
               </label>
               <div
-                class="inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg flex-wrap"
+                class="period-types inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg flex-wrap"
               >
                 {#each PERIOD_TYPES as type}
                   <button
                     on:click={() => handlePeriodTypeChange(type)}
+                    aria-pressed={selectedPeriodType === type}
                     class="flex-1 min-w-[120px] px-2 py-2 rounded-md text-xs font-medium transition-all whitespace-nowrap
                       {selectedPeriodType === type
                       ? 'bg-white text-gray-900 shadow-sm'
@@ -735,7 +722,7 @@
             {/if}
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="period-values-row">
             {#if selectedPeriodType === "month"}
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block"
@@ -919,9 +906,9 @@
         </div>
 
         {#if compareMode}
-          <div class="flex flex-col justify-start">
+          <div class="comparison-side flex flex-col justify-start">
             <div
-              class="bg-gray-50 border-2 border-green-300 rounded-lg p-4 h-full flex flex-col gap-3"
+              class="comparison-panel bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-3"
             >
               <div class="flex items-center gap-3 mb-1">
                 <Icon icon="lucide:layers" class="w-5 h-5 text-green-600" />
@@ -944,13 +931,14 @@
                 <div class="flex flex-col gap-2 mt-1">
                   {#each comparisonPeriods as period, index}
                     <div
-                      class="flex items-center justify-between px-3 py-2 rounded-lg text-white text-xs font-medium"
-                      style="background-color: {COLORS[index % COLORS.length]}"
+                      class="comparison-period flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium"
                     >
                       <span>{period.displayLabel}</span>
                       <button
                         on:click={() => removePeriod(period._id)}
                         class="ml-2 hover:opacity-70"
+                        title={`Remove ${period.displayLabel}`}
+                        aria-label={`Remove ${period.displayLabel}`}
                       >
                         <Icon icon="mdi:close" class="w-3.5 h-3.5" />
                       </button>
@@ -975,7 +963,7 @@
       </div>
 
       <!-- Action Button -->
-      <div class="mt-6 flex justify-end gap-3">
+      <div class="filter-actions flex justify-end gap-3">
         {#if compareMode}
           <button
             on:click={fetchComparison}
@@ -1029,7 +1017,7 @@
     {#if results && results.periods.length > 0}
       <!-- Summary Table -->
       <div
-        class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6"
+        class="report-summary bg-white border border-gray-200 overflow-hidden mb-6"
       >
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
@@ -1137,7 +1125,7 @@
       </div>
 
       <!-- Charts side by side -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="charts-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Histogram Bar Chart -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
           <div class="flex items-center gap-3 mb-6">
@@ -1192,7 +1180,7 @@
       <!-- Quarterly Monthly Breakdown -->
       {#if selectedPeriodType === "quarter" && results.periods.some((p) => p.monthlyBreakdown && p.monthlyBreakdown.length > 0)}
         <div
-          class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6"
+          class="monthly-breakdown report-breakdown bg-white border border-gray-200 overflow-hidden mb-6"
         >
           <div
             class="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white"
@@ -1371,7 +1359,7 @@
 
       <!-- Payment Type Breakdown Table -->
       <div
-        class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6"
+        class="payment-breakdown report-breakdown bg-white border border-gray-200 overflow-hidden mb-6"
       >
         <div
           class="flex items-center gap-3 px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white"
@@ -1480,18 +1468,94 @@
         </div>
       </div>
 
-      <!-- Print Button -->
-      {#if results && results.periods.length > 0}
-        <div class="flex justify-end mt-6 mb-2">
-          <button
-            on:click={() => window.print()}
-            class="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-          >
-            <Icon icon="lucide:printer" class="w-4 h-4" />
-            Print Report
-          </button>
-        </div>
-      {/if}
     {/if}
   </div>
 </div>
+
+<style>
+  .finance-workspace { --report-green: #265640; color: #202923; background: linear-gradient(180deg, #f0f4f1 0, #fafafa 320px); letter-spacing: 0; }
+  .report-header { gap: 20px; flex-wrap: wrap; padding-bottom: 22px; border-bottom: 1px solid #d4e2da; }
+  .report-back { padding: 9px 14px; border: 1px solid #d1d9d4; border-radius: 6px; }
+  .report-heading { flex: 1; min-width: 180px; }
+  .report-heading h1 { line-height: 1.3; }
+  .registry-context { display: flex; align-items: center; gap: 7px; margin-top: 4px; color: #4d6959; font-size: 13px; }
+  .report-print { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid #000; border-radius: 6px; background: #000; color: #fff; font-size: 13px; }
+  .report-print:hover { background: #000; }
+  .filter-toolbar { border-color: #d7e0da; border-radius: 6px; }
+  .filter-heading { margin-bottom: 18px; flex-wrap: wrap; }
+  .filter-title { display: flex; align-items: center; gap: 7px; color: #2d5840; font-size: 13px; font-weight: 600; }
+  .filter-heading > button { padding: 8px 12px; border-width: 1px; font-size: 13px; }
+  .filter-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .filter-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .filter-fields.month-range-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .period-top-row, .period-values-row { display: contents; }
+  .filter-fields > div > div { min-width: 0; }
+  .period-type-field { grid-column: 1 / -1; }
+  .filter-toolbar label { font-size: 12px; color: #54635a; }
+  .filter-toolbar select { height: 42px; padding-top: 8px; padding-bottom: 8px; border-width: 1px; border-radius: 6px; font-size: 13px; }
+  .filter-toolbar button { border-radius: 6px; }
+  .filter-toolbar button.bg-green-600 { background: var(--report-green); border-color: var(--report-green); }
+  .filter-toolbar button.bg-green-600:hover { background: #1e4432; }
+  .period-types { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .period-types button { min-width: 0; min-height: 34px; padding: 6px 8px; white-space: normal; }
+  .period-types button[aria-pressed='true'] { background: var(--report-green); color: #fff; box-shadow: none; }
+  .comparison-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; border-color: #dce4de; background: #f5f8f6; }
+  .comparison-panel > div:first-child { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+  .comparison-panel > button:first-of-type { grid-column: 2; grid-row: 1; width: auto; padding: 8px 12px; font-size: 12px; }
+  .comparison-panel > button:last-of-type { grid-column: 3; grid-row: 1; width: auto; margin-top: 0; padding: 8px 12px; font-size: 12px; }
+  .comparison-panel > div:nth-child(3) { display: flex; flex-direction: row; flex-wrap: wrap; grid-column: 1 / -1; gap: 8px; }
+  .comparison-panel > p { grid-column: 1 / -1; }
+  .comparison-period { gap: 10px; background: #e9f0eb; color: var(--report-green); border-left: 3px solid #718f7c; }
+  .comparison-period span { overflow-wrap: anywhere; }
+  .filter-actions { margin-top: 16px; }
+  .filter-actions > button { padding: 10px 20px; font-size: 14px; }
+  .report-summary, .report-breakdown { border-radius: 6px; border-color: #dde5df; }
+  .report-summary table, .report-breakdown table { font-variant-numeric: tabular-nums; }
+  .report-summary table { min-width: 720px; }
+  .report-breakdown table { min-width: 640px; }
+  .report-summary thead tr, .report-breakdown thead tr { background: var(--report-green); }
+  .report-summary thead th, .report-breakdown thead th { color: #f5f8f6 !important; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .report-summary th, .report-summary td, .report-breakdown th, .report-breakdown td { padding: 14px 18px; }
+  .report-summary tbody td:first-child { color: var(--report-green); }
+  .report-summary tbody td:first-child .rounded-full { width: 8px; height: 8px; background: #718f7c !important; }
+  .report-summary tbody td > span, .report-summary tfoot td > span { padding: 0; border-radius: 0; color: var(--report-green) !important; background: transparent !important; }
+  .report-summary tbody td:nth-child(3) { white-space: nowrap; }
+  .report-summary tfoot tr, .report-breakdown tfoot tr { background: #edf2ee; border-top-width: 1px; }
+  .report-summary tfoot td, .report-breakdown tfoot td { text-transform: none; letter-spacing: 0; }
+  .charts-grid > div { min-width: 0; padding: 20px; border-radius: 6px; border-color: #dde5df; box-shadow: none; }
+  .charts-grid h3 { color: var(--report-green); font-size: 14px; }
+  .charts-grid p { font-size: 12px; }
+  .charts-grid > div > div:first-child > div:first-child { width: 32px; height: 32px; background: #e5ede7; border-radius: 6px; }
+  .report-breakdown > div:first-child { padding: 14px 18px; background: #f5f8f6; background-image: none; }
+  .report-breakdown > div:first-child > div:first-child { width: 32px; height: 32px; border-radius: 6px; background: #e5ede7; }
+  .report-breakdown h3 { color: var(--report-green); font-size: 14px; }
+  .report-breakdown tbody td:first-child { color: var(--report-green); }
+  .payment-breakdown td > span > span:first-child { padding: 0; border-radius: 0; color: var(--report-green) !important; background: transparent !important; font-size: 13px; white-space: nowrap; }
+  .monthly-breakdown tbody td > span, .monthly-breakdown tfoot td > span { padding: 0; border-radius: 0; color: var(--report-green) !important; background: transparent !important; }
+  button:focus-visible { outline: 2px solid #477b5d; outline-offset: 2px; }
+  @media (max-width: 900px) {
+    .period-types { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .filter-fields.month-range-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 700px) {
+    .report-header { gap: 12px; }
+    .report-heading { min-width: 140px; flex-basis: 100%; order: -1; }
+    .report-heading h1 { font-size: 20px; }
+    .report-back { padding: 8px; }
+    .report-print { margin-left: auto; }
+    .filter-fields, .filter-fields.month-range-fields { grid-template-columns: minmax(0, 1fr); }
+    .comparison-panel { grid-template-columns: minmax(0, 1fr) auto; }
+    .comparison-panel > div:first-child { grid-column: 1 / -1; }
+    .comparison-panel > button:first-of-type { grid-column: 1; grid-row: 2; }
+    .comparison-panel > button:last-of-type { grid-column: 2; grid-row: 2; }
+    .charts-grid { gap: 16px; }
+    .charts-grid > div { padding: 16px; }
+    .report-summary th, .report-summary td, .report-breakdown th, .report-breakdown td { padding: 12px; }
+  }
+  @media (max-width: 480px) { .period-types { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media print {
+    .finance-workspace { background: white; }
+    .report-header > button, .filter-toolbar { display: none; }
+    .report-summary, .charts-grid > div { break-inside: avoid; }
+  }
+</style>

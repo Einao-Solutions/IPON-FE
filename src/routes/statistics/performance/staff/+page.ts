@@ -12,20 +12,7 @@ export const load: PageLoad = async ({ url }) => {
     throw redirect(303, '/auth');
   }
 
-  // Check if user has authorized roles for statistics
-  const authorizedRoles = [
-    UserRoles.Finance,
-    UserRoles.PermSec,
-    UserRoles.Minister,
-    UserRoles.Tech,
-    UserRoles.SuperAdmin,
-    UserRoles.TrademarkRegistrar,
-    UserRoles.PatentDesignRegistrar,
-  ];
-
-  const hasAuthorizedRole = user.userRoles.some((role) =>
-    authorizedRoles.includes(role)
-  );
+  const hasAuthorizedRole = user.userRoles.includes(UserRoles.SuperAdmin);
 
   // If user doesn't have authorized role, redirect to dashboard
   if (!hasAuthorizedRole) {

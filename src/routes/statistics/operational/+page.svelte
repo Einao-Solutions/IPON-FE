@@ -5,10 +5,12 @@
   import { baseURL } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
+  import Calendar from "$lib/components/ui/calendar/calendar.svelte";
+  import { parseDate } from "@internationalized/date";
   import { toast } from "svelte-sonner";
   import { GetCountryImageLink } from "$lib/helpers";
 
-  type PeriodType = "month" | "quarter" | "year" | "month-range" | "year-range";
+  type PeriodType = "month" | "quarter" | "year" | "date-range" | "year-range";
 
   interface OperationalPeriodRequestDto {
     type: PeriodType;
@@ -16,8 +18,8 @@
     year?: number;
     startYear?: number;
     endYear?: number;
-    startMonth?: number;
-    endMonth?: number;
+    startDate?: string;
+    endDate?: string;
     label?: string;
   }
 
@@ -50,7 +52,7 @@
   const MONTHS = ["January", "February", "March", "April", "May", "June",
                   "July", "August", "September", "October", "November", "December"];
   const QUARTERS = ["Q1: Jan-Mar", "Q2: Apr-Jun", "Q3: Jul-Sep", "Q4: Oct-Dec"];
-  const PERIOD_TYPES: PeriodType[] = ["month", "quarter", "year", "month-range", "year-range"];
+  const PERIOD_TYPES: PeriodType[] = ["month", "quarter", "year", "date-range", "year-range"];
   const CURRENT_YEAR = new Date().getFullYear();
   const YEARS = Array.from({ length: 10 }, (_, i) => CURRENT_YEAR - i);
   const COLORS = ["#16a34a", "#2563eb", "#d97706", "#dc2626", "#7c3aed"];
@@ -66,10 +68,14 @@
   let selectedYear = CURRENT_YEAR;
   let selectedMonth = MONTHS[new Date().getMonth()];
   let selectedQuarter = "Q1: Jan-Mar";
-  let selectedStartMonth = 1;
-  let selectedEndMonth = 6;
+  function dateInputValue(date: Date): string {
+    return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+  let selectedStartDate = dateInputValue(new Date(CURRENT_YEAR, new Date().getMonth(), 1));
+  let selectedEndDate = dateInputValue(new Date());
   let selectedStartYear = CURRENT_YEAR - 1;
   let selectedEndYear = CURRENT_YEAR;
+  $: invalidDateRange = selectedPeriodType === "date-range" && (!selectedStartDate || !selectedEndDate || selectedStartDate > selectedEndDate);
 
   // Comparison periods list
   let comparisonPeriods: (OperationalPeriodRequestDto & { _id: number; displayLabel: string })[] = [];
@@ -80,7 +86,7 @@
       case "month": return { type: "month", year: selectedYear, value: selectedMonth };
       case "quarter": return { type: "quarter", year: selectedYear, value: selectedQuarter };
       case "year": return { type: "year", year: selectedYear };
-      case "month-range": return { type: "month-range", year: selectedYear, startMonth: selectedStartMonth, endMonth: selectedEndMonth };
+      case "date-range": return { type: "date-range", startDate: selectedStartDate, endDate: selectedEndDate };
       case "year-range": return { type: "year-range", startYear: selectedStartYear, endYear: selectedEndYear };
     }
   }
@@ -90,13 +96,23 @@
       case "month": return `${period.value} ${period.year}`;
       case "quarter": return `${period.value} ${period.year}`;
       case "year": return `${period.year}`;
-      case "month-range": return `${MONTHS[(period.startMonth ?? 1) - 1]}–${MONTHS[(period.endMonth ?? 6) - 1]} ${period.year}`;
+      case "date-range": return `${formatDate(`${period.startDate}T00:00:00`)} - ${formatDate(`${period.endDate}T00:00:00`)}`;
       case "year-range": return `${period.startYear}–${period.endYear}`;
       default: return "Period";
     }
   }
 
+  function validateDateRange(): boolean {
+    if (selectedPeriodType !== "date-range") return true;
+    if (!selectedStartDate || !selectedEndDate || selectedStartDate > selectedEndDate) {
+      toast.error("Select both dates with the start on or before the end");
+      return false;
+    }
+    return true;
+  }
+
   function addToComparison() {
+    if (!validateDateRange()) return;
     if (comparisonPeriods.length >= 5) { toast.warning("Maximum 5 periods allowed"); return; }
     const period = buildCurrentPeriod();
     const displayLabel = buildDisplayLabel(period);
@@ -119,6 +135,7 @@
   }
 
   async function fetchSingle() {
+    if (!validateDateRange()) return;
     loading = true; error = null; results = null;
     try {
       const dto = { registryType, periods: [buildCurrentPeriod()] };
@@ -159,7 +176,8 @@
     comparisonPeriods = []; results = null; error = null; compareMode = false;
     selectedPeriodType = "month"; selectedYear = CURRENT_YEAR;
     selectedMonth = MONTHS[new Date().getMonth()]; selectedQuarter = "Q1: Jan-Mar";
-    selectedStartMonth = 1; selectedEndMonth = 6;
+    selectedStartDate = dateInputValue(new Date(CURRENT_YEAR, new Date().getMonth(), 1));
+    selectedEndDate = dateInputValue(new Date());
     selectedStartYear = CURRENT_YEAR - 1; selectedEndYear = CURRENT_YEAR;
   }
 
@@ -240,40 +258,38 @@
   });
 </script>
 
-<div class="min-h-screen bg-gray-50">
+<div class="operational-workspace min-h-screen bg-gray-50">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
     <!-- Header -->
-    <div class="flex items-center mb-6">
+    <div class="report-header flex items-center mb-6">
       <button
         on:click={() => goto(`/statistics`)}
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="report-back flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
       >
         <Icon icon="lucide:arrow-left" class="w-4 h-4" />
-        <span class="text-sm font-medium">Back to Statistics</span>
+        <span class="text-sm font-medium">Statistics</span>
       </button>
-      <h1 class="text-3xl font-bold text-gray-900 flex-1 text-center">Operational Statistics</h1>
-      <div class="w-[200px]"></div>
+      <div class="report-heading">
+        <h1 class="text-2xl font-semibold text-gray-900">Executive Dashboard - Operational Statistics</h1>
+        <p class="registry-context"><Icon icon="lucide:building-2" class="w-3.5 h-3.5" />{registryType} Registry</p>
+      </div>
+      {#if results && results.periods.length > 0}
+        <button on:click={() => window.print()} class="report-print" title="Print report"><Icon icon="lucide:printer" class="w-4 h-4" />Print Report</button>
+      {/if}
     </div>
 
     <!-- Filter Section -->
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-6 mb-6">
+    <div class="filter-toolbar bg-white border border-gray-200 rounded-lg p-4 mb-6">
 
       <!-- Section Title -->
-      <div class="flex items-start justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
-        <div class="flex items-start gap-4 flex-1">
-          <div class="flex-shrink-0 w-14 h-14 bg-green-600 rounded-lg flex items-center justify-center shadow-sm">
-            <Icon icon="lucide:activity" class="w-7 h-7 text-white" />
-          </div>
-          <div class="flex-1">
-            <h2 class="text-2xl font-bold text-gray-900 mb-1">{registryType} Registry </h2>
-            <p class="text-sm text-gray-600">View filing volumes and breakdowns</p>
-          </div>
-        </div>
+      <div class="filter-heading flex items-center justify-between gap-4">
+        <h2 class="filter-title"><Icon icon="lucide:sliders-horizontal" class="w-4 h-4" />Reporting Period</h2>
 
         <!-- Compare Toggle -->
         <button
           on:click={toggleCompareMode}
+          aria-pressed={compareMode}
           class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border-2 transition-all flex-shrink-0
             {compareMode
               ? 'bg-green-600 text-white border-green-600 shadow-sm'
@@ -285,32 +301,33 @@
       </div>
 
       <!-- Filters Grid -->
-      <div class="grid grid-cols-1 {compareMode ? 'lg:grid-cols-[2fr_1fr]' : ''} gap-6">
+      <div class="filter-layout">
 
         <!-- LEFT: Period Type + Fields -->
-        <div class="space-y-4">
+        <div class="filter-fields" class:date-range-fields={selectedPeriodType === 'date-range'} class:year-range-fields={selectedPeriodType === 'year-range'}>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+          <div class="period-top-row">
+            <div class="period-type-field">
               <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                 <Icon icon="lucide:calendar" class="w-5 h-5 text-gray-500" />
                 Period Type
               </label>
-              <div class="inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg flex-wrap">
+              <div class="period-types inline-flex w-full gap-1 bg-gray-100 p-1 rounded-lg flex-wrap">
                 {#each PERIOD_TYPES as type}
                   <button
                     on:click={() => handlePeriodTypeChange(type)}
+                    aria-pressed={selectedPeriodType === type}
                     class="flex-1 px-2 py-2 rounded-md text-xs font-medium transition-all whitespace-nowrap
                       {selectedPeriodType === type ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}"
                   >
-                    {type === "month-range" ? "Month Range" : type === "year-range" ? "Year Range" : type.charAt(0).toUpperCase() + type.slice(1)}
+                    {type === "date-range" ? "Date Range" : type === "year-range" ? "Year Range" : type.charAt(0).toUpperCase() + type.slice(1)}
                   </button>
                 {/each}
               </div>
             </div>
 
-            {#if selectedPeriodType !== "year-range"}
-              <div>
+            {#if selectedPeriodType !== "year-range" && selectedPeriodType !== "date-range"}
+              <div class="year-field">
                 <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
                   <Icon icon="lucide:calendar-days" class="w-5 h-5 text-gray-500" />
                   Year
@@ -325,7 +342,7 @@
             {/if}
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="period-values-row">
             {#if selectedPeriodType === "month"}
               <div>
                 <label class="text-sm font-semibold text-gray-700 mb-2 block">Select Month</label>
@@ -350,25 +367,38 @@
               </div>
             {/if}
 
-            {#if selectedPeriodType === "month-range"}
-              <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">Start Month</label>
-                <div class="relative">
-                  <select bind:value={selectedStartMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
-                    {#each MONTHS as month, i}<option value={i + 1}>{month}</option>{/each}
-                  </select>
-                  <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+            {#if selectedPeriodType === "date-range"}
+              <div class="date-calendar-picker">
+                <label for="operational-start-date" class="text-sm font-semibold text-gray-700 mb-2 block">Start Date</label>
+                <input id="operational-start-date" type="date" bind:value={selectedStartDate} aria-invalid={invalidDateRange} aria-describedby={invalidDateRange ? 'operational-date-error' : undefined} />
+                <div class="mt-2 overflow-x-auto border border-gray-200 rounded-lg bg-white">
+                  <Calendar
+                    aria-label="Start date calendar"
+                    value={selectedStartDate ? parseDate(selectedStartDate) : undefined}
+                    onValueChange={(date) => (selectedStartDate = date?.toString() ?? "")}
+                    preventDeselect
+                    fixedWeeks
+                    class="w-max mx-auto"
+                  />
                 </div>
               </div>
-              <div>
-                <label class="text-sm font-semibold text-gray-700 mb-2 block">End Month</label>
-                <div class="relative">
-                  <select bind:value={selectedEndMonth} class="appearance-none w-full bg-white border-2 border-gray-300 rounded-lg px-4 py-2.5 pr-10 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 cursor-pointer transition-all">
-                    {#each MONTHS as month, i}<option value={i + 1}>{month}</option>{/each}
-                  </select>
-                  <Icon icon="lucide:chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+              <div class="date-calendar-picker">
+                <label for="operational-end-date" class="text-sm font-semibold text-gray-700 mb-2 block">End Date</label>
+                <input id="operational-end-date" type="date" bind:value={selectedEndDate} aria-invalid={invalidDateRange} aria-describedby={invalidDateRange ? 'operational-date-error' : undefined} />
+                <div class="mt-2 overflow-x-auto border border-gray-200 rounded-lg bg-white">
+                  <Calendar
+                    aria-label="End date calendar"
+                    value={selectedEndDate ? parseDate(selectedEndDate) : undefined}
+                    onValueChange={(date) => (selectedEndDate = date?.toString() ?? "")}
+                    preventDeselect
+                    fixedWeeks
+                    class="w-max mx-auto"
+                  />
                 </div>
               </div>
+              {#if invalidDateRange}
+                <p id="operational-date-error" class="date-range-error" role="alert">Select both dates with the start on or before the end.</p>
+              {/if}
             {/if}
 
             {#if selectedPeriodType === "year-range"}
@@ -397,8 +427,8 @@
 
         <!-- RIGHT: Comparison Panel — only when compare mode ON -->
         {#if compareMode}
-          <div class="flex flex-col justify-start">
-            <div class="bg-gray-50 border-2 border-green-300 rounded-lg p-4 h-full flex flex-col gap-3">
+          <div class="comparison-side flex flex-col justify-start">
+            <div class="comparison-panel bg-gray-50 border border-gray-200 rounded-lg p-4 flex flex-col gap-3">
               <div class="flex items-center gap-3 mb-1">
                 <Icon icon="lucide:layers" class="w-5 h-5 text-green-600" />
                 <span class="text-sm font-semibold text-gray-700">Comparison Periods</span>
@@ -407,7 +437,7 @@
 
               <button
                 on:click={addToComparison}
-                disabled={comparisonPeriods.length >= 5}
+                disabled={comparisonPeriods.length >= 5 || invalidDateRange}
                 class="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
               >
                 <Icon icon="mdi:plus" class="w-4 h-4" />
@@ -417,9 +447,9 @@
               {#if comparisonPeriods.length > 0}
                 <div class="flex flex-col gap-2 mt-1">
                   {#each comparisonPeriods as period, index}
-                    <div class="flex items-center justify-between px-3 py-2 rounded-lg text-white text-xs font-medium" style="background-color: {COLORS[index % COLORS.length]}">
+                    <div class="comparison-period flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium">
                       <span>{period.displayLabel}</span>
-                      <button on:click={() => removePeriod(period._id)} class="ml-2 hover:opacity-70">
+                      <button on:click={() => removePeriod(period._id)} class="ml-2 hover:opacity-70" title={`Remove ${period.displayLabel}`} aria-label={`Remove ${period.displayLabel}`}>
                         <Icon icon="mdi:close" class="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -443,7 +473,7 @@
       </div>
 
       <!-- Action Button -->
-      <div class="mt-6 flex justify-end gap-3">
+      <div class="filter-actions flex justify-end gap-3">
         {#if compareMode}
           <button
             on:click={fetchComparison}
@@ -461,7 +491,7 @@
         {:else}
           <button
             on:click={fetchSingle}
-            disabled={loading}
+            disabled={loading || invalidDateRange}
             class="flex items-center gap-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
           >
             {#if loading}
@@ -496,7 +526,7 @@
     {#if results && results.periods.length > 0}
 
       <!-- Summary Table -->
-      <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-6">
+      <div class="report-summary bg-white border border-gray-200 overflow-hidden mb-6">
         <div class="overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
@@ -511,7 +541,7 @@
                 <tr class="border-b border-slate-100 {index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-green-50/40 transition-colors">
                   <td class="py-4 px-6">
                     <div class="flex items-center gap-2">
-                      <div class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: {COLORS[index % COLORS.length]}"></div>
+                      <div class="period-marker w-2 h-2 rounded-full flex-shrink-0"></div>
                       <span class="font-semibold text-slate-800">{period.label}</span>
                     </div>
                   </td>
@@ -519,8 +549,7 @@
                     {formatDate(period.startDate)} — {formatDate(period.endDate)}
                   </td>
                   <td class="py-4 px-6 text-right">
-                    <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-full text-sm font-bold"
-                      style="background-color: {COLORS[index % COLORS.length]}15; color: {COLORS[index % COLORS.length]}">
+                    <span class="total-files text-sm font-semibold">
                       {period.totalFiles.toLocaleString()}
                     </span>
                   </td>
@@ -544,7 +573,7 @@
       </div>
 
       <!-- Charts side by side -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="charts-grid grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
 
         <!-- Bar Chart -->
         <div class="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -565,9 +594,9 @@
                   <span class="font-medium text-slate-700">{period.label}</span>
                   <span class="font-bold text-slate-800">{period.totalFiles.toLocaleString()} files</span>
                 </div>
-                <div class="w-full bg-gray-100 rounded-full h-8 overflow-hidden">
+                <div class="volume-track w-full bg-gray-100 h-8 overflow-hidden">
                   <div
-                    class="h-full rounded-full flex items-center justify-end pr-3 transition-all duration-700"
+                    class="volume-bar h-full flex items-center justify-end pr-3 transition-all duration-700"
                     style="width: {barWidth}%; background-color: {COLORS[index % COLORS.length]}"
                   >
                     {#if barWidth > 15}
@@ -625,7 +654,7 @@
       </div>
 
       <!-- Breakdown Tables -->
-      <div class="space-y-4">
+      <div class="breakdown-tables space-y-4">
 
         <!-- TRADEMARK TABLES -->
         {#if isTrademark}
@@ -931,18 +960,110 @@
 
     {/if}
 
-    <!-- Print Button -->
-    {#if results && results.periods.length > 0}
-      <div class="flex justify-end mt-6 mb-2">
-        <button
-          on:click={() => window.print()}
-          class="flex items-center gap-2 px-6 py-3 bg-gray-900 hover:bg-black text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
-        >
-          <Icon icon="lucide:printer" class="w-4 h-4" />
-          Print Report
-        </button>
-      </div>
-    {/if}
-
   </div>
 </div>
+
+<style>
+  .operational-workspace { --report-green: #265640; color: #202923; background: linear-gradient(180deg, #f0f4f1 0, #fafafa 320px); letter-spacing: 0; }
+  .report-header { gap: 20px; flex-wrap: wrap; padding-bottom: 22px; border-bottom: 1px solid #d4e2da; }
+  .report-back { padding: 9px 14px; border: 1px solid #d1d9d4; border-radius: 6px; }
+  .report-heading { flex: 1; min-width: 180px; }
+  .report-heading h1 { line-height: 1.3; }
+  .registry-context { display: flex; align-items: center; gap: 7px; margin-top: 4px; color: #4d6959; font-size: 13px; }
+  .report-print { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border: 1px solid #000; border-radius: 6px; background: #000; color: #fff; font-size: 13px; }
+  .report-print:hover { background: #000; }
+  .filter-toolbar { border-color: #d7e0da; border-radius: 6px; }
+  .filter-heading { margin-bottom: 18px; flex-wrap: wrap; }
+  .filter-title { display: flex; align-items: center; gap: 7px; color: #2d5840; font-size: 13px; font-weight: 600; }
+  .filter-heading > button { padding: 8px 12px; border-width: 1px; font-size: 13px; }
+  .filter-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .filter-fields { display: grid; grid-template-columns: minmax(350px, 2fr) minmax(120px, .7fr) minmax(160px, 1fr); gap: 16px; }
+  .filter-fields.date-range-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .date-range-fields .period-type-field { grid-column: 1 / -1; }
+  .date-calendar-picker { min-width: 0; }
+  .date-calendar-picker input { width: 100%; min-width: 0; height: 44px; padding: 10px 16px; border: 2px solid #d1d5db; border-radius: 8px; color: #111827; background: #fff; font-size: 14px; font-weight: 500; }
+  .date-calendar-picker input:focus-visible { outline: 2px solid #477b5d; outline-offset: 2px; }
+  .date-calendar-picker input[aria-invalid='true'] { border-color: #b91c1c; }
+  .filter-toolbar .date-calendar-picker label { font-size: 14px; }
+  .date-range-error { grid-column: 1 / -1; color: #b91c1c; font-size: 12px; }
+  .filter-fields.year-range-fields { grid-template-columns: minmax(350px, 2fr) repeat(2, minmax(120px, .7fr)); }
+  .period-top-row, .period-values-row { display: contents; }
+  .filter-fields > div > div { min-width: 0; }
+  .period-type-field { grid-column: 1; }
+  .filter-toolbar label { font-size: 12px; color: #54635a; }
+  .filter-toolbar select { height: 42px; padding-top: 8px; padding-bottom: 8px; border-width: 1px; border-radius: 6px; font-size: 13px; }
+  .filter-toolbar button { border-radius: 6px; }
+  .filter-toolbar button.bg-green-600 { background: var(--report-green); border-color: var(--report-green); }
+  .filter-toolbar button.bg-green-600:hover { background: #1e4432; }
+  .period-types { min-height: 42px; align-items: stretch; }
+  .period-types button { padding: 6px 8px; }
+  .period-types button[aria-pressed='true'] { background: var(--report-green); color: #fff; box-shadow: none; }
+  .comparison-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; border-color: #dce4de; background: #f5f8f6; }
+  .comparison-panel > div:first-child { grid-column: 1; grid-row: 1; margin-bottom: 0; }
+  .comparison-panel > button:first-of-type { grid-column: 2; grid-row: 1; width: auto; font-size: 12px; padding: 8px 12px; }
+  .comparison-panel > button:last-of-type { grid-column: 3; grid-row: 1; width: auto; margin-top: 0; font-size: 12px; padding: 8px 12px; }
+  .comparison-panel > div:nth-child(3) { display: flex; flex-direction: row; flex-wrap: wrap; grid-column: 1 / -1; gap: 8px; }
+  .comparison-panel > p { grid-column: 1 / -1; }
+  .comparison-period { gap: 10px; background: #e9f0eb; color: var(--report-green); border-left: 3px solid #718f7c; }
+  .comparison-period span { overflow-wrap: anywhere; }
+  .filter-actions { margin-top: 16px; }
+  .filter-actions > button { font-size: 14px; padding: 10px 20px; }
+  .report-summary { border-radius: 6px; border-color: #dde5df; }
+  .report-summary table { min-width: 560px; font-variant-numeric: tabular-nums; }
+  .report-summary thead tr, .breakdown-tables thead tr { background: var(--report-green); }
+  .report-summary thead th, .breakdown-tables thead th { color: #f5f8f6 !important; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .report-summary th, .report-summary td { padding: 14px 18px; }
+  .period-marker { background: #718f7c; }
+  .total-files { color: var(--report-green); font-variant-numeric: tabular-nums; }
+  .report-summary tfoot tr { background: #edf2ee; border-top-width: 1px; }
+  .report-summary tfoot td { text-transform: none; letter-spacing: 0; }
+  .report-summary tfoot span { padding: 0; color: var(--report-green); background: transparent; border-radius: 0; }
+  .charts-grid > div { min-width: 0; padding: 20px; border-radius: 6px; border-color: #dde5df; box-shadow: none; }
+  .charts-grid h3 { font-size: 14px; color: var(--report-green); }
+  .charts-grid p { font-size: 12px; }
+  .charts-grid > div > div:first-child > div:first-child { width: 32px; height: 32px; background: #e5ede7; border-radius: 6px; }
+  .volume-track, .volume-bar { border-radius: 4px; }
+  .volume-track { height: 26px; }
+  .breakdown-tables > div { border-radius: 6px; border-color: #dde5df; box-shadow: none; }
+  .breakdown-tables > div > button { padding: 14px 18px; background: #f5f8f6; background-image: none; }
+  .breakdown-tables > div > button:hover { background: #edf3ef; }
+  .breakdown-tables > div > button > div:first-child { width: 32px; height: 32px; border-radius: 6px; background: #e5ede7; }
+  .breakdown-tables h3 { font-size: 14px; color: var(--report-green); }
+  .breakdown-tables table { table-layout: fixed; font-variant-numeric: tabular-nums; }
+  .breakdown-tables th, .breakdown-tables td { padding: 12px 18px; overflow-wrap: anywhere; }
+  .breakdown-tables th:first-child, .breakdown-tables td:first-child { width: 40%; }
+  .breakdown-tables tbody td:first-child { color: var(--report-green); }
+  .breakdown-tables tbody td > span, .breakdown-tables tfoot td > span { min-width: 0; padding: 0; border-radius: 0; background: transparent !important; color: var(--report-green) !important; font-size: 13px; }
+  .breakdown-tables tfoot tr { background: #edf2ee; border-top-width: 1px; }
+  .breakdown-tables tfoot td { text-transform: none; letter-spacing: 0; }
+  button:focus-visible { outline: 2px solid #477b5d; outline-offset: 2px; }
+  @media (max-width: 1100px) {
+    .filter-fields, .filter-fields.date-range-fields, .filter-fields.year-range-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .period-type-field { grid-column: 1 / -1; }
+  }
+  @media (max-width: 700px) {
+    .report-header { gap: 12px; }
+    .report-heading { min-width: 140px; flex-basis: 100%; order: -1; }
+    .report-heading h1 { font-size: 20px; }
+    .report-back { padding: 8px; }
+    .report-print { margin-left: auto; }
+    .charts-grid { gap: 16px; }
+    .charts-grid > div { padding: 16px; }
+    .date-range-fields .date-calendar-picker { grid-column: 1 / -1; }
+    .comparison-panel { grid-template-columns: minmax(0, 1fr) auto; }
+    .comparison-panel > div:first-child { grid-column: 1 / -1; }
+    .comparison-panel > button:first-of-type { grid-column: 1; grid-row: 2; }
+    .comparison-panel > button:last-of-type { grid-column: 2; grid-row: 2; }
+    .breakdown-tables th, .breakdown-tables td { padding: 10px 12px; }
+    .breakdown-tables > div > button { padding: 12px; }
+  }
+  @media (max-width: 480px) {
+    .period-types { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .period-types button { white-space: normal; min-height: 34px; }
+  }
+  @media print {
+    .operational-workspace { background: white; }
+    .report-header > button, .filter-toolbar { display: none; }
+    .report-summary, .charts-grid > div { break-inside: avoid; }
+  }
+</style>

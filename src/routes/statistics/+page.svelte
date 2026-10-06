@@ -19,20 +19,7 @@
       return;
     }
 
-    const hasAccess = $loggedInUser.userRoles?.some((role) =>
-      [
-        // UserRoles.Finance,
-        // UserRoles.PermSec,
-        // UserRoles.Minister,
-        UserRoles.Tech,
-        UserRoles.SuperAdmin,
-        // UserRoles.TrademarkRegistrar,
-        // UserRoles.PatentDesignRegistrar,
-        // UserRoles.ActingTrademarkRegistrar,
-        // UserRoles.ActingPatentDesignRegistrar,
-        UserRoles.EinaoFinance,
-      ].includes(role),
-    );
+    const hasAccess = $loggedInUser.userRoles?.includes(UserRoles.SuperAdmin);
 
     if (!hasAccess) {
       // Redirect unauthorized users
@@ -59,41 +46,21 @@
   }
 </script>
 
-<div
-  class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-screen rounded-xl p-6 shadow-xl border border-slate-200/60"
->
-  <div class="max-w-7xl mx-auto flex flex-col">
-    <!-- Header Section with Back Button -->
-    <div class="mb-5 flex-shrink-0">
-      <!-- Back to Dashboard Button -->
-      {#if currentView === "cards"}
-        <button
-          on:click={handleBackToDashboard}
-          class="flex items-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors border border-gray-300 rounded-lg px-4 py-2 mb-4"
-        >
-          <Icon icon="mdi:arrow-left" class="text-xl" />
-          <span class="font-medium">Back to Dashboard</span>
+<div class="statistics-home min-h-screen rounded-lg p-4 sm:p-8">
+  <div class="statistics-page mx-auto flex w-full max-w-screen-2xl flex-col">
+    {#if currentView === "cards"}
+      <div class="statistics-header">
+        <button on:click={handleBackToDashboard} class="back-link">
+          <Icon icon="mdi:arrow-left" class="h-4 w-4" />
+          <span>Dashboard</span>
         </button>
-      {/if}
-
-      <div class="flex items-center space-x-3 mb-1">
-        <div
-          class="w-10 h-10 bg-gradient-to-br from-green-600 to-green-700 rounded-xl flex items-center justify-center shadow-lg"
-        >
-          <Icon icon="mdi:chart-bar" class="text-white text-xl" />
-        </div>
-        <div>
-          <h1 class="text-2xl md:text-3xl font-bold text-black bg-clip-text">
-            Intellectual Property Office Nigeria
-          </h1>
-          <p class="text-slate-600 text-sm">
-            {currentView === "cards"
-              ? "Select a category to view detailed statistics"
-              : `${selectedRegistry} Statistics - Select a section to view details`}
-          </p>
+        <div class="statistics-heading">
+          <span class="heading-kicker">IPON · REPORTING</span>
+          <h1>Statistics</h1>
+          <p>Select a registry to explore reports</p>
         </div>
       </div>
-    </div>
+    {/if}
 
     <!-- Main Content Area -->
     {#if currentView === "cards"}
@@ -116,3 +83,19 @@
     {/if}
   </div>
 </div>
+
+<style>
+  .statistics-home { color: #202923; background: linear-gradient(180deg, #edf3ef 0, #fafbfa 360px); }
+  .statistics-header { display: flex; align-items: center; gap: 30px; margin-bottom: 30px; padding: 10px 0 24px; border-bottom: 1px solid #d5e0d8; }
+  .back-link { display: inline-flex; flex-shrink: 0; align-items: center; gap: 8px; padding: 10px 14px; border: 1px solid #d1d9d4; border-radius: 6px; color: #59665e; font-size: 13px; }
+  .back-link:hover { background: #f5f8f6; color: #265640; }
+  .statistics-heading { min-width: 0; }
+  .heading-kicker { color: #52745e; font-size: 11px; font-weight: 600; }
+  .statistics-heading h1 { margin-top: 3px; color: #202923; font-size: 30px; line-height: 1.25; font-weight: 600; }
+  .statistics-heading p { margin-top: 6px; color: #68766d; font-size: 14px; }
+  .back-link:focus-visible { outline: 2px solid #477b5d; outline-offset: 2px; }
+  @media (max-width: 600px) {
+    .statistics-header { align-items: flex-start; flex-direction: column; gap: 12px; }
+    .statistics-heading h1 { font-size: 24px; }
+  }
+</style>

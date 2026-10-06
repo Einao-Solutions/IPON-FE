@@ -5,37 +5,12 @@
   export let userRoles: number[] = [];
   export let onCardClick: (registry: string) => void;
 
-  $: isFullAccess = userRoles.includes(UserRoles.PermSec) || 
-                    userRoles.includes(UserRoles.Minister) || 
-                    userRoles.includes(UserRoles.SuperAdmin);
-
-  $: showTrademark = isFullAccess || 
-                     userRoles.includes(UserRoles.TrademarkRegistrar) || 
-                     userRoles.includes(UserRoles.ActingTrademarkRegistrar) || 
-                     userRoles.includes(UserRoles.Finance) ||
-                     userRoles.includes(UserRoles.EinaoFinance);
-
-  $: showPatent = isFullAccess || 
-                  userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.ActingPatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance) ||
-                  userRoles.includes(UserRoles.EinaoFinance);
-
-  $: showDesign = isFullAccess || 
-                  userRoles.includes(UserRoles.PatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.ActingPatentDesignRegistrar) || 
-                  userRoles.includes(UserRoles.Finance) ||
-                  userRoles.includes(UserRoles.EinaoFinance);
-
-  $: showSupport = userRoles.includes(UserRoles.SuperAdmin) ||
-                   userRoles.includes(UserRoles.PermSec) ||
-                   userRoles.includes(UserRoles.Tech);
-
-  $: supportBadge = userRoles.includes(UserRoles.PermSec) &&
-    !userRoles.includes(UserRoles.SuperAdmin) &&
-    !userRoles.includes(UserRoles.Tech)
-    ? "PermSec"
-    : "Admin & Tech";
+  $: isFullAccess = userRoles.includes(UserRoles.SuperAdmin);
+  $: showTrademark = isFullAccess;
+  $: showPatent = isFullAccess;
+  $: showDesign = isFullAccess;
+  $: showSupport = isFullAccess;
+  $: supportBadge = "SuperAdmin";
 
   $: visibleCount = [showTrademark, showPatent, showDesign].filter(Boolean).length;
   $: gridCols = visibleCount === 1 ? "md:grid-cols-1 max-w-md mx-auto" 
@@ -54,146 +29,61 @@
   })();
 </script>
 
-<div class="grid grid-cols-1 {gridCols} gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
-  
-  <!-- Trademark Card -->
+<div class="registry-grid">
   {#if showTrademark}
-  <button
-    on:click={() => onCardClick('Trademark')}
-    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
-  >
-    <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-    
-    <div class="relative p-8">
-      <div class="flex items-center justify-between mb-6">
-        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-          <Icon icon="mdi:trademark" class="text-white text-3xl" />
-        </div>
-        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-green-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
-      </div>
-      
-      <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
-        Trademark
-      </h3>
-      <p class="text-slate-600 text-sm leading-relaxed">{cardSubtitle}</p>
-      
-      <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
-          Click to explore
-        </span>
-        <div class="flex items-center space-x-1">
-          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-          <span class="text-xs text-slate-400">Active</span>
-        </div>
-      </div>
-    </div>
-  </button>
+    <button on:click={() => onCardClick('Trademark')} class="registry-option">
+      <span class="registry-icon"><Icon icon="mdi:trademark" class="h-5 w-5" /></span>
+      <span class="registry-copy"><span class="registry-name">Trademark</span><span class="registry-description">Trademarks, classes, and applications</span></span>
+      <Icon icon="mdi:arrow-right" class="h-[17px] w-[17px] shrink-0 text-[#63806d]" />
+    </button>
   {/if}
 
-  <!-- Patent Card -->
   {#if showPatent}
-  <button
-    on:click={() => onCardClick('Patent')}
-    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
-  >
-    <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-    
-    <div class="relative p-8">
-      <div class="flex items-center justify-between mb-6">
-        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-          <Icon icon="mdi:lightbulb-on" class="text-white text-3xl" />
-        </div>
-        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-green-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
-      </div>
-      
-      <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
-        Patent
-      </h3>
-      <p class="text-slate-600 text-sm leading-relaxed">{cardSubtitle}</p>
-      
-      <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
-          Click to explore
-        </span>
-        <div class="flex items-center space-x-1">
-          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-          <span class="text-xs text-slate-400">Active</span>
-        </div>
-      </div>
-    </div>
-  </button>
+    <button on:click={() => onCardClick('Patent')} class="registry-option">
+      <span class="registry-icon"><Icon icon="mdi:lightbulb-on" class="h-5 w-5" /></span>
+      <span class="registry-copy"><span class="registry-name">Patent</span><span class="registry-description">Patents and technical inventions</span></span>
+      <Icon icon="mdi:arrow-right" class="h-[17px] w-[17px] shrink-0 text-[#63806d]" />
+    </button>
   {/if}
 
-  <!-- Design Card -->
   {#if showDesign}
-  <button
-    on:click={() => onCardClick('Design')}
-    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-105"
-  >
-    <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-    
-    <div class="relative p-8">
-      <div class="flex items-center justify-between mb-6">
-        <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300">
-          <Icon icon="mdi:palette" class="text-white text-3xl" />
-        </div>
-        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-green-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
-      </div>
-      
-      <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors mb-2">
-        Design
-      </h3>
-      <p class="text-slate-600 text-sm leading-relaxed">{cardSubtitle}</p>
-      
-      <div class="mt-6 pt-6 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-xs font-medium text-slate-500 group-hover:text-green-600 transition-colors">
-          Click to explore
-        </span>
-        <div class="flex items-center space-x-1">
-          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-          <span class="text-xs text-slate-400">Active</span>
-        </div>
-      </div>
-    </div>
-  </button>
+    <button on:click={() => onCardClick('Design')} class="registry-option">
+      <span class="registry-icon"><Icon icon="mdi:palette" class="h-5 w-5" /></span>
+      <span class="registry-copy"><span class="registry-name">Design</span><span class="registry-description">Industrial designs and creators</span></span>
+      <Icon icon="mdi:arrow-right" class="h-[17px] w-[17px] shrink-0 text-[#63806d]" />
+    </button>
   {/if}
 
+  {#if showSupport}
+    <button on:click={() => onCardClick('Support')} class="registry-option">
+      <span class="registry-icon"><Icon icon="mdi:headset" class="h-5 w-5" /></span>
+      <span class="registry-copy"><span class="registry-name">Support</span><span class="registry-description">Support tickets and officer performance</span></span>
+      <span class="support-badge">{supportBadge}</span>
+      <Icon icon="mdi:arrow-right" class="h-[17px] w-[17px] shrink-0 text-[#63806d]" />
+    </button>
+  {/if}
 </div>
 
-<!-- Support Card — SuperAdmin & Tech only -->
-{#if showSupport}
-<div class="mt-4 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm">
-  <button
-    on:click={() => onCardClick('Support')}
-    class="group relative overflow-hidden bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-green-400/50 hover:scale-[1.02] w-full text-left"
-  >
-    <div class="absolute inset-0 bg-gradient-to-br from-green-50 via-white to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-    <div class="relative p-8 flex items-center gap-8">
-      <div class="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 flex-shrink-0">
-        <Icon icon="mdi:headset" class="text-white text-3xl" />
-      </div>
-
-      <div class="flex-1">
-        <div class="flex items-center gap-3 mb-1">
-          <h3 class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors">
-            Support
-          </h3>
-          <span class="text-xs font-semibold px-2 py-1 bg-green-100 text-green-700 rounded-full">{supportBadge}</span>
-        </div>
-        <p class="text-slate-600 text-sm leading-relaxed">
-          View support ticket performance metrics — response rates, closure rates, and officer performance scores across all scopes
-        </p>
-      </div>
-
-      <div class="flex items-center gap-3 flex-shrink-0">
-        <div class="flex items-center space-x-1">
-          <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-          <span class="text-xs text-slate-400">Active</span>
-        </div>
-        <Icon icon="mdi:chevron-right" class="text-slate-400 group-hover:text-green-600 text-2xl transform group-hover:translate-x-1 transition-all duration-300" />
-      </div>
-    </div>
-  </button>
-</div>
-{/if}
+<style>
+  .registry-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 0; background: transparent; }
+  .registry-option { position: relative; display: flex; min-width: 0; min-height: 142px; align-items: center; gap: 18px; padding: 24px; overflow: hidden; border: 1px solid #d7e1da; border-radius: 6px; background: #fff; text-align: left; transition: background-color 150ms ease, border-color 150ms ease; }
+  .registry-option::before { position: absolute; inset: 0 auto 0 0; width: 3px; background: #477b5d; content: ''; opacity: 0; transition: opacity 150ms ease; }
+  .registry-option:hover { border-color: #b9cbbf; background: #fcfdfc; }
+  .registry-option:hover::before { opacity: 1; }
+  .registry-option:focus-visible { outline: 2px solid #477b5d; outline-offset: 2px; }
+  .registry-icon { display: flex; width: 48px; height: 48px; flex-shrink: 0; align-items: center; justify-content: center; border: 1px solid #dce7df; border-radius: 6px; background: #edf3ef; color: #265640; }
+  .registry-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 7px; }
+  .registry-name { color: #26392d; font-size: 17px; font-weight: 600; }
+  .registry-description { max-width: 34rem; color: #69776e; font-size: 13px; line-height: 1.5; }
+  .support-badge { flex-shrink: 0; padding: 4px 7px; border: 1px solid #dce4de; border-radius: 4px; color: #66736b; font-size: 10px; }
+  @media (max-width: 900px) {
+    .registry-option { min-height: 128px; padding: 20px; gap: 14px; }
+  }
+  @media (max-width: 700px) {
+    .registry-grid { grid-template-columns: minmax(0, 1fr); }
+    .registry-option { min-height: 104px; padding: 18px; }
+    .registry-icon { width: 42px; height: 42px; }
+    .registry-name { font-size: 15px; }
+    .registry-description { font-size: 12px; }
+  }
+</style>
