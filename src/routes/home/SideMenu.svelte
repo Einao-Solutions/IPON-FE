@@ -137,7 +137,7 @@
     submenus?: MenuItem[];
   };
 
-  let menus: MenuItem[] = [
+  const menuItems: MenuItem[] = [
     {
       icon: "radix-icons:dashboard",
       location: "Dashboard",
@@ -277,16 +277,16 @@
       );
   }
 
+  $: currentUserRoles = Array.isArray($loggedInUser?.userRoles) ? $loggedInUser.userRoles : [];
+  $: canViewStatistics = currentUserRoles.includes(UserRoles.SuperAdmin);
+  $: menus = $loggedInUser ? filterMenus(menuItems, currentUserRoles) : [];
+
   onMount(async () => {
     await decodeUser();
     loadNotifications();
     loadClaimRequestsCount();
     loadOppositionsCount();
     loadIpoSupportCount();
-    if ($loggedInUser) {
-      menus = filterMenus(menus, $loggedInUser.userRoles);
-    }
-
     // Set initial active menu based on current route
     const path = window.location.pathname.toLowerCase();
     let currentLocation = path.split("/").pop();
@@ -318,6 +318,7 @@
   }
 
   function handleMenuClick(menu: any, submenu: any = null) {
+    if (menu.location.toLowerCase() === "statistics" && !canViewStatistics) return;
     currentMenuView.set(submenu?.name || menu.location);
     if (submenu) {
       // Open journal modal instead of navigating
@@ -551,6 +552,7 @@
   <!-- Menu items -->
   <div class="flex-1 overflow-y-auto pt-6 pb-2">
     {#each menus as menu}
+      {#if menu.location.toLowerCase() !== "statistics" || canViewStatistics}
       <div class="mb-1">
         <button
           class="w-full text-left px-2 focus:outline-none"
@@ -630,6 +632,7 @@
           </div>
         {/if}
       </div>
+      {/if}
     {/each}
   </div>
 
