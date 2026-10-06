@@ -325,6 +325,11 @@ async function availabilitysearch(ctx: PaymentContext): Promise<void> {
   ctx.state.setTitle("Availability Search Payment");
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
+  const user = get(ctx.loggedInUser);
+  const applicantName = [user?.firstName, user?.lastName]
+    .filter((part) => part && part.trim())
+    .join(" ");
+  ctx.state.setFileApplicant(applicantName || user?.email || null);
   ctx.state.setResponseUrl(
     `https://${ctx.page.url.host}/availabilitysearch?rrr=${rrr}${appId ? `&appId=${appId}` : ""}`,
   );

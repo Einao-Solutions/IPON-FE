@@ -6,6 +6,38 @@ interface ReceiptTab extends Window {
 	location: Location;
 }
 
+export type ReceiptErrorKind = 'unauthorized' | 'forbidden' | 'payment' | 'generic';
+
+// Messages on this error are always safe to show to the user.
+export class ReceiptError extends Error {
+	constructor(
+		public readonly kind: ReceiptErrorKind,
+		message: string
+	) {
+		super(message);
+		this.name = 'ReceiptError';
+	}
+}
+
+export const SESSION_EXPIRED_MESSAGE = 'Session expired, please log in again';
+export const RECEIPT_FORBIDDEN_MESSAGE = 'You are not allowed to print this receipt';
+export const RECEIPT_PAYMENT_REQUIRED_MESSAGE =
+	'Payment has not been completed for this availability search. Complete payment to print your receipt.';
+export const RECEIPT_GENERIC_MESSAGE = 'Could not generate receipt, please try again';
+
+async function readPaymentRequiredMessage(response: Response): Promise<string> {
+	try {
+		const body = await response.json();
+		const message = body?.message;
+		if (typeof message === 'string' && message.trim() && message.length <= 300) {
+			return message.trim();
+		}
+	} catch {
+		// Non-JSON body: fall back to the default message.
+	}
+	return RECEIPT_PAYMENT_REQUIRED_MESSAGE;
+}
+
 interface ReceiptDependencies {
 	fetcher: typeof fetch;
 	openTab: () => ReceiptTab | null;
@@ -27,18 +59,18 @@ export async function openAvailabilitySearchReceipt(
 	dependencies: Partial<ReceiptDependencies> = {}
 ): Promise<void> {
 	if (!rrr) {
-		throw new Error('No payment reference is available for this receipt.');
+		throw new ReceiptError('generic', RECEIPT_GENERIC_MESSAGE);
 	}
 
 	const token = get(loggedInToken);
 	if (!token) {
-		throw new Error('Your session is missing or expired. Please sign in again.');
+		throw new ReceiptError('unauthorized', SESSION_EXPIRED_MESSAGE);
 	}
 
 	const deps = { ...defaultDependencies, ...dependencies };
 	const receiptTab = deps.openTab();
 	if (!receiptTab) {
-		throw new Error('The receipt tab was blocked. Allow pop-ups and try again.');
+		throw new ReceiptError('generic', 'The receipt tab was blocked. Allow pop-ups and try again.');
 	}
 
 	let objectUrl: string | null = null;
@@ -56,14 +88,16 @@ export async function openAvailabilitySearchReceipt(
 		});
 
 		if (!response.ok) {
-			if (response.status === 401 || response.status === 403) {
-				throw new Error(
-					response.status === 401
-						? 'Your session is missing or expired. Please sign in again.'
-						: 'You are not authorized to print this receipt.'
-				);
+			if (response.status === 401) {
+				throw new ReceiptError('unauthorized', SESSION_EXPIRED_MESSAGE);
 			}
-			throw new Error(`Receipt request failed (${response.status}). Please try again.`);
+			if (response.status === 403) {
+				throw new ReceiptError('forbidden', RECEIPT_FORBIDDEN_MESSAGE);
+			}
+			if (response.status === 409) {
+				throw new ReceiptError('payment', await readPaymentRequiredMessage(response));
+			}
+			throw new ReceiptError('generic', RECEIPT_GENERIC_MESSAGE);
 		}
 
 		const blob = await response.blob();
@@ -76,7 +110,7 @@ export async function openAvailabilitySearchReceipt(
 			signature[3] === 0x46 &&
 			signature[4] === 0x2d;
 		if (!isPdfSignature) {
-			throw new Error('The server did not return a PDF receipt.');
+			throw new ReceiptError('generic', RECEIPT_GENERIC_MESSAGE);
 		}
 
 		const pdfBlob = new Blob([blob], { type: 'application/pdf' });
