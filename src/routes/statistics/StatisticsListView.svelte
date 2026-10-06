@@ -40,6 +40,8 @@
 
   $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
   $: sections = isSuperAdmin ? getSectionsForRole(false, true, false) : [];
+  $: isSuperAdmin = userRoles.includes(UserRoles.SuperAdmin);
+  $: sections = isSuperAdmin ? getSectionsForRole(false, true, false) : [];
 
   function getSectionsForRole(financeOnly: boolean, includeSupport: boolean, actingSupportOnly: boolean) {
     const sections = [];
