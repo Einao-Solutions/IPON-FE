@@ -3,7 +3,11 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
-	import { baseURL, UserRoles, ApplicationLetters } from '$lib/helpers';
+	import {
+		baseURL,
+		UserRoles,
+		FormApplicationTypes
+	} from '$lib/helpers';
 	import { loggedInToken, loggedInUser } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -14,8 +18,8 @@
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapDateToString, mapTypeToString } from '../components/dashboardutils';
 	import { toast } from 'svelte-sonner';
-
-	const AVAILABILITY_SEARCH_TYPE = 29;
+	import { openAvailabilitySearchReceipt } from '$lib/utils/availabilitySearchReceipt';
+	import { getOtherApplicationsUrl } from '$lib/utils/otherApplications';
 
 	let oppositions: any[] = [];
 	let otherApps: any[] = [];
@@ -78,10 +82,19 @@
 			]);
 			oppositions = oppItems.map((x, i) => ({ ...x, sn: i + 1 }));
 			availabilitySearches = otherItems
-				.filter((x) => x.applicationTypeRaw === AVAILABILITY_SEARCH_TYPE)
+				.filter(
+					(x) => Number(x.applicationTypeRaw) === FormApplicationTypes.AvailabilitySearch
+				)
+				.sort((a, b) => {
+					const dateA = Date.parse(a.date ?? '');
+					const dateB = Date.parse(b.date ?? '');
+					return (Number.isFinite(dateB) ? dateB : 0) - (Number.isFinite(dateA) ? dateA : 0);
+				})
 				.map((x, i) => ({ ...x, sn: i + 1 }));
 			otherApps = otherItems
-				.filter((x) => x.applicationTypeRaw !== AVAILABILITY_SEARCH_TYPE)
+				.filter(
+					(x) => Number(x.applicationTypeRaw) !== FormApplicationTypes.AvailabilitySearch
+				)
 				.map((x, i) => ({ ...x, sn: i + 1 }));
 		} catch (e) {
 			console.error('Failed to load applications', e);
@@ -123,14 +136,11 @@
 
 	async function fetchOtherApps(currentUser: any): Promise<any[]> {
 		try {
-			const isSuperOrTech = currentUser.userRoles?.some((role: number) =>
-				[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
-			);
-			const url = isSuperOrTech
-				? `${baseURL}/api/users/GetOtherApplications`
-				: `${baseURL}/api/users/GetOtherApplications?userId=${encodeURIComponent(currentUser.id)}`;
+			const url = getOtherApplicationsUrl(baseURL, currentUser);
 			const res = await fetch(url, { headers: { Authorization: `Bearer ${$loggedInToken}` } });
-			if (!res.ok) return [];
+			if (!res.ok) {
+				throw new Error(`GetOtherApplications failed (${res.status})`);
+			}
 			const body = await res.json();
 			const items = Array.isArray(body) ? body : body.data ?? body.applications ?? [];
 			return items.map((x: any) => ({
@@ -138,14 +148,14 @@
 				status: x.currentStatus,
 				paymentId: x.paymentId,
 				id: x.id,
-				applicationTypeRaw: x.applicationType,
-				applicationType: mapTypeToString(x.applicationType),
+				applicationTypeRaw: Number(x.applicationType),
+				applicationType: mapTypeToString(Number(x.applicationType)),
 				title: x.title ?? null,
 				history: x.statusHistory
 			}));
 		} catch (e) {
 			console.error('Failed to load other applications', e);
-			return [];
+			throw e;
 		}
 	}
 
@@ -227,11 +237,15 @@
 		}
 	}
 
-	function printAvailabilitySearchReceipt(rrr: string | null | undefined) {
-		if (!rrr) return;
-		window.open(
-			`${baseURL}/api/letters/generate?letterType=${ApplicationLetters.AvailabilitySearchReceipt}&rrr=${rrr}`
-		);
+	async function printAvailabilitySearchReceipt(rrr: string | null | undefined) {
+		try {
+			await openAvailabilitySearchReceipt(rrr);
+		} catch (error) {
+			console.error('Failed to print availability search receipt', error);
+			toast.error(
+				error instanceof Error ? error.message : 'Failed to print availability search receipt.'
+			);
+		}
 	}
 </script>
 

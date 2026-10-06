@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { baseURL } from '$lib/helpers';
-	import { loggedInUser } from '$lib/store';
+	import { loggedInToken, loggedInUser } from '$lib/store';
 	import Icon from '@iconify/svelte';
 	
 	export let isOpen = false;
@@ -175,21 +175,37 @@
 				applicantEmail = $loggedInUser?.email || 'unknown@email.com';
 				// console.log('applicantEmail', applicantEmail);
 				
+				const params = new URLSearchParams({
+					name: applicantName,
+					email: applicantEmail,
+					userId: $loggedInUser?.id ?? '',
+					searchTerm: searchQuery,
+					classNo: selectedClass?.toString() ?? '',
+					fileType: selectedfileType
+				});
 				const res = await fetch(
-					`${baseURL}/api/files/AvailabilitySearchCost?name=${applicantName}&email=${applicantEmail}&userId=${$loggedInUser?.id}&searchTerm=${encodeURIComponent(searchQuery)}&classNo=${selectedClass ?? ''}&fileType=${selectedfileType}`,
-					{}
+					`${baseURL}/api/files/AvailabilitySearchCost?${params.toString()}`,
+					{
+						headers: {
+							Authorization: `Bearer ${$loggedInToken ?? ''}`
+						}
+					}
 				);
 
 				if (!res.ok) {
-					throw new Error(`Error: ${res.statusText}`);
+					throw new Error(
+						res.status === 401
+							? 'Your session is missing or expired. Please sign in again.'
+							: `Availability search request failed (${res.status} ${res.statusText}).`
+					);
 				}
 
 				response = await res.json();
+				if (!response?.appId || !response?.rrr || response?.cost == null) {
+					throw new Error('The server did not return all required payment details.');
+				}
 				cost = response.cost;
 				paymentId = response.rrr;
-				console.log('Amount:', cost);
-				console.log('RRR:', paymentId);
-				// Persist appId so the payment confirmation step can mark this search completed
 				searchParams.appId = response.appId;
 				sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
 				// Redirect to payment page
@@ -197,7 +213,7 @@
 
 				// await goto(`/availabilitysearch`);
 			} catch (err) {
-				error = 'Payment failed';
+				error = err instanceof Error ? err.message : 'Availability search request failed.';
 			}
 		} catch (err) {
 			const catchError = err as Error;

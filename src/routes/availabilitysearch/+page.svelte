@@ -22,17 +22,19 @@
 		tradeMarkLogo: string | null;
 		fileId: string | null;
 		fileStatus: string | null;
-		LogoUrl: string;
-		Similarity: number;
+		logoUrl: string;
+		similarity: number;
 	}
 
 	let results: SearchResult[] = [];
 	let isLoading = true;
 	let error: string | null = null;
+	let paymentConfirmationError: string | null = null;
 	let searchParams: {
 		query: string;
 		classId?: number;
 		fileType: string;
+		appId?: string;
 	} | null = null;
 	let fileNumber: string | null = null;
 	let viewMode: 'list' | 'grid' = 'list'; // New state for view toggle
@@ -52,31 +54,42 @@
 			if (!$loggedInUser) {
 				const user = parseLoggedInUser(document.cookie);
 				if (!user) {
-					console.log('the logged in user');
 					await goto('/auth');
-				} else {
-					loggedInUser.set(user);
+					return;
 				}
+				loggedInUser.set(user);
 			}
 
-			// Confirm the payment so the "Other Applications" history flips from Awaiting Payment to Auto-Approved
 			const rrr = $page.url.searchParams.get('rrr');
-			const appId = $page.url.searchParams.get('appId') ?? (searchParams as any)?.appId ?? null;
-			if (rrr && appId && $loggedInUser?.id) {
-				await confirmAvailabilitySearchPayment(appId, $loggedInUser.id);
-			} else if (rrr && !appId) {
-				console.warn('Availability search payment confirmation skipped: appId is missing.');
-			}
+			const appId = $page.url.searchParams.get('appId') ?? searchParams?.appId ?? null;
 
 			if (searchParams) {
-				// Fetch search results from the backend
+				const params = new URLSearchParams({
+					title: searchParams.query,
+					classNo: searchParams.classId?.toString() ?? '',
+					type: searchParams.fileType
+				});
 				const response = await fetch(
-					`${baseURL}/api/files/GetAvailabilitySearch?title=${searchParams.query}&classNo=${searchParams.classId}&type=${searchParams.fileType}`
+					`${baseURL}/api/files/GetAvailabilitySearch?${params.toString()}`
 				);
 
 				if (response.ok) {
 					results = await response.json();
-					console.log(results.Similarity);
+					if (rrr && appId && $loggedInUser?.id) {
+						try {
+							await confirmAvailabilitySearchPayment(appId, $loggedInUser.id);
+						} catch (err) {
+							console.error('Availability search payment confirmation failed:', err);
+							paymentConfirmationError =
+								'Search results loaded, but payment status could not be updated. Please refresh Other Applications later.';
+						}
+					} else if (rrr) {
+						console.warn(
+							'Availability search payment confirmation skipped: application ID or logged-in user is missing.'
+						);
+						paymentConfirmationError =
+							'Search results loaded, but payment status could not be updated. Please refresh Other Applications later.';
+					}
 				} else {
 					error = 'Failed to fetch search results';
 				}
@@ -92,8 +105,9 @@
 	});
 
 	// Retries because Remita's own status check can briefly lag right after the redirect back
-	async function confirmAvailabilitySearchPayment(appId: string, userId: string) {
+	async function confirmAvailabilitySearchPayment(appId: string, userId: string): Promise<void> {
 		const maxAttempts = 3;
+		let lastError = 'Payment confirmation failed. Please retry.';
 		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 			try {
 				const res = await fetch(`${baseURL}/api/files/UpdateAvailabilitySearchPayment`, {
@@ -101,21 +115,20 @@
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ appId, userId })
 				});
-				const body = await res.json().catch(() => null);
+				const body = await res.json();
 				if (res.ok && body?.success) {
 					return;
 				}
-				console.warn(
-					`Availability search payment confirmation attempt ${attempt} failed:`,
-					body?.message ?? res.status
-				);
+				lastError = body?.message ?? `Payment confirmation failed (${res.status}).`;
 			} catch (err) {
 				console.error(`Availability search payment confirmation attempt ${attempt} errored:`, err);
+				lastError = err instanceof Error ? err.message : 'Payment confirmation request failed.';
 			}
 			if (attempt < maxAttempts) {
 				await new Promise((resolve) => setTimeout(resolve, 2000));
 			}
 		}
+		throw new Error(lastError);
 	}
 
 	function goBack() {
@@ -209,6 +222,12 @@
 					</div>
 				{/if}
 			</div>
+		</div>
+	{/if}
+
+	{#if paymentConfirmationError}
+		<div class="bg-amber-50 text-amber-800 p-4 rounded-md" role="status">
+			<p>{paymentConfirmationError}</p>
 		</div>
 	{/if}
 
