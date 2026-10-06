@@ -4,23 +4,13 @@
   import { UserRoles } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
 
-  let isAuthorized = false;
+  let mounted = false;
+  $: isAuthorized = mounted && Array.isArray($loggedInUser?.userRoles) && $loggedInUser.userRoles.includes(UserRoles.SuperAdmin);
+  $: if (mounted && !isAuthorized) {
+    goto($loggedInUser ? "/home/dashboard" : "/auth");
+  }
 
-  onMount(() => {
-    const user = $loggedInUser;
-
-    if (!user) {
-      goto("/auth");
-      return;
-    }
-
-    if (!user.userRoles?.includes(UserRoles.SuperAdmin)) {
-      goto("/home/dashboard");
-      return;
-    }
-
-    isAuthorized = true;
-  });
+  onMount(() => { mounted = true; });
 </script>
 
 {#if isAuthorized}
