@@ -2,8 +2,14 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
 	import Icon from '@iconify/svelte';
-	import { baseURL, UserRoles, ApplicationLetters } from '$lib/helpers';
+	import {
+		baseURL,
+		UserRoles,
+		FormApplicationTypes,
+		ApplicationStatuses
+	} from '$lib/helpers';
 	import { loggedInToken, loggedInUser } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -14,13 +20,24 @@
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapDateToString, mapTypeToString } from '../components/dashboardutils';
 	import { toast } from 'svelte-sonner';
-
-	const AVAILABILITY_SEARCH_TYPE = 29;
+	import {
+		openAvailabilitySearchReceipt,
+		ReceiptError,
+		SESSION_EXPIRED_MESSAGE,
+		RECEIPT_GENERIC_MESSAGE
+	} from '$lib/utils/availabilitySearchReceipt';
+	import { getOtherApplicationsUrl } from '$lib/utils/otherApplications';
+	import { clearAuthCookies } from '$lib/auth-session';
+	import { Toaster } from '$lib/components/ui/sonner';
+	import { otherApplicationsRefresh } from '$lib/utils/otherApplicationsRefresh';
 
 	let oppositions: any[] = [];
 	let otherApps: any[] = [];
 	let availabilitySearches: any[] = [];
 	let oppositionsLoading = false;
+	let loadError: string | null = null;
+	let sessionExpired = false;
+	let paymentRedirectId: string | null = null;
 	let search = '';
 	let activeTab = 'oppositions';
 
@@ -55,22 +72,45 @@
 		showStatusHistory = true;
 	}
 
-	onMount(async () => {
-		const tabParam = $page.url.searchParams.get('tab');
+	onMount(() => {
+		// Refetch (instead of trusting the current list) when a payment or notification changes statuses.
+		let seenRefresh = $otherApplicationsRefresh;
+		const unsubscribe = otherApplicationsRefresh.subscribe((value) => {
+			if (value !== seenRefresh) {
+				seenRefresh = value;
+				loadApplications();
+			}
+		});
+		(async () => {
+			await loadApplications();
+			const oppositionId = $page.url.searchParams.get('oppositionId');
+			if (oppositionId) {
+				viewOppositionDetail('', oppositionId);
+			}
+		})();
+		return unsubscribe;
+	});
+
+	// Re-applies tab/query when the header search navigates while this page is already open.
+	// Browser-only: url.searchParams cannot be read while prerendering.
+	$: if (browser) applyUrlParams($page.url.searchParams);
+
+	function applyUrlParams(params: URLSearchParams) {
+		const tabParam = params.get('tab');
 		if (tabParam === 'availabilitysearch' || tabParam === 'other' || tabParam === 'oppositions') {
 			activeTab = tabParam;
 		}
-		await loadApplications();
-		const oppositionId = $page.url.searchParams.get('oppositionId');
-		if (oppositionId) {
-			viewOppositionDetail('', oppositionId);
+		const queryParam = params.get('q');
+		if (queryParam !== null) {
+			search = queryParam;
 		}
-	});
+	}
 
 	async function loadApplications() {
 		const currentUser = $loggedInUser;
 		if (!currentUser) return;
 		oppositionsLoading = true;
+		loadError = null;
 		try {
 			const [oppItems, otherItems] = await Promise.all([
 				loadOppositions(currentUser),
@@ -78,14 +118,25 @@
 			]);
 			oppositions = oppItems.map((x, i) => ({ ...x, sn: i + 1 }));
 			availabilitySearches = otherItems
-				.filter((x) => x.applicationTypeRaw === AVAILABILITY_SEARCH_TYPE)
+				.filter(
+					(x) => Number(x.applicationTypeRaw) === FormApplicationTypes.AvailabilitySearch
+				)
+				.sort((a, b) => {
+					const dateA = Date.parse(a.date ?? '');
+					const dateB = Date.parse(b.date ?? '');
+					return (Number.isFinite(dateB) ? dateB : 0) - (Number.isFinite(dateA) ? dateA : 0);
+				})
 				.map((x, i) => ({ ...x, sn: i + 1 }));
 			otherApps = otherItems
-				.filter((x) => x.applicationTypeRaw !== AVAILABILITY_SEARCH_TYPE)
+				.filter(
+					(x) => Number(x.applicationTypeRaw) !== FormApplicationTypes.AvailabilitySearch
+				)
 				.map((x, i) => ({ ...x, sn: i + 1 }));
 		} catch (e) {
+			if (e instanceof SessionExpiredError) return;
 			console.error('Failed to load applications', e);
-			toast.error('Failed to load applications');
+			loadError = 'We could not load your applications. Please try again.';
+			toast.error(loadError);
 		} finally {
 			oppositionsLoading = false;
 		}
@@ -102,6 +153,10 @@
 			const res = await fetch(url, {
 				headers: { Authorization: `Bearer ${$loggedInToken}` }
 			});
+			if (res.status === 401) {
+				handleSessionExpired();
+				return [];
+			}
 			if (!res.ok) return [];
 			const body = await res.json();
 			const items = body.data ?? [];
@@ -121,16 +176,31 @@
 		}
 	}
 
+	// Access tokens last 2 hours while the login cookie lasts 7 days, so a stale token returns 401.
+	// No refresh flow exists (the refresh token is not stored), so the user must sign in again.
+	class SessionExpiredError extends Error {}
+
+	function handleSessionExpired() {
+		if (sessionExpired) return;
+		sessionExpired = true;
+		toast.error(SESSION_EXPIRED_MESSAGE);
+		clearAuthCookies();
+		loggedInToken.set(null);
+		loggedInUser.set(null);
+		goto('/auth');
+	}
+
 	async function fetchOtherApps(currentUser: any): Promise<any[]> {
 		try {
-			const isSuperOrTech = currentUser.userRoles?.some((role: number) =>
-				[UserRoles.Tech, UserRoles.SuperAdmin].includes(role)
-			);
-			const url = isSuperOrTech
-				? `${baseURL}/api/users/GetOtherApplications`
-				: `${baseURL}/api/users/GetOtherApplications?userId=${encodeURIComponent(currentUser.id)}`;
+			const url = getOtherApplicationsUrl(baseURL, currentUser);
 			const res = await fetch(url, { headers: { Authorization: `Bearer ${$loggedInToken}` } });
-			if (!res.ok) return [];
+			if (res.status === 401) {
+				handleSessionExpired();
+				throw new SessionExpiredError();
+			}
+			if (!res.ok) {
+				throw new Error(`GetOtherApplications failed (${res.status})`);
+			}
 			const body = await res.json();
 			const items = Array.isArray(body) ? body : body.data ?? body.applications ?? [];
 			return items.map((x: any) => ({
@@ -138,14 +208,15 @@
 				status: x.currentStatus,
 				paymentId: x.paymentId,
 				id: x.id,
-				applicationTypeRaw: x.applicationType,
-				applicationType: mapTypeToString(x.applicationType),
+				applicationTypeRaw: Number(x.applicationType),
+				applicationType: mapTypeToString(Number(x.applicationType)),
 				title: x.title ?? null,
+				referenceNumber: x.referenceNumber ?? null,
 				history: x.statusHistory
 			}));
 		} catch (e) {
 			console.error('Failed to load other applications', e);
-			return [];
+			throw e;
 		}
 	}
 
@@ -193,7 +264,9 @@
 				(o.title ?? '').toLowerCase().includes(t) ||
 				(o.fileId ?? '').toLowerCase().includes(t) ||
 				(o.name ?? '').toLowerCase().includes(t) ||
-				(o.paymentId ?? '').toLowerCase().includes(t)
+				(o.paymentId ?? '').toLowerCase().includes(t) ||
+				(o.referenceNumber ?? '').toLowerCase().includes(t) ||
+				(o.id ?? '').toLowerCase().includes(t)
 		);
 	}
 
@@ -227,11 +300,63 @@
 		}
 	}
 
-	function printAvailabilitySearchReceipt(rrr: string | null | undefined) {
-		if (!rrr) return;
-		window.open(
-			`${baseURL}/api/letters/generate?letterType=${ApplicationLetters.AvailabilitySearchReceipt}&rrr=${rrr}`
-		);
+	function isPaidSearch(row: any): boolean {
+		return Number(row.status) === ApplicationStatuses.AutoApproved;
+	}
+
+	function isAwaitingPayment(row: any): boolean {
+		return Number(row.status) === ApplicationStatuses.AwaitingPayment;
+	}
+
+	async function printAvailabilitySearchReceipt(row: any) {
+		try {
+			await openAvailabilitySearchReceipt(row.paymentId);
+		} catch (error) {
+			if (error instanceof ReceiptError) {
+				if (error.kind === 'unauthorized') {
+					handleSessionExpired();
+					return;
+				}
+				toast.error(error.message);
+				return;
+			}
+			console.error('Failed to print availability search receipt', error);
+			toast.error(RECEIPT_GENERIC_MESSAGE);
+		}
+	}
+
+	// Reuses the search's existing RRR; the payment page returns to /availabilitysearch to confirm it.
+	async function completePayment(row: any) {
+		if (!row.paymentId || paymentRedirectId) return;
+		paymentRedirectId = row.id;
+		try {
+			const res = await fetch(
+				`${baseURL}/api/files/GetRRRCost?rrr=${encodeURIComponent(row.paymentId)}`
+			);
+			if (!res.ok) throw new Error(`GetRRRCost failed (${res.status})`);
+			const body = await res.json();
+			const amount = body?.cost ?? body?.amount;
+			if (amount == null) throw new Error('Missing payment amount');
+
+			sessionStorage.setItem(
+				'searchParams',
+				JSON.stringify({
+					query: row.title ?? '',
+					fileType: 'Trademark',
+					type: 'availabilitysearch',
+					appId: row.id,
+					submittedAt: new Date().toISOString()
+				})
+			);
+			await goto(
+				`/payment/?type=availabilitysearch&rrr=${encodeURIComponent(row.paymentId)}&amount=${encodeURIComponent(amount)}`
+			);
+		} catch (error) {
+			console.error('Failed to start payment for availability search', error);
+			toast.error('Could not start payment, please try again');
+		} finally {
+			paymentRedirectId = null;
+		}
 	}
 </script>
 
@@ -257,13 +382,13 @@
 		</div>
 		<div class="flex items-center gap-2">
 			<span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-				{oppositions.length} Oppositions
+				{filteredOppositions.length} Oppositions
 			</span>
 			<span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-semibold">
-				{availabilitySearches.length} Availability Searches
+				{filteredAvailabilitySearches.length} Availability Searches
 			</span>
 			<span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm font-semibold">
-				{otherApps.length} Other
+				{filteredOtherApps.length} Other
 			</span>
 		</div>
 	</div>
@@ -272,7 +397,7 @@
 	<div class="flex items-center gap-3">
 		<div class="relative flex-1 max-w-md">
 			<Icon icon="heroicons:magnifying-glass" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-			<Input bind:value={search} placeholder="Search by title, file ID, name or payment ID..." class="pl-9" />
+			<Input bind:value={search} placeholder="Search by title, file ID, name, payment ID or reference no...." class="pl-9" />
 		</div>
 		<Button variant="outline" on:click={() => loadApplications()}>
 			<Icon icon="heroicons:arrow-path" class="w-4 h-4 mr-1.5" />
@@ -284,13 +409,13 @@
 	<Tabs.Root bind:value={activeTab} class="w-full">
 		<Tabs.List class="grid w-full max-w-lg grid-cols-3">
 			<Tabs.Trigger value="oppositions">
-				Oppositions ({oppositions.length})
+				Oppositions ({filteredOppositions.length})
 			</Tabs.Trigger>
 			<Tabs.Trigger value="availabilitysearch">
-				Availability Searches ({availabilitySearches.length})
+				Availability Searches ({filteredAvailabilitySearches.length})
 			</Tabs.Trigger>
 			<Tabs.Trigger value="other">
-				Other Applications ({otherApps.length})
+				Other Applications ({filteredOtherApps.length})
 			</Tabs.Trigger>
 		</Tabs.List>
 
@@ -395,6 +520,15 @@
 					<div class="flex justify-center items-center py-16">
 						<Icon icon="line-md:loading-loop" class="w-8 h-8 text-purple-600" />
 					</div>
+				{:else if loadError}
+					<div class="flex flex-col items-center justify-center py-16 text-center" role="alert">
+						<Icon icon="mdi:alert-circle-outline" class="w-12 h-12 text-red-400 mb-2" />
+						<p class="text-red-600 text-sm mb-3">{loadError}</p>
+						<Button variant="outline" on:click={() => loadApplications()}>
+							<Icon icon="heroicons:arrow-path" class="w-4 h-4 mr-1.5" />
+							Retry
+						</Button>
+					</div>
 				{:else if filteredAvailabilitySearches.length === 0}
 					<div class="flex flex-col items-center justify-center py-16 text-center">
 						<Icon icon="mdi:inbox-outline" class="w-12 h-12 text-slate-300 mb-2" />
@@ -407,6 +541,7 @@
 								<tr>
 									<th class="px-4 py-3 text-left font-semibold">S/N</th>
 									<th class="px-4 py-3 text-left font-semibold">Date</th>
+									<th class="px-4 py-3 text-left font-semibold">Reference No.</th>
 									<th class="px-4 py-3 text-left font-semibold">Title</th>
 									<th class="px-4 py-3 text-left font-semibold">Payment ID</th>
 									<th class="px-4 py-3 text-left font-semibold">Application Status</th>
@@ -418,6 +553,7 @@
 									<tr class="hover:bg-slate-50 transition-colors">
 										<td class="px-4 py-3 text-slate-700">{i + 1}</td>
 										<td class="px-4 py-3 text-slate-700 whitespace-nowrap">{row.date ? mapDateToString(row.date) : '—'}</td>
+										<td class="px-4 py-3 text-slate-700 whitespace-nowrap font-mono text-xs">{row.referenceNumber ?? '—'}</td>
 										<td class="px-4 py-3 text-slate-700">{row.title ?? '—'}</td>
 										<td class="px-4 py-3 text-slate-700">{row.paymentId ?? '—'}</td>
 										<td class="px-4 py-3">
@@ -433,9 +569,22 @@
 														<DropdownMenu.Item on:click={() => openVerifyPaymentDialog(row.paymentId)}>
 															Verify Payment
 														</DropdownMenu.Item>
-														<DropdownMenu.Item on:click={() => printAvailabilitySearchReceipt(row.paymentId)}>
-															Print
-														</DropdownMenu.Item>
+														{#if isPaidSearch(row)}
+															<DropdownMenu.Item on:click={() => printAvailabilitySearchReceipt(row)}>
+																Print
+															</DropdownMenu.Item>
+														{:else if isAwaitingPayment(row)}
+															<DropdownMenu.Item on:click={() => completePayment(row)}>
+																Complete payment
+															</DropdownMenu.Item>
+															<DropdownMenu.Item
+																disabled
+																title="Complete payment to print your receipt"
+																class="cursor-not-allowed opacity-50"
+															>
+																Print (payment required)
+															</DropdownMenu.Item>
+														{/if}
 													</DropdownMenu.Content>
 												</DropdownMenu.Root>
 											{:else}
@@ -457,6 +606,15 @@
 				{#if oppositionsLoading}
 					<div class="flex justify-center items-center py-16">
 						<Icon icon="line-md:loading-loop" class="w-8 h-8 text-blue-600" />
+					</div>
+				{:else if loadError}
+					<div class="flex flex-col items-center justify-center py-16 text-center" role="alert">
+						<Icon icon="mdi:alert-circle-outline" class="w-12 h-12 text-red-400 mb-2" />
+						<p class="text-red-600 text-sm mb-3">{loadError}</p>
+						<Button variant="outline" on:click={() => loadApplications()}>
+							<Icon icon="heroicons:arrow-path" class="w-4 h-4 mr-1.5" />
+							Retry
+						</Button>
 					</div>
 				{:else if filteredOtherApps.length === 0}
 					<div class="flex flex-col items-center justify-center py-16 text-center">
@@ -785,3 +943,5 @@
 {#if showStatusHistory && historyComponent}
 	<svelte:component this={historyComponent} {...historyData} />
 {/if}
+
+<Toaster />
