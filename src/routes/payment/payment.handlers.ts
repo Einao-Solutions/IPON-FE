@@ -319,10 +319,6 @@ async function availabilitysearch(ctx: PaymentContext): Promise<void> {
   const rrr = params.get("rrr");
   if (!cost || !rrr) throw new Error("Missing payment data");
 
-  const raw = sessionStorage.getItem("searchParams");
-  const parsed = raw ? JSON.parse(raw) : null;
-  const appId = parsed?.appId ?? null;
-
   ctx.state.setTitle("Availability Search Payment");
   ctx.state.setCost(cost);
   ctx.state.setPaymentId(rrr);
@@ -332,7 +328,7 @@ async function availabilitysearch(ctx: PaymentContext): Promise<void> {
     .join(" ");
   ctx.state.setFileApplicant(applicantName || user?.email || null);
   ctx.state.setResponseUrl(
-    `https://${ctx.page.url.host}/availabilitysearch?rrr=${rrr}${appId ? `&appId=${appId}` : ""}`,
+    `https://${ctx.page.url.host}/availabilitysearch/paid?rrr=${rrr}`,
   );
 }
 

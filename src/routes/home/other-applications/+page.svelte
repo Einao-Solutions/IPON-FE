@@ -26,7 +26,11 @@
 		SESSION_EXPIRED_MESSAGE,
 		RECEIPT_GENERIC_MESSAGE
 	} from '$lib/utils/availabilitySearchReceipt';
-	import { getOtherApplicationsUrl } from '$lib/utils/otherApplications';
+	import {
+		getOtherApplicationsUrl,
+		normalizeApplicationStatus
+	} from '$lib/utils/otherApplications';
+	import { confirmAvailabilitySearchPayment, savePendingAvailabilitySearch } from '$lib/utils/availabilitySearchPayment';
 	import { clearAuthCookies } from '$lib/auth-session';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { otherApplicationsRefresh } from '$lib/utils/otherApplicationsRefresh';
@@ -132,6 +136,7 @@
 					(x) => Number(x.applicationTypeRaw) !== FormApplicationTypes.AvailabilitySearch
 				)
 				.map((x, i) => ({ ...x, sn: i + 1 }));
+			void reconcileAwaitingPayments(currentUser);
 		} catch (e) {
 			if (e instanceof SessionExpiredError) return;
 			console.error('Failed to load applications', e);
@@ -205,7 +210,7 @@
 			const items = Array.isArray(body) ? body : body.data ?? body.applications ?? [];
 			return items.map((x: any) => ({
 				date: x.applicationDate,
-				status: x.currentStatus,
+				status: normalizeApplicationStatus(x.currentStatus),
 				paymentId: x.paymentId,
 				id: x.id,
 				applicationTypeRaw: Number(x.applicationType),
@@ -308,6 +313,35 @@
 		return Number(row.status) === ApplicationStatuses.AwaitingPayment;
 	}
 
+	// Each RRR is checked at most once per page visit so refetches never loop.
+	const reconcileAttempted = new Set<string>();
+
+	// Covers users who paid but closed the tab before the return page confirmed it.
+	// A 400 just means "still unpaid" and is not an error.
+	async function reconcileAwaitingPayments(currentUser: any) {
+		const isStaff = currentUser?.userRoles?.some((role: number) => role !== UserRoles.User);
+		if (isStaff) return;
+
+		const candidates = availabilitySearches.filter(
+			(row) => isAwaitingPayment(row) && row.paymentId && !reconcileAttempted.has(row.paymentId)
+		);
+		let anyConfirmed = false;
+		for (const row of candidates) {
+			reconcileAttempted.add(row.paymentId);
+			const result = await confirmAvailabilitySearchPayment(row.paymentId, row.id);
+			if (result.outcome === 'confirmed') {
+				anyConfirmed = true;
+			} else if (result.outcome === 'unauthorized') {
+				handleSessionExpired();
+				return;
+			}
+		}
+		if (anyConfirmed) {
+			toast.success('Payment confirmed, search approved');
+			await loadApplications();
+		}
+	}
+
 	async function printAvailabilitySearchReceipt(row: any) {
 		try {
 			await openAvailabilitySearchReceipt(row.paymentId);
@@ -325,7 +359,7 @@
 		}
 	}
 
-	// Reuses the search's existing RRR; the payment page returns to /availabilitysearch to confirm it.
+	// Reuses the search's existing RRR; the payment page returns to /availabilitysearch/paid to confirm it.
 	async function completePayment(row: any) {
 		if (!row.paymentId || paymentRedirectId) return;
 		paymentRedirectId = row.id;
@@ -338,6 +372,7 @@
 			const amount = body?.cost ?? body?.amount;
 			if (amount == null) throw new Error('Missing payment amount');
 
+			savePendingAvailabilitySearch(row.paymentId, row.id);
 			sessionStorage.setItem(
 				'searchParams',
 				JSON.stringify({
