@@ -30,7 +30,7 @@ export function mapStatusToString(
     case ApplicationStatuses.None:
       return "None";
     case ApplicationStatuses.AutoApproved:
-      return "Auto-Approved";
+      return "Auto Approved";
     case ApplicationStatuses.Publication:
       return "Publication";
     case ApplicationStatuses.Opposition:

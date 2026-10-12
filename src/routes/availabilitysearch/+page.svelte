@@ -7,13 +7,10 @@
 	import { baseURL, normalizeImageUrl, UserRoles } from '$lib/helpers';
 	import { Cell } from '$lib/components/ui/calendar';
 	import { mapDateToString } from '../home/components/dashboardutils';
-	import { loggedInUser, loggedInToken } from '$lib/store';
+	import { loggedInUser } from '$lib/store';
 	import { Toaster } from '$lib/components/ui/sonner';
-	import { toast } from 'svelte-sonner';
-	import { requestOtherApplicationsRefresh } from '$lib/utils/otherApplicationsRefresh';
 	import { parseLoggedInUser } from '../dataview/datahelpers';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 
 	interface SearchResult {
@@ -32,12 +29,10 @@
 	let results: SearchResult[] = [];
 	let isLoading = true;
 	let error: string | null = null;
-	let paymentConfirmationError: string | null = null;
 	let searchParams: {
 		query: string;
 		classId?: number;
 		fileType: string;
-		appId?: string;
 	} | null = null;
 	let fileNumber: string | null = null;
 	let viewMode: 'list' | 'grid' = 'list'; // New state for view toggle
@@ -63,9 +58,6 @@
 				loggedInUser.set(user);
 			}
 
-			const rrr = $page.url.searchParams.get('rrr');
-			const appId = $page.url.searchParams.get('appId') ?? searchParams?.appId ?? null;
-
 			if (searchParams) {
 				const params = new URLSearchParams({
 					title: searchParams.query,
@@ -78,28 +70,6 @@
 
 				if (response.ok) {
 					results = await response.json();
-					if (rrr && appId && $loggedInUser?.id) {
-						try {
-							await confirmAvailabilitySearchPayment(appId, $loggedInUser.id);
-							paymentConfirmationError = null;
-							toast.success(
-								'Payment confirmed. A confirmation email has been sent to your registered address.'
-							);
-							requestOtherApplicationsRefresh();
-						} catch (err) {
-							console.error('Availability search payment confirmation failed:', err);
-							const reason = err instanceof Error ? err.message : '';
-							paymentConfirmationError = `Search results loaded, but the payment could not be confirmed${
-								reason ? `: ${reason}` : '.'
-							}`;
-						}
-					} else if (rrr) {
-						console.warn(
-							'Availability search payment confirmation skipped: application ID or logged-in user is missing.'
-						);
-						paymentConfirmationError =
-							'Search results loaded, but payment status could not be updated. Please refresh Other Applications later.';
-					}
 				} else {
 					error = 'Failed to fetch search results';
 				}
@@ -113,48 +83,6 @@
 			isLoading = false;
 		}
 	});
-
-	class NonRetryableConfirmationError extends Error {}
-
-	// Retries because Remita's own status check can briefly lag right after the redirect back
-	async function confirmAvailabilitySearchPayment(appId: string, userId: string): Promise<void> {
-		const maxAttempts = 3;
-		let lastError = 'Payment confirmation failed. Please retry.';
-		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-			try {
-				const res = await fetch(`${baseURL}/api/files/UpdateAvailabilitySearchPayment`, {
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Authorization: `Bearer ${$loggedInToken}`
-					},
-					body: JSON.stringify({ appId, userId })
-				});
-				const body = await res.json().catch(() => null);
-				if (res.ok && body?.success) {
-					return;
-				}
-				if (res.status === 401) {
-					throw new NonRetryableConfirmationError('Session expired, please log in again.');
-				}
-				if (res.status === 403) {
-					throw new NonRetryableConfirmationError('You are not allowed to confirm this payment.');
-				}
-				lastError =
-					typeof body?.message === 'string' && body.message
-						? body.message
-						: `Payment confirmation failed (${res.status}).`;
-			} catch (err) {
-				if (err instanceof NonRetryableConfirmationError) throw err;
-				console.error(`Availability search payment confirmation attempt ${attempt} errored:`, err);
-				lastError = err instanceof Error ? err.message : 'Payment confirmation request failed.';
-			}
-			if (attempt < maxAttempts) {
-				await new Promise((resolve) => setTimeout(resolve, 2000));
-			}
-		}
-		throw new Error(lastError);
-	}
 
 	function goBack() {
 		window.history.back();
@@ -247,12 +175,6 @@
 					</div>
 				{/if}
 			</div>
-		</div>
-	{/if}
-
-	{#if paymentConfirmationError}
-		<div class="bg-amber-50 text-amber-800 p-4 rounded-md" role="status">
-			<p>{paymentConfirmationError}</p>
 		</div>
 	{/if}
 

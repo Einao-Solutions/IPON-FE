@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { baseURL } from '$lib/helpers';
 	import { loggedInToken, loggedInUser } from '$lib/store';
+	import { savePendingAvailabilitySearch } from '$lib/utils/availabilitySearchPayment';
 	import Icon from '@iconify/svelte';
 	
 	export let isOpen = false;
@@ -19,7 +20,6 @@
 		fileType: string;
 		type: string;
 		submittedAt: string;
-		appId?: string;
 	}
 
 	// Class of goods options
@@ -201,13 +201,13 @@
 				}
 
 				response = await res.json();
-				if (!response?.appId || !response?.rrr || response?.cost == null) {
+				if (!response?.rrr || response?.cost == null) {
 					throw new Error('The server did not return all required payment details.');
 				}
 				cost = response.cost;
 				paymentId = response.rrr;
-				searchParams.appId = response.appId;
-				sessionStorage.setItem('searchParams', JSON.stringify(searchParams));
+				// Persist the RRR so returning from Remita, a refresh or a closed tab can still confirm it
+				savePendingAvailabilitySearch(response.rrr, response.appId ?? response.id ?? null);
 				// Redirect to payment page
 				 await goto(`/payment/?type=availabilitysearch&rrr=${paymentId}&amount=${cost}`);
 
