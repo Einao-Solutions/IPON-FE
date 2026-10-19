@@ -482,7 +482,7 @@
             {:else}
               <Button
                 type="submit"
-                class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                class="flex-1 bg-gradient-to-r from-[#f58220] to-[#f15a24] hover:from-[#e87516] hover:to-[#d94d1d] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
               >
                 <div class="flex items-center justify-center gap-2">
                   <Icon
