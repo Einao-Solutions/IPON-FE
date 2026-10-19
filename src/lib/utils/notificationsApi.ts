@@ -7,6 +7,7 @@ import {
 } from "@microsoft/signalr";
 import { baseURL } from "$lib/helpers";
 import { loggedInToken, loggedInUser } from "$lib/store";
+import { requestOtherApplicationsRefresh } from "$lib/utils/otherApplicationsRefresh";
 
 export enum NotificationAudience {
   User = 0,
@@ -230,6 +231,9 @@ function upsertNotification(n: AppNotification) {
     return next;
   });
   if (!n.isRead) unreadCount.update((c) => c + 1);
+  if (n.actionUrl?.includes("/home/other-applications")) {
+    requestOtherApplicationsRefresh();
+  }
 }
 
 export async function startNotificationHub(): Promise<void> {

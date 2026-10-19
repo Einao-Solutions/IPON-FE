@@ -8,9 +8,9 @@
 	import { Cell } from '$lib/components/ui/calendar';
 	import { mapDateToString } from '../home/components/dashboardutils';
 	import { loggedInUser } from '$lib/store';
+	import { Toaster } from '$lib/components/ui/sonner';
 	import { parseLoggedInUser } from '../dataview/datahelpers';
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 
 	interface SearchResult {
@@ -22,8 +22,8 @@
 		tradeMarkLogo: string | null;
 		fileId: string | null;
 		fileStatus: string | null;
-		LogoUrl: string;
-		Similarity: number;
+		logoUrl: string;
+		similarity: number;
 	}
 
 	let results: SearchResult[] = [];
@@ -52,31 +52,24 @@
 			if (!$loggedInUser) {
 				const user = parseLoggedInUser(document.cookie);
 				if (!user) {
-					console.log('the logged in user');
 					await goto('/auth');
-				} else {
-					loggedInUser.set(user);
+					return;
 				}
-			}
-
-			// Confirm the payment so the "Other Applications" history flips from Awaiting Payment to Auto-Approved
-			const rrr = $page.url.searchParams.get('rrr');
-			const appId = $page.url.searchParams.get('appId') ?? (searchParams as any)?.appId ?? null;
-			if (rrr && appId && $loggedInUser?.id) {
-				await confirmAvailabilitySearchPayment(appId, $loggedInUser.id);
-			} else if (rrr && !appId) {
-				console.warn('Availability search payment confirmation skipped: appId is missing.');
+				loggedInUser.set(user);
 			}
 
 			if (searchParams) {
-				// Fetch search results from the backend
+				const params = new URLSearchParams({
+					title: searchParams.query,
+					classNo: searchParams.classId?.toString() ?? '',
+					type: searchParams.fileType
+				});
 				const response = await fetch(
-					`${baseURL}/api/files/GetAvailabilitySearch?title=${searchParams.query}&classNo=${searchParams.classId}&type=${searchParams.fileType}`
+					`${baseURL}/api/files/GetAvailabilitySearch?${params.toString()}`
 				);
 
 				if (response.ok) {
 					results = await response.json();
-					console.log(results.Similarity);
 				} else {
 					error = 'Failed to fetch search results';
 				}
@@ -90,33 +83,6 @@
 			isLoading = false;
 		}
 	});
-
-	// Retries because Remita's own status check can briefly lag right after the redirect back
-	async function confirmAvailabilitySearchPayment(appId: string, userId: string) {
-		const maxAttempts = 3;
-		for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-			try {
-				const res = await fetch(`${baseURL}/api/files/UpdateAvailabilitySearchPayment`, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ appId, userId })
-				});
-				const body = await res.json().catch(() => null);
-				if (res.ok && body?.success) {
-					return;
-				}
-				console.warn(
-					`Availability search payment confirmation attempt ${attempt} failed:`,
-					body?.message ?? res.status
-				);
-			} catch (err) {
-				console.error(`Availability search payment confirmation attempt ${attempt} errored:`, err);
-			}
-			if (attempt < maxAttempts) {
-				await new Promise((resolve) => setTimeout(resolve, 2000));
-			}
-		}
-	}
 
 	function goBack() {
 		window.history.back();
@@ -269,16 +235,22 @@
 			<p>{error}</p>
 		</div>
 	{:else if results.length === 0}
-		<!-- No Results State -->
-		<div class="bg-yellow-50 p-8 rounded-md text-center">
-			<Icon
-				icon="lucide:search-x"
-				width="2rem"
-				height="2rem"
-				class="mx-auto mb-2 text-yellow-600"
-			/>
-			<h3 class="text-lg font-medium text-gray-800 mb-1">No results found</h3>
-			<p class="text-gray-600">Try adjusting your search criteria for more results.</p>
+		<!-- No Similarity State -->
+		<div
+			class="relative w-full overflow-hidden rounded-xl bg-gradient-to-r from-green-600 via-green-500 to-emerald-600 px-6 py-8 text-center text-white shadow-lg"
+			role="status"
+		>
+			<span class="balloon balloon-left" aria-hidden="true">🎈</span>
+			<span class="balloon balloon-right" aria-hidden="true">🎈</span>
+			<div class="text-4xl mb-3" aria-hidden="true">🎈🎉🎈</div>
+			<h3 class="text-xl font-extrabold uppercase tracking-wide sm:text-2xl">
+				Congratulations! There is no similarity to the search title on the portal
+			</h3>
+			{#if searchParams?.query}
+				<p class="mt-3 text-sm text-green-50">
+					Search title: <span class="rounded bg-white/20 px-2 py-0.5 font-semibold">{searchParams.query}</span>
+				</p>
+			{/if}
 		</div>
 	{:else}
 		<!-- Results Display -->
@@ -397,7 +369,47 @@
 	{/if}
 </div>
 
+<Toaster />
+
 <style>
+	.balloon {
+		position: absolute;
+		bottom: -2rem;
+		font-size: 2rem;
+		opacity: 0.85;
+		animation: balloon-float 5s ease-in infinite;
+	}
+
+	.balloon-left {
+		left: 8%;
+	}
+
+	.balloon-right {
+		right: 8%;
+		animation-delay: 1.5s;
+	}
+
+	@keyframes balloon-float {
+		0% {
+			transform: translateY(0);
+			opacity: 0;
+		}
+		15% {
+			opacity: 0.85;
+		}
+		100% {
+			transform: translateY(-12rem);
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.balloon {
+			animation: none;
+			display: none;
+		}
+	}
+
 	.line-clamp-2 {
 		display: -webkit-box;
 		-webkit-line-clamp: 2;

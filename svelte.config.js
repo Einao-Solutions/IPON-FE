@@ -53,6 +53,7 @@ const config = {
         "/statussearch",
         "/statussearch/result",
         "/availabilitysearch",
+        "/availabilitysearch/paid",
         "/home/postregistration",
         "/home/opposition",
         "/home/postregistration/search",
