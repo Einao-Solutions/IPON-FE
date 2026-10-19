@@ -1,10 +1,29 @@
-import { TicketCategory, ApplicationType, TicketType } from '$lib/helpers';
+import { TicketCategory, ApplicationType, TicketType, TicketStates } from '$lib/helpers';
+
+export function ticketSystemMessage(message: string): string {
+	return /^escalated to (?:developers|dev)\.?$/i.test(message.trim()) ? 'In Progress' : message;
+}
+
+export function canReplyToTicket(status: TicketStates, resolvedAt: string | null | undefined, now = Date.now()): boolean {
+	if (status === TicketStates.closed) return false;
+	if (status !== TicketStates.resolved) return true;
+	if (!resolvedAt) return false;
+	const resolvedTime = Date.parse(resolvedAt);
+	return Number.isFinite(resolvedTime) && now < resolvedTime + 24 * 60 * 60 * 1000;
+}
+
+export function ticketReplyStatus(status: TicketStates, isCreator: boolean): TicketStates {
+	if (status === TicketStates.inProgress || status === TicketStates.resolved) return TicketStates.inProgress;
+	return isCreator ? TicketStates.awaitingStaff : TicketStates.awaitingUser;
+}
 
 export function mapTicketStateToString(input: number): string {
 	switch (Number(input)) {
 		case 0: return 'Awaiting User';
 		case 1: return 'Awaiting Staff';
 		case 2: return 'Closed';
+		case 3: return 'In Progress';
+		case 4: return 'Resolved';
 		default: return 'Unknown';
 	}
 }

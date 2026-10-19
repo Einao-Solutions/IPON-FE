@@ -133,11 +133,12 @@
 	let activeQueueMode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical' = 'normal';
 	let specialQueueStats: Record<string, number> = {};
 	let showCloseConfirm: boolean = false;
+	let isResolving = false;
 	let ticketLoading: boolean = false;
 	let selectedResultList: number = 10;
 	let showResultLengthList: boolean = false;
 	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
-	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 0: 1, 2: 2 };
+	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 3: 1, 0: 2, 4: 3, 2: 4 };
 	const FULL_SUMMARY_FETCH_LIMIT = 100000;
 
 	const userName = ($loggedInUser?.firstName ?? '') + ' ' + ($loggedInUser?.lastName ?? '');
@@ -170,6 +171,7 @@
 	let activeSearchTerm: string = '';
 
 	$: showTechSpecialQueues = isTechSupport() && activeTabId === 'tech';
+	$: showInProgressFilter = activeQueueMode !== 'normal' || tabs.some((tab) => tab.id === activeTabId && tab.category === TicketCategory.TechnicalSupport);
 
 	// ── Reactive hidden columns ───────────────────────────────────────────────────
 	$: {
@@ -361,7 +363,9 @@
 			total: tickets.length,
 			staff: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingStaff).length,
 			user: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingUser).length,
-			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length
+			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length,
+			inProgress: tickets.filter((ticket) => ticket?.status === TicketStates.inProgress).length,
+			resolved: tickets.filter((ticket) => ticket?.status === TicketStates.resolved).length
 		};
 	}
 
@@ -405,21 +409,40 @@
 	async function refreshSearchResults(status: number | null = activeStatusFilter) {
 		const allMatches = await fetchSearchTickets(null);
 		ipoTicketStats.set(summarizeTickets(allMatches));
-		ipoTicketsSummary.set(sortTicketSummaries(await fetchSearchTickets(status)));
+		ipoTicketsSummary.set(sortTicketSummaries(status === null ? allMatches : allMatches.filter((ticket) => ticket.status === status)));
+	}
+
+	async function fetchQueueStats(body: Record<string, any>): Promise<Record<string, number>> {
+		const params = new URLSearchParams();
+		if (body.creatorId && body.creatorId !== 'null') params.set('userId', body.creatorId);
+		for (const key of ['category', 'registryCategory', 'raisedByRegistryStaff']) {
+			if (body[key] !== undefined && body[key] !== null) params.set(key, String(body[key]));
+		}
+		const response = await fetch(`${baseURL}/api/tickets/GetStats?${params}`);
+		if (!response.ok) throw new Error('Unable to load ticket counts.');
+		return await response.json();
 	}
 
 	async function getStats() {
-		const tickets = await fetchTicketSummaries(getTicketSummaryBody(null));
-		ipoTicketStats.set(summarizeTickets(tickets));
+		try {
+			ipoTicketStats.set(await fetchQueueStats(getTicketSummaryBody(null)));
+		} catch {
+			toast.error('Unable to load ticket counts.', { position: 'top-right' });
+		}
 	}
 
 	async function getSpecialQueueCount(registryCategory: TicketCategory): Promise<number> {
-		return (await fetchTicketSummaries(withFullSummaryPage({
+		try {
+		return (await fetchQueueStats({
 			creatorId: 'null',
 			category: TicketCategory.TechnicalSupport,
 			registryCategory,
 			raisedByRegistryStaff: true
-		}))).length;
+		})).total;
+		} catch {
+			toast.error('Unable to load technical queue counts.', { position: 'top-right' });
+			return 0;
+		}
 	}
 
 	async function getSpecialQueueStats() {
@@ -503,6 +526,8 @@
 		activeStatusFilter = status;
 		activeCategoryPillFilter = categoryOverride !== undefined ? (categoryOverride ?? null) : null;
 		ticketLoading = true;
+		$_selectedDataIds = {};
+		try {
 		if (activeSearchTerm.trim()) {
 			await refreshSearchResults(status);
 		} else {
@@ -510,7 +535,11 @@
 			await getStats();
 			await fetchTabTickets(activeTabId);
 		}
-		ticketLoading = false;
+		} catch {
+			toast.error('Unable to refresh tickets.', { position: 'top-right' });
+		} finally {
+			ticketLoading = false;
+		}
 	}
 
 	async function searchTickets() {
@@ -560,6 +589,7 @@
 		ticketInfo = {
 			data: messages,
 			isAdmin,
+			onChanged: () => { void getSpecific(activeStatusFilter); },
 			onExit: () => { showTicketMessages = false; },
 			open: true
 		};
@@ -610,19 +640,29 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 
 	// ── Close tickets ─────────────────────────────────────────────────────────────
 	function closeTickets() {
+		if (isResolving) return;
 		showCloseConfirm = true;
 	}
 
 	async function confirmCloseTickets() {
+		if (isResolving) return;
 		showCloseConfirm = false;
 		const selected = $_selectedDataIds;
 		const closeIds: string[] = [];
 		for (const key in selected) {
+			if (!selected[key]) continue;
+			const ticket = ($ipoTicketsSummary as any)?.[key];
+			if (!ticket || ticket.status === TicketStates.resolved || ticket.status === TicketStates.closed) continue;
 			const id =
-				($ipoTicketsSummary as any)?.[key]?.ticketId ??
-				($ipoTicketsSummary as any)?.[key]?.id;
+				ticket.ticketId ?? ticket.id;
 			if (id) closeIds.push(id);
 		}
+		if (!closeIds.length) {
+			toast.error('Select an active ticket to resolve.', { position: 'top-right' });
+			return;
+		}
+		isResolving = true;
+		try {
 		const response = await fetch(`${baseURL}/api/tickets/CloseTicket`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -631,20 +671,15 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				resolution: { staffId: $loggedInUser?.id, staffName: userName }
 			})
 		});
-		if (response.ok) {
-			const result = await response.json();
-			if (result) {
-				for (const key in selected) {
-					ipoTicketsSummary.update((data) => {
-						if (data !== null) {
-							(data as any)[key].status = 2;
-							return [...data];
-						}
-						return data;
-					});
-				}
-				toast.success('Ticket(s) closed successfully', { position: 'top-right' });
-			}
+		if (!response.ok) throw new Error(await response.text() || 'Unable to resolve tickets.');
+		if (!await response.json()) throw new Error('Unable to resolve tickets.');
+		$_selectedDataIds = {};
+		await getSpecific(activeStatusFilter);
+		toast.success('Ticket(s) resolved successfully', { position: 'top-right' });
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Unable to resolve tickets.', { position: 'top-right' });
+		} finally {
+			isResolving = false;
 		}
 	}
 
@@ -687,14 +722,14 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 <AlertDialog.Root bind:open={showCloseConfirm}>
 	<AlertDialog.Content>
 		<AlertDialog.Header>
-			<AlertDialog.Title>Close Ticket(s)?</AlertDialog.Title>
+			<AlertDialog.Title>Resolve Ticket(s)?</AlertDialog.Title>
 			<AlertDialog.Description>
-				You are about to close {Object.values($_selectedDataIds ?? {}).filter(Boolean).length} ticket(s). This action cannot be undone.
+				Selected active tickets will be marked Resolved. They close automatically after 24 hours unless the ticket creator replies.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
 			<AlertDialog.Cancel on:click={() => (showCloseConfirm = false)}>Cancel</AlertDialog.Cancel>
-			<Button on:click={confirmCloseTickets} class="bg-red-600 hover:bg-red-700 text-white">Confirm Close</Button>
+			<Button disabled={isResolving} on:click={confirmCloseTickets} class="bg-green-700 hover:bg-green-800 text-white">Confirm Resolve</Button>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
@@ -772,6 +807,20 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				{$ipoTicketStats.user ?? 0}
 			</span>
 		</button>
+		{#if showInProgressFilter}
+		<button type="button" on:click={() => getSpecific(TicketStates.inProgress)}
+			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === TicketStates.inProgress ? 'bg-cyan-700 text-white' : 'bg-cyan-100 text-cyan-900 hover:bg-cyan-200'}">
+			In Progress
+			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black/20 text-[10px] font-semibold">{$ipoTicketStats.inProgress ?? 0}</span>
+		</button>
+		{/if}
+		<button type="button" on:click={() => getSpecific(TicketStates.resolved)}
+			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === TicketStates.resolved ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'}">
+			Resolved
+			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black/20 text-[10px] font-semibold">{$ipoTicketStats.resolved ?? 0}</span>
+		</button>
 		<!-- Closed -->
 		<button type="button" on:click={() => getSpecific(2)}
 			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
@@ -782,6 +831,9 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			</span>
 		</button>
 
+		{#if activeSearchTerm.trim()}
+			<span class="self-center text-xs text-slate-500">Counts reflect up to 100 search matches.</span>
+		{/if}
 		{#if showTechSpecialQueues}
 			<span class="h-6 border-l border-slate-300 mx-1"></span>
 			<button type="button" on:click={() => setQueueMode(activeQueueMode === 'trademarkTechnical' ? 'normal' : 'trademarkTechnical')}
@@ -869,7 +921,7 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 							</Button>
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content>
-							<DropdownMenu.Item on:click={closeTickets}>Close ticket(s)</DropdownMenu.Item>
+							<DropdownMenu.Item disabled={isResolving} on:click={closeTickets}>Resolve ticket(s)</DropdownMenu.Item>
 						</DropdownMenu.Content>
 					</DropdownMenu.Root>
 				{/if}

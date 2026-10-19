@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { TicketStates } from '$lib/helpers';
-	import { mapTicketStateToString } from '../../../../routes/home/support/supportutils';
+	import { mapTicketStateToString } from '../../../../routes/home/iposupport/supportutils';
 	export let state:TicketStates
 
 	function getBgColor() {
@@ -11,6 +11,10 @@
 				return 'bg-green-400';
 			case TicketStates.awaitingUser:
 				return 'bg-yellow-400';
+			case TicketStates.inProgress:
+				return 'bg-cyan-200';
+			case TicketStates.resolved:
+				return 'bg-emerald-200';
 			default:
 				return 'bg-gray-400';
 		}
