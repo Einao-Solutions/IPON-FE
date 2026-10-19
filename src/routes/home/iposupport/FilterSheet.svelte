@@ -51,7 +51,9 @@
 	const statusOptions = [
 		{ value: 0, label: 'Awaiting User' },
 		{ value: 1, label: 'Awaiting Staff' },
-		{ value: 2, label: 'Closed' }
+		{ value: 2, label: 'Closed' },
+		{ value: 3, label: 'In Progress' },
+		{ value: 4, label: 'Resolved' }
 	];
 
 	// ── Toggle helpers ────────────────────────────────────────────────────────────

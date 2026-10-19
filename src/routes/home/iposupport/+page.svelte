@@ -134,11 +134,12 @@
 	let activeQueueMode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical' = 'normal';
 	let specialQueueStats: Record<string, number> = {};
 	let showCloseConfirm: boolean = false;
+	let isResolving = false;
 	let ticketLoading: boolean = false;
 	let selectedResultList: number = 10;
 	let showResultLengthList: boolean = false;
 	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
-	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 0: 1, 2: 2 };
+	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 3: 1, 0: 2, 4: 3, 2: 4 };
 	const FULL_SUMMARY_FETCH_LIMIT = 100000;
 
 	const userName = ($loggedInUser?.firstName ?? '') + ' ' + ($loggedInUser?.lastName ?? '');
@@ -171,6 +172,7 @@
 	let activeSearchTerm: string = '';
 
 	$: showTechSpecialQueues = isTechSupport() && activeTabId === 'tech';
+	$: showInProgressFilter = activeQueueMode !== 'normal' || tabs.some((tab) => tab.id === activeTabId && tab.category === TicketCategory.TechnicalSupport);
 
 	// ── Reactive hidden columns ───────────────────────────────────────────────────
 	$: {
@@ -362,7 +364,9 @@
 			total: tickets.length,
 			staff: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingStaff).length,
 			user: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingUser).length,
-			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length
+			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length,
+			inProgress: tickets.filter((ticket) => ticket?.status === TicketStates.inProgress).length,
+			resolved: tickets.filter((ticket) => ticket?.status === TicketStates.resolved).length
 		};
 	}
 
@@ -406,21 +410,40 @@
 	async function refreshSearchResults(status: number | null = activeStatusFilter) {
 		const allMatches = await fetchSearchTickets(null);
 		ipoTicketStats.set(summarizeTickets(allMatches));
-		ipoTicketsSummary.set(sortTicketSummaries(await fetchSearchTickets(status)));
+		ipoTicketsSummary.set(sortTicketSummaries(status === null ? allMatches : allMatches.filter((ticket) => ticket.status === status)));
+	}
+
+	async function fetchQueueStats(body: Record<string, any>): Promise<Record<string, number>> {
+		const params = new URLSearchParams();
+		if (body.creatorId && body.creatorId !== 'null') params.set('userId', body.creatorId);
+		for (const key of ['category', 'registryCategory', 'raisedByRegistryStaff']) {
+			if (body[key] !== undefined && body[key] !== null) params.set(key, String(body[key]));
+		}
+		const response = await authFetch(`${baseURL}/api/tickets/GetStats?${params}`);
+		if (!response.ok) throw new Error('Unable to load ticket counts.');
+		return await response.json();
 	}
 
 	async function getStats() {
-		const tickets = await fetchTicketSummaries(getTicketSummaryBody(null));
-		ipoTicketStats.set(summarizeTickets(tickets));
+		try {
+			ipoTicketStats.set(await fetchQueueStats(getTicketSummaryBody(null)));
+		} catch {
+			toast.error('Unable to load ticket counts.', { position: 'top-right' });
+		}
 	}
 
 	async function getSpecialQueueCount(registryCategory: TicketCategory): Promise<number> {
-		return (await fetchTicketSummaries(withFullSummaryPage({
+		try {
+		return (await fetchQueueStats({
 			creatorId: 'null',
 			category: TicketCategory.TechnicalSupport,
 			registryCategory,
 			raisedByRegistryStaff: true
-		}))).length;
+		})).total;
+		} catch {
+			toast.error('Unable to load technical queue counts.', { position: 'top-right' });
+			return 0;
+		}
 	}
 
 	async function getSpecialQueueStats() {
@@ -504,6 +527,8 @@
 		activeStatusFilter = status;
 		activeCategoryPillFilter = categoryOverride !== undefined ? (categoryOverride ?? null) : null;
 		ticketLoading = true;
+		$_selectedDataIds = {};
+		try {
 		if (activeSearchTerm.trim()) {
 			await refreshSearchResults(status);
 		} else {
@@ -511,7 +536,11 @@
 			await getStats();
 			await fetchTabTickets(activeTabId);
 		}
-		ticketLoading = false;
+		} catch {
+			toast.error('Unable to refresh tickets.', { position: 'top-right' });
+		} finally {
+			ticketLoading = false;
+		}
 	}
 
 	async function searchTickets() {
@@ -561,6 +590,7 @@
 		ticketInfo = {
 			data: messages,
 			isAdmin,
+			onChanged: () => { void getSpecific(activeStatusFilter); },
 			onExit: () => { showTicketMessages = false; },
 			open: true
 		};
@@ -611,19 +641,29 @@ const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 
 	// ── Close tickets ─────────────────────────────────────────────────────────────
 	function closeTickets() {
+		if (isResolving) return;
 		showCloseConfirm = true;
 	}
 
 	async function confirmCloseTickets() {
+		if (isResolving) return;
 		showCloseConfirm = false;
 		const selected = $_selectedDataIds;
 		const closeIds: string[] = [];
 		for (const key in selected) {
+			if (!selected[key]) continue;
+			const ticket = ($ipoTicketsSummary as any)?.[key];
+			if (!ticket || ticket.status === TicketStates.resolved || ticket.status === TicketStates.closed) continue;
 			const id =
-				($ipoTicketsSummary as any)?.[key]?.ticketId ??
-				($ipoTicketsSummary as any)?.[key]?.id;
+				ticket.ticketId ?? ticket.id;
 			if (id) closeIds.push(id);
 		}
+		if (!closeIds.length) {
+			toast.error('Select an active ticket to resolve.', { position: 'top-right' });
+			return;
+		}
+		isResolving = true;
+		try {
 		const response = await authFetch(`${baseURL}/api/tickets/CloseTicket`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -632,20 +672,15 @@ const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				resolution: { staffId: $loggedInUser?.id, staffName: userName }
 			})
 		});
-		if (response.ok) {
-			const result = await response.json();
-			if (result) {
-				for (const key in selected) {
-					ipoTicketsSummary.update((data) => {
-						if (data !== null) {
-							(data as any)[key].status = 2;
-							return [...data];
-						}
-						return data;
-					});
-				}
-				toast.success('Ticket(s) closed successfully', { position: 'top-right' });
-			}
+		if (!response.ok) throw new Error(await response.text() || 'Unable to resolve tickets.');
+		if (!await response.json()) throw new Error('Unable to resolve tickets.');
+		$_selectedDataIds = {};
+		await getSpecific(activeStatusFilter);
+		toast.success('Ticket(s) resolved successfully', { position: 'top-right' });
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : 'Unable to resolve tickets.', { position: 'top-right' });
+		} finally {
+			isResolving = false;
 		}
 	}
 
@@ -686,319 +721,476 @@ const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 
 <!-- Close confirmation dialog -->
 <AlertDialog.Root bind:open={showCloseConfirm}>
-	<AlertDialog.Content>
-		<AlertDialog.Header>
-			<AlertDialog.Title>Close Ticket(s)?</AlertDialog.Title>
-			<AlertDialog.Description>
-				You are about to close {Object.values($_selectedDataIds ?? {}).filter(Boolean).length} ticket(s). This action cannot be undone.
-			</AlertDialog.Description>
-		</AlertDialog.Header>
-		<AlertDialog.Footer>
-			<AlertDialog.Cancel on:click={() => (showCloseConfirm = false)}>Cancel</AlertDialog.Cancel>
-			<Button on:click={confirmCloseTickets} class="bg-red-600 hover:bg-red-700 text-white">Confirm Close</Button>
-		</AlertDialog.Footer>
-	</AlertDialog.Content>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title>Resolve Ticket(s)?</AlertDialog.Title>
+      <AlertDialog.Description>
+        Selected active tickets will be marked Resolved. They close
+        automatically after 24 hours unless the ticket creator replies.
+      </AlertDialog.Description>
+    </AlertDialog.Header>
+    <AlertDialog.Footer>
+      <AlertDialog.Cancel on:click={() => (showCloseConfirm = false)}
+        >Cancel</AlertDialog.Cancel
+      >
+      <Button
+        disabled={isResolving}
+        on:click={confirmCloseTickets}
+        class="bg-green-700 hover:bg-green-800 text-white"
+        >Confirm Resolve</Button
+      >
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
 </AlertDialog.Root>
 
 <div class="p-4">
-	<!-- Header -->
-	<div class="mb-4 flex items-center justify-end">
-		<div class="flex gap-2">
-			<!-- Filter button temporarily removed -->
-			<!--
+  <!-- Header -->
+  <div class="mb-4 flex items-center justify-end">
+    <div class="flex gap-2">
+      <!-- Filter button temporarily removed -->
+      <!--
 			<Button variant="outline" on:click={showFilterSheet}>
 				<Icon icon="mdi:filter-outline" width="1rem" height="1rem" class="mr-1" />
 				Filter
 			</Button>
 			-->
-			<Button on:click={createNewTicket}>+ Create new Ticket</Button>
-		</div>
-	</div>
+      <Button on:click={createNewTicket}>+ Create new Ticket</Button>
+    </div>
+  </div>
 
-	<!-- Lazy-loaded panels -->
-	{#if showTicketMessages && ticketViewComp}
-		<svelte:component this={ticketViewComp} {...ticketInfo} />
-	{/if}
-	{#if showTicketCreation && createTicketComp}
-		<svelte:component this={createTicketComp} {...ticketData} />
-	{/if}
-	{#if showFilter && filterSheetComp}
-		<svelte:component this={filterSheetComp} {...filterData} />
-	{/if}
+  <!-- Lazy-loaded panels -->
+  {#if showTicketMessages && ticketViewComp}
+    <svelte:component this={ticketViewComp} {...ticketInfo} />
+  {/if}
+  {#if showTicketCreation && createTicketComp}
+    <svelte:component this={createTicketComp} {...ticketData} />
+  {/if}
+  {#if showFilter && filterSheetComp}
+    <svelte:component this={filterSheetComp} {...filterData} />
+  {/if}
 
-	<!-- Tabs (staff only) -->
-	{#if tabs.length > 0}
-		<nav class="flex gap-1 border-b mb-4">
-			{#each tabs as tab}
-				<button
-					type="button"
-					class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors
+  <!-- Tabs (staff only) -->
+  {#if tabs.length > 0}
+    <nav class="flex gap-1 border-b mb-4">
+      {#each tabs as tab}
+        <button
+          type="button"
+          class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors
 						{activeTabId === tab.id
-							? 'border-green-700 text-green-700'
-							: 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}"
-					on:click={() => onTabChange(tab.id)}
-				>
-					{tab.label}
-				</button>
-			{/each}
-		</nav>
-	{/if}
+            ? 'border-green-700 text-green-700'
+            : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}"
+          on:click={() => onTabChange(tab.id)}
+        >
+          {tab.label}
+        </button>
+      {/each}
+    </nav>
+  {/if}
 
-	<!-- Status filter pills -->
-	<div class="flex flex-wrap gap-2 mb-4">
-		<!-- Total -->
-		<button type="button" on:click={() => getSpecific(null)}
-			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-				{activeStatusFilter === null && activeCategoryPillFilter === null ? 'bg-gray-600 text-white' : 'bg-gray-200 text-slate-700 hover:bg-gray-300'}">
-			Total
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black/20 text-[10px] font-semibold">
-				{$ipoTicketStats.total ?? 0}
-			</span>
-		</button>
-		<!-- Awaiting Staff -->
-		<button type="button" on:click={() => getSpecific(1)}
-			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-				{activeStatusFilter === 1 && activeCategoryPillFilter === null ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}">
-			Awaiting Staff
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-950/30 text-[10px] font-semibold">
-				{$ipoTicketStats.staff ?? 0}
-			</span>
-		</button>
-		<!-- Awaiting User -->
-		<button type="button" on:click={() => getSpecific(0)}
-			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-				{activeStatusFilter === 0 && activeCategoryPillFilter === null ? 'bg-yellow-600 text-white' : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'}">
-			Awaiting User
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-yellow-950/30 text-[10px] font-semibold">
-				{$ipoTicketStats.user ?? 0}
-			</span>
-		</button>
-		<!-- Closed -->
-		<button type="button" on:click={() => getSpecific(2)}
-			class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-				{activeStatusFilter === 2 && activeCategoryPillFilter === null ? 'bg-green-700 text-white' : 'bg-green-100 text-green-800 hover:bg-green-200'}">
-			Closed
-			<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-green-950/30 text-[10px] font-semibold">
-				{$ipoTicketStats.closed ?? 0}
-			</span>
-		</button>
+  <!-- Status filter pills -->
+  <div class="flex flex-wrap gap-2 mb-4">
+    <!-- Total -->
+    <button
+      type="button"
+      on:click={() => getSpecific(null)}
+      class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === null && activeCategoryPillFilter === null
+        ? 'bg-gray-600 text-white'
+        : 'bg-gray-200 text-slate-700 hover:bg-gray-300'}"
+    >
+      Total
+      <span
+        class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black/20 text-[10px] font-semibold"
+      >
+        {$ipoTicketStats.total ?? 0}
+      </span>
+    </button>
+    <!-- Awaiting Staff -->
+    <button
+      type="button"
+      on:click={() => getSpecific(1)}
+      class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === 1 && activeCategoryPillFilter === null
+        ? 'bg-blue-600 text-white'
+        : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}"
+    >
+      Awaiting Staff
+      <span
+        class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-950/30 text-[10px] font-semibold"
+      >
+        {$ipoTicketStats.staff ?? 0}
+      </span>
+    </button>
+    <!-- Awaiting User -->
+    <button
+      type="button"
+      on:click={() => getSpecific(0)}
+      class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === 0 && activeCategoryPillFilter === null
+        ? 'bg-yellow-600 text-white'
+        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200'}"
+    >
+      Awaiting User
+      <span
+        class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-yellow-950/30 text-[10px] font-semibold"
+      >
+        {$ipoTicketStats.user ?? 0}
+      </span>
+    </button>
+    {#if showInProgressFilter}
+      <button
+        type="button"
+        on:click={() => getSpecific(TicketStates.inProgress)}
+        class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === TicketStates.inProgress
+          ? 'bg-cyan-700 text-white'
+          : 'bg-cyan-100 text-cyan-900 hover:bg-cyan-200'}"
+      >
+        In Progress
+        <span
+          class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black/20 text-[10px] font-semibold"
+          >{$ipoTicketStats.inProgress ?? 0}</span
+        >
+      </button>
+    {/if}
+    <button
+      type="button"
+      on:click={() => getSpecific(TicketStates.resolved)}
+      class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === TicketStates.resolved
+        ? 'bg-emerald-700 text-white'
+        : 'bg-emerald-100 text-emerald-900 hover:bg-emerald-200'}"
+    >
+      Resolved
+      <span
+        class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-black/20 text-[10px] font-semibold"
+        >{$ipoTicketStats.resolved ?? 0}</span
+      >
+    </button>
+    <!-- Closed -->
+    <button
+      type="button"
+      on:click={() => getSpecific(2)}
+      class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+				{activeStatusFilter === 2 && activeCategoryPillFilter === null
+        ? 'bg-green-700 text-white'
+        : 'bg-green-100 text-green-800 hover:bg-green-200'}"
+    >
+      Closed
+      <span
+        class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-green-950/30 text-[10px] font-semibold"
+      >
+        {$ipoTicketStats.closed ?? 0}
+      </span>
+    </button>
 
-		{#if showTechSpecialQueues}
-			<span class="h-6 border-l border-slate-300 mx-1"></span>
-			<button type="button" on:click={() => setQueueMode(activeQueueMode === 'trademarkTechnical' ? 'normal' : 'trademarkTechnical')}
-				class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-					{activeQueueMode === 'trademarkTechnical' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}">
-				Trademark
-				<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold">
-					{specialQueueStats.trademark ?? 0}
-				</span>
-			</button>
-			<button type="button" on:click={() => setQueueMode(activeQueueMode === 'patentDesignTechnical' ? 'normal' : 'patentDesignTechnical')}
-				class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-					{activeQueueMode === 'patentDesignTechnical' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}">
-				Patent & Design
-				<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold">
-					{specialQueueStats.patentDesign ?? 0}
-				</span>
-			</button>
-		{:else if isTrademarkSupport() || isPatentDesignSupport()}
-			<span class="h-6 border-l border-slate-300 mx-1"></span>
-			<button type="button" on:click={() => setQueueMode(activeQueueMode === 'normal' ? (isTrademarkSupport() ? 'trademarkTechnical' : 'patentDesignTechnical') : 'normal')}
-				class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
-					{activeQueueMode !== 'normal' ? 'bg-emerald-700 text-white' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}">
-				Technical
-				<span class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold">
-					{specialQueueStats.technical ?? 0}
-				</span>
-			</button>
-		{/if}
-	</div>
+    {#if activeSearchTerm.trim()}
+      <span class="self-center text-xs text-slate-500"
+        >Counts reflect up to 100 search matches.</span
+      >
+    {/if}
+    {#if showTechSpecialQueues}
+      <span class="h-6 border-l border-slate-300 mx-1"></span>
+      <button
+        type="button"
+        on:click={() =>
+          setQueueMode(
+            activeQueueMode === "trademarkTechnical"
+              ? "normal"
+              : "trademarkTechnical",
+          )}
+        class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+					{activeQueueMode === 'trademarkTechnical'
+          ? 'bg-emerald-700 text-white'
+          : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}"
+      >
+        Trademark
+        <span
+          class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold"
+        >
+          {specialQueueStats.trademark ?? 0}
+        </span>
+      </button>
+      <button
+        type="button"
+        on:click={() =>
+          setQueueMode(
+            activeQueueMode === "patentDesignTechnical"
+              ? "normal"
+              : "patentDesignTechnical",
+          )}
+        class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+					{activeQueueMode === 'patentDesignTechnical'
+          ? 'bg-emerald-700 text-white'
+          : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}"
+      >
+        Patent & Design
+        <span
+          class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold"
+        >
+          {specialQueueStats.patentDesign ?? 0}
+        </span>
+      </button>
+    {:else if isTrademarkSupport() || isPatentDesignSupport()}
+      <span class="h-6 border-l border-slate-300 mx-1"></span>
+      <button
+        type="button"
+        on:click={() =>
+          setQueueMode(
+            activeQueueMode === "normal"
+              ? isTrademarkSupport()
+                ? "trademarkTechnical"
+                : "patentDesignTechnical"
+              : "normal",
+          )}
+        class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-colors
+					{activeQueueMode !== 'normal'
+          ? 'bg-emerald-700 text-white'
+          : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'}"
+      >
+        Technical
+        <span
+          class="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-emerald-950/30 text-[10px] font-semibold"
+        >
+          {specialQueueStats.technical ?? 0}
+        </span>
+      </button>
+    {/if}
+  </div>
 
-	{#if ticketLoading}
-		<div class="flex items-center justify-center h-64">
-			<Icon icon="line-md:loading-loop" width="2.5rem" height="2.5rem" />
-		</div>
-	{:else}
-		<form class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center" on:submit|preventDefault={searchTickets}>
-			<div class="relative w-full sm:max-w-md">
-				<Icon icon="mdi:magnify" width="1rem" height="1rem" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-				<Input class="pl-9" placeholder="Search ticket number or file number" bind:value={searchQuery} />
-			</div>
-			<div class="flex gap-2">
-				<Button type="submit" size="sm">Search</Button>
-				{#if activeSearchTerm}
-					<Button type="button" variant="outline" size="sm" on:click={clearSearch}>Clear</Button>
-				{/if}
-			</div>
-			{#if activeSearchTerm}
-				<p class="text-xs text-slate-500 sm:ml-2">
-					Showing search results for <span class="font-semibold text-slate-700">{activeSearchTerm}</span>
-				</p>
-			{/if}
-		</form>
+  {#if ticketLoading}
+    <div class="flex items-center justify-center h-64">
+      <Icon icon="line-md:loading-loop" width="2.5rem" height="2.5rem" />
+    </div>
+  {:else}
+    <form
+      class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center"
+      on:submit|preventDefault={searchTickets}
+    >
+      <div class="relative w-full sm:max-w-md">
+        <Icon
+          icon="mdi:magnify"
+          width="1rem"
+          height="1rem"
+          class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+        />
+        <Input
+          class="pl-9"
+          placeholder="Search ticket number or file number"
+          bind:value={searchQuery}
+        />
+      </div>
+      <div class="flex gap-2">
+        <Button type="submit" size="sm">Search</Button>
+        {#if activeSearchTerm}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            on:click={clearSearch}>Clear</Button
+          >
+        {/if}
+      </div>
+      {#if activeSearchTerm}
+        <p class="text-xs text-slate-500 sm:ml-2">
+          Showing search results for <span class="font-semibold text-slate-700"
+            >{activeSearchTerm}</span
+          >
+        </p>
+      {/if}
+    </form>
 
-		<!-- Table controls -->
-		<div class="flex items-center gap-2 py-2 flex-wrap">
-			{#if $_selectedDataIds && Object.keys($_selectedDataIds).length > 0}
-				<span class="text-sm text-muted-foreground">
-					{Object.keys($_selectedDataIds).length} of {$ipoTicketsSummary?.length ?? 0} row(s) selected.
-				</span>
-			{/if}
+    <!-- Table controls -->
+    <div class="flex items-center gap-2 py-2 flex-wrap">
+      {#if $_selectedDataIds && Object.keys($_selectedDataIds).length > 0}
+        <span class="text-sm text-muted-foreground">
+          {Object.keys($_selectedDataIds).length} of {$ipoTicketsSummary?.length ??
+            0} row(s) selected.
+        </span>
+      {/if}
 
-			<div class="ml-auto flex gap-2 items-center">
-				<!-- Rows per page -->
-				<DropdownMenu.Root bind:open={showResultLengthList}>
-					<DropdownMenu.Trigger asChild let:builder>
-						<Button builders={[builder]} variant="outline" size="sm">
-							Rows ({selectedResultList})
-							<ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
-						</Button>
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content class="w-fit p-1">
-						{#each resultLength as rl}
-							<DropdownMenu.Item on:click={() => (selectedResultList = rl)}>{rl}</DropdownMenu.Item>
-						{/each}
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
+      <div class="ml-auto flex gap-2 items-center">
+        <!-- Rows per page -->
+        <DropdownMenu.Root bind:open={showResultLengthList}>
+          <DropdownMenu.Trigger asChild let:builder>
+            <Button builders={[builder]} variant="outline" size="sm">
+              Rows ({selectedResultList})
+              <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content class="w-fit p-1">
+            {#each resultLength as rl}
+              <DropdownMenu.Item on:click={() => (selectedResultList = rl)}
+                >{rl}</DropdownMenu.Item
+              >
+            {/each}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
 
-				<!-- Actions (rows selected) -->
-				{#if $_selectedDataIds && Object.values($_selectedDataIds).some(Boolean)}
-					<DropdownMenu.Root>
-						<DropdownMenu.Trigger asChild let:builder>
-							<Button builders={[builder]} size="sm">
-								Actions <ChevronDown class="ml-2 h-4 w-4" />
-							</Button>
-						</DropdownMenu.Trigger>
-						<DropdownMenu.Content>
-							<DropdownMenu.Item on:click={closeTickets}>Close ticket(s)</DropdownMenu.Item>
-						</DropdownMenu.Content>
-					</DropdownMenu.Root>
-				{/if}
+        <!-- Actions (rows selected) -->
+        {#if $_selectedDataIds && Object.values($_selectedDataIds).some(Boolean)}
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild let:builder>
+              <Button builders={[builder]} size="sm">
+                Actions <ChevronDown class="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item disabled={isResolving} on:click={closeTickets}
+                >Resolve ticket(s)</DropdownMenu.Item
+              >
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        {/if}
 
-				<!-- Column visibility -->
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger asChild let:builder>
-						<Button variant="outline" size="sm" builders={[builder]}>
-							Columns <ChevronDown class="ml-2 h-4 w-4" />
-						</Button>
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content>
-						{#if _flatColumns}
-							{#each _flatColumns as col}
-								{#if hidableCols.includes(col.id)}
-									<DropdownMenu.CheckboxItem
-										bind:checked={hideForId[col.id]}
-										onCheckedChange={(v) => { hideForId[col.id] = v === true; }}
-									>
-										{col.header}
-									</DropdownMenu.CheckboxItem>
-								{/if}
-							{/each}
-						{/if}
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
-			</div>
-		</div>
+        <!-- Column visibility -->
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger asChild let:builder>
+            <Button variant="outline" size="sm" builders={[builder]}>
+              Columns <ChevronDown class="ml-2 h-4 w-4" />
+            </Button>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Content>
+            {#if _flatColumns}
+              {#each _flatColumns as col}
+                {#if hidableCols.includes(col.id)}
+                  <DropdownMenu.CheckboxItem
+                    bind:checked={hideForId[col.id]}
+                    onCheckedChange={(v) => {
+                      hideForId[col.id] = v === true;
+                    }}
+                  >
+                    {col.header}
+                  </DropdownMenu.CheckboxItem>
+                {/if}
+              {/each}
+            {/if}
+          </DropdownMenu.Content>
+        </DropdownMenu.Root>
+      </div>
+    </div>
 
-		<!-- Table -->
-		<div class="rounded-md border">
-			<Table.Root {...spreadAttrs($_tableAttrs)}>
-				<Table.Header>
-					{#if tableHeaderRows}
-						{#each $tableHeaderRows as headerRow}
-							<Subscribe rowAttrs={headerRow.attrs()}>
-								<Table.Row>
-									{#each headerRow.cells as cell (cell.id)}
-										<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()}>
-											<Table.Head {...spreadAttrs(attrs)} class="[&:has([role=checkbox])]:pl-3">
-												<Render of={cell.render()} />
-											</Table.Head>
-										</Subscribe>
-									{/each}
-								</Table.Row>
-							</Subscribe>
-						{/each}
-					{/if}
-				</Table.Header>
-				<Table.Body {...spreadAttrs($_tableBodyAttrs)}>
-					{#if !$ipoTicketsSummary || $ipoTicketsSummary.length === 0}
-						<Table.Row>
-							<Table.Cell colspan={7} class="text-center py-12 text-muted-foreground text-sm">
-								No tickets found.
-							</Table.Cell>
-						</Table.Row>
-					{:else if tablePageRows}
-						{#each $tablePageRows as row (row.id)}
-							<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
-								<Table.Row
-									{...spreadAttrs(rowAttrs)}
-									data-state={$_selectedDataIds?.[row.id] && 'selected'}
-								>
-									{#each row.cells as cell (cell.id)}
-										<Subscribe attrs={cell.attrs()} let:attrs>
-											<Table.Cell {...spreadAttrs(attrs)}>
-												{#if cell.id === 'status'}
-													<TicketTag state={parseInt(cell.render())} />
-												{:else if cell.id === 'creator'}
-													<span class="line-clamp-2 text-sm">{creatorNameFor(row.id)}</span>
-												{:else if cell.id === 'category'}
-													<span class="text-xs text-muted-foreground">{categoryFor(row.id)}</span>
-												{:else if cell.id === 'ticketType'}
-													<span class="text-xs text-muted-foreground">{ticketTypeFor(row.id)}</span>
-												{:else if cell.id === 'lastInteraction'}
-													<Render of={mapDateToString(cell.render())} />
-												{:else if cell.id === 'title'}
-													<div class="text-ellipsis line-clamp-2">
-														<Render of={cell.render()} />
-													</div>
-												{:else if cell.id === 'id'}
-													<Button size="sm" on:click={() => showTicket(row.id)}>View</Button>
-												{:else}
-													<Render of={cell.render()} />
-												{/if}
-											</Table.Cell>
-										</Subscribe>
-									{/each}
-								</Table.Row>
-							</Subscribe>
-						{/each}
-					{/if}
-				</Table.Body>
-			</Table.Root>
-		</div>
+    <!-- Table -->
+    <div class="rounded-md border">
+      <Table.Root {...spreadAttrs($_tableAttrs)}>
+        <Table.Header>
+          {#if tableHeaderRows}
+            {#each $tableHeaderRows as headerRow}
+              <Subscribe rowAttrs={headerRow.attrs()}>
+                <Table.Row>
+                  {#each headerRow.cells as cell (cell.id)}
+                    <Subscribe
+                      attrs={cell.attrs()}
+                      let:attrs
+                      props={cell.props()}
+                    >
+                      <Table.Head
+                        {...spreadAttrs(attrs)}
+                        class="[&:has([role=checkbox])]:pl-3"
+                      >
+                        <Render of={cell.render()} />
+                      </Table.Head>
+                    </Subscribe>
+                  {/each}
+                </Table.Row>
+              </Subscribe>
+            {/each}
+          {/if}
+        </Table.Header>
+        <Table.Body {...spreadAttrs($_tableBodyAttrs)}>
+          {#if !$ipoTicketsSummary || $ipoTicketsSummary.length === 0}
+            <Table.Row>
+              <Table.Cell
+                colspan={7}
+                class="text-center py-12 text-muted-foreground text-sm"
+              >
+                No tickets found.
+              </Table.Cell>
+            </Table.Row>
+          {:else if tablePageRows}
+            {#each $tablePageRows as row (row.id)}
+              <Subscribe rowAttrs={row.attrs()} let:rowAttrs>
+                <Table.Row
+                  {...spreadAttrs(rowAttrs)}
+                  data-state={$_selectedDataIds?.[row.id] && "selected"}
+                >
+                  {#each row.cells as cell (cell.id)}
+                    <Subscribe attrs={cell.attrs()} let:attrs>
+                      <Table.Cell {...spreadAttrs(attrs)}>
+                        {#if cell.id === "status"}
+                          <TicketTag state={parseInt(cell.render())} />
+                        {:else if cell.id === "creator"}
+                          <span class="line-clamp-2 text-sm"
+                            >{creatorNameFor(row.id)}</span
+                          >
+                        {:else if cell.id === "category"}
+                          <span class="text-xs text-muted-foreground"
+                            >{categoryFor(row.id)}</span
+                          >
+                        {:else if cell.id === "ticketType"}
+                          <span class="text-xs text-muted-foreground"
+                            >{ticketTypeFor(row.id)}</span
+                          >
+                        {:else if cell.id === "lastInteraction"}
+                          <Render of={mapDateToString(cell.render())} />
+                        {:else if cell.id === "title"}
+                          <div class="text-ellipsis line-clamp-2">
+                            <Render of={cell.render()} />
+                          </div>
+                        {:else if cell.id === "id"}
+                          <Button size="sm" on:click={() => showTicket(row.id)}
+                            >View</Button
+                          >
+                        {:else}
+                          <Render of={cell.render()} />
+                        {/if}
+                      </Table.Cell>
+                    </Subscribe>
+                  {/each}
+                </Table.Row>
+              </Subscribe>
+            {/each}
+          {/if}
+        </Table.Body>
+      </Table.Root>
+    </div>
 
-		<!-- Pagination -->
-		<div class="flex items-center justify-end space-x-4 py-4">
-			<Pagination.Root
-				count={$ipoTicketsSummary?.length ?? 0}
-				perPage={selectedResultList}
-				let:pages
-				let:currentPage
-			>
-				<Pagination.Content>
-					<Pagination.Item>
-						<Pagination.PrevButton on:click={() => ($_pageIndex = $_pageIndex - 1)} />
-					</Pagination.Item>
-					{#each pages as page (page.key)}
-						{#if page.type === 'ellipsis'}
-							<Pagination.Item><Pagination.Ellipsis /></Pagination.Item>
-						{:else}
-							<Pagination.Item>
-								<Pagination.Link
-									{page}
-									isActive={currentPage == page.value}
-									on:click={() => ($_pageIndex = page.value - 1)}
-								>
-									{page.value}
-								</Pagination.Link>
-							</Pagination.Item>
-						{/if}
-					{/each}
-					<Pagination.Item>
-						<Pagination.NextButton on:click={() => ($_pageIndex = $_pageIndex + 1)} />
-					</Pagination.Item>
-				</Pagination.Content>
-			</Pagination.Root>
-		</div>
-	{/if}
+    <!-- Pagination -->
+    <div class="flex items-center justify-end space-x-4 py-4">
+      <Pagination.Root
+        count={$ipoTicketsSummary?.length ?? 0}
+        perPage={selectedResultList}
+        let:pages
+        let:currentPage
+      >
+        <Pagination.Content>
+          <Pagination.Item>
+            <Pagination.PrevButton
+              on:click={() => ($_pageIndex = $_pageIndex - 1)}
+            />
+          </Pagination.Item>
+          {#each pages as page (page.key)}
+            {#if page.type === "ellipsis"}
+              <Pagination.Item><Pagination.Ellipsis /></Pagination.Item>
+            {:else}
+              <Pagination.Item>
+                <Pagination.Link
+                  {page}
+                  isActive={currentPage == page.value}
+                  on:click={() => ($_pageIndex = page.value - 1)}
+                >
+                  {page.value}
+                </Pagination.Link>
+              </Pagination.Item>
+            {/if}
+          {/each}
+          <Pagination.Item>
+            <Pagination.NextButton
+              on:click={() => ($_pageIndex = $_pageIndex + 1)}
+            />
+          </Pagination.Item>
+        </Pagination.Content>
+      </Pagination.Root>
+    </div>
+  {/if}
 </div>

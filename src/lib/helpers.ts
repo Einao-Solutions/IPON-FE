@@ -7,7 +7,7 @@ import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
 // export const baseURL = "http://localhost:5044";
-export const baseURL = "https://testbackend.iponigeria.com";
+ export const baseURL = "https://testbackend.iponigeria.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -544,7 +544,7 @@ export enum UserRoles {
   TrademarkSupport,
   PatentDesignSupport,
   ActingTrademarkRegistrar,
-  ActingPatentDesignRegistrar,
+  ActingPatentDesignRegistrar,  
 }
 
 export enum FilingType {
@@ -769,6 +769,8 @@ export enum TicketStates {
   awaitingUser = 0,
   awaitingStaff = 1,
   closed = 2,
+  inProgress = 3,
+  resolved = 4,
 }
 
 export enum TicketCategory {
@@ -830,6 +832,10 @@ export type TicketSummary = {
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
   raisedByRegistryStaff?: boolean;
+  isEscalatedToDev?: boolean;
+  escalatedToDevAt?: string | null;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
   creator: {
     id: string;
     name: string;
@@ -859,6 +865,12 @@ export type TicketInfo = {
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
   escalatedAt?: string;
+  isEscalatedToDev?: boolean;
+  escalatedToDevAt?: string | null;
+  escalatedToDevById?: string | null;
+  escalatedToDevByName?: string | null;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
   title: string;
   creatorId: string;
   creatorName: string;

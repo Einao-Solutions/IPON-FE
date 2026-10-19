@@ -377,7 +377,7 @@ async function tradecertificate(ctx: PaymentContext): Promise<void> {
   const rrr = params.get("rrr");
   const data = localStorage.getItem("formData");
   const parsed = data ? JSON.parse(data) : null;
-  const fileNumber = localStorage.getItem("fileId");
+  const fileNumber = localStorage.getItem("fileId"); 
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 

@@ -7,6 +7,7 @@
     TicketCategory,
   } from "$lib/helpers";
   import { Textarea } from "$lib/components/ui/textarea";
+  import { onMount } from "svelte";
 
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { Button } from "$lib/components/ui/button";
@@ -17,12 +18,19 @@
   import TicketTag from "$lib/components/ui/ticketTag/ticketTag.svelte";
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
-  import { mapCategoryToString, mapTicketStateToString } from "./supportutils";
+  import {
+    mapCategoryToString,
+    mapTicketStateToString,
+    canReplyToTicket,
+    ticketReplyStatus,
+    ticketSystemMessage,
+  } from "./supportutils";
   import { authFetch } from "$lib/utils/authFetch";
 
   export let data: TicketInfo;
   export let open: boolean = false;
   export let onExit: () => void = () => {};
+  export let onChanged: () => void = () => {};
 
   let newText: string = "";
   let selectedFile: File | null = null;
@@ -32,6 +40,18 @@
   let selectedEscalationTarget: TicketCategory =
     TicketCategory.TechnicalSupport;
   let isEscalating: boolean = false;
+  let isEscalatingToDev = false;
+  let showDevConfirm = false;
+  let now = Date.now();
+
+  onMount(() => {
+    const timer = window.setInterval(() => { now = Date.now(); }, 1000);
+    return () => window.clearInterval(timer);
+  });
+
+  $: canReply = canReplyToTicket(data?.status, data?.resolvedAt, now);
+  $: isActive = data?.status !== TicketStates.closed && data?.status !== TicketStates.resolved;
+  $: canEscalateToDev = isTechSupport && data?.category === TicketCategory.TechnicalSupport && isActive && !data?.isEscalatedToDev;
 
   const name =
     ($loggedInUser?.firstName ?? "") + " " + ($loggedInUser?.lastName ?? "");
@@ -41,7 +61,7 @@
   $: isPatentDesignSupport =
     $loggedInUser?.userRoles?.includes(UserRoles.PatentDesignSupport) ?? false;
   $: isTechSupport =
-    $loggedInUser?.userRoles?.includes(UserRoles.Tech) ?? false;
+    $loggedInUser?.userRoles?.some((role) => [UserRoles.Tech, UserRoles.SuperAdmin].includes(role)) ?? false;
   $: isRegistrySupport = isTrademarkSupport || isPatentDesignSupport;
 
   $: escalationTargets = isTechSupport
@@ -83,7 +103,7 @@
 
   $: canEscalate =
     (isRegistrySupport || isTechSupport) &&
-    data?.status !== TicketStates.closed &&
+    isActive &&
     escalationTargets.length > 0 &&
     // Tech is allowed to escalate again even if the ticket was escalated before,
     // so long as the user has an escalation target available.
@@ -115,6 +135,7 @@
   }
 
   async function confirmAndEscalateTicket() {
+    if (!canEscalate || isEscalating || isEscalatingToDev || isUploading) return;
     // Confirm with user before performing escalation
     if (
       !window.confirm(
@@ -125,6 +146,7 @@
     }
 
     isEscalating = true;
+    try {
     const target = escalationTargets.find(
       (t) => t.value === selectedEscalationTarget,
     );
@@ -140,20 +162,22 @@
         autoMessage,
       }),
     });
-    if (response.ok) {
+    if (!response.ok) throw new Error(await response.text() || "Failed to escalate ticket.");
       toast.success("Ticket escalated successfully", { position: "top-right" });
       showEscalateDialog = false;
-      dataExt.isEscalated = true;
-      data = data;
-    } else {
-      toast.error("Failed to escalate ticket", { position: "top-right" });
+      data = await response.json();
+      onChanged();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to escalate ticket.", { position: "top-right" });
+    } finally {
+      isEscalating = false;
     }
-    isEscalating = false;
   }
 
   async function addCorrespondence() {
-    if (!newText.trim() && !selectedFile) return;
+    if (isUploading || isEscalating || isEscalatingToDev || !canReplyToTicket(data.status, data.resolvedAt) || (!newText.trim() && !selectedFile)) return;
     isUploading = true;
+    try {
     let attachmenturl: any = null;
     if (selectedFile) {
       const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
@@ -168,6 +192,7 @@
           },
         ]),
       });
+      if (!result.ok) throw new Error("Attachment upload failed.");
       attachmenturl = await result.json();
     }
     const response = await authFetch(`${baseURL}/api/tickets/AddMessage`, {
@@ -175,10 +200,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ticketId: data.id,
-        newStatus:
-          $loggedInUser?.creatorId === data.creatorId
-            ? TicketStates.awaitingStaff
-            : TicketStates.awaitingUser,
+        newStatus: ticketReplyStatus(data.status, $loggedInUser?.creatorId === data.creatorId),
         correspondence:
           attachmenturl !== null
             ? {
@@ -194,13 +216,43 @@
               },
       }),
     });
-    if (response.ok) {
-      data = await response.json();
-    }
-    isUploading = false;
+    if (!response.ok) throw new Error(await response.text() || "Failed to send message.");
+    data = await response.json();
+    onChanged();
     newText = "";
     selectedFile = null;
     selectedFileName = "";
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send message.", { position: "top-right" });
+    } finally {
+      isUploading = false;
+    }
+  }
+
+  async function escalateToDev() {
+    if (!canEscalateToDev || isEscalatingToDev || isEscalating || isUploading) return;
+    isEscalatingToDev = true;
+    try {
+      const response = await authFetch(`${baseURL}/api/tickets/EscalateToDev`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticketId: data.id,
+          escalatedById: $loggedInUser?.creatorId,
+          escalatedByName: name,
+          autoMessage: "In Progress",
+        }),
+      });
+      if (!response.ok) throw new Error(await response.text() || "Failed to escalate ticket.");
+      data = await response.json();
+      onChanged();
+      showDevConfirm = false;
+      toast.success("Ticket escalated to developers", { position: "top-right" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to escalate ticket.", { position: "top-right" });
+    } finally {
+      isEscalatingToDev = false;
+    }
   }
 
   function fileChanged(event: Event) {
@@ -258,11 +310,28 @@
     // Keep colors consistent with TicketTag
     if (s === 0) return "bg-yellow-400";
     if (s === 1) return "bg-blue-400";
+    if (s === TicketStates.inProgress) return "bg-cyan-400";
+    if (s === TicketStates.resolved) return "bg-emerald-400";
     return "bg-green-400";
   }
 </script>
 
 <Toaster />
+
+<AlertDialog.Root bind:open={showDevConfirm}>
+  <AlertDialog.Content>
+    <AlertDialog.Header>
+      <AlertDialog.Title>Escalate to Dev?</AlertDialog.Title>
+      <AlertDialog.Description>This technical ticket will be marked In Progress.</AlertDialog.Description>
+    </AlertDialog.Header>
+    <AlertDialog.Footer>
+      <AlertDialog.Cancel disabled={isEscalatingToDev}>Cancel</AlertDialog.Cancel>
+      <Button disabled={isEscalatingToDev} on:click={escalateToDev}>
+        {isEscalatingToDev ? "Escalating..." : "Escalate to Dev"}
+      </Button>
+    </AlertDialog.Footer>
+  </AlertDialog.Content>
+</AlertDialog.Root>
 
 <!-- Escalation dialog -->
 <AlertDialog.Root bind:open={showEscalateDialog}>
@@ -305,7 +374,7 @@
         >Cancel</AlertDialog.Cancel
       >
       <Button
-        disabled={isEscalating}
+        disabled={isEscalating || isEscalatingToDev || isUploading}
         on:click={confirmAndEscalateTicket}
         class="bg-red-600 hover:bg-red-700 text-white"
       >
@@ -333,7 +402,7 @@
       <!-- ── Top bar ─────────────────────────────────────────────────── -->
 
       <div
-        class="flex items-center justify-between px-3 py-3 bg-white border-b flex-shrink-0"
+        class="flex flex-wrap gap-2 items-center justify-between px-3 py-3 bg-white border-b flex-shrink-0"
       >
         <div class="flex items-center gap-3 min-w-0">
           <button
@@ -357,10 +426,17 @@
           </h2>
         </div>
         <div class="flex items-center gap-2 flex-shrink-0 ml-3">
+          {#if canEscalateToDev}
+            <Button variant="outline" size="sm" disabled={isUploading || isEscalating || isEscalatingToDev} on:click={() => (showDevConfirm = true)}>
+              <Icon icon="mdi:code-braces" width="0.9rem" height="0.9rem" class="mr-1" />
+              Escalate to Dev
+            </Button>
+          {/if}
           {#if canEscalate}
             <Button
               variant="outline"
               size="sm"
+              disabled={isUploading || isEscalating || isEscalatingToDev}
               class="border-red-500 text-red-600 hover:bg-red-50 h-8 text-xs"
               on:click={() => (showEscalateDialog = true)}
             >
@@ -480,6 +556,27 @@
               </div>
             {/if}
 
+            {#if data?.isEscalatedToDev}
+              <div>
+                <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Developer Escalation</p>
+                <p class="text-xs text-slate-700 font-medium">Escalated to Dev</p>
+                {#if data.escalatedToDevByName}<p class="text-xs text-slate-500 break-words">{data.escalatedToDevByName}</p>{/if}
+                {#if data.escalatedToDevAt}<p class="text-xs text-slate-500">{mapDateToString(data.escalatedToDevAt)}</p>{/if}
+              </div>
+            {/if}
+            {#if data?.resolvedAt}
+              <div>
+                <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Resolved</p>
+                <p class="text-xs text-slate-700">{mapDateToString(data.resolvedAt)}</p>
+              </div>
+            {/if}
+            {#if data?.closedAt}
+              <div>
+                <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Closed</p>
+                <p class="text-xs text-slate-700">{mapDateToString(data.closedAt)}</p>
+              </div>
+            {/if}
+
             {#if data?.affectedFiles && data.affectedFiles.length > 0}
               <div>
                 <p
@@ -558,7 +655,7 @@
                   ></div>
                   <p class="text-[10px] font-medium text-slate-600">Closed</p>
                   <p class="text-[10px] text-slate-400">
-                    {data?.resolution ? relativeTime(data.resolution.date) : ""}
+                    {data?.closedAt ? relativeTime(data.closedAt) : ""}
                   </p>
                 </div>
               {/if}
@@ -590,7 +687,7 @@
                       <span
                         class="text-[10px] font-medium text-red-700 break-words"
                         style="white-space:break-spaces;overflow-wrap:anywhere;tab-size:4;"
-                        >{message.message}</span
+                        >{ticketSystemMessage(message.message)}</span
                       >
                     </div>
                     <div class="h-px flex-1 bg-slate-200"></div>
@@ -669,9 +766,13 @@
 
           <!-- Composer -->
           <div class="border-t bg-white flex-shrink-0">
-            {#if data?.status !== TicketStates.closed}
+            {#if canReply}
               <div class="p-3 space-y-2">
+                {#if data.status === TicketStates.resolved}
+                  <p class="text-xs text-emerald-800">Resolved. This ticket closes automatically 24 hours after resolution unless the creator replies.</p>
+                {/if}
                 <Textarea
+                  disabled={isUploading}
                   class="min-h-16 max-h-40 resize-none text-sm"
                   placeholder="Type your reply…"
                   bind:value={newText}
@@ -734,7 +835,7 @@
                   <Button
                     size="sm"
                     class="h-8 px-4"
-                    disabled={isUploading || (!newText.trim() && !selectedFile)}
+                    disabled={isUploading || isEscalating || isEscalatingToDev || (!newText.trim() && !selectedFile)}
                     on:click={addCorrespondence}
                   >
                     {#if isUploading}
@@ -768,11 +869,7 @@
                   class="flex-shrink-0"
                 />
                 <span>
-                  Ticket closed by <strong
-                    >{data.resolution?.staffName ?? "—"}</strong
-                  >
-                  {#if data.resolution}
-                    · {mapDateToString(data.resolution.date)}{/if}
+                  {data.status === TicketStates.closed ? "This ticket is closed." : "The 24-hour reply window has expired. This ticket is awaiting automatic closure."}
                 </span>
               </div>
             {/if}
