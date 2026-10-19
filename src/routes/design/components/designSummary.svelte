@@ -5,6 +5,7 @@ import { designForm, currentStep } from '$lib/utils/design';
 import { applicationData, loggedInUser } from '$lib/store';
 import { ApplicationStatuses, baseURL, FilingType, FormApplicationTypes, arrayBufferToBase64, toByteArray } from '$lib/helpers';
     import PriorityInfo from '../../patent/components/PriorityInfo.svelte';
+    import { authFetch } from '$lib/utils/authFetch';
 
 let form = $designForm;
 
@@ -291,7 +292,7 @@ async function submit() {
       attachments: attachmentsLists,
     };
 
-    const result = await fetch(`${baseURL}/api/files/createNew`, {
+    const result = await authFetch(`${baseURL}/api/files/createNew`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

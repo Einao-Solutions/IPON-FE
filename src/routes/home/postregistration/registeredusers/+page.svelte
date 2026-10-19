@@ -8,6 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { countriesMap } from '$lib/constants';
 	import { Button } from '$lib/components/ui/button/index';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface UserData {
 		name: string;
@@ -47,7 +48,7 @@
 		console.log('setting data...');
 		isLoading = true;
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetMergerCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {
@@ -123,7 +124,7 @@
 
 			
 
-			const res = await fetch(`${baseURL}/api/files/AddRegisteredUsers`, {
+			const res = await authFetch(`${baseURL}/api/files/AddRegisteredUsers`, {
 				method: 'POST',
 				body: form
 			});

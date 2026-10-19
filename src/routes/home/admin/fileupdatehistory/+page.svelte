@@ -5,6 +5,7 @@
 	import Icon from '@iconify/svelte';
  	import { Button } from '$lib/components/ui/button/index';
 	import { goto } from '$app/navigation';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let histories: any[] = [];
 	let isLoading = false;
@@ -24,7 +25,7 @@
 	onMount(async () => {
 		isLoading = true;
 		try {
-			const res = await fetch(`${baseURL}/api/files/file-update-history`);
+			const res = await authFetch(`${baseURL}/api/files/file-update-history`);
 			if (!res.ok) throw new Error('Failed to fetch update history');
 			histories = await res.json();
 			totalPages = Math.ceil(histories.length / itemsPerPage);

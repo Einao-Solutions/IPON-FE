@@ -11,6 +11,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import * as Dialog from "$lib/components/ui/dialog"
 	import { goto } from '$app/navigation';
+	import { authFetch } from '$lib/utils/authFetch';
 	let open: boolean = true;
 	let fileNumber: string | null = null;
 	export let closed: () => void;
@@ -28,7 +29,7 @@
 		}
 		isSearching = true;
 		const searchId =  $loggedInUser?.userRoles?.includes(UserRoles.Tech)? '': $loggedInUser?.id;
-		const response = await fetch(`${baseURL}/api/files/searchForRenewal?fileNumber=${fileNumber}&userId=${searchId}`);
+		const response = await authFetch(`${baseURL}/api/files/searchForRenewal?fileNumber=${fileNumber}&userId=${searchId}`);
 			const _searchResponse = await response.json();
 		if (response.ok) {
 
@@ -62,7 +63,7 @@
 	}
 	async function renewFile()
 	{
-		const response=await fetch(`${baseURL}/api/files/DashboardRenewal?fileId=${searchResponse?.id}&userId=${$loggedInUser?.creatorId}&userName=${userName}`);
+		const response=await authFetch(`${baseURL}/api/files/DashboardRenewal?fileId=${searchResponse?.id}&userId=${$loggedInUser?.creatorId}&userName=${userName}`);
 		if (response.ok) {
 			const paymentInfo = await response.json();
 			const amount = searchResponse.amount;

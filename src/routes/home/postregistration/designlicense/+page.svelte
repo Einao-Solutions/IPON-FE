@@ -10,6 +10,7 @@
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { mapDesignTypeToString } from '$lib/designutils';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface DesignLicenseData {
 		licenseDeeds: File[];
@@ -73,7 +74,7 @@
 	async function setData(fileNumber: string, fileType: string): Promise<void> {
 		isLoading = true;
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetDesignLicenseCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {

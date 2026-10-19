@@ -12,6 +12,7 @@
 		FileTypes,
 		type CorrespondenceType
 	} from '$lib/helpers';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface SearchResult {
 		titleOfTradeMark: string;
@@ -70,7 +71,7 @@
 				return;
 			}
 
-			const response = await fetch(
+			const response = await authFetch(
 				`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${searchParams.query}`
 			);
 			if (!response.ok) {

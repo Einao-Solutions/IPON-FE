@@ -18,6 +18,7 @@
 		hasValidCorrespondenceDetails,
 		UserRoles
 	} from '$lib/helpers';
+	import { authFetch } from '$lib/utils/authFetch';
 	interface ClaimDetailsDto {
 		fileNumber: string;
 		filingDate: string;
@@ -38,7 +39,7 @@
 	async function fetchAllClaims() {
 		try {
 			loading = true;
-			const response = await fetch(`${baseURL}/api/migration/GetAllClaimRequests`);
+			const response = await authFetch(`${baseURL}/api/migration/GetAllClaimRequests`);
 			if (!response.ok) throw new Error('Failed to fetch claims');
 			claims = await response.json();
 			error = '';
@@ -52,7 +53,7 @@
 
 	async function fetchClaimDetails(fileId: string) {
 		try {
-			const response = await fetch(`${baseURL}/api/migration/GetClaimRequest?fileId=${fileId}`);
+			const response = await authFetch(`${baseURL}/api/migration/GetClaimRequest?fileId=${fileId}`);
 			if (!response.ok) throw new Error('Failed to fetch claim details');
 			selectedClaim = await response.json();
 			showModal = true;
@@ -73,7 +74,7 @@
 	async function migrate(fileId: string | undefined) {
 		if (!fileId) return;
 		try {
-			const response = await fetch(`${baseURL}/api/migration/migrate?fileId=${fileId}`, {
+			const response = await authFetch(`${baseURL}/api/migration/migrate?fileId=${fileId}`, {
 				method: 'POST'
 			});
 			if (!response.ok) throw new Error('Migration failed');

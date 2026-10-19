@@ -8,6 +8,7 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface PatentAttachment {
 		id?: string;
@@ -73,7 +74,7 @@
 		isLoading = true;
 		try {
 			// Get cost information and attachments for patent CTC
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetPatentCTCCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {
@@ -135,7 +136,7 @@
 			
 			// Generate new RRR with the correct (multiplied) cost
 			const finalCost = calculatedCost;
-			const rrrResponse = await fetch(
+			const rrrResponse = await authFetch(
 				`${baseURL}/api/files/GetPatentCTCCost?fileId=${fileId}&fileType=0&numberOfAttachments=${selectedAttachmentIndices.length}`
 			);
 			

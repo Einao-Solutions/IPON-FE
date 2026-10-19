@@ -20,6 +20,7 @@
 	import { countriesMap } from '$lib/constants';
 	import Icon from '@iconify/svelte';
 	import { browser } from '$app/environment';
+	import { authFetch } from '$lib/utils/authFetch';
 	dayjs.extend(quarterOfYear);
 	let financeData = writable<FinanceData[] | []>([]);
 	let financeLoading: boolean = false;
@@ -48,7 +49,7 @@
 		if (startTime === null || endTime === null) {
 			body = {};
 		}
-		const response = await fetch(`${baseURL}/api/finance/GetFinanceSummary`, {
+		const response = await authFetch(`${baseURL}/api/finance/GetFinanceSummary`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)

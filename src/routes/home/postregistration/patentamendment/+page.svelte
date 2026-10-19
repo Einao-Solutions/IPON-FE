@@ -11,6 +11,7 @@
         PatentTypes,
         PatentApplicationTypes
     } from '$lib/helpers';
+    import { authFetch } from '$lib/utils/authFetch';
 
     interface ApplicantInfo {
         id: string;
@@ -191,7 +192,7 @@
         }
 
         try {
-            const response = await fetch(
+            const response = await authFetch(
                 `${baseURL}/api/files/GetPatentAmendmentCost?fileId=${fileNumber}&fileType=${fileType}&updateType=${updateType}`
             );
 

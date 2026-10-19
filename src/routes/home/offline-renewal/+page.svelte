@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { baseURL } from '$lib/helpers';
 	import Icon from '@iconify/svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let isOpen = false;
 	let searchQuery = '';
@@ -52,7 +53,7 @@
 		isLoading = true;
 		error = null;
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`
 			);
 			const data = await res.json();

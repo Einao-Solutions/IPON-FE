@@ -16,6 +16,7 @@
   import { toast } from "svelte-sonner";
   import { countriesMap } from "$lib/constants";
   import { loggedInToken, loggedInUser } from "$lib/store";
+  import { authFetch } from "$lib/utils/authFetch";
   interface ApplicantInfo {
     id?: string;
     name: string;
@@ -566,7 +567,7 @@
           });
         }
 
-        const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+        const result = await authFetch(`${baseURL}/api/files/ClericalUpdate`, {
           method: "POST",
           body: formData,
         });
@@ -631,7 +632,7 @@
         });
       }
 
-      const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+      const result = await authFetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
         body: formData,
       });
@@ -719,7 +720,7 @@
 
   async function freeUpdate(data: FormData) {
     if (fileInfo.fileStatus === ApplicationStatuses.Withdrawn) {
-      const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+      const result = await authFetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
         body: data,
       });

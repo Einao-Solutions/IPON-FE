@@ -18,6 +18,7 @@
   import { loggedInUser } from "$lib/store";
   import Icon from "@iconify/svelte";
   import { mapCategoryToString, mapTicketStateToString } from "./supportutils";
+  import { authFetch } from "$lib/utils/authFetch";
 
   export let data: TicketInfo;
   export let open: boolean = false;
@@ -128,7 +129,7 @@
       (t) => t.value === selectedEscalationTarget,
     );
     const autoMessage = `This ticket has been escalated to ${target?.label ?? "the appropriate team"} for further assistance.`;
-    const response = await fetch(`${baseURL}/api/tickets/Escalate`, {
+    const response = await authFetch(`${baseURL}/api/tickets/Escalate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -155,7 +156,7 @@
     isUploading = true;
     let attachmenturl: any = null;
     if (selectedFile) {
-      const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+      const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify([
@@ -169,7 +170,7 @@
       });
       attachmenturl = await result.json();
     }
-    const response = await fetch(`${baseURL}/api/tickets/AddMessage`, {
+    const response = await authFetch(`${baseURL}/api/tickets/AddMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

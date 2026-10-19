@@ -20,6 +20,7 @@
 		type CorrespondenceType
 	} from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
+	import { authFetch } from '$lib/utils/authFetch';
 	$: fileData = $applicationData;
 
 	interface SearchResult {
@@ -73,7 +74,7 @@
 			//console.log($loggedInUser.name);
 			if (searchParams) {
 				// Fetch search results from the backend
-				const response = await fetch(
+				const response = await authFetch(
 					`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${searchParams.query}`
 				);
 				if (response.ok) {

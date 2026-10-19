@@ -2,6 +2,7 @@
 	import { baseURL } from '$lib/helpers';
 	import { Button } from '$lib/components/ui/button';
 	import Icon from '@iconify/svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	export let fileId: string;
 	export let appId: string;
@@ -57,7 +58,7 @@
 		error = '';
 
 		try {
-			const response = await fetch(
+			const response = await authFetch(
 				`${baseURL}/api/files/GetAssignmentApplication?fileId=${encodeURIComponent(fileId)}&appId=${encodeURIComponent(appId)}`
 			);
 			if (!response.ok) throw new Error(`Failed to fetch documents: ${response.status}`);

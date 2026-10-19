@@ -7,6 +7,7 @@
   import { baseURL, decodeUser } from "$lib/helpers";
   import { toast } from "svelte-sonner";
   import { Toaster } from "$lib/components/ui/sonner";
+  import { authFetch } from "$lib/utils/authFetch";
   let checkVisible = false;
   let messageVisible = false;
   let subMessageVisible = false;
@@ -91,7 +92,7 @@
     clericalId: string | null = null,
   ) {
     try {
-      const result = await fetch(
+      const result = await authFetch(
         `${baseURL}/api/files/ConfirmClericalUpdate?fileId=${fileId}&clericalId=${clericalId}`,
         { method: "POST" },
       );

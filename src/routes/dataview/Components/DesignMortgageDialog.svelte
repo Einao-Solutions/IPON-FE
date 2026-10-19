@@ -8,6 +8,7 @@
   import { baseURL } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
   import { get } from "svelte/store";
+  import { authFetch } from "$lib/utils/authFetch";
 
   // Props
   export let open = false;
@@ -42,7 +43,7 @@
     mortgageDetails = null;
     
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetDesignMortgageDetails?fileId=${encodeURIComponent(fileId)}`
       );
       
@@ -67,7 +68,7 @@
       const user = get(loggedInUser);
       const appUserId = user?.id || null;
 
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/DesignMortgageDecision`, 
         {
           method: "POST",

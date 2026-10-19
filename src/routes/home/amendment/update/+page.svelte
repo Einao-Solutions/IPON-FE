@@ -12,6 +12,7 @@
   import { baseURL, FileTypes } from "$lib/helpers";
   import { MapTradeMarkClass } from "$lib/constants";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
+  import { authFetch } from "$lib/utils/authFetch";
 
   interface FileInfo {
     fileId: string | null;
@@ -194,7 +195,7 @@
         formData.append("NewRepresentation", newRepresentation);
       }
 
-      const res = await fetch(`${baseURL}/api/opposition/OppositionAmendment`, {
+      const res = await authFetch(`${baseURL}/api/opposition/OppositionAmendment`, {
         method: "POST",
         body: formData,
       });

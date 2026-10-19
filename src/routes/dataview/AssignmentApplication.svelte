@@ -20,6 +20,7 @@
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
 	import { mapStatusStringToStatus } from '$lib/designutils';
 	import AssignmentDocuments from './AssignmentDocuments.svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	export let allApplications:ApplicationHistoryType[];
 	export let isAdmin:boolean=false;
@@ -125,7 +126,7 @@
 			fileId: fileData.id,
 			applicationId: currApp.id
 		}
-		const result = await fetch(`${baseURL}/api/assignment/UpdateAssignment`, {
+		const result = await authFetch(`${baseURL}/api/assignment/UpdateAssignment`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -145,7 +146,7 @@
 	async function viewDataUpdateApplication(data) {
 		if (isDataLoading){return;}
 		isDataLoading=true;
-		let amountJson = await (await fetch(`${baseURL}/api/assignment/ValidationRRR?data=${data.paymentId}`)).json()
+		let amountJson = await (await authFetch(`${baseURL}/api/assignment/ValidationRRR?data=${data.paymentId}`)).json()
 		assignmentData.set({
 			rrr: data.paymentId,
 			applicationId: data.id,
@@ -228,7 +229,7 @@ let options:ApplicationStatuses[] =[];
 		if (selectedOption===ApplicationStatuses.Approved || selectedOption===ApplicationStatuses.Rejected) {
 			body['signatureUrl']=$loggedInUser.signatureUrl
 		}
-			const result=await fetch(`${baseURL}/api/assignment/UpdateAssignment`, {
+			const result=await authFetch(`${baseURL}/api/assignment/UpdateAssignment`, {
 				method: 'POST',
 				headers:{
 					'Content-Type':'application/json'

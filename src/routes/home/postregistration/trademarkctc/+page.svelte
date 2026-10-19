@@ -7,6 +7,7 @@
 	import { baseURL } from '$lib/helpers';
 	import { loggedInUser } from '$lib/store';
 	import { toast } from 'svelte-sonner';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let pageData = $page;
 	let fileId = '';
@@ -57,7 +58,7 @@
 	async function setData(fileNumber: string, fileType: string): Promise<void> {
 		isLoading = true;
 		try {
-			const res = await fetch(`${baseURL}/api/files/GetTrademarkCTCCost?fileId=${fileNumber}&fileType=TradeMark`);
+			const res = await authFetch(`${baseURL}/api/files/GetTrademarkCTCCost?fileId=${fileNumber}&fileType=TradeMark`);
 			if (!res.ok) { error = 'Unable to retrieve cost info and attachments.'; return; }
 			const response = await res.json();
 			const data = response.data || response;
@@ -88,7 +89,7 @@
 					: attachment.id || attachment.name || attachment.fileName || `attachment_${selectedAttachmentIndices[idx]}`
 			);
 			const finalCost = calculatedCost;
-			const rrrResponse = await fetch(`${baseURL}/api/files/GetTrademarkCTCCost?fileId=${fileId}&fileType=TradeMark&numberOfAttachments=${selectedAttachmentIndices.length}`);
+			const rrrResponse = await authFetch(`${baseURL}/api/files/GetTrademarkCTCCost?fileId=${fileId}&fileType=TradeMark&numberOfAttachments=${selectedAttachmentIndices.length}`);
 			if (!rrrResponse.ok) { toast.error('Failed to generate payment reference'); return; }
 			const rrrData = await rrrResponse.json();
 			const finalRRR = rrrData.data?.rrr || rrrData.rrr;

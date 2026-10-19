@@ -18,6 +18,7 @@
   import * as Select from "$lib/components/ui/select/index.js";
   import dayjs from "dayjs";
   import { User } from "lucide-svelte";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let notifications = writable<NotificationsType | null>(null);
   let notificationsLoading = false;
@@ -67,7 +68,7 @@
     journalFetchError = null;
     journalResults = [];
     try {
-      const queryResult = await fetch(
+      const queryResult = await authFetch(
         `${baseURL}/api/publication/GetJournals?year=${journalSelectedYear}`,
       );
       if (queryResult.ok) {
@@ -421,7 +422,7 @@
         roles.includes(UserRoles.Tech) ||
         roles.includes(UserRoles.SuperAdmin)
       ) {
-        const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+        const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -441,7 +442,7 @@
         const userId = ($loggedInUser as any)?.creatorId;
         url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
       }
-      const response = await fetch(url);
+      const response = await authFetch(url);
       if (response.ok) {
         const data = await response.json();
         const isStaff =
@@ -458,7 +459,7 @@
 
   async function loadOppositionsCount() {
     try {
-      const response = await fetch(`${baseURL}/api/opposition/count`);
+      const response = await authFetch(`${baseURL}/api/opposition/count`);
       if (response.ok) {
         const opps = await response.text();
         oppsCount = Number(opps);
@@ -483,7 +484,7 @@
   }
   async function getJournalCost(userId: string, batch: string) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/publication/GetJournalCost?userId=${encodeURIComponent(userId)}&batch=${encodeURIComponent(batch)}`,
       );
       if (!response.ok) {

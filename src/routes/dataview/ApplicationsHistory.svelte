@@ -56,6 +56,7 @@
   import OwnershipHistoryDialog from "./Components/OwnershipHistoryDialog.svelte";
   import OfflineRenewalDialog from "./Components/OfflineRenewalDialog.svelte";
   import AssignmentDocuments from "./AssignmentDocuments.svelte";
+  import { authFetch } from "$lib/utils/authFetch";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -666,7 +667,7 @@
     fileOppositions = [];
     activeOppositionIndex = 0;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/opposition/getOppositionDetail?fileNumber=${fileNumber}`,
       );
       if (res.ok) {
@@ -777,7 +778,7 @@
     showAlertDialog = true;
 
     try {
-      const response = await fetch(`${baseURL}/api/payments/check?id=${id}`);
+      const response = await authFetch(`${baseURL}/api/payments/check?id=${id}`);
       if (!response.ok) throw new Error("Payment check failed");
 
       const text = await response.text();
@@ -816,7 +817,7 @@
 
   async function updateCertPaymentStatus(paymentId: string, fileId: string) {
     try {
-      const result = await fetch(
+      const result = await authFetch(
         `${baseURL}/api/files/UpdateCertificatePaymentStatus?fileId=${fileId}&rrr=${paymentId}`,
         { method: "POST" },
       );
@@ -834,7 +835,7 @@
   async function updateManual() {
     remita_confirmation = "checking";
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/ManualUpdate?fileId=${fileData.fileId}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.creatorId}&userName=${name}&isCertificate=${isCertificate}`,
         { method: "POST" },
       );
@@ -980,7 +981,7 @@
       }
 
       const lookupAppId = historyNewValue?.recordalAppId || application.id;
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${lookupAppId}`,
       );
 
@@ -1010,7 +1011,7 @@
           `🔵 DEBUG: ${endpoint} 404'd for saved id, retrying with fileId only to recover old entry`,
         );
         try {
-          const listResponse = await fetch(
+          const listResponse = await authFetch(
             `${baseURL}${endpoint}?fileId=${fileData.fileId}`,
           );
           if (listResponse.ok) {
@@ -1076,7 +1077,7 @@
         userId: $loggedInUser?.id,
       };
 
-      const res = await fetch(`${baseURL}${endpoint}`, {
+      const res = await authFetch(`${baseURL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1101,7 +1102,7 @@
         userId: $loggedInUser?.id,
       };
 
-      const res = await fetch(`${baseURL}/api/opposition/TreatAmendment`, {
+      const res = await authFetch(`${baseURL}/api/opposition/TreatAmendment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1126,7 +1127,7 @@
         userId: $loggedInUser?.id,
       };
 
-      const res = await fetch(`${baseURL}/api/files/DenyRecordal`, {
+      const res = await authFetch(`${baseURL}/api/files/DenyRecordal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -1147,7 +1148,7 @@
   async function viewAppeal(application: ApplicationHistoryType) {
     selectedApplication = application;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/getappeal?fileId=${fileData.fileId}&appId=${application.id}`,
       );
 
@@ -1192,7 +1193,7 @@
     submittingAppeal = true;
 
     try {
-      const response = await fetch(`${baseURL}/api/files/treat-appeal`, {
+      const response = await authFetch(`${baseURL}/api/files/treat-appeal`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1250,7 +1251,7 @@
     submittingAppeal = true;
 
     try {
-      const response = await fetch(`${baseURL}/api/files/treat-appeal`, {
+      const response = await authFetch(`${baseURL}/api/files/treat-appeal`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1589,7 +1590,7 @@
         );
       }
 
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/AdminUpdateApplication`,
         {
           method: "POST",
@@ -1656,7 +1657,7 @@
 
     getDocLoading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`,
       );
       if (!response.ok) {
@@ -1687,7 +1688,7 @@
     publicationFileId = fileId;
     showPublicationDialog = true;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/publication-details/${encodeURIComponent(fileId)}`,
       );
       if (!res.ok) throw new Error("Could not fetch details");
@@ -1703,7 +1704,7 @@
   async function handlePublicationDecision(approve: boolean) {
     publicationSubmitting = true;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/PublicationStatusDecision`,
         {
           method: "POST",
@@ -1741,7 +1742,7 @@
     withdrawalSupportingFiles = [];
     showWithdrawalDialog = true;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/withdrawal-details/${encodeURIComponent(fileId)}`,
       );
       if (!res.ok) {
@@ -1767,7 +1768,7 @@
   async function handleWithdrawalDecision(approve: boolean) {
     withdrawalSubmitting = true;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/withdrawalrequestdecision`,
         {
           method: "POST",
@@ -4216,7 +4217,7 @@
                       on:click={async () => {
                         oppositionDetailLoading = true;
                         try {
-                          const res = await fetch(
+                          const res = await authFetch(
                             `${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&fileId=${fileData.fileId}`,
                           );
                           if (res.ok) {

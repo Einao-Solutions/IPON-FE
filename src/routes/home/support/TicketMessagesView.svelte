@@ -12,6 +12,7 @@
 	import TicketTag from '$lib/components/ui/ticketTag/ticketTag.svelte';
 	import { loggedInUser } from '$lib/store';
 	import Icon from '@iconify/svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	export let data: TicketInfo;
 	export let open: boolean = false;
@@ -23,7 +24,7 @@
 		isUploading = true;
 		let attachmenturl: string | null = null;
 		if (selectedFile) {
-			const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+			const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -41,7 +42,7 @@
 			attachmenturl = await result.json();
 		}
 
-		let response = await fetch(`${baseURL}/api/tickets/AddMessage`, {
+		let response = await authFetch(`${baseURL}/api/tickets/AddMessage`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'

@@ -10,6 +10,7 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface DesignAssignmentData {
 		assignmentDeeds: File[];
@@ -72,7 +73,7 @@
 	async function setData(fileNumber: string, fileType: string): Promise<void> {
 		isLoading = true;
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetDesignAssignmentCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {

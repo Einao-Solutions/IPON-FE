@@ -5,6 +5,7 @@
     import { filesToAttachment } from "$lib/utils/patent";
     import { loggedInUser } from '$lib/store';
     import { get } from 'svelte/store';
+    import { authFetch } from '$lib/utils/authFetch';
 
     let fileNumber = '';
     let publicationDate = '';
@@ -56,7 +57,7 @@
             const fileType = detectFileType(fileNumber);
             
             // Only send GET request with query params, no body!
-            const response = await fetch(
+            const response = await authFetch(
                 `${baseURL}/api/files/GetPublicationStatusUpdateCost?fileId=${encodeURIComponent(fileNumber)}&fileType=${fileType}`,
                 { method: 'GET' }
             );

@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 import { baseURL, ApplicationLetters } from '$lib/helpers';
 import { loggedInToken } from '$lib/store';
+import { SESSION_EXPIRED_MESSAGE } from './authFetch';
 
 interface ReceiptTab extends Window {
 	location: Location;
@@ -19,7 +20,7 @@ export class ReceiptError extends Error {
 	}
 }
 
-export const SESSION_EXPIRED_MESSAGE = 'Session expired, please log in again';
+export { SESSION_EXPIRED_MESSAGE };
 export const RECEIPT_FORBIDDEN_MESSAGE = 'You are not allowed to print this receipt';
 export const RECEIPT_PAYMENT_REQUIRED_MESSAGE =
 	'Payment has not been completed for this availability search. Complete payment to print your receipt.';

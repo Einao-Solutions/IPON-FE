@@ -21,6 +21,7 @@
   import ApplicationsHistory from "../../../dataview/ApplicationsHistory.svelte";
   import DatePickerCustom from "../../../application/components/DatePickerCustom.svelte";
   import { FileType } from "lucide-svelte";
+  import { authFetch } from "$lib/utils/authFetch";
   let fileId = "";
   let isLoading = false;
   let showForm = false;
@@ -608,7 +609,7 @@
     notFoundMessage = "";
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/GetAllFileDetails?fileNumber=${encodeURIComponent(fileId)}`
       );
       if (!res.ok) throw new Error("Filing not found");
@@ -1024,7 +1025,7 @@
         });
       }
 
-      const res = await fetch(apiUrl, {
+      const res = await authFetch(apiUrl, {
         method: "POST",
         headers: requestHeaders,
         body: requestBody,
@@ -1148,7 +1149,7 @@
           // status (existing entry) or create the missing one ourselves
           // (no entry found) so it always shows up in the list.
           try {
-            const refetch = await fetch(
+            const refetch = await authFetch(
               `${baseURL}/api/files/GetAllFileDetails?fileNumber=${encodeURIComponent(filing.fileId)}`,
             );
             if (refetch.ok) {

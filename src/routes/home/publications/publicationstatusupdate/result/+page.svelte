@@ -5,6 +5,7 @@
     import { fade, fly } from 'svelte/transition';
     import { loggedInUser } from '$lib/store';
     import { get } from 'svelte/store';
+    import { authFetch } from '$lib/utils/authFetch';
 
     let isLoading = true;
     let error: string | null = null;
@@ -41,7 +42,7 @@
                 UserId: user?.id || null  // Added this line
             };
 
-            const response = await fetch(`${baseURL}/api/files/PublicationStatusUpdate`, {
+            const response = await authFetch(`${baseURL}/api/files/PublicationStatusUpdate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(dto)

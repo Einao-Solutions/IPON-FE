@@ -7,6 +7,7 @@
 	import { toast } from 'svelte-sonner';
 	import ministry from '$lib/assets/ministry.png';
 	import cldLogo from '$lib/assets/cld.png';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let checkVisible = false;
 	let messageVisible = false;
@@ -31,7 +32,7 @@
 			isStatusUpdating = false;
 			return;
 		}
-		const result = await fetch(
+		const result = await authFetch(
 			`${baseURL}/api/opposition/UpdateOppositionWithdrawalPayment?paymentId=${paymentId}`,
 			{
 				method: 'POST',

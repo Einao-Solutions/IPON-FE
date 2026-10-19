@@ -9,6 +9,7 @@
   import CreateNotification from "./components/CreateNotification.svelte";
   import { Toaster, toast } from "svelte-sonner";
   import { loggedInToken } from "$lib/store";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let showSearchDialog = false;
   let showUserSearch = false;
@@ -31,7 +32,7 @@
 
   async function searchApplicationsByFileNumber(fileNumber: string) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetApplicationsByFile?fileId=${fileNumber}`,
       );
 

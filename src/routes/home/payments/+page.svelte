@@ -24,6 +24,7 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { PatentAttachments } from '$lib/designutils';
 	import { mapDateToStringNoDate, mapDateToString } from '../components/dashboardutils';
+	import { authFetch } from '$lib/utils/authFetch';
 	let isPaymentsLoading: boolean = false;
 	let allPayments = [];
 	let allPaymentHistory = [];
@@ -43,7 +44,7 @@
 	const possibleNumbers = [10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100];
 	async function loadPayments() {
 		isPaymentsLoading = true;
-		allPayments = await (await fetch(`${baseURL}/api/payments/GetAllPayment`)).json();
+		allPayments = await (await authFetch(`${baseURL}/api/payments/GetAllPayment`)).json();
 		isPaymentsLoading = false;
 	}
 
@@ -59,7 +60,7 @@
 				url = `${baseURL}/api/payments/GetOtherPayment?userId=${$loggedInUser.id}&count=${count}&skip=${skip}`;
 			}
 		}
-		var data = await (await fetch(url)).json();
+		var data = await (await authFetch(url)).json();
 		allPaymentHistory = data.data;
 		totalHistory = data.count;
 		paymentHistoryLoading = false;
@@ -68,7 +69,7 @@
 	async function makePayment() {
 		isRRRLoading = true;
 		var data = await (
-			await fetch(
+			await authFetch(
 				`${baseURL}/api/payments/generate?id=${selectedPayment.id}&name=${name}&email=${email}&number=${number}`,
 				{
 					method: 'post'
@@ -86,7 +87,7 @@
 				contentType: $otherPaymentAttachment.type,
 				data: arrayBufferToBase64(await toByteArray($otherPaymentAttachment))
 			})
-			const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+			const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -144,7 +145,7 @@
 			notes: creationNotes,
 			id: crypto.randomUUID()
 		}
-		var result = await fetch(`${baseURL}/api/payments/AddPayment`, {
+		var result = await authFetch(`${baseURL}/api/payments/AddPayment`, {
 			method: 'POST',
 			headers: { 'content-Type': 'application/json' },
 			body: JSON.stringify(body)
@@ -199,7 +200,7 @@
 				governmentFee: newGovernmentFee,
 				id: selected.id
 			}
-		var result = await fetch(`${baseURL}/api/payments/UpdatePayment`, {
+		var result = await authFetch(`${baseURL}/api/payments/UpdatePayment`, {
 			method: 'POST',
 			headers: { 'content-Type': 'application/json' },
 			body: JSON.stringify(body)

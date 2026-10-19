@@ -8,6 +8,7 @@
   import { baseURL } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
   import { get } from "svelte/store";
+  import { authFetch } from "$lib/utils/authFetch";
 
   // Props
   export let open = false;
@@ -40,7 +41,7 @@
     amendmentDetails = null;
     
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetPatentAmendmentDetails?fileId=${encodeURIComponent(fileId)}&appId=${encodeURIComponent(applicationId)}`
       );
       
@@ -66,7 +67,7 @@
       const user = get(loggedInUser);
       const appUserId = user?.id || null;
 
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/amendment-decision`, 
         {
           method: "POST",

@@ -8,6 +8,7 @@
 	import Icon from '@iconify/svelte';
 	import { countriesMap } from '$lib/constants';
 	import { Button } from '$lib/components/ui/button/index';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface UserData {
 		name: string;
@@ -54,7 +55,7 @@
 		console.log('setting data...');
 		isLoading = true;
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetAssignmentCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {
@@ -139,7 +140,7 @@
 			form.append('AssignmentDeed', userData.assignmentDeed as File);
 			form.append('AuthorizationLetter', userData.authorizationLetter as File);
 
-			const res = await fetch(`${baseURL}/api/files/AssignmentApplication`, {
+			const res = await authFetch(`${baseURL}/api/files/AssignmentApplication`, {
 				method: 'POST',
 				body: form
 			});

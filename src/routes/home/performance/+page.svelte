@@ -11,6 +11,7 @@
 	import * as Sheet from "$lib/components/ui/sheet";
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let selectedRange = writable<string>('Month');
 	let performanceLoading = false;
@@ -43,7 +44,7 @@
 				body = {};
 			}
 			
-			const response = await fetch(`${baseURL}/api/users/Performances`, {
+			const response = await authFetch(`${baseURL}/api/users/Performances`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)

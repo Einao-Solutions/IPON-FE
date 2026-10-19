@@ -10,7 +10,7 @@
 		FormApplicationTypes,
 		ApplicationStatuses
 	} from '$lib/helpers';
-	import { loggedInToken, loggedInUser } from '$lib/store';
+	import { loggedInUser } from '$lib/store';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
@@ -23,7 +23,6 @@
 	import {
 		openAvailabilitySearchReceipt,
 		ReceiptError,
-		SESSION_EXPIRED_MESSAGE,
 		RECEIPT_GENERIC_MESSAGE
 	} from '$lib/utils/availabilitySearchReceipt';
 	import {
@@ -31,16 +30,15 @@
 		normalizeApplicationStatus
 	} from '$lib/utils/otherApplications';
 	import { confirmAvailabilitySearchPayment, savePendingAvailabilitySearch } from '$lib/utils/availabilitySearchPayment';
-	import { clearAuthCookies } from '$lib/auth-session';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { otherApplicationsRefresh } from '$lib/utils/otherApplicationsRefresh';
+	import { authFetch, handleSessionExpired } from '$lib/utils/authFetch';
 
 	let oppositions: any[] = [];
 	let otherApps: any[] = [];
 	let availabilitySearches: any[] = [];
 	let oppositionsLoading = false;
 	let loadError: string | null = null;
-	let sessionExpired = false;
 	let paymentRedirectId: string | null = null;
 	let search = '';
 	let activeTab = 'oppositions';
@@ -155,13 +153,9 @@
 			const url = isSuperOrTech
 				? `${baseURL}/api/opposition/loadSummary?quantity=200&skip=0`
 				: `${baseURL}/api/opposition/loadSummary?quantity=200&skip=0&userId=${currentUser.id}`;
-			const res = await fetch(url, {
-				headers: { Authorization: `Bearer ${$loggedInToken}` }
-			});
-			if (res.status === 401) {
-				handleSessionExpired();
-				return [];
-			}
+			const res = await authFetch(url);
+			// authFetch signs the user out on a 401, so only the control flow is left here.
+			if (res.status === 401) return [];
 			if (!res.ok) return [];
 			const body = await res.json();
 			const items = body.data ?? [];
@@ -185,22 +179,12 @@
 	// No refresh flow exists (the refresh token is not stored), so the user must sign in again.
 	class SessionExpiredError extends Error {}
 
-	function handleSessionExpired() {
-		if (sessionExpired) return;
-		sessionExpired = true;
-		toast.error(SESSION_EXPIRED_MESSAGE);
-		clearAuthCookies();
-		loggedInToken.set(null);
-		loggedInUser.set(null);
-		goto('/auth');
-	}
-
 	async function fetchOtherApps(currentUser: any): Promise<any[]> {
 		try {
 			const url = getOtherApplicationsUrl(baseURL, currentUser);
-			const res = await fetch(url, { headers: { Authorization: `Bearer ${$loggedInToken}` } });
+			const res = await authFetch(url);
+			// authFetch signs the user out on a 401, so only the control flow is left here.
 			if (res.status === 401) {
-				handleSessionExpired();
 				throw new SessionExpiredError();
 			}
 			if (!res.ok) {
@@ -237,7 +221,7 @@
 			} else {
 				throw new Error('No valid opposition identifier provided');
 			}
-			const res = await fetch(url);
+			const res = await authFetch(url);
 			if (res.ok) {
 				const json = await res.json();
 				const data = json.opposition ?? json.data ?? json;
@@ -295,7 +279,7 @@
 		verifyPaymentLoading = true;
 		verifyPaymentError = null;
 		try {
-			const response = await fetch(`${baseURL}/api/payments/check?id=${verifyPaymentRRR}`);
+			const response = await authFetch(`${baseURL}/api/payments/check?id=${verifyPaymentRRR}`);
 			if (!response.ok) throw new Error('Verification failed');
 			verifyPaymentResult = await response.json();
 		} catch (e) {
@@ -364,7 +348,7 @@
 		if (!row.paymentId || paymentRedirectId) return;
 		paymentRedirectId = row.id;
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetRRRCost?rrr=${encodeURIComponent(row.paymentId)}`
 			);
 			if (!res.ok) throw new Error(`GetRRRCost failed (${res.status})`);

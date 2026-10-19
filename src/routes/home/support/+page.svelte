@@ -32,6 +32,7 @@
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import * as Table from "$lib/components/ui/table"
 	import * as Pagination from "$lib/components/ui/pagination"
+	import { authFetch } from '$lib/utils/authFetch';
 	let tableHeaderRows: any, tablePageRows: any, _tableAttrs: any, _tableBodyAttrs: any;
 	let _hasNextPage: any, _hasPreviousPage: any, _pageIndex: any;
 	let ticketMessages: any = null;
@@ -71,7 +72,7 @@
 		const url = hasSupportStaffRole()
 			? `${baseURL}/api/tickets/GetStats`
 			: `${baseURL}/api/tickets/GetStats?userId=${userId}`;
-		let response = await fetch(url, {
+		let response = await authFetch(url, {
 			method: 'GET'
 		})
 		if (response.ok) {
@@ -108,7 +109,7 @@
 						creatorId: 'null'
 					}
 				}
-				let response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+				let response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -244,7 +245,7 @@
 	let ticketData={};
 	async function loadTicket(id:string)
 	{
-		const response= await fetch(`${baseURL}/api/tickets/${id}`,{
+		const response= await authFetch(`${baseURL}/api/tickets/${id}`,{
 			method:"GET",
 			headers:{"Content-Type":"application/json"}
 		});
@@ -311,7 +312,7 @@
 			body['status']=type
 		}
 		console.log(body)
-		let response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+		let response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'
@@ -331,7 +332,7 @@
 			const id=($ticketsSummary as any)?.[selectedKey]?.ticketId
 			closeIdds.push(id)
 		}
-		const response=await fetch(`${baseURL}/api/tickets/CloseTicket`, {
+		const response=await authFetch(`${baseURL}/api/tickets/CloseTicket`, {
 			method:"POST",
 			headers:{"Content-Type":"application/json"},
 			body:JSON.stringify({

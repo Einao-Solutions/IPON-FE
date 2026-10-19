@@ -12,6 +12,7 @@
   /* ✅ IMPORT YOUR EXISTING HANDLERS */
   import { paymentHandlers } from "./payment.handlers";
   import { Toaster } from "$lib/components/ui/sonner";
+  import { authFetch } from "$lib/utils/authFetch";
   //   import { form } from "$app/server";
   //   import { loginSchema } from "../auth/schema";
 
@@ -154,7 +155,7 @@
   }
 
   async function freeUpdate(fileId: string, clericalId: string) {
-    const result = await fetch(
+    const result = await authFetch(
       `${baseURL}/api/files/ConfirmClericalUpdate?fileId=${fileId}&clericalId=${clericalId}`,
       {
         method: "POST",

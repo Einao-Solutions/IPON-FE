@@ -20,6 +20,7 @@
   import { boolean } from "zod";
   import type { DesignTypes } from "$lib/designutils";
   import { mapDesignTypeToString } from "$lib/designutils";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let error: string | null = null;
   let isProcessing = false;
@@ -733,7 +734,7 @@
       }
       // formData.append("UserId", $loggedInUser?.id ?? "");
 
-      const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+      const result = await authFetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
         body: formData,
       });
@@ -764,7 +765,7 @@
 
   async function freeUpdate(data: FormData) {
     if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
-      const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+      const result = await authFetch(`${baseURL}/api/files/ClericalUpdate`, {
         method: "POST",
         body: data,
       });

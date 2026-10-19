@@ -10,6 +10,7 @@
 	import { showTreatUpdateAppButton } from '../../../dataview/datahelpers';
 	import { toast } from 'svelte-sonner';
 	import { countriesMap } from '$lib/constants';
+	import { authFetch } from '$lib/utils/authFetch';
 	interface FileInfo {
 		fileTitle: string;
 		representation: File | null;
@@ -159,7 +160,7 @@
 	async function setData(fileNumber: string, fileType: string, updateType: string): Promise<void> {
 		isLoading = true;
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetClericalUpdateCost?fileId=${fileNumber}&fileType=${fileType}&updateType=${updateType}`
 			);
 			if (!res.ok) {
@@ -420,7 +421,7 @@
 	}
 	async function freeUpdate(data: FormData) {
 		if (fileInfo.fileStatus === ApplicationStatuses.AwaitingSearch) {
-			const result = await fetch(`${baseURL}/api/files/ClericalUpdate`, {
+			const result = await authFetch(`${baseURL}/api/files/ClericalUpdate`, {
 				method: 'POST',
 				body: data
 			});

@@ -8,6 +8,7 @@
   import { baseURL } from "$lib/helpers";
   import { loggedInUser } from "$lib/store";
   import { get } from "svelte/store";
+  import { authFetch } from "$lib/utils/authFetch";
 
   export let open = false;
   export let applicationId = "";
@@ -45,7 +46,7 @@
     details = null;
     try {
       const user = get(loggedInUser);
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/offline-renewal/application-history/${encodeURIComponent(applicationId)}`,
       );
       const json = await res.json();
@@ -63,7 +64,7 @@
     error = null;
     try {
       const user = get(loggedInUser);
-      const res = await fetch(`${baseURL}/api/files/offline-renewal/decision`, {
+      const res = await authFetch(`${baseURL}/api/files/offline-renewal/decision`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

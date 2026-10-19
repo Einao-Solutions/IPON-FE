@@ -8,6 +8,7 @@
 	import { baseURL, ClericalUpdateTypes } from '$lib/helpers';
 	import { loggedInUser } from '$lib/store';
 	import { mapDesignTypeToString } from '$lib/designutils';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface ApplicantInfo {
 		id: string;
@@ -130,7 +131,7 @@
 		}
 
 		try {
-			const response = await fetch(`${baseURL}/api/files/GetDesignAmendmentCost?fileId=${fileNumber}&fileType=${fileType}&updateType=${updateType}`);
+			const response = await authFetch(`${baseURL}/api/files/GetDesignAmendmentCost?fileId=${fileNumber}&fileType=${fileType}&updateType=${updateType}`);
 			if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 			const result = await response.json();
 

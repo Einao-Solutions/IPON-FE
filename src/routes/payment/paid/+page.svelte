@@ -12,6 +12,7 @@
   import { toast } from "svelte-sonner";
   import { packSiblings } from "d3";
   import { Toaster } from "$lib/components/ui/sonner";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let isLoading = true;
   let isSuccess = false;
@@ -102,7 +103,7 @@
     isCertificate: boolean,
   ): Promise<boolean> {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/ManualUpdate?fileId=${appData.fileId}&applicationId=${appData.appId}&userId=${appData.userId}&userName=${name}&isCertificate=${isCertificate}`,
         { method: "POST" },
       );
@@ -150,7 +151,7 @@
     const fileId = localStorage.getItem("fileId") ?? undefined;
     console.log("RRR:", rrr);
     console.log("File ID:", fileId);
-    const result = await fetch(
+    const result = await authFetch(
       `${baseURL}/api/files/UpdateCertificatePaymentStatus?fileId=${fileId}&rrr=${rrr}`,
       { method: "POST" },
     );
@@ -176,7 +177,7 @@
 
     console.log("Updating opposition payment status...");
     try {
-      const result = await fetch(
+      const result = await authFetch(
         `${baseURL}/api/opposition/UpdateOppositionPayment?paymentId=${paymentId}`,
         { method: "POST" },
       );
@@ -215,7 +216,7 @@
       }
 
       console.log("Updating journal request status...");
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/publication/UpdateRequestStatus`,
         {
           method: "POST",

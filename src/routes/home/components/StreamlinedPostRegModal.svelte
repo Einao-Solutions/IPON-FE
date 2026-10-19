@@ -6,6 +6,7 @@
   import Icon from "@iconify/svelte";
   import * as Dialog from "$lib/components/ui/dialog";
   import { FileTypes } from "$lib/helpers";
+  import { authFetch } from "$lib/utils/authFetch";
   export let isOpen = false;
   export let serviceId: string;
   export let serviceName: string;
@@ -88,7 +89,7 @@
 
     try {
       // Check file type from backend - preserve exact same validation logic
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`,
       );
       const data = await res.json();
@@ -113,7 +114,7 @@
         )
       ) {
         // Get file details to check status
-        const fileRes = await fetch(
+        const fileRes = await authFetch(
           `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`,
         );
         const fileData = await fileRes.json();
@@ -164,7 +165,7 @@
         )
       ) {
         // Get file details to check status
-        const fileRes = await fetch(
+        const fileRes = await authFetch(
           `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`,
         );
         const fileData = await fileRes.json();
@@ -202,7 +203,7 @@
         ].includes(serviceId)
       ) {
         // Get file details to check status
-        const fileRes = await fetch(
+        const fileRes = await authFetch(
           `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchQuery.trim())}`,
         );
         const fileData = await fileRes.json();
@@ -307,7 +308,7 @@
   ): Promise<void> {
     try {
       // Get file details - same API call as postregistration search
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${fileNumber}`,
       );
 
@@ -344,7 +345,7 @@
         //   paymentId: fallbackPaymentId,
         // });
 
-        // const createRes = await fetch(
+        // const createRes = await authFetch(
         //   `${baseURL}/api/files/CreateRestorationApplication?${createParams.toString()}`,
         //   { method: "POST" },
         // );
@@ -376,7 +377,7 @@
         // );
 
         //Paid restoration flow (disabled for now - keep for quick re-enable later).
-        const renewalCost = await fetch(
+        const renewalCost = await authFetch(
           `${baseURL}/api/files/RestorationRequest?fileId=${fileNumber}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
@@ -400,7 +401,7 @@
 
       // Follow exact same renewal logic as postregistration/search
       if (isPatent) {
-        const renewalCost = await fetch(
+        const renewalCost = await authFetch(
           `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Patent}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
@@ -417,7 +418,7 @@
         await goto(`/payment?type=patentRenewal`);
       } else if (isTrademark) {
         // Trademark renewal logic
-        const renewalCost = await fetch(
+        const renewalCost = await authFetch(
           `${baseURL}/api/files/RenewalCost?fileNumber=${fileNumber}&fileType=${FileTypes.Trademark}&userId=${$loggedInUser?.id}`,
         );
         const renewalData = await renewalCost.json();
@@ -440,7 +441,7 @@
         renewalCostUrl.searchParams.set("fileType", String(FileTypes.Design));
         renewalCostUrl.searchParams.set("userId", String($loggedInUser?.id));
         renewalCostUrl.searchParams.set("timestamp", String(Date.now()));
-        const renewalCost = await fetch(
+        const renewalCost = await authFetch(
           renewalCostUrl.toString(),
           {
             cache: "no-store",

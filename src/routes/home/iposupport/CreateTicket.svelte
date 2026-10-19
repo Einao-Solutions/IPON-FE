@@ -16,6 +16,7 @@ ApplicationType,
 TrademarkRecordalType,
 PatentDesignRecordalType
 } from '$lib/helpers';
+import { authFetch } from '$lib/utils/authFetch';
 
 export let onExit: () => void = () => {};
 export let open: boolean = false;
@@ -297,7 +298,7 @@ return false;
 isValidatingFile = true;
 fileValidationMessage = '';
 try {
-const response = await fetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(value)}`);
+const response = await authFetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(value)}`);
 if (!response.ok) throw new Error('lookup failed');
 const result = await response.json();
 const file = Array.isArray(result) ? result[0] : result;
@@ -361,7 +362,7 @@ return;
 isSavingTicket = true;
 let attachmenturl: any = null;
 if (selectedFile) {
-const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify([{
@@ -396,7 +397,7 @@ if (validatedFileInfo) {
 body.fileId = validatedFileInfo.id ?? validatedFileInfo.Id ?? validatedFileInfo.fileId ?? validatedFileInfo.FileId;
 }
 
-const response = await fetch(`${baseURL}/api/tickets/Create`, {
+const response = await authFetch(`${baseURL}/api/tickets/Create`, {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify(body)

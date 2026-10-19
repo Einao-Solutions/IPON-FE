@@ -11,6 +11,7 @@
 	import { loggedInUser } from '$lib/store';
 	import { parseLoggedInUser } from '../../../dataview/datahelpers';
 	import { filesToAttachment } from '$lib/utils/patent';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let fileId = '';
 	let fileType: FileTypes | null = null;
@@ -111,7 +112,7 @@
 				RenewalCertificateAttachments: certAttachments
 			};
 
-			const res = await fetch(`${baseURL}/api/files/offline-renewal/submit`, {
+			const res = await authFetch(`${baseURL}/api/files/offline-renewal/submit`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)

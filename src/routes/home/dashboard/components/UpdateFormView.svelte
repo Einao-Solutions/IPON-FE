@@ -9,6 +9,7 @@
 	import Icon from '@iconify/svelte';
 	import { loggedInUser } from '$lib/store';
 	import { goto } from '$app/navigation';
+	import { authFetch } from '$lib/utils/authFetch';
 let open:boolean = true
 	let fileNumber:string|null=null;
 	export let closed:()=>void;
@@ -26,7 +27,7 @@ async function fetchResult()
 	isSearching=true;
 	// const searchId = '4474';
 	const searchId =  $loggedInUser?.userRoles?.includes(UserRoles.Tech)? '': $loggedInUser?.id;
-	const response=await fetch(`${baseURL}/api/files/search?fileNumber=${fileNumber}&userId=${searchId}`);
+	const response=await authFetch(`${baseURL}/api/files/search?fileNumber=${fileNumber}&userId=${searchId}`);
 	if (response.ok)
 	{
 		const {id, fileStatus } =await response.json();

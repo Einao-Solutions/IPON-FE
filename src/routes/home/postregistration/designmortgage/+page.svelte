@@ -10,6 +10,7 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface DesignMortgageData {
 		mortgageDeeds: File[];
@@ -57,7 +58,7 @@
 	async function setData(fileNumber: string, fileType: string): Promise<void> {
 		isLoading = true;
 		try {
-			const res = await fetch(`${baseURL}/api/files/GetDesignMortgageCost?fileId=${fileNumber}&fileType=${fileType}`);
+			const res = await authFetch(`${baseURL}/api/files/GetDesignMortgageCost?fileId=${fileNumber}&fileType=${fileType}`);
 			if (!res.ok) { error = 'Unable to retrieve cost info.'; return; }
 			const response = await res.json();
 			const data = response.data || response;

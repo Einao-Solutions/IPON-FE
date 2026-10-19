@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { baseURL } from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let checkVisible = false;
 	let messageVisible = false;
@@ -35,7 +36,7 @@
 			const payloadData = sessionStorage.getItem('designAssignmentPayload');
 			if (!payloadData) { submissionError = 'No form data found. Please try again.'; return; }
 			const payload = JSON.parse(payloadData);
-			const response = await fetch(`${baseURL}/api/files/DesignAssignmentApplication`, {
+			const response = await authFetch(`${baseURL}/api/files/DesignAssignmentApplication`, {
 				method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
 			});
 			const result = await response.json();

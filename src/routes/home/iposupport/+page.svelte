@@ -37,6 +37,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import * as Table from '$lib/components/ui/table';
 	import * as Pagination from '$lib/components/ui/pagination';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	// ── Role helpers ──────────────────────────────────────────────────────────────
 	const SUPPORT_STAFF_ROLES = [
@@ -346,7 +347,7 @@
 	}
 
 	async function fetchTicketSummaries(body: Record<string, any>): Promise<any[]> {
-		const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+		const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)
@@ -391,7 +392,7 @@
 	async function fetchSearchTickets(status: number | null = activeStatusFilter): Promise<any[]> {
 		const body = getSearchRequest();
 		if (body === null) return [];
-		const response = await fetch(`${baseURL}/api/tickets/Search`, {
+		const response = await authFetch(`${baseURL}/api/tickets/Search`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)
@@ -460,7 +461,7 @@
 		let body: Record<string, any> = getTicketSummaryBody();
 		if (activeCategoryPillFilter !== null) body.category = activeCategoryPillFilter;
 
-		const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+		const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)
@@ -541,7 +542,7 @@
 
 	// ── Ticket view ───────────────────────────────────────────────────────────────
 	async function loadTicket(id: string) {
-		const response = await fetch(`${baseURL}/api/tickets/${id}`, {
+		const response = await authFetch(`${baseURL}/api/tickets/${id}`, {
 			method: 'GET',
 			headers: { 'Content-Type': 'application/json' }
 		});
@@ -590,7 +591,7 @@
 			onFilter: async (params: Record<string, any>) => {
 				ticketLoading = true;
 				ipoTicketsSummary.set(null);
-const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
+const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
 						body: JSON.stringify({
@@ -623,7 +624,7 @@ const response = await fetch(`${baseURL}/api/tickets/TicketSummaries`, {
 				($ipoTicketsSummary as any)?.[key]?.id;
 			if (id) closeIds.push(id);
 		}
-		const response = await fetch(`${baseURL}/api/tickets/CloseTicket`, {
+		const response = await authFetch(`${baseURL}/api/tickets/CloseTicket`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({

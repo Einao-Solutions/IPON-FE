@@ -49,6 +49,7 @@
   import ApplicationsHistory from "./ApplicationsHistory.svelte";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { comment } from "postcss";
+  import { authFetch } from "$lib/utils/authFetch";
   //   import { aw } from "vitest/dist/chunks/reporters.nr4dxCkA.js";
   let canUpdate: boolean = false;
   let canTreat: boolean = false;
@@ -128,7 +129,7 @@
       fileNumber: fileData?.fileId,
       dates: getDates(),
     };
-    const res = await fetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
+    const res = await authFetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -215,7 +216,7 @@
       }
     }
     const loggeduser = $loggedInUser?.id.toString() ?? "";
-    const res = await fetch(`${baseURL}/api/files/${id}`);
+    const res = await authFetch(`${baseURL}/api/files/${id}`);
     const file = await res.json();
     const userRoles = $loggedInUser?.userRoles ?? [];
     const filingType = file.type;
@@ -316,7 +317,7 @@
   async function getNextIds() {
     const index = $listOfIds.length;
     const _queryBody = $queryBody;
-    const response = await fetch(
+    const response = await authFetch(
       `${baseURL}/api/files/GetListOfIds?index=${index}`,
       {
         method: "POST",
@@ -349,7 +350,7 @@
   async function opposeFile(fileNumber: string, reason: string) {
     console.log("opposing file", fileNumber, reason);
     isSaving = true;
-    const response = await fetch(`${baseURL}/api/opposition/StaffOpposition`, {
+    const response = await authFetch(`${baseURL}/api/opposition/StaffOpposition`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -374,7 +375,7 @@
   }
   async function publishFile(fileNumber: string, reason: string | null) {
     isSaving = true;
-    const response = await fetch(`${baseURL}/api/publication/SavePublication`, {
+    const response = await authFetch(`${baseURL}/api/publication/SavePublication`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

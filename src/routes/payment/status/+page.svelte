@@ -6,6 +6,7 @@
 	import { page } from '$app/stores';
 	import { applicationData, DashStats, loggedInUser } from '$lib/store';
 	import { baseURL, decodeUser } from '$lib/helpers';
+	import { authFetch } from '$lib/utils/authFetch';
 	let code: string;
 	let paymentType: string;
 	let orderID: string;
@@ -46,7 +47,7 @@
 	async function updateStatus() {
 		isStatusUpdating = true;
 		if (paymentType == 'newapplication') {
-			const resp = await fetch(`${baseURL}/api/files/NewApplicationPayment`, {
+			const resp = await authFetch(`${baseURL}/api/files/NewApplicationPayment`, {
 				method: 'POST',
 				body: JSON.stringify({
 					orderID: orderID,
@@ -75,7 +76,7 @@
 			// ackUrl = result.applicationHistory[0].letters.acknowledgement[0];
 		}
 		if (paymentType==='tradecertificate'){
-			const resp = await fetch(`${baseURL}/api/files/CertificateValidate?fileId=${fileId}&rrr=${paymentId}&userId=${$loggedInUser.id}&userName=${$loggedInUser.name}`,{
+			const resp = await authFetch(`${baseURL}/api/files/CertificateValidate?fileId=${fileId}&rrr=${paymentId}&userId=${$loggedInUser.id}&userName=${$loggedInUser.name}`,{
 				method:"POST"
 			})
 			if (resp.ok){
@@ -86,7 +87,7 @@
 			}
 		}
 		if (paymentType === 'renewal' || paymentType === 'batchrenewal' || paymentType === 'dashrenewal') {
-			const resp = await fetch(`${baseURL}/api/files/CreateFileRenewal`, {
+			const resp = await authFetch(`${baseURL}/api/files/CreateFileRenewal`, {
 				method: 'POST',
 				body: JSON.stringify({
 					orderID: orderID,
@@ -132,7 +133,7 @@
 				fileType: parseInt(fileType),
 				simulate: simulate
 			};
-			const resp = await fetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
+			const resp = await authFetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
 				method: 'POST',
 				body: JSON.stringify(body),
 				headers: { 'Content-Type': 'application/json' }
@@ -166,7 +167,7 @@
 				fileId: fileId,
 				simulate: simulate
 			};
-			const data = await fetch(`${baseURL}/api/assignment/PayAssignment`, {
+			const data = await authFetch(`${baseURL}/api/assignment/PayAssignment`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -206,7 +207,7 @@
 				number,
 				simulate:simulate
 			};
-			const data = await fetch(`${baseURL}/api/opposition/payment`, {
+			const data = await authFetch(`${baseURL}/api/opposition/payment`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -242,7 +243,7 @@
 				description,
 				number
 			};
-			const data = await fetch(`${baseURL}/api/opposition/respond`, {
+			const data = await authFetch(`${baseURL}/api/opposition/respond`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -270,7 +271,7 @@
 				description,
 				fileUrl,
 			};
-			const data = await fetch(`${baseURL}/api/opposition/resolution`, {
+			const data = await authFetch(`${baseURL}/api/opposition/resolution`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -283,7 +284,7 @@
 		}
 		if (paymentType==="statussearch") {
 			const requestId = $page.url.searchParams.get('requestId') ?? undefined;
-			await fetch(`${baseURL}/api/files/UpdateStatusRequest?requestId=${requestId}&simulate=${simulate}`, {
+			await authFetch(`${baseURL}/api/files/UpdateStatusRequest?requestId=${requestId}&simulate=${simulate}`, {
 				method: 'POST'
 			})
 			isStatusUpdating = false;
@@ -320,7 +321,7 @@
 			if (attachmentUrl) {
 				body.attachmentUrl = attachmentUrl
 			}
-			const result = await fetch(`${baseURL}/api/payments/SaveOtherPayment`, {
+			const result = await authFetch(`${baseURL}/api/payments/SaveOtherPayment`, {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
 				body: JSON.stringify(body),
