@@ -769,6 +769,8 @@ export enum TicketStates {
   awaitingUser = 0,
   awaitingStaff = 1,
   closed = 2,
+  inProgress = 3,
+  resolved = 4,
 }
 
 export enum TicketCategory {
@@ -830,6 +832,10 @@ export type TicketSummary = {
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
   raisedByRegistryStaff?: boolean;
+  isEscalatedToDev?: boolean;
+  escalatedToDevAt?: string | null;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
   creator: {
     id: string;
     name: string;
@@ -859,6 +865,12 @@ export type TicketInfo = {
   isEscalated?: boolean;
   escalatedFromCategory?: TicketCategory;
   escalatedAt?: string;
+  isEscalatedToDev?: boolean;
+  escalatedToDevAt?: string | null;
+  escalatedToDevById?: string | null;
+  escalatedToDevByName?: string | null;
+  resolvedAt?: string | null;
+  closedAt?: string | null;
   title: string;
   creatorId: string;
   creatorName: string;
