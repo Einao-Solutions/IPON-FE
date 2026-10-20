@@ -17,6 +17,15 @@
 		return undefined;
 	}
 
+	function parseHistoryValue(value: unknown): unknown {
+		if (typeof value !== 'string') return value;
+		try {
+			return JSON.parse(value);
+		} catch {
+			return value;
+		}
+	}
+
 	function readParty(value: unknown): {
 		name: string;
 		id: string;
@@ -25,6 +34,7 @@
 		address: string;
 		state: string;
 	} {
+		value = parseHistoryValue(value);
 		if (!value) {
 			return { name: '-', id: '-', email: '-', phone: '-', address: '-', state: '-' };
 		}
@@ -46,12 +56,32 @@
 		};
 	}
 
-	function readPoaUrl(entry: ApplicationHistoryType): string | null {
-		const nv: any = entry.newValue;
-		if (!nv || typeof nv !== 'object') return null;
+	function readPoaUrls(entry: ApplicationHistoryType): string[] {
+		const nv: any = parseHistoryValue(entry.newValue);
+		if (!nv || typeof nv !== 'object') return [];
 		const poa = pick(nv, 'poa', 'Poa', 'powerOfAttorney', 'PowerOfAttorney');
-		if (!poa) return null;
-		return pick(poa, 'url', 'Url', 'fileUrl', 'FileUrl') ?? null;
+		if (!poa) return [];
+
+		function getUrls(value: unknown, directUrl = false): string[] {
+			if (typeof value === 'string') {
+				if (directUrl || /^(https?:|\/|blob:|data:)/i.test(value)) {
+					return [value];
+				}
+				return [];
+			}
+			if (Array.isArray(value)) {
+				return value.flatMap((item) => getUrls(item, directUrl));
+			}
+			if (!value || typeof value !== 'object') return [];
+
+			const url = pick(value, 'url', 'Url', 'fileUrl', 'FileUrl', 'downloadUrl', 'DownloadUrl');
+			if (url) return getUrls(url, true);
+
+			const nested = pick(value, 'data', 'Data', 'attachments', 'Attachments');
+			return nested ? getUrls(nested) : [];
+		}
+
+		return [...new Set(getUrls(poa))];
 	}
 
 	function formatDate(raw: string | null | undefined) {
@@ -97,7 +127,7 @@
 					{#each ownershipEntries as entry, i (entry.id)}
 						{@const oldParty = readParty(entry.oldValue)}
 						{@const newParty = readParty(entry.newValue)}
-						{@const poaUrl = readPoaUrl(entry)}
+						{@const poaUrls = readPoaUrls(entry)}
 						<div class="rounded-lg border p-4 space-y-3 bg-card">
 							<div class="flex items-center justify-between">
 								<div class="flex items-center gap-2 text-sm font-medium">
@@ -157,17 +187,21 @@
 								</div>
 							</div>
 
-							{#if poaUrl}
+							{#if poaUrls.length > 0}
 								<div class="pt-1">
-									<a
-										href={poaUrl}
-										target="_blank"
-										rel="noopener"
-										class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-									>
-										<Icon icon="lucide:file-text" width="0.9rem" height="0.9rem" />
-										View Power of Attorney
-									</a>
+									<div class="flex flex-wrap gap-x-4 gap-y-2">
+										{#each poaUrls as poaUrl, poaIndex}
+											<a
+												href={poaUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+											>
+												<Icon icon="lucide:file-text" width="0.9rem" height="0.9rem" />
+												{poaUrls.length > 1 ? `View Power of Attorney ${poaIndex + 1}` : 'View Power of Attorney'}
+											</a>
+										{/each}
+									</div>
 								</div>
 							{/if}
 						</div>
