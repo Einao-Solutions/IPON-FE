@@ -13,6 +13,7 @@
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from "$lib/components/ui/dialog"
 	import { goto } from '$app/navigation';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let isSearching:boolean=false;
 let currentView: number = 0;
@@ -61,7 +62,7 @@ async function fetchResult() {
 	// }
 	// if ($loggedInUser?.userRoles.includes(UserRoles.BackOffice) ===false){
 	// }
-	const result=await fetch(`${baseURL}/api/assignment/SearchForFile`, {
+	const result=await authFetch(`${baseURL}/api/assignment/SearchForFile`, {
 		method: "POST",
 		headers: {
 			"Content-Type":"application/json"
@@ -95,7 +96,7 @@ async function renewFile() {
 		return;
 	}
 
-	const response = await fetch(
+	const response = await authFetch(
 		`${baseURL}/api/files/DashboardRenewal?fileId=${searchResponse.id}&userId=${$loggedInUser?.creatorId}&userName=${userName}`
 	);
 

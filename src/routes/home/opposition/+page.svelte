@@ -14,6 +14,7 @@
   import { goto } from "$app/navigation";
   import { page } from "$app/stores";
   import { Toaster } from "$lib/components/ui/sonner";
+  import { authFetch } from "$lib/utils/authFetch";
 
   // ── Main Tab
   type MainView = "applications" | "withdrawal";
@@ -48,7 +49,7 @@
 
   async function loadOppositionStats() {
     const headers = { Authorization: `Bearer ${$loggedInToken}` };
-    const response = await fetch(`${baseURL}/api/opposition/stats`, {
+    const response = await authFetch(`${baseURL}/api/opposition/stats`, {
       headers,
     });
     const stats = await response.json();
@@ -57,7 +58,7 @@
     awaitingOfficeProcess = stats.awaitingOfficeProcess ?? 0;
     abandoned = stats.abandoned ?? 0;
     if (!stats.awaitingOfficeProcess) {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&type=36`,
         { headers },
       );
@@ -145,15 +146,15 @@
     try {
       const headers = { Authorization: `Bearer ${$loggedInToken}` };
       const [r1, r2, r3] = await Promise.all([
-        fetch(
+        authFetch(
           `${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&type=${ApplicationStatuses.AwaitingPayment}`,
           { headers },
         ),
-        fetch(
+        authFetch(
           `${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&type=${ApplicationStatuses.RequestWithdrawal}`,
           { headers },
         ),
-        fetch(
+        authFetch(
           `${baseURL}/api/opposition/loadSummary?quantity=1&skip=0&type=${ApplicationStatuses.Withdrawn}`,
           { headers },
         ),
@@ -180,7 +181,7 @@
     wItems = [];
     try {
       const headers = { Authorization: `Bearer ${$loggedInToken}` };
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/opposition/loadSummary?quantity=100&skip=0&type=${wTabStatusMap[tab]}`,
         { headers },
       );
@@ -201,7 +202,7 @@
     detailLoading = true;
     showDetail = true;
     const headers = { Authorization: `Bearer ${$loggedInToken}` };
-    const res = await fetch(
+    const res = await authFetch(
       `${baseURL}/api/opposition/getOppositionDetail?oppositionId=${item.id}`,
       { headers },
     );
@@ -243,7 +244,7 @@
             UserRoles.SuperAdmin,
           ].includes(r),
         ) ?? $loggedInUser?.userRoles?.[0];
-      const res = await fetch(`${baseURL}/api/opposition/TreatWithdrawal`, {
+      const res = await authFetch(`${baseURL}/api/opposition/TreatWithdrawal`, {
         method: "POST",
         headers,
         body: JSON.stringify({

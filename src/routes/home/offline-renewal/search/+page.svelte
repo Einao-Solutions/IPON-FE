@@ -6,6 +6,7 @@
 	import * as Table from '$lib/components/ui/table/index';
 	import { Button } from '$lib/components/ui/button/index';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let isLoading = true;
 	let error: string | null = null;
@@ -17,7 +18,7 @@
 			const stored = sessionStorage.getItem('offlineRenewalSearchParams');
 			searchParams = stored ? JSON.parse(stored) : null;
 			if (!searchParams) { error = 'Search parameters are missing'; return; }
-			const res = await fetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchParams.query)}`);
+			const res = await authFetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(searchParams.query)}`);
 			if (!res.ok) { error = 'Failed to fetch file details'; return; }
 			const data = await res.json();
 			if (!data || data.length === 0) { error = 'No file found for the provided number'; return; }

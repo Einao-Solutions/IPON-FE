@@ -1,6 +1,7 @@
 import { get } from 'svelte/store';
 import { baseURL } from '$lib/helpers';
 import { loggedInToken } from '$lib/store';
+import { SESSION_EXPIRED_MESSAGE } from './authFetch';
 
 export type ConfirmOutcome = 'confirmed' | 'pending' | 'unauthorized' | 'forbidden' | 'error';
 
@@ -10,7 +11,7 @@ export interface ConfirmResult {
 }
 
 export const PAYMENT_PENDING_MESSAGE = 'Payment not confirmed yet';
-export const PAYMENT_SESSION_MESSAGE = 'Session expired, please log in again';
+export const PAYMENT_SESSION_MESSAGE = SESSION_EXPIRED_MESSAGE;
 export const PAYMENT_FORBIDDEN_MESSAGE = 'You are not allowed to confirm this payment';
 export const PAYMENT_GENERIC_MESSAGE = 'Could not confirm your payment, please try again';
 

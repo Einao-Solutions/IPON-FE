@@ -40,6 +40,7 @@
 	import { mapStatusStringToStatus } from '$lib/designutils';
 	import { Item } from '$lib/components/ui/accordion';
 	import DropdownMenuItem from '$lib/components/ui/dropdown-menu/dropdown-menu-item.svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 	// import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
 	// Variables
@@ -147,7 +148,7 @@
 		showAlertDialog = true;
 
 		try {
-			const response = await fetch(`${baseURL}/api/payments/check?id=${id}`);
+			const response = await authFetch(`${baseURL}/api/payments/check?id=${id}`);
 			if (!response.ok) throw new Error('Payment check failed');
 
 			const result = await response.json();
@@ -169,7 +170,7 @@
 
 	async function updateCertPaymentStatus(paymentId: string, fileId: string) {
 		try {
-			const result = await fetch(
+			const result = await authFetch(
 				`${baseURL}/api/files/UpdateCertificatePaymentStatus?fileId=${fileId}&rrr=${paymentId}`,
 				{ method: 'POST' }
 			);
@@ -182,7 +183,7 @@
 	async function updateManual() {
 		remita_confirmation = 'checking';
 		try {
-			const result = await fetch(
+			const result = await authFetch(
 				`${baseURL}/api/files/ManualUpdate?fileId=${fileData.id}&applicationId=${manualUpdate?.id}&userId=${$loggedInUser?.id}&userName=${$loggedInUser?.name}&isCertificate=${isCertificate}`,
 				{ method: 'POST' }
 			);
@@ -272,7 +273,7 @@
 					return;
 			}
 
-			const response = await fetch(
+			const response = await authFetch(
 				`${baseURL}${endpoint}?fileId=${fileData.fileId}&appId=${application.id}`
 			);
 
@@ -299,7 +300,7 @@
 				reason: reason
 			};
 
-			const res = await fetch(`${baseURL}${endpoint}`, {
+			const res = await authFetch(`${baseURL}${endpoint}`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -324,7 +325,7 @@
 				reason: reason
 			};
 
-			const res = await fetch(`${baseURL}/api/files/DenyRecordal`, {
+			const res = await authFetch(`${baseURL}/api/files/DenyRecordal`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -405,7 +406,7 @@
 				userName: $loggedInUser.name
 			};
 
-			const response = await fetch(`${baseURL}/api/files/AdminUpdateApplication`, {
+			const response = await authFetch(`${baseURL}/api/files/AdminUpdateApplication`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
@@ -466,7 +467,7 @@
 
 		getDocLoading = true;
 		try {
-			const response = await fetch(
+			const response = await authFetch(
 				`${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`
 			);
 			if (!response.ok) {
@@ -497,7 +498,7 @@
 		publicationFileId = fileId;
 		showPublicationDialog = true;
 		try {
-			const res = await fetch(`${baseURL}/api/files/publication-details/${encodeURIComponent(fileId)}`);
+			const res = await authFetch(`${baseURL}/api/files/publication-details/${encodeURIComponent(fileId)}`);
 			if (!res.ok) throw new Error('Could not fetch details');
 			publicationDetails = await res.json();
 		} catch (e) {
@@ -511,7 +512,7 @@
 	async function handlePublicationDecision(approve: boolean) {
 		publicationSubmitting = true;
 		try {
-			const res = await fetch(`${baseURL}/api/files/PublicationStatusDecision`, {
+			const res = await authFetch(`${baseURL}/api/files/PublicationStatusDecision`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

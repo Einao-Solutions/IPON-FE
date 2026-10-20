@@ -6,6 +6,7 @@
   import { loggedInUser } from "$lib/store";
   import { page } from "$app/stores";
   import Icon from "@iconify/svelte";
+  import { authFetch } from "$lib/utils/authFetch";
   export let isOpen = false;
 
   interface SearchParams {
@@ -80,7 +81,7 @@
     error = null;
     try {
       // Call backend to check file type
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`,
       );
       const result = await response.json();

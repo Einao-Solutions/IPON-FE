@@ -12,6 +12,7 @@
   import * as Card from "$lib/components/ui/card";
   import * as Table from "$lib/components/ui/table";
   import { baseURL } from "$lib/helpers";
+  import { authFetch } from "$lib/utils/authFetch";
   export let open = false;
   export let applications = [];
   export let fileNumber = "";
@@ -63,7 +64,7 @@
       if (!fileNumber && storedFileNumber) {
         fileNumber = storedFileNumber;
       }
-      const response = await fetch(`${baseURL}/api/files/UpdatePaymentId`, {
+      const response = await authFetch(`${baseURL}/api/files/UpdatePaymentId`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -6,6 +6,7 @@
   import Icon from "@iconify/svelte";
   import TradePubsTable from "./TradePubsTable.svelte";
   import { baseURL } from "$lib/helpers";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let searchTitle: string | undefined = undefined;
   let isLoading: boolean = false;
@@ -25,7 +26,7 @@
       url = `${baseURL}/api/publication/GetTrademarkPublication?index=${index}&quantity=10`;
     }
 
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });

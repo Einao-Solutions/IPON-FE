@@ -9,6 +9,7 @@
   import Icon from "@iconify/svelte";
   import { onMount } from "svelte";
   import { toast } from "svelte-sonner";
+  import { authFetch } from "$lib/utils/authFetch";
 
   const VOLUME_OPTIONS = Array.from({ length: 100 }, (_, i) => i + 1);
   const NUMBER_OPTIONS = Array.from({ length: 52 }, (_, i) => i + 1);
@@ -73,7 +74,7 @@
   async function loadStats() {
     isLoadingStats = true;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/publication/GetTrademarkPublication?index=0&quantity=1`,
         {
           method: "GET",
@@ -189,7 +190,7 @@
     isLoadingJournals = true;
     journalsError = null;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/publication/GetJournals?index=${index}&quantity=${JOURNAL_PAGE_SIZE}`,
         {
           method: "GET",

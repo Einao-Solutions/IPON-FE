@@ -1,6 +1,7 @@
 import { baseURL } from '$lib/helpers';
 import { loggedInToken } from '$lib/store';
 import { get } from 'svelte/store';
+import { authFetch } from '$lib/utils/authFetch';
 
 export interface UnitInfo {
     unitId: number;
@@ -134,7 +135,7 @@ class StatisticsApiService {
     async getUnits(registryType: string): Promise<UnitInfo[]> {
         try {
             const mappedType = this.mapRegistryType(registryType);
-            const response = await fetch(
+            const response = await authFetch(
                 `${baseURL}/api/units?registryType=${encodeURIComponent(mappedType)}`,
                 {
                     headers: this.getAuthHeaders()
@@ -172,7 +173,7 @@ class StatisticsApiService {
             params.set('registryType', mappedType);
             params.set('unitId', unitId.toString());
 
-            const response = await fetch(
+            const response = await authFetch(
                 `${baseURL}/api/statistics/performance/staff?${params.toString()}`,
                 {
                     headers: this.getAuthHeaders()
@@ -200,7 +201,7 @@ class StatisticsApiService {
         if (periods.length < 2 || periods.length > 5) {
             throw new Error('Please select between 2 and 5 periods to compare');
         }
-        const response = await fetch(`${baseURL}/api/statistics/performance/units/compare`, {
+        const response = await authFetch(`${baseURL}/api/statistics/performance/units/compare`, {
             method: 'POST',
             headers: this.getAuthHeaders(),
             body: JSON.stringify({
@@ -227,7 +228,7 @@ class StatisticsApiService {
             const params = this.buildPeriodParams(periodType, periodValue, year, range);
             params.set('registryType', mappedType);
 
-            const response = await fetch(
+            const response = await authFetch(
                 `${baseURL}/api/statistics/performance/units?${params.toString()}`,
                 {
                     headers: this.getAuthHeaders()

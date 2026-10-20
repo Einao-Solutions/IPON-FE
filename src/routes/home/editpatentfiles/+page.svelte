@@ -5,6 +5,7 @@
   import { toast } from 'svelte-french-toast';
   import { Button } from '$lib/components/ui/button';
   import { loggedInUser } from '$lib/store';
+  import { authFetch } from '$lib/utils/authFetch';
 
   let fileId = '';
   let isLoading = false;
@@ -62,7 +63,7 @@
     notFoundMessage = '';
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/GetAllFileDetails?fileNumber=${encodeURIComponent(fileId)}`
       );
       if (!res.ok) throw new Error('Filing not found');
@@ -133,7 +134,7 @@ const saveChanges = async () => {
      }
 
 
-    const res = await fetch(`${baseURL}/api/files/updatepatentfiles`, {
+    const res = await authFetch(`${baseURL}/api/files/updatepatentfiles`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

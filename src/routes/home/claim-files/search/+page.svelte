@@ -23,6 +23,7 @@
   } from "$lib/helpers";
   import { toast } from "svelte-sonner";
   import { any } from "zod";
+  import { authFetch } from "$lib/utils/authFetch";
   $: fileData = $applicationData;
 
   interface SearchResult {
@@ -108,7 +109,7 @@
       //console.log($loggedInUser.name);
       if (searchParams) {
         // Claim-file searches use the standard file-number lookup.
-        const response = await fetch(
+        const response = await authFetch(
           `${baseURL}/api/migration/GetMarkInfo?regNumber=${encodeURIComponent(searchParams.query.trim())}`,
         );
 
@@ -227,7 +228,7 @@
     isVerifyingPayment = true;
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/migration/GetPaymentInfo?paymentId=${paymentId}`,
       );
 
@@ -315,7 +316,7 @@
 
   async function fetchApplicantDetails(applicantId: string) {
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/migration/GetApplicantInfo?applicantId=${applicantId}`,
       );
       if (response.ok) {
@@ -436,7 +437,7 @@
         return;
       }
 
-      const response = await fetch(`${baseURL}/api/migration/ClaimRequest`, {
+      const response = await authFetch(`${baseURL}/api/migration/ClaimRequest`, {
         method: "POST",
         body: formData, // Using FormData instead of JSON for file uploads
       });

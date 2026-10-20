@@ -20,6 +20,7 @@
     queryBody,
     loggedInToken,
   } from "$lib/store";
+  import { authFetch } from "$lib/utils/authFetch";
 
   export let dataList: any[] | null = null;
   let count: number = 0;
@@ -103,7 +104,7 @@
 
     queryBody.set(JSON.stringify(body));
 
-    const result = await fetch(fileUrl, {
+    const result = await authFetch(fileUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

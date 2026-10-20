@@ -6,6 +6,7 @@
     import { Toaster, toast } from 'svelte-sonner';
     import Icon from '@iconify/svelte';
     import { baseURL } from '$lib/helpers';
+    import { authFetch } from '$lib/utils/authFetch';
 
     let showNewSearch = true;
     let search_file_id = '';
@@ -27,7 +28,7 @@
         isSearching = true;
         try {
             const fileType = detectFileType(search_file_id);
-            const res = await fetch(`${baseURL}/api/files/GetStatusSearchCost?fileId=${encodeURIComponent(search_file_id)}&fileType=${fileType}`);
+            const res = await authFetch(`${baseURL}/api/files/GetStatusSearchCost?fileId=${encodeURIComponent(search_file_id)}&fileType=${fileType}`);
             if (!res.ok) throw new Error('Failed to get cost');
             const data = await res.json();
             const cost = data?.amount;

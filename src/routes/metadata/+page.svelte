@@ -10,6 +10,7 @@
 	import RecursiveItem from './RecursiveItem.svelte';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from 'svelte-sonner';
+	import { authFetch } from '$lib/utils/authFetch';
 	let fileId:string|null="";
 	let applicationId:string|null="";
 	let requestType:string|null=""
@@ -39,7 +40,7 @@
 			}
 		if ($metaDataInfo===null){
 			// fetch
-			const response=await fetch(`${baseURL}/api/files/getApplicationData?fileId=${fileId}&applicationId=${applicationId}&requestType=${requestType}`);
+			const response=await authFetch(`${baseURL}/api/files/getApplicationData?fileId=${fileId}&applicationId=${applicationId}&requestType=${requestType}`);
 			if (response.ok){
 				data=await response.json()
 			}

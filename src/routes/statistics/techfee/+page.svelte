@@ -24,6 +24,7 @@
     ArcElement,
   } from "chart.js";
   import ChartDataLabels from "chartjs-plugin-datalabels";
+  import { authFetch } from "$lib/utils/authFetch";
 
   Chart.register(
     BarController,
@@ -402,7 +403,7 @@
         RegistryType: registryType,
         Periods: [buildCurrentPeriod()],
       };
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/statistics/finance/techfee/compare`,
         {
           method: "POST",
@@ -436,7 +437,7 @@
         Periods: comparisonPeriods.map(({ _id, displayLabel, ...p }) => p),
       };
       // ✅ ONLY DIFFERENCE — hits techfee endpoint
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/statistics/finance/techfee/compare`,
         {
           method: "POST",

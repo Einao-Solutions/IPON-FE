@@ -5,6 +5,7 @@
     import { baseURL } from '$lib/helpers';
     import { loggedInUser } from '$lib/store';
     import Icon from '@iconify/svelte';
+    import { authFetch } from '$lib/utils/authFetch';
 
     let isOpen = false;
     let searchQuery = '';
@@ -35,7 +36,7 @@
         isLoading = true;
         error = null;
         try {
-            const response = await fetch(`${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`);
+            const response = await authFetch(`${baseURL}/api/files/files/${encodeURIComponent(searchQuery.trim())}/type`);
             const result = await response.json();
             if (!response.ok) {
                 error = result.message || 'File not found.';

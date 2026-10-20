@@ -4,6 +4,7 @@
   import { baseURL, ApplicationStatuses, PatentTypes } from '$lib/helpers';
   import { DesignTypes } from '$lib/designutils';
   import { filesToAttachment } from "$lib/utils/patent";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let fileId: string = "";
   let loading = false;
@@ -53,7 +54,7 @@ async function searchFile() {
   errorModal = null;
   fileData = null;
   try {
-    const res = await fetch(`${baseURL}/api/files/${encodeURIComponent(fileId)}/getattachments`);
+    const res = await authFetch(`${baseURL}/api/files/${encodeURIComponent(fileId)}/getattachments`);
     if (!res.ok) {
       const err = await res.json();
       errorModal = err.message || "File not found.";
@@ -139,7 +140,7 @@ async function searchFile() {
       return;
     }
     try {
-      const res = await fetch(`${baseURL}/api/files/${encodeURIComponent(fileData.fileId)}/updateattachments`, {
+      const res = await authFetch(`${baseURL}/api/files/${encodeURIComponent(fileData.fileId)}/updateattachments`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ attachments: formattedAttachments })

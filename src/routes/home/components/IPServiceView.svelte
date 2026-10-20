@@ -18,6 +18,7 @@
   import { mapDateToString, fileTypeToString } from "./dashboardutils";
   import { getLetterName } from "../../dataview/datahelpers";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
+  import { authFetch } from "$lib/utils/authFetch";
 
   export let ipType: "trademark" | "patent" | "design";
   export let onBack: () => void;
@@ -117,7 +118,7 @@
     try {
       console.log("🔍 Searching for file:", payCertFileNumber);
 
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`,
       );
 
@@ -157,7 +158,7 @@
     console.log("💳 Processing certificate payment for file:", fileNumber);
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/CertificatePayment?id=${fileNumber}&userId=${$loggedInUser?.id}`,
       );
 
@@ -213,7 +214,7 @@
     }
     verifyPaymentLoading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/payments/check?id=${verifyRRR.trim()}`,
       );
       if (!response.ok) throw new Error("Verification failed");
@@ -244,7 +245,7 @@
         changeAgentFileNumber,
       );
 
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(changeAgentFileNumber.trim())}`,
       );
 
@@ -310,7 +311,7 @@
     }
     getDocLoading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`,
       );
       if (!response.ok) {
@@ -352,7 +353,7 @@
     appealsResults = undefined;
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(appealsFileNumber.trim())}`,
       );
 
@@ -478,7 +479,7 @@
         formData.append(`Docs`, file);
       });
 
-      const response = await fetch(`${baseURL}/api/files/appeal-module`, {
+      const response = await authFetch(`${baseURL}/api/files/appeal-module`, {
         method: "POST",
         body: formData,
       });

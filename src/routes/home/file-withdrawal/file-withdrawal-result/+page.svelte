@@ -5,6 +5,7 @@ import { baseURL } from '$lib/helpers';
 import { fade, fly } from 'svelte/transition';
 import { loggedInUser } from '$lib/store';
 import { get } from 'svelte/store';
+import { authFetch } from '$lib/utils/authFetch';
 
 let isLoading = true;
 let error: string | null = null;
@@ -56,7 +57,7 @@ onMount(async () => {
             requestForm.append('SupportingDocuments', file);
         });
 
-        const response = await fetch(`${baseURL}/api/files/WithdrawalRequest`, {
+        const response = await authFetch(`${baseURL}/api/files/WithdrawalRequest`, {
             method: 'POST',
             body: requestForm,
         });

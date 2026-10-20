@@ -5,6 +5,7 @@
 	import { goto } from '$app/navigation';
 	import { baseURL } from '$lib/helpers';
 	import { toast } from 'svelte-sonner';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let checkVisible = false;
 	let messageVisible = false;
@@ -34,7 +35,7 @@
 			const payloadData = sessionStorage.getItem('designMortgagePayload');
 			if (!payloadData) { submissionError = 'No form data found. Please try again.'; return; }
 			const payload = JSON.parse(payloadData);
-			const response = await fetch(`${baseURL}/api/files/DesignMortgageApplication`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+			const response = await authFetch(`${baseURL}/api/files/DesignMortgageApplication`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
 			const result = await response.json();
 			if (!response.ok) { submissionError = result.message || 'Submission failed.'; toast.error(`Submission failed: ${submissionError}`); return; }
 			submissionSuccess = true;

@@ -16,6 +16,7 @@
 	import { appattachmentsData, loggedInUser } from '$lib/store';
 	import { onMount } from 'svelte';
 	import { PatentAttachments } from '$lib/designutils';
+	import { authFetch } from '$lib/utils/authFetch';
 	export let onExit: () => void;
 	export let open: boolean;
 	let openFiles: boolean = false;
@@ -83,7 +84,7 @@
 		isSavingTicket = true;
 		let attachmenturl: null | string = null;
 		if (selectedFile) {
-			const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+			const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -100,7 +101,7 @@
 			});
 			attachmenturl = await result.json();
 		}
-		const response = await fetch(`${baseURL}/api/tickets/Create`, {
+		const response = await authFetch(`${baseURL}/api/tickets/Create`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({

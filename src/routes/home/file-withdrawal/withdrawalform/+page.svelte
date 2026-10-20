@@ -4,6 +4,7 @@ import { goto } from '$app/navigation';
 import { onMount } from 'svelte';
 import { baseURL } from '$lib/helpers';
 import { filesToAttachment } from "$lib/utils/patent";
+import { authFetch } from '$lib/utils/authFetch';
 
 let fileNumber = '';
 let fileType = '';
@@ -67,7 +68,7 @@ async function fetchWithdrawalCost(fileNumber: string, normalizedFileType: strin
 
     for (const candidate of candidates) {
         try {
-            const response = await fetch(
+            const response = await authFetch(
                 `${baseURL}/api/files/GetFileWithdrawalCost?fileId=${encodeURIComponent(fileNumber)}&fileType=${encodeURIComponent(candidate)}`,
                 { method: 'GET' }
             );

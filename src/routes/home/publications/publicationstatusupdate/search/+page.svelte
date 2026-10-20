@@ -5,6 +5,7 @@
     import { baseURL, ApplicationStatuses, FileTypes } from '$lib/helpers';
     import * as Table from '$lib/components/ui/table/index';
     import { Button } from '$lib/components/ui/button/index';
+    import { authFetch } from '$lib/utils/authFetch';
 
     let isLoading = true;
     let error: string | null = null;
@@ -21,7 +22,7 @@
                 error = 'Search parameters are missing';
                 return;
             }
-            const response = await fetch(
+            const response = await authFetch(
                 `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${searchParams.query}`
             );
             if (!response.ok) {

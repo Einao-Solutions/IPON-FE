@@ -7,6 +7,7 @@
     import { baseURL, normalizeImageUrl } from '$lib/helpers';
     import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
     import * as Dialog from '$lib/components/ui/dialog/index';
+    import { authFetch } from '$lib/utils/authFetch';
 
     let fileId: string | null = null;
     let fileData: any = null;
@@ -25,7 +26,7 @@
         return;
     }
     try {
-        const res = await fetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(fileId)}`);
+        const res = await authFetch(`${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(fileId)}`);
         if (!res.ok) throw new Error('Could not fetch file details.');
         const data = await res.json();
         if (!data || !data.length) {
@@ -35,7 +36,7 @@
 
             // Only update history after result is displayed
             if (rrr) {
-                fetch(`${baseURL}/api/files/AddStatusSearchHistory?fileId=${encodeURIComponent(fileId)}&rrr=${encodeURIComponent(rrr)}`, {
+                authFetch(`${baseURL}/api/files/AddStatusSearchHistory?fileId=${encodeURIComponent(fileId)}&rrr=${encodeURIComponent(rrr)}`, {
                     method: 'POST'
                 });
             }

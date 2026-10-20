@@ -21,6 +21,7 @@
     type ChartOptions,
   } from "chart.js";
   import ChartDataLabels from "chartjs-plugin-datalabels";
+  import { authFetch } from "$lib/utils/authFetch";
 
   Chart.register(
     BarController,
@@ -456,7 +457,7 @@
         RegistryType: registryType,
         Periods: [buildCurrentPeriod()],
       };
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/statistics/finance/compare`,
         {
           method: "POST",
@@ -500,7 +501,7 @@
         RegistryType: registryType,
         Periods: comparisonPeriods.map(({ _id, displayLabel, ...p }) => p),
       };
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/statistics/finance/compare`,
         {
           method: "POST",

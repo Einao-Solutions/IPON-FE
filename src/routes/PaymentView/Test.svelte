@@ -5,6 +5,7 @@ import { Button } from '$lib/components/ui/button';
 import { appattachmentsData, applicationData, newApplicationType } from '$lib/store';
 import { goto } from '$app/navigation';
 import { onMount } from 'svelte';
+import { authFetch } from '$lib/utils/authFetch';
 
 onMount(async()=>{
 	console.log("Testing.....")
@@ -34,7 +35,7 @@ async function test2()
 	// 			files[$appattachmentsData[i].name] =   files[fileIndex];}
 	// 	}
 	// }
-	const result=await fetch(`${baseURL}/api/files/createNew`, {method:'POST',
+	const result=await authFetch(`${baseURL}/api/files/createNew`, {method:'POST',
 	headers: {
 	'Content-Type': 'application/json'
 },

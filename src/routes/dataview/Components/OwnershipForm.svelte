@@ -17,6 +17,7 @@
 	import { tick, onMount } from 'svelte';
 	import { applicationData, loggedInUser } from '$lib/store';
 	import { browser } from '$app/environment';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	let openCitySelection = writable<boolean>(false);
 
@@ -70,7 +71,7 @@
 			if (name_id.includes('@')) {
 				params.set('email', name_id);
 			}
-			const response = await fetch(`${baseURL}/api/users/SearchNameId?${params.toString()}`);
+			const response = await authFetch(`${baseURL}/api/users/SearchNameId?${params.toString()}`);
 			if (response.ok) {
 				matchesList = await response.json();
 				currentView = matchesList.length > 0 ? 'result' : 'no_results';
@@ -118,7 +119,7 @@
 			};
 
 			// Fetch old owner name
-			const name_search_ = await fetch(
+			const name_search_ = await authFetch(
 				`${baseURL}/api/users/SearchNameId?nameId=${requiredData.oldId}`
 			);
 			
@@ -137,7 +138,7 @@
 			}
 
 			// Reassign file
-			const response = await fetch(`${baseURL}/api/files/ReAssign`, {
+			const response = await authFetch(`${baseURL}/api/files/ReAssign`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'

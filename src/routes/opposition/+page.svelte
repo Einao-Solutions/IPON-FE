@@ -12,6 +12,7 @@
   import { page } from "$app/stores";
   import { loggedInUser } from "$lib/store";
   import { loggedInToken } from "$lib/store";
+  import { authFetch } from "$lib/utils/authFetch";
   interface FileInfo {
     fileNumber: string;
     fileTitle: string;
@@ -255,7 +256,7 @@
     csIsLoading = true;
     toast.loading("Fetching File Information", { description: "Please hold on...", duration: 1000 });
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/opposition/CounterStatementSearch?fileNumber=${fileNumber.trim()}`,
         { method: "GET", headers: { "Content-Type": "application/json" } }
       );
@@ -363,7 +364,7 @@
       duration: 1000,
     });
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/opposition/OppositionSearch?fileNumber=${query}`,
         {
           method: "GET",
@@ -475,7 +476,7 @@
     localStorage.setItem("oppositionData", JSON.stringify(serializableData));
 
     try {
-      const response = await fetch(`${baseURL}/api/opposition/NewOpposition`, {
+      const response = await authFetch(`${baseURL}/api/opposition/NewOpposition`, {
         method: "POST",
         body: submitData,
       });
@@ -546,7 +547,7 @@
     csIsLoading = true;
     toast.loading("Fetching File Information", { description: "Please hold on...", duration: 1000 });
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/opposition/CounterStatementSearch?fileNumber=${csSearchInput.trim()}`,
         { method: "GET", headers: { "Content-Type": "application/json" } }
       );
@@ -606,7 +607,7 @@
         UserId: $loggedInUser?.id,
         CounterStatement: csStatementText.substring(0, 50),
       });
-      const response = await fetch(`${baseURL}/api/opposition/NewCounterStatement`, {
+      const response = await authFetch(`${baseURL}/api/opposition/NewCounterStatement`, {
         method: "POST",
         body: submitData,
       });
@@ -864,7 +865,7 @@
         Role: sdRole,
         Comment: sdComment.substring(0, 50),
       });
-      const response = await fetch(`${baseURL}/api/opposition/NewStatutoryDeclaration`, {
+      const response = await authFetch(`${baseURL}/api/opposition/NewStatutoryDeclaration`, {
         method: "POST",
         body: submitData,
       });

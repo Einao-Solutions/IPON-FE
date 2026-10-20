@@ -5,6 +5,7 @@
 	import { loggedInUser } from '$lib/store';
 	import { page } from '$app/stores';
 	import Icon from '@iconify/svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	export let isOpen = false;
 
@@ -80,7 +81,7 @@
 		error = null;
 
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/files/${encodeURIComponent(searchQuery)}/type`
 			);
 			const data = await res.json();

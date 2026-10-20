@@ -8,6 +8,7 @@
   import { Button } from "$lib/components/ui/button/index";
   import { tradeMarkClassesMap } from "$lib/constants";
   import { loggedInUser } from "$lib/store";
+  import { authFetch } from "$lib/utils/authFetch";
 
   interface NewData {
     name: string;
@@ -52,7 +53,7 @@
   async function setData(fileNumber: string, fileType: string): Promise<void> {
     isLoading = true;
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/GetChangeDataRecordalCost?fileId=${fileNumber}&fileType=${fileType}&changeType=${changeType}`,
       );
       if (!res.ok) {
@@ -131,7 +132,7 @@
         "userId",
         $loggedInUser?.id ?? $loggedInUser?.creatorId ?? "",
       );
-      const resp = await fetch(`${baseURL}/api/files/ChangeDataRecordal`, {
+      const resp = await authFetch(`${baseURL}/api/files/ChangeDataRecordal`, {
         method: "POST",
         body: form,
       });

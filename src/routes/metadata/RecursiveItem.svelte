@@ -7,6 +7,7 @@
 	import { applicationData } from '$lib/store.js';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from "$lib/components/ui/dialog";
+	import { authFetch } from '$lib/utils/authFetch';
 	export let fileId;
 	export let applicationId;
 	export let requestType
@@ -24,7 +25,7 @@
 		if(modifiedData===undefined){
 			return;
 		}
-		const response=await fetch(`${baseURL}/api/files/updateJsonData?applicationId=${applicationId}&fileId=${fileId}&requestType=${requestType}`,{
+		const response=await authFetch(`${baseURL}/api/files/updateJsonData?applicationId=${applicationId}&fileId=${fileId}&requestType=${requestType}`,{
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'

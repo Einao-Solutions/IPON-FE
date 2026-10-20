@@ -32,6 +32,7 @@
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu"
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { toast } from 'svelte-sonner';
+	import { authFetch } from '$lib/utils/authFetch';
 	export let dataList: any[] | null = [];
 	let tableHeaderRows: any, tablePageRows: any, _tableAttrs: any, _tableBodyAttrs: any;
 	let _hasNextPage: any, _hasPreviousPage: any, _pageIndex: any;
@@ -251,7 +252,7 @@
     }
     // return;
     queryBody.set(JSON.stringify(body));
-    const result = await fetch(fileUrl, {
+    const result = await authFetch(fileUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -388,7 +389,7 @@
     if (newStatusReason === "") return;
     else {
       isStatusUpdating = true;
-      const response = await fetch(`${baseURL}/api/files/updatemanystatus`, {
+      const response = await authFetch(`${baseURL}/api/files/updatemanystatus`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

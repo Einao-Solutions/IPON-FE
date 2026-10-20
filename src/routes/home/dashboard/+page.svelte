@@ -44,6 +44,7 @@
   import { getLetterName } from "../../dataview/datahelpers";
   import { toast } from "svelte-sonner";
   import { User } from "lucide-svelte";
+  import { authFetch } from "$lib/utils/authFetch";
   let isModalOpen = false;
   function toggleModal(): void {
     isModalOpen = !isModalOpen;
@@ -193,7 +194,7 @@
   async function searchPayCert() {
     payCertLoading = true;
 
-    const response = await fetch(
+    const response = await authFetch(
       `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${payCertFileNumber}`,
     );
     if (response.ok) {
@@ -214,7 +215,7 @@
     // const history = result?.applicationHistory;
     const fileNumber = result?.fileId;
 
-    let response = await fetch(
+    let response = await authFetch(
       `${baseURL}/api/files/CertificatePayment?id=${fileNumber}&userId=${$loggedInUser?.id}`,
     );
     if (response.ok) {
@@ -290,7 +291,7 @@
     showAlertDialog = true;
 
     try {
-      const response = await fetch(`${baseURL}/api/payments/check?id=${id}`);
+      const response = await authFetch(`${baseURL}/api/payments/check?id=${id}`);
       if (!response.ok) throw new Error("Payment check failed");
 
       const result = await response.json();
@@ -341,7 +342,7 @@
     }
     verifyPaymentLoading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/payments/check?id=${verifyRRR.trim()}`,
       );
       if (!response.ok) throw new Error("Verification failed");
@@ -378,7 +379,7 @@
     }
     getDocLoading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/letters/GetDocuments?fileId=${encodeURIComponent(getDocFileNumber.trim())}&paymentId=${encodeURIComponent(getDocPaymentId.trim())}`,
       );
       if (!response.ok) {
@@ -417,7 +418,7 @@
     }
     changeAgentLoading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(changeAgentFileNumber.trim())}`,
       );
       if (!response.ok) {
@@ -488,7 +489,7 @@
     appealsResults = undefined;
 
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${encodeURIComponent(appealsFileNumber.trim())}`,
       );
 
@@ -587,7 +588,7 @@
         formData.append(`Docs`, file);
       });
 
-      const response = await fetch(`${baseURL}/api/files/appeal-module`, {
+      const response = await authFetch(`${baseURL}/api/files/appeal-module`, {
         method: "POST",
         body: formData,
       });

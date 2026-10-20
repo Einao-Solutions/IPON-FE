@@ -7,6 +7,7 @@
 	import Icon from '@iconify/svelte';
 	import { Button } from '$lib/components/ui/button/index';
 	import { countriesMap } from '$lib/constants';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface MergerData {
 		name: string;
@@ -50,7 +51,7 @@
 		isLoading = true;
 
 		try {
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetMergerCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {
@@ -132,7 +133,7 @@
 			form.append('document', mergerData.document as File);
 			console.log(form);
 
-			const resp = await fetch(`${baseURL}/api/files/MergerApplication`, {
+			const resp = await authFetch(`${baseURL}/api/files/MergerApplication`, {
 				method: 'POST',
 				body: form
 			});

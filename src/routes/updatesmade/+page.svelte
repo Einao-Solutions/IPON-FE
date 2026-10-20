@@ -34,6 +34,7 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { mapFieldToString } from "../application/apphelper";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let requiredData: any = {};
   let revisions = writable<RevisionsType[]>([]);
@@ -86,7 +87,7 @@
   }
   async function getRevisionAmount(field: string): Promise<string> {
     console.log("required data", requiredData);
-    const result = await fetch(`${baseURL}/api/files/RevisionCost`, {
+    const result = await authFetch(`${baseURL}/api/files/RevisionCost`, {
       headers: { "Content-Type": "application/json" },
       method: "POST",
       body: JSON.stringify({
@@ -144,7 +145,7 @@
         fieldToUpdate: selectedRevision?.field,
         newValue: JSON.stringify(selectedRevision?.newTitle),
       };
-      const res = await fetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
+      const res = await authFetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -245,7 +246,7 @@
       // 	fileType: requiredData.fileData.type
       // };
       // isApplicationSaving = true;
-      // const res = await fetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
+      // const res = await authFetch(`${baseURL}/api/files/UpdateApplicationStatus`, {
       // 	method: 'POST',
       // 	headers: { 'Content-Type': 'application/json' },
       // 	body: JSON.stringify(body)
@@ -309,7 +310,7 @@
       user: $loggedInUser!.name,
       userId: $loggedInUser!.id.toString(),
     };
-    const result = await fetch(`${baseURL}/api/files/SaveDataUpdate`, {
+    const result = await authFetch(`${baseURL}/api/files/SaveDataUpdate`, {
       method: "post",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...body }),
@@ -378,7 +379,7 @@
       user: $loggedInUser!.name,
       userId: $loggedInUser!.id.toString(),
     };
-    const result = await fetch(`${baseURL}/api/files/freeupdates`, {
+    const result = await authFetch(`${baseURL}/api/files/freeupdates`, {
       method: "POST",
       body: JSON.stringify(updateInfo),
       headers: { "Content-Type": "application/json" },

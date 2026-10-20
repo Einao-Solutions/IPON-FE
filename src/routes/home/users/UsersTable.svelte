@@ -20,6 +20,7 @@
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import { loggedInUser } from "$lib/store";
+  import { authFetch } from "$lib/utils/authFetch";
 
   interface UserTableRow {
     sn: number;
@@ -50,7 +51,7 @@
 
   async function viewUser(id: string) {
     loadingUserId = id;
-    const result = await fetch(`${baseURL}/api/users/GetUserById?id=${id}`);
+    const result = await authFetch(`${baseURL}/api/users/GetUserById?id=${id}`);
     selectedUser = await result.json();
     updatedRoles.set([...(selectedUser?.userRoles ?? [])]);
     loadingUserId = null;
@@ -70,7 +71,7 @@
       toast.info("No role changes to save", { position: "top-right" });
       return;
     }
-    const response = await fetch(`${baseURL}/api/users/UpdateUserRoles`, {
+    const response = await authFetch(`${baseURL}/api/users/UpdateUserRoles`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -146,7 +147,7 @@
     if (searchName) {
       body.name = searchName;
     }
-    const result = await fetch(`${baseURL}/api/users/GetAllUsers`, {
+    const result = await authFetch(`${baseURL}/api/users/GetAllUsers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),

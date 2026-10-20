@@ -5,6 +5,7 @@
   import { toast } from "svelte-sonner";
   import { goto } from "$app/navigation";
   import { Toaster } from "$lib/components/ui/sonner";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let fileNumber = "";
   let results: any[] = [];
@@ -16,7 +17,7 @@
   async function searchFileNumber() {
     loading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/files/GetFileByFileNumber?fileNumber=${fileNumber}`
       );
       results = await response.json();
@@ -46,7 +47,7 @@
     formData.append("attachmentName", "representation");
     loading = true;
     try {
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/migration/AdminUploadAttach`,
         {
           method: "POST",

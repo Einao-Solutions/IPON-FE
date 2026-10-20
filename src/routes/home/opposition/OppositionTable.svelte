@@ -46,6 +46,7 @@
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { mapDateToString } from "../components/dashboardutils";
   import { Textarea } from "$lib/components/ui/textarea";
+  import { authFetch } from "$lib/utils/authFetch";
   export let dataList: [] | null = [];
   let tableHeaderRows, tablePageRows, _tableAttrs, _tableBodyAttrs;
   let _hasNextPage, _hasPreviousPage, _pageIndex;
@@ -174,7 +175,7 @@
     ) {
       url = url + `?userId=${$loggedInUser.id}`;
     }
-    const response = await fetch(url);
+    const response = await authFetch(url);
     const __data = await response.json();
     const _data = __data.data;
     for (let i = 0; i < _data.length; i++) {
@@ -210,7 +211,7 @@
       data: arrayBufferToBase64(await toByteArray(requiredFile)),
     });
     // push and get return;
-    const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+    const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -229,7 +230,7 @@
       description = "Withdrawal of opposition regarding -" + selectedTitle + "-";
     }
 
-    const response = await fetch(`${baseURL}/api/opposition/generate`, {
+    const response = await authFetch(`${baseURL}/api/opposition/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -284,7 +285,7 @@
         url += `?oppositionId=${oppositionID}`;
       }
 
-      const response = await fetch(url);
+      const response = await authFetch(url);
 
       if (!response.ok) {
         throw new Error("Failed to fetch opposition");
@@ -404,7 +405,7 @@
 
     try {
       isLoading = true;
-      const response = await fetch(
+      const response = await authFetch(
         `${baseURL}/api/opposition/csSearchFile?fileNumber=${fileNumber}`,
       );
 
@@ -435,14 +436,14 @@
     const oppositionID = row.find((x) => x.id === "id").value;
     showRaiseOpposition = true;
     oppositionHistory = await (
-      await fetch(`${baseURL}/api/opposition/getHistory?id=${oppositionID}`)
+      await authFetch(`${baseURL}/api/opposition/getHistory?id=${oppositionID}`)
     ).json();
     currentView = 12;
   }
 
   async function notifyApplicant(oppositionId: string) {
     isLoading = true;
-    var res = await fetch(
+    var res = await authFetch(
       `${baseURL}/api/opposition/notify?oppId=${oppositionId}`,
       {
         method: "POST",
@@ -468,7 +469,7 @@
   let isResolving = false;
   async function resolveOpposition() {
     isResolving = true;
-    var res = await fetch(`${baseURL}/api/opposition/resolve`, {
+    var res = await authFetch(`${baseURL}/api/opposition/resolve`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -1342,7 +1343,7 @@
           <Button
             on:click={async () => {
               isResolving = true;
-              const res = await fetch(`${baseURL}/api/opposition/resolve`, {
+              const res = await authFetch(`${baseURL}/api/opposition/resolve`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
@@ -1404,7 +1405,7 @@
           <Button
             on:click={async () => {
               isResolving = true;
-              const res = await fetch(`${baseURL}/api/opposition/resolve`, {
+              const res = await authFetch(`${baseURL}/api/opposition/resolve`, {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify({
@@ -1676,7 +1677,7 @@
                           on:click={async () => {
                             const fileNumber = row.cells.find((c) => c.id === "fileId")?.render();
                             try {
-                              const res = await fetch(`${baseURL}/api/files/GetFileIdByFileNumber?fileNumber=${encodeURIComponent(fileNumber)}`);
+                              const res = await authFetch(`${baseURL}/api/files/GetFileIdByFileNumber?fileNumber=${encodeURIComponent(fileNumber)}`);
                               if (res.ok) {
                                 const data = await res.json();
                                 if (data?.id) {

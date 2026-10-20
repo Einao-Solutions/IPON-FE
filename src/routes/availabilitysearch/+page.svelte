@@ -12,6 +12,7 @@
 	import { parseLoggedInUser } from '../dataview/datahelpers';
 	import { goto } from '$app/navigation';
 	import AppStatusTag from '$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface SearchResult {
 		titleOfTradeMark: string;
@@ -64,7 +65,7 @@
 					classNo: searchParams.classId?.toString() ?? '',
 					type: searchParams.fileType
 				});
-				const response = await fetch(
+				const response = await authFetch(
 					`${baseURL}/api/files/GetAvailabilitySearch?${params.toString()}`
 				);
 

@@ -43,6 +43,7 @@
   import { CanUpdateApplication } from "./datahelpers";
   import OppositionHistory from "./OppositionHistory.svelte";
   import { ApplicationLetters } from "$lib/helpers";
+  import { authFetch } from "$lib/utils/authFetch";
   $: fileData = $applicationData;
   let historyComponent: any = null;
   let historyData: Record<string, any> = {};
@@ -225,7 +226,7 @@
   let missingInfoUpdate = false;
   async function updateForThis() {
     missingInfoUpdate = true;
-    const response = await fetch(
+    const response = await authFetch(
       `${baseURL}/api/files/UpdateCorThis?id=${fileData?.id}&userId=${$loggedInUser?.creatorId}`,
       {
         method: "POST",
@@ -250,7 +251,7 @@
   }
   async function updateForAll() {
     missingInfoUpdate = true;
-    const response = await fetch(
+    const response = await authFetch(
       `${baseURL}/api/files/UpdateCorAll?id=${fileData?.id}&userId=${$loggedInUser?.creatorId}&creatorAccount=${fileData?.creatorAccount}`,
       {
         method: "POST",
@@ -285,7 +286,7 @@
       return;
     }
     if (history0.certificatePaymentId !== null) {
-      let response = await fetch(
+      let response = await authFetch(
         `${baseURL}/api/files/CertificatePayment?id=${fileData?.fileId}`,
       );
       if (response.ok) {
@@ -301,7 +302,7 @@
       const rrr = history0.certificatePaymentId;
       let amount = 0;
       if (rrr) {
-        const response = await fetch(`${baseURL}/api/payments/check?id=${rrr}`);
+        const response = await authFetch(`${baseURL}/api/payments/check?id=${rrr}`);
         if (response.ok) {
           const result = await response.json();
           amount = result?.amount;
@@ -365,7 +366,7 @@
     getDocLoading = true;
 
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/letters/GetDocuments?fileId=${getDocFileNumber}&paymentId=${getDocPaymentId}`,
       );
       if (!res.ok) throw new Error("Failed to fetch documents");

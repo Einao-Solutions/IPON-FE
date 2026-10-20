@@ -7,6 +7,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import Test from './Test.svelte';
+	import { authFetch } from '$lib/utils/authFetch';
 	async function test2()
 	{
 		let data:PatentData;
@@ -31,7 +32,7 @@
 		// 			files[$appattachmentsData[i].name] =   files[fileIndex];}
 		// 	}
 		// }
-		const result=await fetch(`${baseURL}/api/files/createNew`, {method:'POST',
+		const result=await authFetch(`${baseURL}/api/files/createNew`, {method:'POST',
 			headers: {
 				'Content-Type': 'application/json'
 			},

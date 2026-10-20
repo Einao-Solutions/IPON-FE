@@ -7,6 +7,7 @@
     import { baseURL } from '$lib/helpers';
     import { loggedInUser } from '$lib/store';
     import Icon from '@iconify/svelte';
+    import { authFetch } from '$lib/utils/authFetch';
     export let isOpen = false;
 
     interface SearchParams {
@@ -76,7 +77,7 @@
         error = null;
 
         try {
-            const res = await fetch(`${baseURL}/api/files/files/${encodeURIComponent(searchQuery)}/type`);
+            const res = await authFetch(`${baseURL}/api/files/files/${encodeURIComponent(searchQuery)}/type`);
             const data = await res.json();
 
             if (!res.ok) {

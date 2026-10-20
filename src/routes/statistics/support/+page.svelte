@@ -17,6 +17,7 @@
     DoughnutController,
     ArcElement
   } from "chart.js";
+  import { authFetch } from "$lib/utils/authFetch";
 
   Chart.register(BarController, BarElement, CategoryScale, LinearScale, Tooltip, Legend, DoughnutController, ArcElement);
 
@@ -183,7 +184,7 @@
     loading = true; error = null; results = null;
     try {
       const dto = { Scope: selectedScope, Periods: [buildCurrentPeriod()] };
-      const response = await fetch(`${baseURL}/api/statistics/support/performance/compare`, {
+      const response = await authFetch(`${baseURL}/api/statistics/support/performance/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
@@ -206,7 +207,7 @@
         Scope: selectedScope,
         Periods: comparisonPeriods.map(({ _id, displayLabel, ...p }) => p)
       };
-      const response = await fetch(`${baseURL}/api/statistics/support/performance/compare`, {
+      const response = await authFetch(`${baseURL}/api/statistics/support/performance/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)

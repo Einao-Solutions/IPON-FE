@@ -7,6 +7,7 @@
   import Icon from "@iconify/svelte";
   import UsersTable from "./UsersTable.svelte";
   import { baseURL } from "$lib/helpers";
+  import { authFetch } from "$lib/utils/authFetch";
 
   export let data: PageData | null;
   let showAddUser: boolean = false;
@@ -35,7 +36,7 @@
   let name = "";
   let usersdata: any = {};
   async function loadData() {
-    const response = await fetch(`${baseURL}/api/users/GetAllUsers`, {
+    const response = await authFetch(`${baseURL}/api/users/GetAllUsers`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -54,7 +55,7 @@
     isLoading = false;
   }
   async function getAllUsers() {
-    const response = await fetch(`${baseURL}/api/users/GetAllUsers`, {
+    const response = await authFetch(`${baseURL}/api/users/GetAllUsers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ skip: 0, take: 10 }),

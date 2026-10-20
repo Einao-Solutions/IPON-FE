@@ -32,6 +32,7 @@
   import { mapAccountTypeToString } from "$lib/helpers";
   import type { User } from "lucide-svelte";
   import { clearAuthCookies } from "$lib/auth-session";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let selectedSignature: File | undefined = undefined;
   let selectedSignatureUrl: undefined | string = undefined;
@@ -138,7 +139,7 @@
   }
   async function saveSignature() {
     isSignatureSaving = true;
-    const result = await fetch(`${baseURL}/api/users/updateSignature`, {
+    const result = await authFetch(`${baseURL}/api/users/updateSignature`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -196,7 +197,7 @@
   async function saveNewCorrespondence() {
     isCorrLoading = true;
     if (validateCorrespondence()) {
-      const response = await fetch(`${baseURL}/api/users/UpdateCorr`, {
+      const response = await authFetch(`${baseURL}/api/users/UpdateCorr`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

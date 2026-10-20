@@ -6,6 +6,7 @@
   import { baseURL, FormApplicationTypes, FilingType, ApplicationStatuses, type PatentData, type Inventor,
      type Applicant } from '$lib/helpers';
   import { applicationData, appattachmentsData } from '$lib/store';
+  import { authFetch } from '$lib/utils/authFetch';
 
   //let error = '';
   let sectionErrors: Record<string, string> = {};
@@ -201,7 +202,7 @@ async function submitForm() {
 			creatorAccount: pp?.creatorId
 		};
     
-		const result = await fetch(`${baseURL}/api/files/createNew`, {
+		const result = await authFetch(`${baseURL}/api/files/createNew`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'

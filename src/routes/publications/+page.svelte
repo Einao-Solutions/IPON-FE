@@ -6,6 +6,7 @@
   import TradePubsTable from "../home/trademarkpubs/TradePubsTable.svelte";
   import { baseURL } from "$lib/helpers";
   import cldLogo from "$lib/assets/cld.png";
+  import { authFetch } from "$lib/utils/authFetch";
 
   let searchTitle: string | undefined = undefined;
   let isLoading: boolean = false;
@@ -25,7 +26,7 @@
       url = `${baseURL}/api/publication/GetTrademarkPublication?index=${index}&quantity=10`;
     }
 
-    const response = await fetch(url, {
+    const response = await authFetch(url, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });

@@ -9,6 +9,7 @@
 	import { Button } from '$lib/components/ui/button/index';
 	import { toast } from 'svelte-sonner';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import { authFetch } from '$lib/utils/authFetch';
 
 	interface PatentMortgageData {
 		mortgageDeeds: File[];
@@ -76,7 +77,7 @@
 		isLoading = true;
 		try {
 			// Get cost information for patent mortgage
-			const res = await fetch(
+			const res = await authFetch(
 				`${baseURL}/api/files/GetPatentMortgageCost?fileId=${fileNumber}&fileType=${fileType}`
 			);
 			if (!res.ok) {

@@ -1,6 +1,7 @@
 import { baseURL, ApplicationStatuses } from "$lib/helpers";
 import { get } from "svelte/store";
 import type { Writable } from "svelte/store";
+import { authFetch } from "$lib/utils/authFetch";
 
 /* ======================================================
    TYPES (INLINE)
@@ -130,11 +131,11 @@ async function newapplication(ctx: PaymentContext): Promise<void> {
 
   let response;
   if (appData.type === 0 && appData.fileOrigin === "Local") {
-    response = await fetch(
+    response = await authFetch(
       `${baseURL}/api/files/GetNonConventionalCost?fileId=${appData.fileId}&fileType=${appData.type}`,
     );
   } else {
-    response = await fetch(`${baseURL}/api/files/GetRRRCost?rrr=${rrr}`);
+    response = await authFetch(`${baseURL}/api/files/GetRRRCost?rrr=${rrr}`);
   }
 
   if (!response.ok) throw new Error("Failed to fetch application cost");
@@ -179,7 +180,7 @@ async function update(ctx: PaymentContext): Promise<void> {
   const changeType = ctx.page.url.searchParams.get("patentChangeType") ?? "";
   const user = get(ctx.loggedInUser);
 
-  const res = await fetch(`${baseURL}/api/files/updatecost`, {
+  const res = await authFetch(`${baseURL}/api/files/updatecost`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -376,7 +377,7 @@ async function tradecertificate(ctx: PaymentContext): Promise<void> {
   const rrr = params.get("rrr");
   const data = localStorage.getItem("formData");
   const parsed = data ? JSON.parse(data) : null;
-  const fileNumber = localStorage.getItem("fileId");
+  const fileNumber = localStorage.getItem("fileId"); 
 
   if (!cost || !rrr) throw new Error("Missing payment data");
 

@@ -9,6 +9,7 @@
   import { parseDate } from "@internationalized/date";
   import { toast } from "svelte-sonner";
   import { GetCountryImageLink } from "$lib/helpers";
+  import { authFetch } from "$lib/utils/authFetch";
 
   type PeriodType = "month" | "quarter" | "year" | "date-range" | "year-range";
 
@@ -139,7 +140,7 @@
     loading = true; error = null; results = null;
     try {
       const dto = { registryType, periods: [buildCurrentPeriod()] };
-      const response = await fetch(`${baseURL}/api/statistics/operational/compare`, {
+      const response = await authFetch(`${baseURL}/api/statistics/operational/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)
@@ -158,7 +159,7 @@
     loading = true; error = null; results = null;
     try {
       const dto = { registryType, periods: comparisonPeriods.map(({ _id, displayLabel, ...p }) => p) };
-      const response = await fetch(`${baseURL}/api/statistics/operational/compare`, {
+      const response = await authFetch(`${baseURL}/api/statistics/operational/compare`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(dto)

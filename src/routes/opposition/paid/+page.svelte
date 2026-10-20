@@ -10,6 +10,7 @@
 	import ministry from '$lib/assets/ministry.png';
 	import { packSiblings } from 'd3';
 	import cldLogo from '$lib/assets/cld.png';
+	import { authFetch } from '$lib/utils/authFetch';
 	let checkVisible = false;
 	let messageVisible = false;
 	let subMessageVisible = false;
@@ -56,7 +57,7 @@
 		}
 
 		console.log('Updating opposition payment status...');
-		const result = await fetch(
+		const result = await authFetch(
 			`${baseURL}/api/opposition/UpdateOppositionPayment?paymentId=${paymentId}`,
 			{ method: 'POST' }
 		);

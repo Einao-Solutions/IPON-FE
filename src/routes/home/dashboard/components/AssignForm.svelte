@@ -18,6 +18,7 @@
 	import dayjs from 'dayjs';
 	import { isValidPhoneNumber } from 'libphonenumber-js';
 	import * as valid from "validator"
+	import { authFetch } from '$lib/utils/authFetch';
 	let open: boolean = true;
 	export let requiredData:{
 		fileId:string
@@ -145,7 +146,7 @@
 				data: arrayBufferToBase64(await toByteArray(deedOfAggreement))
 			})
 			// push and get return;
-			const result = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+			const result = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -166,7 +167,7 @@
 				contentType: authorizationLetter.type,
 				data: arrayBufferToBase64(await toByteArray(authorizationLetter))
 			});
-			const resultAuth = await fetch(`${baseURL}/api/files/uploadAttachment`, {
+			const resultAuth = await authFetch(`${baseURL}/api/files/uploadAttachment`, {
 					method: 'POST',
 					headers: {
 						'Content-Type': 'application/json'
@@ -199,7 +200,7 @@
 				authorizationLetterUrl,
 			fileTitle: requiredData.fileTitle,
 		};
-		var data=await  fetch(`${baseURL}/api/assignment/generate`, {
+		var data=await  authFetch(`${baseURL}/api/assignment/generate`, {
 			method:'POST',
 			body: JSON.stringify(body),
 			headers:{ 'Content-Type':'application/json' } })

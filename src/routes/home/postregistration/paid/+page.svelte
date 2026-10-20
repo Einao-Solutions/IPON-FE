@@ -12,6 +12,7 @@
   import { toast } from "svelte-sonner";
   import { packSiblings } from "d3";
   import { get } from "svelte/store";
+  import { authFetch } from "$lib/utils/authFetch";
   let checkVisible = false;
   let messageVisible = false;
   let subMessageVisible = false;
@@ -94,7 +95,7 @@
     const rrr = $page.url.searchParams.get("rrr") ?? undefined;
     const fileId = $page.url.searchParams.get("fileId") ?? undefined;
 
-    const result = await fetch(
+    const result = await authFetch(
       `${baseURL}/api/files/RenewalApplication?fileId=${fileId}&rrr=${rrr}`,
       {
         method: "POST",
@@ -129,7 +130,7 @@
 
     console.log("parsed: ", parsed);
 
-    const result = await fetch(
+    const result = await authFetch(
       `${baseURL}/api/files/UpdateRecordalStatus?fileId=${parsed.FileId}&rrr=${parsed.rrr}`,
       { method: "POST" },
     );
@@ -148,7 +149,7 @@
     isCertificate: boolean,
   ): Promise<boolean> {
     try {
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/ManualUpdate?fileId=${appData.FileId}&applicationId=${applicationId}&userId=${appData.userId}&userName=${name}&isCertificate=${isCertificate}`,
         { method: "POST" },
       );
@@ -219,7 +220,7 @@
         paymentId,
       });
 
-      const createRes = await fetch(
+      const createRes = await authFetch(
         `${baseURL}/api/files/CreateRestorationApplication?${createParams.toString()}`,
         { method: "POST" },
       );
@@ -263,7 +264,7 @@
       if (restorationUserId) params.set("userId", restorationUserId);
       if (restorationUserName) params.set("userName", restorationUserName);
 
-      const res = await fetch(
+      const res = await authFetch(
         `${baseURL}/api/files/ManualUpdate?${params.toString()}`,
         {
           method: "POST",
