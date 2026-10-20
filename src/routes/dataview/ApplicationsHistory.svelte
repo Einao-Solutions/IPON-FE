@@ -4245,7 +4245,7 @@
                   {/if}
 
                   <!-- Recall Application (for all types) -->
-                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar].some( (r) => $loggedInUser.userRoles.includes(r), )}
+                  {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkRegistrar, UserRoles.ActingTrademarkRegistrar, UserRoles.PatentDesignRegistrar, UserRoles.TrademarkExaminer].some( (r) => $loggedInUser.userRoles.includes(r), )}
                     <DropdownMenu.Item
                       on:click={() => changeStatus(application)}
                     >
