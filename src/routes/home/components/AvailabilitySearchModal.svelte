@@ -4,6 +4,7 @@
 	import { baseURL } from '$lib/helpers';
 	import { loggedInToken, loggedInUser } from '$lib/store';
 	import { savePendingAvailabilitySearch } from '$lib/utils/availabilitySearchPayment';
+	import { authFetch } from '$lib/utils/authFetch';
 	import Icon from '@iconify/svelte';
 	
 	export let isOpen = false;
@@ -116,10 +117,15 @@
 	let response: any = null;
 	let applicantName: string | null = null;
 	let applicantEmail: string | null = null;
+	let searchRequestController: AbortController | null = null;
 	const dispatch = createEventDispatcher();
 
 	// Close modal function
 	function closeModal(): void {
+		searchRequestController?.abort();
+		searchRequestController = null;
+		isLoading = false;
+		error = null;
 		dispatch('close');
 		isOpen = false;
 	}
@@ -132,8 +138,26 @@
 		}
 	}
 
+	function waitBeforeRetry(delayMs: number, signal: AbortSignal): Promise<void> {
+		return new Promise((resolve) => {
+			if (signal.aborted) {
+				resolve();
+				return;
+			}
+			let timeout: ReturnType<typeof setTimeout>;
+			const finish = () => {
+				clearTimeout(timeout);
+				signal.removeEventListener('abort', finish);
+				resolve();
+			};
+			timeout = setTimeout(finish, delayMs);
+			signal.addEventListener('abort', finish, { once: true });
+		});
+	}
+
 	// Handle search submission
 	async function handleSearch(): Promise<void> {
+		if (isLoading) return;
 		if (!searchQuery) {
 			error = 'Please enter a search term';
 			return;
@@ -154,6 +178,9 @@
 			}
 			return;
 		}
+		const controller = new AbortController();
+		searchRequestController = controller;
+
 		try {
 			isLoading = true;
 			error = null;
@@ -183,43 +210,76 @@
 					classNo: selectedClass?.toString() ?? '',
 					fileType: selectedfileType
 				});
-				const res = await fetch(
-					`${baseURL}/api/files/AvailabilitySearchCost?${params.toString()}`,
-					{
-						headers: {
+				let res: Response;
+				let retryDelayMs = 1_000;
+				while (true) {
+					try {
+						res = await authFetch(
+							`${baseURL}/api/files/AvailabilitySearchCost?${params.toString()}`,
+							{
+								signal: controller.signal,
+								skipSessionExpiryRedirect: true,
+								headers: {
 							Authorization: `Bearer ${$loggedInToken ?? ''}`
-						}
+								}
+							}
+						);
+					} catch (err) {
+						if (controller.signal.aborted || !(err instanceof TypeError)) throw err;
+						await waitBeforeRetry(retryDelayMs, controller.signal);
+						retryDelayMs = Math.min(retryDelayMs * 2, 15_000);
+						if (controller.signal.aborted) return;
+						continue;
 					}
-				);
+					if (![502, 503, 504].includes(res.status)) break;
+					await res.body?.cancel();
+					await waitBeforeRetry(retryDelayMs, controller.signal);
+					retryDelayMs = Math.min(retryDelayMs * 2, 15_000);
+					if (controller.signal.aborted) return;
+				}
 
 				if (!res.ok) {
-					throw new Error(
-						res.status === 401
-							? 'Your session is missing or expired. Please sign in again.'
-							: `Availability search request failed (${res.status} ${res.statusText}).`
-					);
+					if (res.status === 499) return;
+					const errorBody = await res.json().catch(() => null);
+					const message =
+						typeof errorBody?.message === 'string' && errorBody.message.trim()
+							? errorBody.message
+							: `Availability search request failed (${res.status} ${res.statusText}).`;
+					throw new Error(message);
 				}
 
 				response = await res.json();
-				if (!response?.rrr || response?.cost == null) {
+				if (
+					typeof response?.rrr !== 'string' ||
+					!response.rrr.trim() ||
+					response?.cost == null ||
+					response.cost === ''
+				) {
 					throw new Error('The server did not return all required payment details.');
 				}
 				cost = response.cost;
-				paymentId = response.rrr;
+				paymentId = response.rrr.trim();
+				const appId = response.AppId ?? response.appId ?? response.id ?? null;
 				// Persist the RRR so returning from Remita, a refresh or a closed tab can still confirm it
-				savePendingAvailabilitySearch(response.rrr, response.appId ?? response.id ?? null);
+				savePendingAvailabilitySearch(paymentId, appId);
 				// Redirect to payment page
-				 await goto(`/payment/?type=availabilitysearch&rrr=${paymentId}&amount=${cost}`);
-
-				// await goto(`/availabilitysearch`);
+				await goto(
+					`/payment/?type=availabilitysearch&rrr=${encodeURIComponent(paymentId)}&amount=${encodeURIComponent(String(cost))}`
+				);
 			} catch (err) {
-				error = err instanceof Error ? err.message : 'Availability search request failed.';
+				if (!controller.signal.aborted) {
+					error = err instanceof Error ? err.message : 'Availability search request failed.';
+				}
 			}
 		} catch (err) {
-			const catchError = err as Error;
-			error = catchError.message || 'An error occurred during search';
+			if (!controller.signal.aborted) {
+				error = err instanceof Error ? err.message : 'Availability search request failed.';
+			}
 		} finally {
-			isLoading = false;
+			if (searchRequestController === controller) {
+				searchRequestController = null;
+				isLoading = false;
+			}
 		}
 	}
 
@@ -365,7 +425,7 @@
 								></path>
 							</svg>
 						</span>
-						Searching...
+						Generating payment reference...
 					{:else}
 						Search
 					{/if}

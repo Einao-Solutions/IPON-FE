@@ -23,6 +23,7 @@
   import { FileType } from "lucide-svelte";
   import { authFetch } from "$lib/utils/authFetch";
   let fileId = "";
+  let availabilitySearchReferenceNumber: string | null = null;
   let isLoading = false;
   let showForm = false;
   let filing: any = null;
@@ -603,81 +604,183 @@
   // };
 
   const fetchFiling = async () => {
-    if (!fileId.trim()) return;
+    const searchValue = fileId.trim();
+    if (!searchValue) return;
     isLoading = true;
     showForm = false;
+    filing = null;
+    availabilitySearchReferenceNumber = null;
     notFoundMessage = "";
 
     try {
-      const res = await authFetch(
-        `${baseURL}/api/files/GetAllFileDetails?fileNumber=${encodeURIComponent(fileId)}`
-      );
-      if (!res.ok) throw new Error("Filing not found");
+      if (/^AVS-/i.test(searchValue)) {
+        const res = await authFetch(
+          `${baseURL}/api/files/GetAllFileDetails?referenceNumber=${encodeURIComponent(searchValue)}`,
+          { skipSessionExpiryRedirect: true }
+        );
 
-      const data = await res.json();
-      // console.log('RAW DATA:', data);
+        if (res.status === 400) {
+          throw new Error("Invalid reference number format (expected AVS-XXXXXXXXXX)");
+        }
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("Super Admin access required");
+        }
+        if (res.status === 404) {
+          throw new Error("Availability Search record not found");
+        }
+        if (!res.ok) {
+          throw new Error(`Availability Search lookup failed (${res.status})`);
+        }
 
-      // ✅ Fix: Assign properly whether array or single object
-      filing = Array.isArray(data) ? data[0] : data;
-      if (!filing) throw new Error("No filing data found");
+        filing = await res.json();
+        availabilitySearchReferenceNumber = filing.referenceNumber;
+      } else {
+        const res = await authFetch(
+          `${baseURL}/api/files/GetAllFileDetails?fileNumber=${encodeURIComponent(searchValue)}`
+        );
+        if (!res.ok) throw new Error("Filing not found");
+
+        const data = await res.json();
+        filing = Array.isArray(data) ? data[0] : data;
+        if (!filing) throw new Error("No filing data found");
+      }
 
       filing = ensureArrays(filing); // <-- Normalize arrays here
       showForm = true;
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "An unknown error occurred";
-      notFoundMessage = "No file found for this file number.";
+      notFoundMessage =
+        err instanceof Error
+          ? err.message
+          : "Unable to search file information. Please try again.";
     } finally {
       isLoading = false;
     }
   };
   let editingId: string | null = null;
   let draft: any = {};
+  let originalDraft: any = {};
 
   const startEdit = (hist: any) => {
     editingId = hist.id;
-    draft = { ...hist };
+    draft = {
+      ...hist,
+      ...(availabilitySearchReferenceNumber && hist.applicationDate
+        ? { applicationDate: String(hist.applicationDate).slice(0, 10) }
+        : {}),
+    };
+    originalDraft = { ...hist };
   };
 
   const cancelEdit = () => {
     editingId = null;
     draft = {};
+    originalDraft = {};
   };
 
   const saveEdit = async () => {
-    const body = {
-      fileNumber: filing.fileId,
-      applicationId: draft.id,
-      applicationDate: draft.applicationDate
-        ? new Date(draft.applicationDate)
-        : null,
-      applicationType: draft.applicationType,
-      currentStatus: draft.currentStatus,
-      paymentId: draft.paymentId ?? null,
-      certificatePaymentId: draft.certificatePaymentId ?? null,
-    };
-    const res = await fetch(`${baseURL}/api/admin/ApplicationHistory`, {
-      method: "PATCH",
+    const isAvailabilitySearch = Boolean(availabilitySearchReferenceNumber);
+    let body: Record<string, unknown>;
+    if (isAvailabilitySearch) {
+      body = {
+        referenceNumber: availabilitySearchReferenceNumber,
+        applicationId: draft.id,
+      };
+      const originalDate = originalDraft.applicationDate
+        ? String(originalDraft.applicationDate).slice(0, 10)
+        : "";
+      if (draft.applicationDate !== originalDate) {
+        body.applicationDate = draft.applicationDate
+          ? new Date(draft.applicationDate).toISOString()
+          : null;
+      }
+      if (draft.currentStatus !== originalDraft.currentStatus) {
+        body.currentStatus = draft.currentStatus;
+      }
+      if ((draft.paymentId ?? "") !== (originalDraft.paymentId ?? "")) {
+        body.paymentId = draft.paymentId ?? "";
+      }
+      if (
+        (draft.certificatePaymentId ?? "") !==
+        (originalDraft.certificatePaymentId ?? "")
+      ) {
+        body.certificatePaymentId = draft.certificatePaymentId ?? "";
+      }
+      if (Object.keys(body).length === 2) {
+        toast.success("No changes to save", { position: "top-right" });
+        cancelEdit();
+        return;
+      }
+    } else {
+      body = {
+        fileNumber: filing.fileId,
+        applicationId: draft.id,
+        applicationDate: draft.applicationDate
+          ? new Date(draft.applicationDate)
+          : null,
+        applicationType: draft.applicationType,
+        currentStatus: draft.currentStatus,
+        paymentId: draft.paymentId ?? null,
+        certificatePaymentId: draft.certificatePaymentId ?? null,
+      };
+    }
+    try {
+      const res = await authFetch(`${baseURL}/api/admin/ApplicationHistory`, {
+        method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${$loggedInToken}`,
       },
-      body: JSON.stringify(body),
-    });
-    if (res.ok) {
-      const idx = filing.applicationHistory.findIndex(
-        (x: any) => x.id === draft.id
+        body: JSON.stringify(body),
+        skipSessionExpiryRedirect: isAvailabilitySearch,
+      });
+      if (res.ok) {
+        let updatedEntry = draft;
+        if (isAvailabilitySearch) {
+          const result = await res.json();
+          if (result?.success !== true || !result.data) {
+            throw new Error(
+              result?.message || "The updated record was not returned."
+            );
+          }
+          updatedEntry = { ...draft, ...result.data };
+        }
+        filing.applicationHistory = filing.applicationHistory.map((entry: any) =>
+          entry.id === draft.id ? updatedEntry : entry
+        );
+        cancelEdit();
+        toast.success("Application history updated", {
+          position: "top-right",
+        });
+      } else {
+        const responseText = await res.text();
+        let responseMessage = responseText;
+        try {
+          const responseBody = JSON.parse(responseText);
+          responseMessage =
+            responseBody.message ?? responseBody.error ?? responseText;
+        } catch {
+          responseMessage = responseText;
+        }
+        const message =
+          res.status === 401 || res.status === 403
+            ? "Super Admin access required"
+            : res.status === 404 && isAvailabilitySearch
+              ? "Availability Search record not found"
+              : responseMessage ||
+                `Failed to update application history (${res.status})`;
+        console.error("Update failed", responseText);
+        toast.error(message, {
+          position: "top-right",
+        });
+      }
+    } catch (err) {
+      console.error("Update failed", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Failed to update application history",
+        { position: "top-right" }
       );
-      if (idx >= 0) filing.applicationHistory[idx] = { ...draft };
-      cancelEdit();
-      toast.success("Application history updated", {
-        position: "top-right",
-      });
-    } else {
-      console.error("Update failed", await res.text());
-      toast.error("Failed to update application history", {
-        position: "top-right",
-      });
     }
   };
 
@@ -1413,7 +1516,7 @@
     <input
       class="border rounded p-2 w-full"
       bind:value={fileId}
-      placeholder="Enter File ID"
+      placeholder="Enter File ID or Availability Search Reference Number"
       on:input={() => (notFoundMessage = "")}
     />
     <Button type="submit">Search</Button>
@@ -1794,6 +1897,7 @@
         </div>
       {/if}
 
+      {#if !availabilitySearchReferenceNumber}
       <!-- Applicants (Common for all file types) -->
       <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
         <details class="p-6 open">
@@ -1953,9 +2057,11 @@
           </div>
         </details>
       </div>
+      {/if}
       <!-- Application History (Common for all file types) -->
       <div class="mt-4">
         <!--      ADD NEW HISTORY CARD     -->
+        {#if !availabilitySearchReferenceNumber}
         <div
           class="bg-white border border-slate-200 p-6 rounded-lg shadow-sm mb-6"
         >
@@ -2333,6 +2439,7 @@
             </div>
           </div>
         </div>
+        {/if}
         <!-- ============ App History Table ================= -->
         {#if selectedRecordal}
           <div class="bg-white border border-slate-200 p-4 rounded-lg shadow-sm mb-4">
@@ -2340,6 +2447,31 @@
               <h3 class="text-lg font-semibold">View Application Details</h3>
               <button class="text-sm text-gray-600 hover:text-gray-800" on:click={closeRecordalView}>Close</button>
             </div>
+
+            {#if availabilitySearchReferenceNumber}
+              <dl class="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt class="font-medium text-slate-600">Reference Number</dt>
+                  <dd class="text-slate-900">{availabilitySearchReferenceNumber}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium text-slate-600">Application Date</dt>
+                  <dd class="text-slate-900">{mapDateToString(selectedRecordal.hist.applicationDate) || "—"}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium text-slate-600">Status</dt>
+                  <dd class="text-slate-900">{mapStatusToString(selectedRecordal.hist.currentStatus)}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium text-slate-600">Payment ID</dt>
+                  <dd class="text-slate-900">{selectedRecordal.hist.paymentId || "—"}</dd>
+                </div>
+                <div>
+                  <dt class="font-medium text-slate-600">Certificate Payment ID</dt>
+                  <dd class="text-slate-900">{selectedRecordal.hist.certificatePaymentId || "—"}</dd>
+                </div>
+              </dl>
+            {/if}
 
             {#if selectedRecordal.applicationType === 5}
               <!-- Assignment: show full form preview -->
@@ -2603,26 +2735,28 @@
                           Cancel
                         </button>
 
-                        <button
-                          class="inline-flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700 transition"
-                          on:click={() => deleteApplicationHistory(hist)}
-                          title="Delete"
-                        >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
+                        {#if !availabilitySearchReferenceNumber}
+                          <button
+                            class="inline-flex items-center gap-2 bg-red-600 text-white px-3 py-1 rounded-md text-sm hover:bg-red-700 transition"
+                            on:click={() => deleteApplicationHistory(hist)}
+                            title="Delete"
                           >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                            ></path>
-                          </svg>
-                          Delete
-                        </button>
+                            <svg
+                              class="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              ></path>
+                            </svg>
+                            Delete
+                          </button>
+                        {/if}
                       </div>
                     {:else}
                       <div class="flex items-center gap-2">
@@ -2653,6 +2787,7 @@
         </div>
       </div>
 
+      {#if !availabilitySearchReferenceNumber}
       <!-- Correspondence Information (Common for all file types) -->
       <div class="bg-slate-50 border border-slate-200 rounded-lg shadow-sm">
         <details class="p-6 open">
@@ -3924,6 +4059,7 @@
 
       <!-- Save Changes Button -->
       <Button class="mt-4" on:click={saveChanges}>Save</Button>
+      {/if}
     </div>
   {/if}
 </div>
