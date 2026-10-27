@@ -57,6 +57,7 @@
   import OfflineRenewalDialog from "./Components/OfflineRenewalDialog.svelte";
   import AssignmentDocuments from "./AssignmentDocuments.svelte";
   import { authFetch } from "$lib/utils/authFetch";
+  import { openLetter, LETTER_GENERIC_MESSAGE } from "$lib/utils/openLetter";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -778,7 +779,9 @@
     showAlertDialog = true;
 
     try {
-      const response = await authFetch(`${baseURL}/api/payments/check?id=${id}`);
+      const response = await authFetch(
+        `${baseURL}/api/payments/check?id=${id}`,
+      );
       if (!response.ok) throw new Error("Payment check failed");
 
       const text = await response.text();
@@ -878,7 +881,7 @@
 
   // Letter Generation
 
-  function generateLetter(
+  async function generateLetter(
     application: ApplicationHistoryType,
     appType: number,
     letterType: number,
@@ -888,9 +891,18 @@
       return;
     }
 
-    window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileData.fileId}&letterType=${letterType}&applicationId=${application.id}`,
-    );
+    try {
+      await openLetter({
+        fileId: fileData.fileId,
+        letterType,
+        applicationId: application.id,
+      });
+    } catch (error) {
+      showToast(
+        "error",
+        error instanceof Error ? error.message : LETTER_GENERIC_MESSAGE,
+      );
+    }
   }
 
   // Specific letter generators
@@ -1614,14 +1626,26 @@
     }
   }
 
-  function validateMove(application: ApplicationHistoryType, letter: number) {
-    if (hasValidCorrespondenceDetails(fileData.correspondence)) {
-      window.open(
-        `${baseURL}/api/letters/generate?fileId=${fileData?.id}&letterType=${letter}&applicationId=${application.id}`,
-        "_blank",
-      );
-    } else {
+  async function validateMove(
+    application: ApplicationHistoryType,
+    letter: number,
+  ) {
+    if (!hasValidCorrespondenceDetails(fileData.correspondence)) {
       showMissingDetailsForm();
+      return;
+    }
+
+    try {
+      await openLetter({
+        fileId: fileData?.id,
+        letterType: letter,
+        applicationId: application.id,
+      });
+    } catch (error) {
+      showToast(
+        "error",
+        error instanceof Error ? error.message : LETTER_GENERIC_MESSAGE,
+      );
     }
   }
 
@@ -1637,10 +1661,19 @@
     goto(`/metadata?fileId=${fileData?.id}&applicationId=${application.id}`);
   }
 
-  function printStatusReceipt(application: ApplicationHistoryType) {
-    window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileData?.fileId}&letterType=39&applicationId=${application.id}`,
-    );
+  async function printStatusReceipt(application: ApplicationHistoryType) {
+    try {
+      await openLetter({
+        fileId: fileData?.fileId,
+        letterType: 39,
+        applicationId: application.id,
+      });
+    } catch (error) {
+      showToast(
+        "error",
+        error instanceof Error ? error.message : LETTER_GENERIC_MESSAGE,
+      );
+    }
   }
 
   let getDocFileNumber = fileData.fileId;
