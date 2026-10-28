@@ -422,22 +422,8 @@
         roles.includes(UserRoles.Tech) ||
         roles.includes(UserRoles.SuperAdmin)
       ) {
-        const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            creatorId: "null",
-            category: TicketCategory.TechnicalSupport,
-            status: TicketStates.awaitingStaff,
-            amount: 100000,
-            startIndex: 0,
-          }),
-        });
-        if (response.ok) {
-          const tickets = await response.json();
-          ipoSupportCount = Array.isArray(tickets) ? tickets.length : 0;
-        }
-        return;
+        // server-side count; avoids downloading every awaiting ticket just to read its length
+        url = `${baseURL}/api/tickets/GetStats?category=${TicketCategory.TechnicalSupport}`;
       } else {
         const userId = ($loggedInUser as any)?.creatorId;
         url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
