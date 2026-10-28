@@ -1,720 +1,873 @@
 <script lang="ts">
-	import {
-		baseURL,
-		decodeUser,
-		type TicketInfo,
-		TicketStates,
-		type TicketSummary,
-		UserRoles,
-		TicketCategory,
+  import {
+    baseURL,
+    decodeUser,
+    type TicketInfo,
+    TicketStates,
+    type TicketSummary,
+    UserRoles,
+    TicketCategory,
+    ApplicationType,
+  } from "$lib/helpers";
+  import {
+    createRender,
+    createTable,
+    Render,
+    Subscribe,
+  } from "svelte-headless-table";
+  import { writable } from "svelte/store";
+  import {
+    addHiddenColumns,
+    addPagination,
+    addSelectedRows,
+    addTableFilter,
+  } from "svelte-headless-table/plugins";
+  import DataTableCheckbox from "./data-table-checkbox.svelte";
+  import TicketTag from "$lib/components/ui/ticketTag/ticketTag.svelte";
+  import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
+  import { ChevronsUpDown } from "lucide-svelte";
+  import ChevronDown from "lucide-svelte/icons/chevron-down";
+  import { onMount } from "svelte";
+  import { goto } from "$app/navigation";
+  import { loggedInUser, ipoTicketsSummary, ipoTicketStats } from "$lib/store";
+  import Icon from "@iconify/svelte";
+  import { mapDateToString } from "../components/dashboardutils";
+  import { mapCategoryToString } from "./supportutils";
+  import { toast } from "svelte-sonner";
+  import { Toaster } from "$lib/components/ui/sonner";
+  import * as AlertDialog from "$lib/components/ui/alert-dialog";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import * as Table from "$lib/components/ui/table";
+  import * as Pagination from "$lib/components/ui/pagination";
+  import { authFetch } from "$lib/utils/authFetch";
 
-        ApplicationType
+  // ── Role helpers ──────────────────────────────────────────────────────────────
+  const SUPPORT_STAFF_ROLES = [
+    UserRoles.Tech,
+    UserRoles.SuperAdmin,
+    UserRoles.TrademarkSupport,
+    UserRoles.PatentDesignSupport,
+  ];
 
-	} from '$lib/helpers';
-	import { createRender, createTable, Render, Subscribe } from 'svelte-headless-table';
-	import { writable, type Writable } from 'svelte/store';
-	import {
-		addHiddenColumns,
-		addPagination,
-		addSelectedRows,
-		addTableFilter
-	} from 'svelte-headless-table/plugins';
-	import DataTableCheckbox from './data-table-checkbox.svelte';
-	import TicketTag from '$lib/components/ui/ticketTag/ticketTag.svelte';
-	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
-	import { ChevronsUpDown } from 'lucide-svelte';
-	import ChevronDown from 'lucide-svelte/icons/chevron-down';
-	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
-	import { loggedInUser, ipoTicketsSummary, ipoTicketStats } from '$lib/store';
-	import Icon from '@iconify/svelte';
-	import { mapDateToString } from '../components/dashboardutils';
-	import { mapCategoryToString } from './supportutils';
-	import { toast } from 'svelte-sonner';
-	import { Toaster } from '$lib/components/ui/sonner';
-	import * as AlertDialog from '$lib/components/ui/alert-dialog';
-	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
-	import * as Table from '$lib/components/ui/table';
-	import * as Pagination from '$lib/components/ui/pagination';
-	import { authFetch } from '$lib/utils/authFetch';
+  function hasRole(role: UserRoles): boolean {
+    return !!$loggedInUser?.userRoles?.includes(role);
+  }
+  function hasSupportStaffRole(): boolean {
+    return SUPPORT_STAFF_ROLES.some((r) => hasRole(r));
+  }
+  function isTrademarkSupport(): boolean {
+    return hasRole(UserRoles.TrademarkSupport);
+  }
+  function isPatentDesignSupport(): boolean {
+    return hasRole(UserRoles.PatentDesignSupport);
+  }
+  function isTechSupport(): boolean {
+    return hasRole(UserRoles.Tech) || hasRole(UserRoles.SuperAdmin);
+  }
+  function hasAnyRole(roles: UserRoles[]): boolean {
+    return roles.some((role) => hasRole(role));
+  }
+  const UNIT_OFFICER_ROLES = [
+    UserRoles.TrademarkSearch,
+    UserRoles.TrademarkExaminer,
+    UserRoles.TrademarkOpposition,
+    UserRoles.TrademarkAcceptance,
+    UserRoles.TrademarkCertification,
+    UserRoles.TrademarkPublication,
+    UserRoles.TrademarkRegistrar,
+    UserRoles.ActingTrademarkRegistrar,
+    UserRoles.PatentDesignRegistrar,
+    UserRoles.ActingPatentDesignRegistrar,
+    UserRoles.PatentSearch,
+    UserRoles.PatentExaminer,
+    UserRoles.PatentCertification,
+    UserRoles.AppealExaminer,
+    UserRoles.DesignSearch,
+    UserRoles.DesignExaminer,
+    UserRoles.DesignCertification,
+    UserRoles.TrademarkStaff,
+    UserRoles.PatentStaff,
+    UserRoles.DesignStaff,
+  ];
+  function isStrictSupportOfficer(): boolean {
+    return isTrademarkSupport() || isPatentDesignSupport();
+  }
+  function isUnitOfficer(): boolean {
+    return hasAnyRole(UNIT_OFFICER_ROLES);
+  }
+  function shouldCreateTechnicalTicketOnly(): boolean {
+    return isStrictSupportOfficer() || isUnitOfficer();
+  }
+  function canAccessIpoSupport(): boolean {
+    return (
+      hasRole(UserRoles.User) ||
+      hasRole(UserRoles.PermSec) ||
+      isTechSupport() ||
+      isStrictSupportOfficer() ||
+      isUnitOfficer()
+    );
+  }
+  // ── Tab system ────────────────────────────────────────────────────────────────
+  type TabDef = {
+    id: string;
+    label: string;
+    category: TicketCategory | null;
+    isEscalation: boolean;
+    raisedByRegistryStaff?: boolean;
+  };
 
-	// ── Role helpers ──────────────────────────────────────────────────────────────
-	const SUPPORT_STAFF_ROLES = [
-		UserRoles.Tech,
-		UserRoles.SuperAdmin,
-		UserRoles.TrademarkSupport,
-		UserRoles.PatentDesignSupport
-	];
+  function getTabsForRole(): TabDef[] {
+    if (isTechSupport()) {
+      return [
+        {
+          id: "tech",
+          label: "Technical Support",
+          category: TicketCategory.TechnicalSupport,
+          isEscalation: false,
+        },
+        {
+          id: "tm",
+          label: "Trademark Registry",
+          category: TicketCategory.TrademarkRegistry,
+          isEscalation: false,
+        },
+        {
+          id: "pd",
+          label: "Patent & Design Registry",
+          category: TicketCategory.PatentDesignRegistry,
+          isEscalation: false,
+        },
+      ];
+    }
+    if (isTrademarkSupport()) {
+      return [
+        {
+          id: "tm",
+          label: "Trademark Registry",
+          category: TicketCategory.TrademarkRegistry,
+          isEscalation: false,
+        },
+      ];
+    }
+    if (isPatentDesignSupport()) {
+      return [
+        {
+          id: "pd",
+          label: "Patent & Design Registry",
+          category: TicketCategory.PatentDesignRegistry,
+          isEscalation: false,
+        },
+      ];
+    }
+    return [];
+  }
 
-	function hasRole(role: UserRoles): boolean {
-		return !!$loggedInUser?.userRoles?.includes(role);
-	}
-	function hasSupportStaffRole(): boolean {
-		return SUPPORT_STAFF_ROLES.some((r) => hasRole(r));
-	}
-	function isTrademarkSupport(): boolean {
-		return hasRole(UserRoles.TrademarkSupport);
-	}
-	function isPatentDesignSupport(): boolean {
-		return hasRole(UserRoles.PatentDesignSupport);
-	}
-	function isTechSupport(): boolean {
-		return hasRole(UserRoles.Tech) || hasRole(UserRoles.SuperAdmin);
-	}
-	function hasAnyRole(roles: UserRoles[]): boolean {
-		return roles.some((role) => hasRole(role));
-	}
-	const UNIT_OFFICER_ROLES = [
-		UserRoles.TrademarkSearch,
-		UserRoles.TrademarkExaminer,
-		UserRoles.TrademarkOpposition,
-		UserRoles.TrademarkAcceptance,
-		UserRoles.TrademarkCertification,
-		UserRoles.TrademarkPublication,
-		UserRoles.TrademarkRegistrar,
-		UserRoles.ActingTrademarkRegistrar,
-		UserRoles.PatentDesignRegistrar,
-		UserRoles.ActingPatentDesignRegistrar,
-		UserRoles.PatentSearch,
-		UserRoles.PatentExaminer,
-		UserRoles.PatentCertification,
-		UserRoles.AppealExaminer,
-		UserRoles.DesignSearch,
-		UserRoles.DesignExaminer,
-		UserRoles.DesignCertification,
-		UserRoles.TrademarkStaff,
-		UserRoles.PatentStaff,
-		UserRoles.DesignStaff
-	];
-	function isStrictSupportOfficer(): boolean {
-		return isTrademarkSupport() || isPatentDesignSupport();
-	}
-	function isUnitOfficer(): boolean {
-		return hasAnyRole(UNIT_OFFICER_ROLES);
-	}
-	function shouldCreateTechnicalTicketOnly(): boolean {
-		return isStrictSupportOfficer() || isUnitOfficer();
-	}
-	function canAccessIpoSupport(): boolean {
-		return hasRole(UserRoles.User) || hasRole(UserRoles.PermSec) || isTechSupport() || isStrictSupportOfficer() || isUnitOfficer();
-	}
-	// ── Tab system ────────────────────────────────────────────────────────────────
-	type TabDef = {
-		id: string;
-		label: string;
-		category: TicketCategory | null;
-		isEscalation: boolean;
-		raisedByRegistryStaff?: boolean;
-	};
+  // ── State ─────────────────────────────────────────────────────────────────────
+  let tabs: TabDef[] = [];
+  let activeTabId: string = "";
+  let isAdmin: boolean = false;
+  let activeStatusFilter: number | null = null;
+  let activeCategoryPillFilter: TicketCategory | null = null;
+  let activeQueueMode:
+    | "normal"
+    | "trademarkTechnical"
+    | "patentDesignTechnical" = "normal";
+  let specialQueueStats: Record<string, number> = {};
+  let showCloseConfirm: boolean = false;
+  let isResolving = false;
+  let ticketLoading: boolean = false;
+  let selectedResultList: number = 10;
+  let showResultLengthList: boolean = false;
+  const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
+  const STATUS_SORT_ORDER: Record<number, number> = {
+    1: 0,
+    3: 1,
+    0: 2,
+    4: 3,
+    2: 4,
+  };
+  const FULL_SUMMARY_FETCH_LIMIT = 100000;
 
-	function getTabsForRole(): TabDef[] {
-		if (isTechSupport()) {
-			return [
-				{ id: 'tech', label: 'Technical Support', category: TicketCategory.TechnicalSupport, isEscalation: false },
-				{ id: 'tm', label: 'Trademark Registry', category: TicketCategory.TrademarkRegistry, isEscalation: false },
-				{ id: 'pd', label: 'Patent & Design Registry', category: TicketCategory.PatentDesignRegistry, isEscalation: false }
-			];
-		}
-		if (isTrademarkSupport()) {
-			return [{ id: 'tm', label: 'Trademark Registry', category: TicketCategory.TrademarkRegistry, isEscalation: false }];
-		}
-		if (isPatentDesignSupport()) {
-			return [{ id: 'pd', label: 'Patent & Design Registry', category: TicketCategory.PatentDesignRegistry, isEscalation: false }];
-		}
-		return [];
-	}
+  const userName =
+    ($loggedInUser?.firstName ?? "") + " " + ($loggedInUser?.lastName ?? "");
 
-	// ── State ─────────────────────────────────────────────────────────────────────
-	let tabs: TabDef[] = [];
-	let activeTabId: string = '';
-	let isAdmin: boolean = false;
-	let activeStatusFilter: number | null = null;
-	let activeCategoryPillFilter: TicketCategory | null = null;
-	let activeQueueMode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical' = 'normal';
-	let specialQueueStats: Record<string, number> = {};
-	let showCloseConfirm: boolean = false;
-	let isResolving = false;
-	let ticketLoading: boolean = false;
-	let selectedResultList: number = 10;
-	let showResultLengthList: boolean = false;
-	const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
-	const STATUS_SORT_ORDER: Record<number, number> = { 1: 0, 3: 1, 0: 2, 4: 3, 2: 4 };
-	const FULL_SUMMARY_FETCH_LIMIT = 100000;
+  // ── Table state ───────────────────────────────────────────────────────────────
+  let hidableCols: string[] = [
+    "lastInteraction",
+    "title",
+    "creator",
+    "status",
+    "category",
+    "ticketType",
+  ];
+  let hideForId: Record<string, boolean> = {};
+  let currentPageNumber: number = 1;
 
-	const userName = ($loggedInUser?.firstName ?? '') + ' ' + ($loggedInUser?.lastName ?? '');
+  // The table is created once and fed through this store, so refreshing the data
+  // (e.g. after viewing or replying to a ticket) keeps the current page.
+  const tableData = writable<any[]>([]);
 
-	// ── Table state ───────────────────────────────────────────────────────────────
-	let tableHeaderRows: any,
-		tablePageRows: any,
-		_tableAttrs: any,
-		_tableBodyAttrs: any;
-	let _hasNextPage: any, _hasPreviousPage: any, _pageIndex: any;
-	let _flatColumns: any;
-	let _selectedDataIds: Writable<Record<string, boolean>>;
-	let _hiddenColumnIds: Writable<string[]>;
-	let hidableCols: string[] = ['lastInteraction', 'title', 'creator', 'status', 'category', 'ticketType'];
-	let hideForId: Record<string, boolean> = {};
-	let _filterValue: any;
+  // ── Lazy-loaded sub-components ────────────────────────────────────────────────
+  let ticketViewComp: any = null;
+  let createTicketComp: any = null;
+  let filterSheetComp: any = null;
 
-	// ── Lazy-loaded sub-components ────────────────────────────────────────────────
-	let ticketViewComp: any = null;
-	let createTicketComp: any = null;
-	let filterSheetComp: any = null;
+  let showTicketMessages: boolean = false;
+  let showTicketCreation: boolean = false;
+  let showFilter: boolean = false;
+  let ticketInfo: any = {};
+  let ticketData: any = {};
+  let filterData: any = {};
+  let searchQuery: string = "";
+  let activeSearchTerm: string = "";
 
-	let showTicketMessages: boolean = false;
-	let showTicketCreation: boolean = false;
-	let showFilter: boolean = false;
-	let ticketInfo: any = {};
-	let ticketData: any = {};
-	let filterData: any = {};
-	let searchQuery: string = '';
-	let activeSearchTerm: string = '';
+  $: showTechSpecialQueues = isTechSupport() && activeTabId === "tech";
+  $: showInProgressFilter =
+    activeQueueMode !== "normal" ||
+    tabs.some(
+      (tab) =>
+        tab.id === activeTabId &&
+        tab.category === TicketCategory.TechnicalSupport,
+    );
 
-	$: showTechSpecialQueues = isTechSupport() && activeTabId === 'tech';
-	$: showInProgressFilter = activeQueueMode !== 'normal' || tabs.some((tab) => tab.id === activeTabId && tab.category === TicketCategory.TechnicalSupport);
+  // ── Table setup (runs once) ──────────────────────────────────────────────────
+  const table = createTable(tableData, {
+    page: addPagination({ initialPageSize: selectedResultList }),
+    filter: addTableFilter({
+      fn: ({ filterValue, value }) =>
+        value.toLowerCase().includes(filterValue.toLowerCase()),
+    }),
+    hide: addHiddenColumns(),
+    select: addSelectedRows(),
+  });
 
-	// ── Reactive hidden columns ───────────────────────────────────────────────────
-	$: {
-		if (_hiddenColumnIds) {
-			$_hiddenColumnIds = Object.entries(hideForId)
-				.filter(([, hide]) => !hide)
-				.map(([id]) => id);
-		}
-	}
+  const columns = table.createColumns([
+    table.column({
+      accessor: "_id",
+      header: (_, { pluginStates }) => {
+        const { allPageRowsSelected } = pluginStates.select;
+        return createRender(DataTableCheckbox, {
+          checked: allPageRowsSelected,
+        });
+      },
+      cell: ({ row }, { pluginStates }) => {
+        const { getRowState } = pluginStates.select;
+        const { isSelected } = getRowState(row);
+        return createRender(DataTableCheckbox, { checked: isSelected });
+      },
+      plugins: { filter: { exclude: true } },
+    }),
+    table.column({ accessor: "lastInteraction", header: "Last Activity" }),
+    table.column({ accessor: "creator", header: "Creator" }),
+    table.column({ accessor: "title", header: "Title" }),
+    table.column({
+      accessor: "category",
+      header: "Category",
+      plugins: { filter: { exclude: true } },
+    }),
+    table.column({
+      accessor: "ticketType",
+      header: "Ticket Type",
+      plugins: { filter: { exclude: true } },
+    }),
+    table.column({ accessor: "status", header: "Status" }),
+    table.column({
+      accessor: "id",
+      header: "",
+      plugins: { filter: { exclude: true } },
+    }),
+  ]);
 
-	// ── Table rebuild when data changes ──────────────────────────────────────────
-	$: {
-		const tickets = $ipoTicketsSummary;
-		const sortedTickets = Array.isArray(tickets) ? tickets : [];
+  const {
+    headerRows: tableHeaderRows,
+    pageRows: tablePageRows,
+    tableAttrs: _tableAttrs,
+    tableBodyAttrs: _tableBodyAttrs,
+    flatColumns: _flatColumns,
+    pluginStates,
+  } = table.createViewModel(columns);
 
-		const table = createTable(writable<any[]>(sortedTickets), {
-			page: addPagination({ initialPageSize: selectedResultList }),
-			filter: addTableFilter({
-				fn: ({ filterValue, value }) =>
-					value.toLowerCase().includes(filterValue.toLowerCase())
-			}),
-			hide: addHiddenColumns(),
-			select: addSelectedRows()
-		});
+  const { pageIndex: _pageIndex, pageSize: _pageSize } = pluginStates.page;
+  const { hiddenColumnIds: _hiddenColumnIds } = pluginStates.hide;
+  const { selectedDataIds: _selectedDataIds } = pluginStates.select;
 
-		const columns = table.createColumns([
-			table.column({
-				accessor: '_id',
-				header: (_, { pluginStates }) => {
-					const { allPageRowsSelected } = pluginStates.select;
-					return createRender(DataTableCheckbox, { checked: allPageRowsSelected });
-				},
-				cell: ({ row }, { pluginStates }) => {
-					const { getRowState } = pluginStates.select;
-					const { isSelected } = getRowState(row);
-					return createRender(DataTableCheckbox, { checked: isSelected });
-				},
-				plugins: { filter: { exclude: true } }
-			}),
-			table.column({ accessor: 'lastInteraction', header: 'Last Activity' }),
-			table.column({ accessor: 'creator', header: 'Creator' }),
-			table.column({ accessor: 'title', header: 'Title' }),
-			table.column({
-				accessor: 'category',
-				header: 'Category',
-				plugins: { filter: { exclude: true } }
-			}),
-			table.column({
-				accessor: 'ticketType',
-				header: 'Ticket Type',
-				plugins: { filter: { exclude: true } }
-			}),
-			table.column({ accessor: 'status', header: 'Status' }),
-			table.column({
-				accessor: 'id',
-				header: '',
-				plugins: { filter: { exclude: true } }
-			})
-		]);
+  hideForId = Object.fromEntries(
+    (_flatColumns as any[]).map((col: any) => [col.id, true]),
+  );
 
-		const { headerRows, pageRows, tableAttrs, flatColumns, tableBodyAttrs, pluginStates } =
-			table.createViewModel(columns);
+  $: tableData.set(
+    Array.isArray($ipoTicketsSummary) ? ($ipoTicketsSummary as any[]) : [],
+  );
+  $: $_pageSize = selectedResultList;
+  $: $_pageIndex = currentPageNumber - 1;
+  $: hideForId["creator"] = isAdmin;
+  $: $_hiddenColumnIds = Object.entries(hideForId)
+    .filter(([, hide]) => !hide)
+    .map(([id]) => id);
 
-		tableHeaderRows = headerRows;
-		_tableBodyAttrs = tableBodyAttrs;
-		tablePageRows = pageRows;
-		_tableAttrs = tableAttrs;
+  // ── Helpers ───────────────────────────────────────────────────────────────────
+  function spreadAttrs(value: unknown): Record<string, unknown> {
+    return (value ?? {}) as Record<string, unknown>;
+  }
 
-		const { hasNextPage, hasPreviousPage, pageIndex } = pluginStates.page;
-		_hasNextPage = hasNextPage;
-		_hasPreviousPage = hasPreviousPage;
-		_pageIndex = pageIndex;
+  function creatorNameFor(rowId: string): string {
+    return ($ipoTicketsSummary as any)?.[rowId]?.creator?.name ?? "";
+  }
 
-		const { filterValue } = pluginStates.filter;
-		_filterValue = filterValue;
+  function categoryFor(rowId: string): string {
+    const cat = ($ipoTicketsSummary as any)?.[rowId]?.category;
+    if (cat === undefined || cat === null) return "—";
+    return mapCategoryToString(cat as TicketCategory);
+  }
 
-		const { hiddenColumnIds } = pluginStates.hide;
-		const { selectedDataIds } = pluginStates.select;
-		_selectedDataIds = selectedDataIds;
-		_hiddenColumnIds = hiddenColumnIds;
+  // ── Fetch ─────────────────────────────────────────────────────────────────────
+  function getActiveTabCategory(): TicketCategory | null {
+    return tabs.find((tab) => tab.id === activeTabId)?.category ?? null;
+  }
 
-		_flatColumns = flatColumns;
-		const ids: string[] = (_flatColumns as any[]).map((col: any) => col.id);
-		hideForId = Object.fromEntries(ids.map((id: string) => [id, true]));
+  function getSpecialRegistryCategory(): TicketCategory | null {
+    if (activeQueueMode === "trademarkTechnical")
+      return TicketCategory.TrademarkRegistry;
+    if (activeQueueMode === "patentDesignTechnical")
+      return TicketCategory.PatentDesignRegistry;
+    return null;
+  }
 
-		if (!isAdmin) {
-			hideForId['creator'] = false;
-		}
-	}
+  function withFullSummaryPage(body: Record<string, any>): Record<string, any> {
+    return { ...body, amount: FULL_SUMMARY_FETCH_LIMIT, startIndex: 0 };
+  }
 
-	// ── Helpers ───────────────────────────────────────────────────────────────────
-	function spreadAttrs(value: unknown): Record<string, unknown> {
-		return (value ?? {}) as Record<string, unknown>;
-	}
+  function getTicketSummaryBody(
+    status: number | null = activeStatusFilter,
+  ): Record<string, any> {
+    const userId = ($loggedInUser as any)?.creatorId;
+    const specialRegistryCategory = getSpecialRegistryCategory();
+    const activeTabCategory = getActiveTabCategory();
+    if (specialRegistryCategory !== null) {
+      const body: Record<string, any> = {
+        creatorId: "null",
+        category: TicketCategory.TechnicalSupport,
+        registryCategory: specialRegistryCategory,
+        raisedByRegistryStaff: true,
+      };
+      if (status !== null) body.status = status;
+      return withFullSummaryPage(body);
+    }
 
-	function creatorNameFor(rowId: string): string {
-		return ($ipoTicketsSummary as any)?.[rowId]?.creator?.name ?? '';
-	}
+    if (isTechSupport()) {
+      const body: Record<string, any> = {
+        creatorId: "null",
+        category: activeTabCategory ?? TicketCategory.TechnicalSupport,
+      };
+      if (
+        (activeTabCategory ?? TicketCategory.TechnicalSupport) ===
+        TicketCategory.TechnicalSupport
+      ) {
+        body.raisedByRegistryStaff = false;
+      }
+      if (status !== null) body.status = status;
+      return withFullSummaryPage(body);
+    }
+    if (isTrademarkSupport()) {
+      const body: Record<string, any> = {
+        creatorId: "null",
+        category: TicketCategory.TrademarkRegistry,
+      };
+      if (status !== null) body.status = status;
+      return withFullSummaryPage(body);
+    }
+    if (isPatentDesignSupport()) {
+      const body: Record<string, any> = {
+        creatorId: "null",
+        category: TicketCategory.PatentDesignRegistry,
+      };
+      if (status !== null) body.status = status;
+      return withFullSummaryPage(body);
+    }
 
-	function categoryFor(rowId: string): string {
-		const cat = ($ipoTicketsSummary as any)?.[rowId]?.category;
-		if (cat === undefined || cat === null) return '—';
-		return mapCategoryToString(cat as TicketCategory);
-	}
+    const body: Record<string, any> = { creatorId: userId };
+    if (status !== null) body.status = status;
+    return withFullSummaryPage(body);
+  }
 
-	// ── Fetch ─────────────────────────────────────────────────────────────────────
-	function getActiveTabCategory(): TicketCategory | null {
-		return tabs.find((tab) => tab.id === activeTabId)?.category ?? null;
-	}
+  function sortTicketSummaries(raw: any): any {
+    return Array.isArray(raw)
+      ? [...raw].sort((a: any, b: any) => {
+          const statusA = STATUS_SORT_ORDER[a?.status] ?? 99;
+          const statusB = STATUS_SORT_ORDER[b?.status] ?? 99;
+          if (statusA !== statusB) return statusA - statusB;
+          const dateA = a?.lastInteraction
+            ? new Date(a.lastInteraction).getTime()
+            : 0;
+          const dateB = b?.lastInteraction
+            ? new Date(b.lastInteraction).getTime()
+            : 0;
+          return dateA - dateB;
+        })
+      : raw;
+  }
 
-	function getSpecialRegistryCategory(): TicketCategory | null {
-		if (activeQueueMode === 'trademarkTechnical') return TicketCategory.TrademarkRegistry;
-		if (activeQueueMode === 'patentDesignTechnical') return TicketCategory.PatentDesignRegistry;
-		return null;
-	}
+  async function fetchTicketSummaries(
+    body: Record<string, any>,
+  ): Promise<any[]> {
+    const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  }
 
-	function withFullSummaryPage(body: Record<string, any>): Record<string, any> {
-		return { ...body, amount: FULL_SUMMARY_FETCH_LIMIT, startIndex: 0 };
-	}
+  function summarizeTickets(tickets: any[]) {
+    return {
+      total: tickets.length,
+      staff: tickets.filter(
+        (ticket) => ticket?.status === TicketStates.awaitingStaff,
+      ).length,
+      user: tickets.filter(
+        (ticket) => ticket?.status === TicketStates.awaitingUser,
+      ).length,
+      closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed)
+        .length,
+      inProgress: tickets.filter(
+        (ticket) => ticket?.status === TicketStates.inProgress,
+      ).length,
+      resolved: tickets.filter(
+        (ticket) => ticket?.status === TicketStates.resolved,
+      ).length,
+    };
+  }
 
-	function getTicketSummaryBody(status: number | null = activeStatusFilter): Record<string, any> {
-		const userId = ($loggedInUser as any)?.creatorId;
-		const specialRegistryCategory = getSpecialRegistryCategory();
-		const activeTabCategory = getActiveTabCategory();
-		if (specialRegistryCategory !== null) {
-			const body: Record<string, any> = {
-				creatorId: 'null',
-				category: TicketCategory.TechnicalSupport,
-				registryCategory: specialRegistryCategory,
-				raisedByRegistryStaff: true
-			};
-			if (status !== null) body.status = status;
-			return withFullSummaryPage(body);
-		}
+  function getSearchField(term: string): Record<string, string> {
+    return /^TKT[-\w]*/i.test(term)
+      ? { ticketNumber: term }
+      : { fileNumber: term };
+  }
 
-		if (isTechSupport()) {
-			const body: Record<string, any> = {
-				creatorId: 'null',
-				category: activeTabCategory ?? TicketCategory.TechnicalSupport
-			};
-			if ((activeTabCategory ?? TicketCategory.TechnicalSupport) === TicketCategory.TechnicalSupport) {
-				body.raisedByRegistryStaff = false;
-			}
-			if (status !== null) body.status = status;
-			return withFullSummaryPage(body);
-		}
-		if (isTrademarkSupport()) {
-			const body: Record<string, any> = { creatorId: 'null', category: TicketCategory.TrademarkRegistry };
-			if (status !== null) body.status = status;
-			return withFullSummaryPage(body);
-		}
-		if (isPatentDesignSupport()) {
-			const body: Record<string, any> = { creatorId: 'null', category: TicketCategory.PatentDesignRegistry };
-			if (status !== null) body.status = status;
-			return withFullSummaryPage(body);
-		}
+  function getSearchRequest(): Record<string, any> | null {
+    const term = activeSearchTerm.trim();
+    if (!term) return null;
+    const searchField = getSearchField(term);
+    const userId = ($loggedInUser as any)?.creatorId;
 
-		const body: Record<string, any> = { creatorId: userId };
-		if (status !== null) body.status = status;
-		return withFullSummaryPage(body);
-	}
+    return {
+      ...searchField,
+      requesterId: userId,
+      isTech: isTechSupport(),
+      supportRegistryCategory: isTrademarkSupport()
+        ? TicketCategory.TrademarkRegistry
+        : isPatentDesignSupport()
+          ? TicketCategory.PatentDesignRegistry
+          : null,
+      isRegistryOfficer: isUnitOfficer(),
+    };
+  }
 
-	function sortTicketSummaries(raw: any): any {
-		return Array.isArray(raw)
-			? [...raw].sort((a: any, b: any) => {
-					const statusA = STATUS_SORT_ORDER[a?.status] ?? 99;
-					const statusB = STATUS_SORT_ORDER[b?.status] ?? 99;
-					if (statusA !== statusB) return statusA - statusB;
-					const dateA = a?.lastInteraction ? new Date(a.lastInteraction).getTime() : 0;
-					const dateB = b?.lastInteraction ? new Date(b.lastInteraction).getTime() : 0;
-					return dateA - dateB;
-				})
-			: raw;
-	}
+  async function fetchSearchTickets(
+    status: number | null = activeStatusFilter,
+  ): Promise<any[]> {
+    const body = getSearchRequest();
+    if (body === null) return [];
+    const response = await authFetch(`${baseURL}/api/tickets/Search`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) return [];
+    const data = await response.json();
+    const tickets = Array.isArray(data) ? data : [];
+    return status === null
+      ? tickets
+      : tickets.filter((ticket) => ticket?.status === status);
+  }
 
-	async function fetchTicketSummaries(body: Record<string, any>): Promise<any[]> {
-		const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
-		if (!response.ok) return [];
-		const data = await response.json();
-		return Array.isArray(data) ? data : [];
-	}
+  async function refreshSearchResults(
+    status: number | null = activeStatusFilter,
+  ) {
+    const allMatches = await fetchSearchTickets(null);
+    ipoTicketStats.set(summarizeTickets(allMatches));
+    ipoTicketsSummary.set(
+      sortTicketSummaries(
+        status === null
+          ? allMatches
+          : allMatches.filter((ticket) => ticket.status === status),
+      ),
+    );
+  }
 
-	function summarizeTickets(tickets: any[]) {
-		return {
-			total: tickets.length,
-			staff: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingStaff).length,
-			user: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingUser).length,
-			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length,
-			inProgress: tickets.filter((ticket) => ticket?.status === TicketStates.inProgress).length,
-			resolved: tickets.filter((ticket) => ticket?.status === TicketStates.resolved).length
-		};
-	}
+  async function fetchQueueStats(
+    body: Record<string, any>,
+  ): Promise<Record<string, number>> {
+    const params = new URLSearchParams();
+    if (body.creatorId && body.creatorId !== "null")
+      params.set("userId", body.creatorId);
+    for (const key of [
+      "category",
+      "registryCategory",
+      "raisedByRegistryStaff",
+    ]) {
+      if (body[key] !== undefined && body[key] !== null)
+        params.set(key, String(body[key]));
+    }
+    const response = await authFetch(
+      `${baseURL}/api/tickets/GetStats?${params}`,
+    );
+    if (!response.ok) throw new Error("Unable to load ticket counts.");
+    return await response.json();
+  }
 
-	function getSearchField(term: string): Record<string, string> {
-		return /^TKT[-\w]*/i.test(term) ? { ticketNumber: term } : { fileNumber: term };
-	}
+  async function getStats() {
+    try {
+      ipoTicketStats.set(await fetchQueueStats(getTicketSummaryBody(null)));
+    } catch {
+      toast.error("Unable to load ticket counts.", { position: "top-right" });
+    }
+  }
 
-	function getSearchRequest(): Record<string, any> | null {
-		const term = activeSearchTerm.trim();
-		if (!term) return null;
-		const searchField = getSearchField(term);
-		const userId = ($loggedInUser as any)?.creatorId;
+  async function getSpecialQueueCount(
+    registryCategory: TicketCategory,
+  ): Promise<number> {
+    try {
+      return (
+        await fetchQueueStats({
+          creatorId: "null",
+          category: TicketCategory.TechnicalSupport,
+          registryCategory,
+          raisedByRegistryStaff: true,
+        })
+      ).total;
+    } catch {
+      toast.error("Unable to load technical queue counts.", {
+        position: "top-right",
+      });
+      return 0;
+    }
+  }
 
-		return {
-			...searchField,
-			requesterId: userId,
-			isTech: isTechSupport(),
-			supportRegistryCategory: isTrademarkSupport()
-				? TicketCategory.TrademarkRegistry
-				: isPatentDesignSupport()
-				? TicketCategory.PatentDesignRegistry
-				: null,
-			isRegistryOfficer: isUnitOfficer()
-		};
-	}
+  async function getSpecialQueueStats() {
+    if (isTechSupport()) {
+      const [trademark, patentDesign] = await Promise.all([
+        getSpecialQueueCount(TicketCategory.TrademarkRegistry),
+        getSpecialQueueCount(TicketCategory.PatentDesignRegistry),
+      ]);
+      specialQueueStats = { trademark, patentDesign };
+      return;
+    }
+    if (isTrademarkSupport()) {
+      specialQueueStats = {
+        technical: await getSpecialQueueCount(TicketCategory.TrademarkRegistry),
+      };
+      return;
+    }
+    if (isPatentDesignSupport()) {
+      specialQueueStats = {
+        technical: await getSpecialQueueCount(
+          TicketCategory.PatentDesignRegistry,
+        ),
+      };
+      return;
+    }
+    specialQueueStats = {};
+  }
 
-	async function fetchSearchTickets(status: number | null = activeStatusFilter): Promise<any[]> {
-		const body = getSearchRequest();
-		if (body === null) return [];
-		const response = await authFetch(`${baseURL}/api/tickets/Search`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
-		if (!response.ok) return [];
-		const data = await response.json();
-		const tickets = Array.isArray(data) ? data : [];
-		return status === null ? tickets : tickets.filter((ticket) => ticket?.status === status);
-	}
+  async function fetchTabTickets(tabId: string) {
+    const cookieUser = document.cookie
+      .split(";")
+      .find((x) => x.startsWith(" user=") || x.startsWith("user="));
+    if (!cookieUser) {
+      await goto("/auth/");
+      return;
+    }
+    const user = cookieUser.trimStart().slice(5);
+    loggedInUser.set(JSON.parse(decodeURIComponent(user)));
+    isAdmin = hasSupportStaffRole();
 
-	async function refreshSearchResults(status: number | null = activeStatusFilter) {
-		const allMatches = await fetchSearchTickets(null);
-		ipoTicketStats.set(summarizeTickets(allMatches));
-		ipoTicketsSummary.set(sortTicketSummaries(status === null ? allMatches : allMatches.filter((ticket) => ticket.status === status)));
-	}
+    if ($loggedInUser === null) return;
 
-	async function fetchQueueStats(body: Record<string, any>): Promise<Record<string, number>> {
-		const params = new URLSearchParams();
-		if (body.creatorId && body.creatorId !== 'null') params.set('userId', body.creatorId);
-		for (const key of ['category', 'registryCategory', 'raisedByRegistryStaff']) {
-			if (body[key] !== undefined && body[key] !== null) params.set(key, String(body[key]));
-		}
-		const response = await authFetch(`${baseURL}/api/tickets/GetStats?${params}`);
-		if (!response.ok) throw new Error('Unable to load ticket counts.');
-		return await response.json();
-	}
+    let body: Record<string, any> = getTicketSummaryBody();
+    if (activeCategoryPillFilter !== null)
+      body.category = activeCategoryPillFilter;
 
-	async function getStats() {
-		try {
-			ipoTicketStats.set(await fetchQueueStats(getTicketSummaryBody(null)));
-		} catch {
-			toast.error('Unable to load ticket counts.', { position: 'top-right' });
-		}
-	}
+    const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (response.ok) {
+      const raw = await response.json();
+      ipoTicketsSummary.set(sortTicketSummaries(raw));
+    }
+  }
 
-	async function getSpecialQueueCount(registryCategory: TicketCategory): Promise<number> {
-		try {
-		return (await fetchQueueStats({
-			creatorId: 'null',
-			category: TicketCategory.TechnicalSupport,
-			registryCategory,
-			raisedByRegistryStaff: true
-		})).total;
-		} catch {
-			toast.error('Unable to load technical queue counts.', { position: 'top-right' });
-			return 0;
-		}
-	}
+  async function onTabChange(tabId: string) {
+    activeTabId = tabId;
+    activeQueueMode = "normal";
+    activeSearchTerm = "";
+    searchQuery = "";
+    activeStatusFilter = isTechSupport() || isAdmin ? 1 : null;
+    activeCategoryPillFilter = null;
+    currentPageNumber = 1;
+    ipoTicketsSummary.set(null);
+    ticketLoading = true;
+    await getStats();
+    await fetchTabTickets(tabId);
+    ticketLoading = false;
+  }
 
-	async function getSpecialQueueStats() {
-		if (isTechSupport()) {
-			const [trademark, patentDesign] = await Promise.all([
-				getSpecialQueueCount(TicketCategory.TrademarkRegistry),
-				getSpecialQueueCount(TicketCategory.PatentDesignRegistry)
-			]);
-			specialQueueStats = { trademark, patentDesign };
-			return;
-		}
-		if (isTrademarkSupport()) {
-			specialQueueStats = { technical: await getSpecialQueueCount(TicketCategory.TrademarkRegistry) };
-			return;
-		}
-		if (isPatentDesignSupport()) {
-			specialQueueStats = { technical: await getSpecialQueueCount(TicketCategory.PatentDesignRegistry) };
-			return;
-		}
-		specialQueueStats = {};
-	}
+  async function setQueueMode(
+    mode: "normal" | "trademarkTechnical" | "patentDesignTechnical",
+  ) {
+    activeQueueMode = mode;
+    activeSearchTerm = "";
+    searchQuery = "";
+    activeStatusFilter = null;
+    activeCategoryPillFilter = null;
+    currentPageNumber = 1;
+    ipoTicketsSummary.set(null);
+    ticketLoading = true;
+    await getSpecialQueueStats();
+    await getStats();
+    await fetchTabTickets(activeTabId);
+    ticketLoading = false;
+  }
 
-	async function fetchTabTickets(tabId: string) {
-		const cookieUser = document.cookie
-			.split(';')
-			.find((x) => x.startsWith(' user=') || x.startsWith('user='));
-		if (!cookieUser) {
-			await goto('/auth/');
-			return;
-		}
-		const user = cookieUser.trimStart().slice(5);
-		loggedInUser.set(JSON.parse(decodeURIComponent(user)));
-		isAdmin = hasSupportStaffRole();
+  async function getSpecific(
+    status: number | null,
+    categoryOverride?: TicketCategory | null,
+    resetPage: boolean = true,
+  ) {
+    activeStatusFilter = status;
+    activeCategoryPillFilter =
+      categoryOverride !== undefined ? (categoryOverride ?? null) : null;
+    if (resetPage) currentPageNumber = 1;
+    ticketLoading = true;
+    $_selectedDataIds = {};
+    try {
+      if (activeSearchTerm.trim()) {
+        await refreshSearchResults(status);
+      } else {
+        await getSpecialQueueStats();
+        await getStats();
+        await fetchTabTickets(activeTabId);
+      }
+    } catch {
+      toast.error("Unable to refresh tickets.", { position: "top-right" });
+    } finally {
+      ticketLoading = false;
+    }
+  }
 
-		if ($loggedInUser === null) return;
+  async function searchTickets() {
+    const term = searchQuery.trim();
+    if (!term) {
+      toast.error("Enter a ticket number or file number.", {
+        position: "top-right",
+      });
+      return;
+    }
+    activeSearchTerm = term;
+    activeStatusFilter = null;
+    activeCategoryPillFilter = null;
+    currentPageNumber = 1;
+    ipoTicketsSummary.set(null);
+    ticketLoading = true;
+    await refreshSearchResults(null);
+    ticketLoading = false;
+  }
 
+  async function clearSearch() {
+    activeSearchTerm = "";
+    searchQuery = "";
+    currentPageNumber = 1;
+    ipoTicketsSummary.set(null);
+    ticketLoading = true;
+    await getSpecialQueueStats();
+    await getStats();
+    await fetchTabTickets(activeTabId);
+    ticketLoading = false;
+  }
 
-		let body: Record<string, any> = getTicketSummaryBody();
-		if (activeCategoryPillFilter !== null) body.category = activeCategoryPillFilter;
+  // ── Ticket view ───────────────────────────────────────────────────────────────
+  async function loadTicket(id: string) {
+    const response = await authFetch(`${baseURL}/api/tickets/${id}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (response.ok) return await response.json();
+    return null;
+  }
 
-		const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
-		if (response.ok) {
-			const raw = await response.json();
-			ipoTicketsSummary.set(sortTicketSummaries(raw));
-		}
-	}
+  async function showTicket(rowId: string) {
+    const ticketId =
+      ($ipoTicketsSummary as any)?.[rowId]?.ticketId ??
+      ($ipoTicketsSummary as any)?.[rowId]?.id;
+    const messages: TicketInfo = await loadTicket(ticketId);
+    if (ticketViewComp === null) {
+      ticketViewComp = (await import("./TicketView.svelte")).default;
+    }
+    showTicketMessages = false;
+    await new Promise((r) => setTimeout(r, 0));
+    ticketInfo = {
+      data: messages,
+      isAdmin,
+      onChanged: () => {
+        void getSpecific(activeStatusFilter, activeCategoryPillFilter, false);
+      },
+      onExit: () => {
+        showTicketMessages = false;
+      },
+      open: true,
+    };
+    showTicketMessages = true;
+  }
 
-	async function onTabChange(tabId: string) {
-		activeTabId = tabId;
-		activeQueueMode = 'normal';
-		activeSearchTerm = '';
-		searchQuery = '';
-		activeStatusFilter = isTechSupport() || isAdmin ? 1 : null;
-		activeCategoryPillFilter = null;
-		ipoTicketsSummary.set(null);
-		ticketLoading = true;
-		await getStats();
-		await fetchTabTickets(tabId);
-		ticketLoading = false;
-	}
+  // ── Create ticket ─────────────────────────────────────────────────────────────
+  async function createNewTicket() {
+    if (createTicketComp === null) {
+      createTicketComp = (await import("./CreateTicket.svelte")).default;
+    }
+    ticketData = {
+      onExit: () => {
+        showTicketCreation = false;
+      },
+      open: true,
+      technicalOnly: shouldCreateTechnicalTicketOnly(),
+      requireFileNumber: shouldCreateTechnicalTicketOnly(),
+    };
+    showTicketCreation = true;
+  }
 
-	async function setQueueMode(mode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical') {
-		activeQueueMode = mode;
-		activeSearchTerm = '';
-		searchQuery = '';
-		activeStatusFilter = null;
-		activeCategoryPillFilter = null;
-		ipoTicketsSummary.set(null);
-		ticketLoading = true;
-		await getSpecialQueueStats();
-		await getStats();
-		await fetchTabTickets(activeTabId);
-		ticketLoading = false;
-	}
+  // ── Filter ────────────────────────────────────────────────────────────────────
+  async function showFilterSheet() {
+    if (filterSheetComp === null) {
+      filterSheetComp = (await import("./FilterSheet.svelte")).default;
+    }
+    filterData = {
+      open: true,
+      onFilter: async (params: Record<string, any>) => {
+        ticketLoading = true;
+        currentPageNumber = 1;
+        ipoTicketsSummary.set(null);
+        const response = await authFetch(
+          `${baseURL}/api/tickets/TicketSummaries`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...params,
+              amount: selectedResultList,
+              startIndex: 0,
+            }),
+          },
+        );
+        if (response.ok) {
+          ipoTicketsSummary.set(await response.json());
+        }
+        ticketLoading = false;
+      },
+    };
+    showFilter = true;
+  }
 
-	async function getSpecific(status: number | null, categoryOverride?: TicketCategory | null) {
-		activeStatusFilter = status;
-		activeCategoryPillFilter = categoryOverride !== undefined ? (categoryOverride ?? null) : null;
-		ticketLoading = true;
-		$_selectedDataIds = {};
-		try {
-		if (activeSearchTerm.trim()) {
-			await refreshSearchResults(status);
-		} else {
-			await getSpecialQueueStats();
-			await getStats();
-			await fetchTabTickets(activeTabId);
-		}
-		} catch {
-			toast.error('Unable to refresh tickets.', { position: 'top-right' });
-		} finally {
-			ticketLoading = false;
-		}
-	}
+  // ── Close tickets ─────────────────────────────────────────────────────────────
+  function closeTickets() {
+    if (isResolving) return;
+    showCloseConfirm = true;
+  }
 
-	async function searchTickets() {
-		const term = searchQuery.trim();
-		if (!term) {
-			toast.error('Enter a ticket number or file number.', { position: 'top-right' });
-			return;
-		}
-		activeSearchTerm = term;
-		activeStatusFilter = null;
-		activeCategoryPillFilter = null;
-		ipoTicketsSummary.set(null);
-		ticketLoading = true;
-		await refreshSearchResults(null);
-		ticketLoading = false;
-	}
+  async function confirmCloseTickets() {
+    if (isResolving) return;
+    showCloseConfirm = false;
+    const selected = $_selectedDataIds;
+    const closeIds: string[] = [];
+    for (const key in selected) {
+      if (!selected[key]) continue;
+      const ticket = ($ipoTicketsSummary as any)?.[key];
+      if (
+        !ticket ||
+        ticket.status === TicketStates.resolved ||
+        ticket.status === TicketStates.closed
+      )
+        continue;
+      const id = ticket.ticketId ?? ticket.id;
+      if (id) closeIds.push(id);
+    }
+    if (!closeIds.length) {
+      toast.error("Select an active ticket to resolve.", {
+        position: "top-right",
+      });
+      return;
+    }
+    isResolving = true;
+    try {
+      const response = await authFetch(`${baseURL}/api/tickets/CloseTicket`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticketId: closeIds,
+          resolution: { staffId: $loggedInUser?.id, staffName: userName },
+        }),
+      });
+      if (!response.ok)
+        throw new Error(
+          (await response.text()) || "Unable to resolve tickets.",
+        );
+      if (!(await response.json()))
+        throw new Error("Unable to resolve tickets.");
+      $_selectedDataIds = {};
+      await getSpecific(activeStatusFilter, activeCategoryPillFilter, false);
+      toast.success("Ticket(s) resolved successfully", {
+        position: "top-right",
+      });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to resolve tickets.",
+        { position: "top-right" },
+      );
+    } finally {
+      isResolving = false;
+    }
+  }
 
-	async function clearSearch() {
-		activeSearchTerm = '';
-		searchQuery = '';
-		ipoTicketsSummary.set(null);
-		ticketLoading = true;
-		await getSpecialQueueStats();
-		await getStats();
-		await fetchTabTickets(activeTabId);
-		ticketLoading = false;
-	}
+  // ── Pill counts (computed from loaded data) ───────────────────────────────────
+  function ticketTypeFor(rowId: string): string {
+    const type = ($ipoTicketsSummary as any)?.[rowId]?.ticketType;
+    const applicationType = ($ipoTicketsSummary as any)?.[rowId]
+      ?.applicationType;
+    if (type === undefined || type === null) return "—";
+    if (applicationType === ApplicationType.Certificate) return "Certificate";
+    const labels: Record<number, string> = {
+      0: "Process Inquiry",
+      1: "App Status",
+      2: "Follow Up",
+      3: "Account Access",
+      4: "Payment Issue",
+      5: "Others",
+    };
+    return labels[type] ?? "—";
+  }
 
-	// ── Ticket view ───────────────────────────────────────────────────────────────
-	async function loadTicket(id: string) {
-		const response = await authFetch(`${baseURL}/api/tickets/${id}`, {
-			method: 'GET',
-			headers: { 'Content-Type': 'application/json' }
-		});
-		if (response.ok) return await response.json();
-		return null;
-	}
-
-	async function showTicket(rowId: string) {
-		const ticketId = ($ipoTicketsSummary as any)?.[rowId]?.ticketId ?? ($ipoTicketsSummary as any)?.[rowId]?.id;
-		const messages: TicketInfo = await loadTicket(ticketId);
-		if (ticketViewComp === null) {
-			ticketViewComp = (await import('./TicketView.svelte')).default;
-		}
-		showTicketMessages = false;
-		await new Promise((r) => setTimeout(r, 0));
-		ticketInfo = {
-			data: messages,
-			isAdmin,
-			onChanged: () => { void getSpecific(activeStatusFilter); },
-			onExit: () => { showTicketMessages = false; },
-			open: true
-		};
-		showTicketMessages = true;
-	}
-
-	// ── Create ticket ─────────────────────────────────────────────────────────────
-	async function createNewTicket() {
-		if (createTicketComp === null) {
-			createTicketComp = (await import('./CreateTicket.svelte')).default;
-		}
-		ticketData = {
-			onExit: () => { showTicketCreation = false; },
-			open: true,
-			technicalOnly: shouldCreateTechnicalTicketOnly(),
-			requireFileNumber: shouldCreateTechnicalTicketOnly()
-		};
-		showTicketCreation = true;
-	}
-
-	// ── Filter ────────────────────────────────────────────────────────────────────
-	async function showFilterSheet() {
-		if (filterSheetComp === null) {
-			filterSheetComp = (await import('./FilterSheet.svelte')).default;
-		}
-		filterData = {
-			open: true,
-			onFilter: async (params: Record<string, any>) => {
-				ticketLoading = true;
-				ipoTicketsSummary.set(null);
-const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
-						method: 'POST',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({
-							...params,
-							amount: selectedResultList,
-							startIndex: 0
-						})
-					});
-				if (response.ok) {
-					ipoTicketsSummary.set(await response.json());
-				}
-				ticketLoading = false;
-			}
-		};
-		showFilter = true;
-	}
-
-	// ── Close tickets ─────────────────────────────────────────────────────────────
-	function closeTickets() {
-		if (isResolving) return;
-		showCloseConfirm = true;
-	}
-
-	async function confirmCloseTickets() {
-		if (isResolving) return;
-		showCloseConfirm = false;
-		const selected = $_selectedDataIds;
-		const closeIds: string[] = [];
-		for (const key in selected) {
-			if (!selected[key]) continue;
-			const ticket = ($ipoTicketsSummary as any)?.[key];
-			if (!ticket || ticket.status === TicketStates.resolved || ticket.status === TicketStates.closed) continue;
-			const id =
-				ticket.ticketId ?? ticket.id;
-			if (id) closeIds.push(id);
-		}
-		if (!closeIds.length) {
-			toast.error('Select an active ticket to resolve.', { position: 'top-right' });
-			return;
-		}
-		isResolving = true;
-		try {
-		const response = await authFetch(`${baseURL}/api/tickets/CloseTicket`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				ticketId: closeIds,
-				resolution: { staffId: $loggedInUser?.id, staffName: userName }
-			})
-		});
-		if (!response.ok) throw new Error(await response.text() || 'Unable to resolve tickets.');
-		if (!await response.json()) throw new Error('Unable to resolve tickets.');
-		$_selectedDataIds = {};
-		await getSpecific(activeStatusFilter);
-		toast.success('Ticket(s) resolved successfully', { position: 'top-right' });
-		} catch (error) {
-			toast.error(error instanceof Error ? error.message : 'Unable to resolve tickets.', { position: 'top-right' });
-		} finally {
-			isResolving = false;
-		}
-	}
-
-	// ── Pill counts (computed from loaded data) ───────────────────────────────────
-	function ticketTypeFor(rowId: string): string {
-		const type = ($ipoTicketsSummary as any)?.[rowId]?.ticketType;
-		const applicationType = ($ipoTicketsSummary as any)?.[rowId]?.applicationType;
-		if (type === undefined || type === null) return '—';
-		if (applicationType === ApplicationType.Certificate) return 'Certificate';
-		const labels: Record<number, string> = {
-			0: 'Process Inquiry', 1: 'App Status', 2: 'Follow Up',
-			3: 'Account Access', 4: 'Payment Issue', 5: 'Others'
-		};
-		return labels[type] ?? '—';
-	}
-
-	// ── Mount ─────────────────────────────────────────────────────────────────────
-	onMount(async () => {
-		await decodeUser();
-		if (!$loggedInUser) return;
-		if (!canAccessIpoSupport()) {
-			await goto('/home/dashboard');
-			return;
-		}
-		isAdmin = hasSupportStaffRole();
-		tabs = getTabsForRole();
-		activeTabId = tabs.length > 0 ? tabs[0].id : '';
-		if (isAdmin) activeStatusFilter = 1;
-		ticketLoading = true;
-		await getSpecialQueueStats();
-		await getStats();
-		await fetchTabTickets(activeTabId);
-		ticketLoading = false;
-	});
+  // ── Mount ─────────────────────────────────────────────────────────────────────
+  onMount(async () => {
+    await decodeUser();
+    if (!$loggedInUser) return;
+    if (!canAccessIpoSupport()) {
+      await goto("/home/dashboard");
+      return;
+    }
+    isAdmin = hasSupportStaffRole();
+    tabs = getTabsForRole();
+    activeTabId = tabs.length > 0 ? tabs[0].id : "";
+    if (isAdmin) activeStatusFilter = 1;
+    ticketLoading = true;
+    await getSpecialQueueStats();
+    await getStats();
+    await fetchTabTickets(activeTabId);
+    ticketLoading = false;
+  });
 </script>
 
 <Toaster />
@@ -1160,34 +1313,27 @@ const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
       <Pagination.Root
         count={$ipoTicketsSummary?.length ?? 0}
         perPage={selectedResultList}
+        bind:page={currentPageNumber}
         let:pages
         let:currentPage
       >
         <Pagination.Content>
           <Pagination.Item>
-            <Pagination.PrevButton
-              on:click={() => ($_pageIndex = $_pageIndex - 1)}
-            />
+            <Pagination.PrevButton />
           </Pagination.Item>
           {#each pages as page (page.key)}
             {#if page.type === "ellipsis"}
               <Pagination.Item><Pagination.Ellipsis /></Pagination.Item>
             {:else}
               <Pagination.Item>
-                <Pagination.Link
-                  {page}
-                  isActive={currentPage == page.value}
-                  on:click={() => ($_pageIndex = page.value - 1)}
-                >
+                <Pagination.Link {page} isActive={currentPage == page.value}>
                   {page.value}
                 </Pagination.Link>
               </Pagination.Item>
             {/if}
           {/each}
           <Pagination.Item>
-            <Pagination.NextButton
-              on:click={() => ($_pageIndex = $_pageIndex + 1)}
-            />
+            <Pagination.NextButton />
           </Pagination.Item>
         </Pagination.Content>
       </Pagination.Root>
