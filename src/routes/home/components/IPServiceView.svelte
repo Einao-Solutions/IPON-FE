@@ -19,6 +19,7 @@
   import { getLetterName } from "../../dataview/datahelpers";
   import AppStatusTag from "$lib/components/ui/ApplicationStatusTag/AppStatusTag.svelte";
   import { authFetch } from "$lib/utils/authFetch";
+  import { openLetter, LETTER_GENERIC_MESSAGE } from "$lib/utils/openLetter";
 
   export let ipType: "trademark" | "patent" | "design";
   export let onBack: () => void;
@@ -332,14 +333,17 @@
     getDocLoading = false;
   }
 
-  function generateLetter(
+  async function generateLetter(
     fileId: string,
     letterType: any,
     applicationId: string,
   ) {
-    window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`,
-    );
+    try {
+      await openLetter({ fileId, letterType, applicationId });
+    } catch (error) {
+      getDocError =
+        error instanceof Error ? error.message : LETTER_GENERIC_MESSAGE;
+    }
   }
 
   async function searchFileAppeals(): Promise<void> {
@@ -1259,13 +1263,22 @@
     {#if changeAgentResult && Array.isArray(changeAgentResult) && changeAgentResult.length > 0}
       {@const file = changeAgentResult[0]}
       <div class="mt-6 space-y-5">
-
         <!-- File Summary -->
         <div>
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">File Info</h3>
-          <div class="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-1 text-sm">
-            <p><span class="font-semibold text-gray-700">File Number:</span> {file.fileId}</p>
-            <p><span class="font-semibold text-gray-700">Type:</span>
+          <h3
+            class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+          >
+            File Info
+          </h3>
+          <div
+            class="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-1 text-sm"
+          >
+            <p>
+              <span class="font-semibold text-gray-700">File Number:</span>
+              {file.fileId}
+            </p>
+            <p>
+              <span class="font-semibold text-gray-700">Type:</span>
               {#if Number(file.tradeMarkLogo) === 0}
                 Trademark Device
               {:else if Number(file.tradeMarkLogo) === 1}
@@ -1277,16 +1290,33 @@
               {/if}
             </p>
             {#if file.titleOfTradeMark}
-              <p><span class="font-semibold text-gray-700">Title of Trade Mark:</span> {file.titleOfTradeMark}</p>
+              <p>
+                <span class="font-semibold text-gray-700"
+                  >Title of Trade Mark:</span
+                >
+                {file.titleOfTradeMark}
+              </p>
             {/if}
             {#if file.titleOfDesign}
-              <p><span class="font-semibold text-gray-700">Title of Design:</span> {file.titleOfDesign}</p>
+              <p>
+                <span class="font-semibold text-gray-700">Title of Design:</span
+                >
+                {file.titleOfDesign}
+              </p>
             {/if}
             {#if file.titleOfInvention}
-              <p><span class="font-semibold text-gray-700">Title of Invention:</span> {file.titleOfInvention}</p>
+              <p>
+                <span class="font-semibold text-gray-700"
+                  >Title of Invention:</span
+                >
+                {file.titleOfInvention}
+              </p>
             {/if}
             {#if file.tradeMarkClass ?? file.trademarkClass}
-              <p><span class="font-semibold text-gray-700">Class:</span> {file.tradeMarkClass ?? file.trademarkClass}</p>
+              <p>
+                <span class="font-semibold text-gray-700">Class:</span>
+                {file.tradeMarkClass ?? file.trademarkClass}
+              </p>
             {/if}
           </div>
         </div>
@@ -1294,27 +1324,65 @@
         <!-- Applicant Details -->
         {#if file.applicants && Array.isArray(file.applicants) && file.applicants.length > 0}
           <div>
-            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Applicant{file.applicants.length > 1 ? "s" : ""} ({file.applicants.length})
+            <h3
+              class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+            >
+              Applicant{file.applicants.length > 1 ? "s" : ""} ({file.applicants
+                .length})
             </h3>
             {#each file.applicants as applicant, i}
-              <div class="p-4 bg-blue-50 border border-blue-200 rounded-md space-y-1 text-sm {i > 0 ? 'mt-2' : ''}">
+              <div
+                class="p-4 bg-blue-50 border border-blue-200 rounded-md space-y-1 text-sm {i >
+                0
+                  ? 'mt-2'
+                  : ''}"
+              >
                 {#if file.applicants.length > 1}
-                  <p class="font-semibold text-blue-800 mb-1">Applicant {i + 1}</p>
+                  <p class="font-semibold text-blue-800 mb-1">
+                    Applicant {i + 1}
+                  </p>
                 {/if}
-                {#if applicant.name}<p><span class="font-semibold text-gray-700">Name:</span> {applicant.name}</p>{/if}
-                {#if applicant.address}<p><span class="font-semibold text-gray-700">Address:</span> {applicant.address}</p>{/if}
-                {#if applicant.email}<p><span class="font-semibold text-gray-700">Email:</span> {applicant.email}</p>{/if}
-                {#if applicant.phone}<p><span class="font-semibold text-gray-700">Phone:</span> {applicant.phonePrefix ? applicant.phonePrefix + " " : ""}{applicant.phone}</p>{/if}
-                {#if applicant.country}<p><span class="font-semibold text-gray-700">Country / Nationality:</span> {applicant.country}</p>{/if}
-                {#if applicant.state}<p><span class="font-semibold text-gray-700">State:</span> {applicant.state}</p>{/if}
+                {#if applicant.name}<p>
+                    <span class="font-semibold text-gray-700">Name:</span>
+                    {applicant.name}
+                  </p>{/if}
+                {#if applicant.address}<p>
+                    <span class="font-semibold text-gray-700">Address:</span>
+                    {applicant.address}
+                  </p>{/if}
+                {#if applicant.email}<p>
+                    <span class="font-semibold text-gray-700">Email:</span>
+                    {applicant.email}
+                  </p>{/if}
+                {#if applicant.phone}<p>
+                    <span class="font-semibold text-gray-700">Phone:</span>
+                    {applicant.phonePrefix
+                      ? applicant.phonePrefix + " "
+                      : ""}{applicant.phone}
+                  </p>{/if}
+                {#if applicant.country}<p>
+                    <span class="font-semibold text-gray-700"
+                      >Country / Nationality:</span
+                    >
+                    {applicant.country}
+                  </p>{/if}
+                {#if applicant.state}<p>
+                    <span class="font-semibold text-gray-700">State:</span>
+                    {applicant.state}
+                  </p>{/if}
               </div>
             {/each}
           </div>
         {:else if file.fileApplicant}
           <div>
-            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Applicant</h3>
-            <div class="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm">
+            <h3
+              class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+            >
+              Applicant
+            </h3>
+            <div
+              class="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm"
+            >
               <p>{file.fileApplicant}</p>
             </div>
           </div>
@@ -1324,14 +1392,38 @@
         {#if file.correspondence}
           {@const corr = file.correspondence}
           <div>
-            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Correspondence</h3>
-            <div class="p-4 bg-green-50 border border-green-200 rounded-md space-y-1 text-sm">
-              {#if corr.name}<p><span class="font-semibold text-gray-700">Name:</span> {corr.name}</p>{/if}
-              {#if corr.address}<p><span class="font-semibold text-gray-700">Address:</span> {corr.address}</p>{/if}
-              {#if corr.email}<p><span class="font-semibold text-gray-700">Email:</span> {corr.email}</p>{/if}
-              {#if corr.phone}<p><span class="font-semibold text-gray-700">Phone:</span> {corr.phone}</p>{/if}
-              {#if corr.nationality}<p><span class="font-semibold text-gray-700">Nationality:</span> {corr.nationality}</p>{/if}
-              {#if corr.state}<p><span class="font-semibold text-gray-700">State:</span> {corr.state}</p>{/if}
+            <h3
+              class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+            >
+              Correspondence
+            </h3>
+            <div
+              class="p-4 bg-green-50 border border-green-200 rounded-md space-y-1 text-sm"
+            >
+              {#if corr.name}<p>
+                  <span class="font-semibold text-gray-700">Name:</span>
+                  {corr.name}
+                </p>{/if}
+              {#if corr.address}<p>
+                  <span class="font-semibold text-gray-700">Address:</span>
+                  {corr.address}
+                </p>{/if}
+              {#if corr.email}<p>
+                  <span class="font-semibold text-gray-700">Email:</span>
+                  {corr.email}
+                </p>{/if}
+              {#if corr.phone}<p>
+                  <span class="font-semibold text-gray-700">Phone:</span>
+                  {corr.phone}
+                </p>{/if}
+              {#if corr.nationality}<p>
+                  <span class="font-semibold text-gray-700">Nationality:</span>
+                  {corr.nationality}
+                </p>{/if}
+              {#if corr.state}<p>
+                  <span class="font-semibold text-gray-700">State:</span>
+                  {corr.state}
+                </p>{/if}
             </div>
           </div>
         {/if}
@@ -1339,7 +1431,10 @@
         <!-- Power of Attorney Upload -->
 
         <!-- Update Button -->
-        <Button class="w-full bg-green-800 hover:bg-green-700 text-white" on:click={async () => await showOwnershipForm()}>
+        <Button
+          class="w-full bg-green-800 hover:bg-green-700 text-white"
+          on:click={async () => await showOwnershipForm()}
+        >
           <Icon icon="lucide:user-check" class="w-4 h-4 mr-2" />
           Proceed to Change Agent
         </Button>

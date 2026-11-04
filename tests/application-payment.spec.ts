@@ -218,6 +218,73 @@ test('offers payment completion for an unpaid opposition', async ({
 	).toBeVisible();
 });
 
+test('preserves authenticated opposition printing after merging payment actions', async ({
+	page,
+	context,
+	baseURL,
+}) => {
+	await context.addCookies([
+		{
+			name: 'auth_token',
+			value: 'test-payment-print-token',
+			url: baseURL ?? 'http://localhost:4173',
+		},
+	]);
+	await page.route('**/api/opposition/loadSummary?*', (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			headers: { 'Access-Control-Allow-Origin': '*' },
+			body: JSON.stringify({
+				data: [
+					{
+						id: 'paid-opposition',
+						title: 'Paid opposition',
+						status: 30,
+						paymentId: '777777777777',
+					},
+				],
+				count: 1,
+			}),
+		}),
+	);
+	await page.route('**/api/letters/generate?*', (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: 'application/pdf',
+			headers: { 'Access-Control-Allow-Origin': '*' },
+			body: '%PDF-1.4\n%%EOF',
+		}),
+	);
+	await page.goto(
+		`${baseURL ?? 'http://localhost:4173'}/home/other-applications/?tab=oppositions`,
+	);
+	await page
+		.getByRole('row')
+		.filter({ hasText: '777777777777' })
+		.getByRole('button')
+		.click();
+	await expect(
+		page.getByRole('menuitem', { name: 'Complete Payment', exact: true }),
+	).toHaveCount(0);
+	const requestPromise = page.waitForRequest(
+		(request) => new URL(request.url()).pathname === '/api/letters/generate',
+	);
+	await page
+		.getByRole('menuitem', {
+			name: 'Opposition Acknowledgement Letter',
+			exact: true,
+		})
+		.click();
+	const request = await requestPromise;
+	expect(request.headers().authorization).toBe(
+		'Bearer test-payment-print-token',
+	);
+	const params = new URL(request.url()).searchParams;
+	expect(params.get('oppositionId')).toBe('paid-opposition');
+	expect(params.get('letterType')).toBe('16');
+});
+
 test('preserves opposition withdrawal confirmation when resuming payment', async ({
 	page,
 	baseURL,

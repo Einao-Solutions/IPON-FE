@@ -45,6 +45,7 @@
   import { ApplicationLetters } from "$lib/helpers";
   import { authFetch } from "$lib/utils/authFetch";
   import { getResumePaymentUrl } from "$lib/utils/applicationPayment";
+  import { openLetter, LETTER_GENERIC_MESSAGE } from "$lib/utils/openLetter";
   $: fileData = $applicationData;
   let historyComponent: any = null;
   let historyData: Record<string, any> = {};
@@ -318,7 +319,9 @@
       const rrr = history0.certificatePaymentId;
       let amount = 0;
       if (rrr) {
-        const response = await authFetch(`${baseURL}/api/payments/check?id=${rrr}`);
+        const response = await authFetch(
+          `${baseURL}/api/payments/check?id=${rrr}`,
+        );
         if (response.ok) {
           const result = await response.json();
           amount = result?.amount;
@@ -366,14 +369,18 @@
     return "Unknown Document";
   }
 
-  function generateLetter(
+  async function generateLetter(
     fileId: string,
     letterType: ApplicationLetters,
     applicationId: string,
   ) {
-    window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`,
-    );
+    try {
+      await openLetter({ fileId, letterType, applicationId });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : LETTER_GENERIC_MESSAGE,
+      );
+    }
   }
 
   async function getDocuments() {
