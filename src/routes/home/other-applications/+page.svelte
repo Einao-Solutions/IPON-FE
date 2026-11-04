@@ -33,6 +33,7 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { otherApplicationsRefresh } from '$lib/utils/otherApplicationsRefresh';
 	import { authFetch, handleSessionExpired } from '$lib/utils/authFetch';
+	import CompletePaymentAction from '$lib/components/CompletePaymentAction.svelte';
 
 	let oppositions: any[] = [];
 	let otherApps: any[] = [];
@@ -163,7 +164,7 @@
 				date: x.date,
 				title: x.title,
 				name: x.name,
-				status: x.status,
+				status: normalizeApplicationStatus(x.status),
 				paymentId: x.paymentId,
 				fileId: x.fileId,
 				id: x.id,
@@ -197,6 +198,7 @@
 				status: normalizeApplicationStatus(x.currentStatus),
 				paymentId: x.paymentId,
 				id: x.id,
+				fileId: x.fileId ?? null,
 				applicationTypeRaw: Number(x.applicationType),
 				applicationType: mapTypeToString(Number(x.applicationType)),
 				title: x.title ?? null,
@@ -501,6 +503,14 @@
 														</Button>
 													</DropdownMenu.Trigger>
 													<DropdownMenu.Content align="end" class="w-56">
+														<CompletePaymentAction application={{
+															id: row.id,
+															status: row.status,
+															paymentId: row.paymentId,
+															applicationType: FormApplicationTypes.NewOpposition,
+															fileId: row.fileId,
+															title: row.title
+														}} />
 														<DropdownMenu.Item on:click={() => viewOppositionDetail(row.fileId || '', row.id)}>
 															View Opposition
 														</DropdownMenu.Item>
@@ -685,6 +695,14 @@
 													<Icon icon="mdi:dots-vertical" class="w-5 h-5" />
 												</DropdownMenu.Trigger>
 												<DropdownMenu.Content align="end" class="w-48">
+													<CompletePaymentAction application={{
+														id: row.id,
+														status: row.status,
+														paymentId: row.paymentId,
+														applicationType: row.applicationTypeRaw,
+														fileId: row.fileId,
+														title: row.title
+													}} />
 													<DropdownMenu.Item>Journal Request Acknowledgement</DropdownMenu.Item>
 												</DropdownMenu.Content>
 											</DropdownMenu.Root>

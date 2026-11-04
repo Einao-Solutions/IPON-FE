@@ -57,6 +57,7 @@
   import OfflineRenewalDialog from "./Components/OfflineRenewalDialog.svelte";
   import AssignmentDocuments from "./AssignmentDocuments.svelte";
   import { authFetch } from "$lib/utils/authFetch";
+  import CompletePaymentAction from "$lib/components/CompletePaymentAction.svelte";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
@@ -3898,7 +3899,7 @@
                 class="inline-block px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
                 >Awaiting Statutory Declaration</span
               >
-            {:else if application.applicationType === FormApplicationTypes.CounterStatement || application.applicationType === FormApplicationTypes.StatutoryDeclaration}
+            {:else if (application.applicationType === FormApplicationTypes.CounterStatement || application.applicationType === FormApplicationTypes.StatutoryDeclaration) && application.currentStatus !== ApplicationStatuses.AwaitingPayment}
               <span
                 class="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs font-medium rounded-full"
                 >Submitted</span
@@ -3919,6 +3920,13 @@
               <DropdownMenu.Trigger on:click>More</DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 <DropdownMenu.Group>
+                  <CompletePaymentAction application={{
+                    id: application.id,
+                    status: application.currentStatus,
+                    paymentId: application.paymentId,
+                    applicationType: application.applicationType,
+                    fileId: fileData.id,
+                  }} />
                   <!-- Ownership Change Application -->
                   {#if application.applicationType === FormApplicationTypes.Ownership}
                     <DropdownMenu.Item

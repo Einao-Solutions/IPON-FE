@@ -41,6 +41,7 @@ const config = {
         "/home/users",
         "/payment",
         "/payment/paid",
+        "/payment/complete",
         "/home/payments",
         "/home/trademarkpubs",
         "/home/trademarkpubs/publish",

@@ -16,6 +16,7 @@
     toByteArray,
     UserRoles,
     UserTypes,
+    FormApplicationTypes,
   } from "$lib/helpers";
   import { Button } from "$lib/components/ui/button";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -47,6 +48,7 @@
   import { mapDateToString } from "../components/dashboardutils";
   import { Textarea } from "$lib/components/ui/textarea";
   import { authFetch } from "$lib/utils/authFetch";
+  import CompletePaymentAction from "$lib/components/CompletePaymentAction.svelte";
   export let dataList: [] | null = [];
   let tableHeaderRows, tablePageRows, _tableAttrs, _tableBodyAttrs;
   let _hasNextPage, _hasPreviousPage, _pageIndex;
@@ -1631,6 +1633,12 @@
                             </Button>
                           </DropdownMenu.Trigger>
                           <DropdownMenu.Content>
+                            <CompletePaymentAction application={{
+                              id: String(cell.render()),
+                              status: String(row.cells.find((c) => c.id === "currentStatus")?.render() ?? ""),
+                              paymentId: String(row.cells.find((c) => c.id === "paymentId")?.render() ?? ""),
+                              applicationType: FormApplicationTypes.NewOpposition,
+                            }} />
                             <DropdownMenu.Item
                               on:click={() => raiseOppositionView(row.cells)}
                               >View opposition</DropdownMenu.Item
