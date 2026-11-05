@@ -44,13 +44,21 @@
   import { Item } from "$lib/components/ui/accordion";
   import DropdownMenuItem from "$lib/components/ui/dropdown-menu/dropdown-menu-item.svelte";
   import { authFetch } from "$lib/utils/authFetch";
+  import CompletePaymentAction from "$lib/components/CompletePaymentAction.svelte";
+  import { FormApplicationTypes } from "$lib/helpers";
+  import { isAwaitingApplicationPayment } from "$lib/utils/applicationPayment";
   import { openLetter, LETTER_GENERIC_MESSAGE } from "$lib/utils/openLetter";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
 
   // Variables
   // ======================
   export let allApplications: ApplicationHistoryType[] = [];
-  export let allOppositions: OppositionHistoryType[];
+  export let allOppositions: (OppositionHistoryType & {
+    oppositionDate?: string;
+    name?: string;
+    status?: number | null;
+    paymentId?: string | null;
+  })[];
   export let isAdmin: boolean = false;
   export let fileData: any;
   export let showMissingDetailsForm: () => {};
@@ -1245,16 +1253,39 @@
           <Table.Row>
             <Table.Cell class="w-1">{i + 1}</Table.Cell>
             <Table.Cell class="w-32"
-              >{mapDateToString(application.oppositionDate)}</Table.Cell
+              >{mapDateToString(
+                application.oppositionDate ?? application.OppositionDate,
+              )}</Table.Cell
             >
-            <Table.Cell class="w-32">{application.name}</Table.Cell>
+            <Table.Cell class="w-32"
+              >{application.name ?? application.Name}</Table.Cell
+            >
             <Table.Cell>
               <AppStatusTag
-                value={application.status ?? undefined}
+                value={application.status ?? application.Status ?? undefined}
               /></Table.Cell
             >
 
-            <Table.Cell><Button>Counter Statement</Button></Table.Cell>
+            <Table.Cell>
+              <Button>Counter Statement</Button>
+              {#if isAwaitingApplicationPayment(application.status ?? application.Status)}
+                <DropdownMenu.Root>
+                  <DropdownMenu.Trigger>More Actions</DropdownMenu.Trigger>
+                  <DropdownMenu.Content>
+                    <CompletePaymentAction
+                      application={{
+                        id: application.id,
+                        status: application.status ?? application.Status,
+                        paymentId:
+                          application.paymentId ?? application.PaymentId,
+                        applicationType: FormApplicationTypes.NewOpposition,
+                        fileId: fileData.id,
+                      }}
+                    />
+                  </DropdownMenu.Content>
+                </DropdownMenu.Root>
+              {/if}
+            </Table.Cell>
           </Table.Row>
         {/each}
       {:else}

@@ -35,6 +35,7 @@
   import { goto } from "$app/navigation";
   import { mapFieldToString } from "../application/apphelper";
   import { authFetch } from "$lib/utils/authFetch";
+  import { getResumePaymentUrl } from "$lib/utils/applicationPayment";
 
   let requiredData: any = {};
   let revisions = writable<RevisionsType[]>([]);
@@ -226,10 +227,25 @@
     } else if (
       selectedRevision?.status === ApplicationStatuses.AwaitingPayment
     ) {
-      // proceed to payment
-      await goto(
-        `/payment?type=update&patentChangeType=${selectedRevision?.field}&applicationId=${selectedRevision?.id}`,
-      );
+      try {
+        const fileId = requiredData.fileData?.id;
+        if (!fileId) throw new Error("Missing file identifier. Please reopen the application.");
+        const response = await authFetch(`${baseURL}/api/files/${encodeURIComponent(fileId)}`);
+        if (!response.ok) throw new Error(`Could not load the pending application (${response.status}).`);
+        const file: PatentData = await response.json();
+        const application = file.applicationHistory?.find((item) => item.id === selectedRevision?.id);
+        if (!application) throw new Error("No pending application payment was found.");
+        await goto(getResumePaymentUrl({
+          id: application.id,
+          status: application.currentStatus,
+          paymentId: application.paymentId,
+          applicationType: application.applicationType,
+          fileId: file.id,
+        }));
+      } catch (error) {
+        console.error("Failed to resume revision payment", error);
+        toast.error(error instanceof Error ? error.message : "Could not start payment. Please try again.");
+      }
       // simulate
       return;
       // const body = {

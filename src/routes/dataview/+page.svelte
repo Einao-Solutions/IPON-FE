@@ -44,6 +44,7 @@
   import OppositionHistory from "./OppositionHistory.svelte";
   import { ApplicationLetters } from "$lib/helpers";
   import { authFetch } from "$lib/utils/authFetch";
+  import { getResumePaymentUrl } from "$lib/utils/applicationPayment";
   import { openLetter, LETTER_GENERIC_MESSAGE } from "$lib/utils/openLetter";
   $: fileData = $applicationData;
   let historyComponent: any = null;
@@ -220,8 +221,23 @@
     }
   }
 
-  function newApplicationPayment() {
-    goto("/payment?type=newapplication");
+  async function newApplicationPayment() {
+    try {
+      const application = fileData?.applicationHistory?.find(
+        (item) => item.applicationType === 0 && item.currentStatus === ApplicationStatuses.AwaitingPayment,
+      );
+      if (!application || !fileData) throw new Error("No pending application payment was found.");
+      await goto(getResumePaymentUrl({
+        id: application.id,
+        status: application.currentStatus,
+        paymentId: application.paymentId,
+        applicationType: application.applicationType,
+        fileId: fileData.id,
+      }));
+    } catch (error) {
+      console.error("Failed to resume new application payment", error);
+      toast.error(error instanceof Error ? error.message : "Could not start payment. Please try again.");
+    }
   }
 
   let missingInfoUpdate = false;
