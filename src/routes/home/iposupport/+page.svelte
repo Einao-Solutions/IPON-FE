@@ -235,7 +235,6 @@
 	// ── Table rebuild when data changes ──────────────────────────────────────────
 	const tableTickets = writable<any[]>([]);
 	$: tableTickets.set(Array.isArray($ipoTicketsSummary) ? $ipoTicketsSummary : []);
-	$: {
 		const table = createTable(tableTickets, {
 			page: addPagination({ initialPageSize: selectedResultList }),
 			filter: addTableFilter({
