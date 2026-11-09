@@ -1,5 +1,5 @@
 ﻿<script lang="ts">
-  import { baseURL, UserRoles, ApplicationStatuses } from "$lib/helpers";
+  import { baseURL, UserRoles, ApplicationStatuses, FormApplicationTypes } from "$lib/helpers";
   import { mapDateToString } from "../components/dashboardutils";
   import Icon from "@iconify/svelte";
   import { onMount } from "svelte";
@@ -15,6 +15,9 @@
   import { page } from "$app/stores";
   import { Toaster } from "$lib/components/ui/sonner";
   import { authFetch } from "$lib/utils/authFetch";
+  import CompletePaymentAction from "$lib/components/CompletePaymentAction.svelte";
+  import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+  import { isAwaitingApplicationPayment } from "$lib/utils/applicationPayment";
 
   // ── Main Tab
   type MainView = "applications" | "withdrawal";
@@ -509,6 +512,22 @@
                         <Icon icon="lucide:eye" class="w-3 h-3 mr-1" />
                         View Opposition
                       </Button>
+                      {#if isAwaitingApplicationPayment(row.status)}
+                      <DropdownMenu.Root>
+                        <DropdownMenu.Trigger class="ml-2" aria-label="More payment actions">
+                          <Icon icon="mdi:dots-vertical" class="w-5 h-5" />
+                        </DropdownMenu.Trigger>
+                        <DropdownMenu.Content>
+                          <CompletePaymentAction application={{
+                            id: row.id,
+                            status: row.status,
+                            paymentId: row.paymentId,
+                            applicationType: FormApplicationTypes.NewOpposition,
+                            oppositionWithdrawal: true
+                          }} />
+                        </DropdownMenu.Content>
+                      </DropdownMenu.Root>
+                      {/if}
                     </td>
                   </tr>
                 {/each}

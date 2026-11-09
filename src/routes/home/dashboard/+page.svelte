@@ -45,6 +45,7 @@
   import { toast } from "svelte-sonner";
   import { User } from "lucide-svelte";
   import { authFetch } from "$lib/utils/authFetch";
+  import { openLetter, LETTER_GENERIC_MESSAGE } from "$lib/utils/openLetter";
   let isModalOpen = false;
   function toggleModal(): void {
     isModalOpen = !isModalOpen;
@@ -153,9 +154,9 @@
           // Note: Tech and SuperAdmin will use UserDashboard with detailed statistics
           // Note: Agent will use UserDashboard with totals only
 
-          UserRoles.TrademarkStaff, 
-          UserRoles.PatentStaff, 
-          UserRoles.DesignStaff, 
+          UserRoles.TrademarkStaff,
+          UserRoles.PatentStaff,
+          UserRoles.DesignStaff,
         ].includes(e),
       );
     }
@@ -291,7 +292,9 @@
     showAlertDialog = true;
 
     try {
-      const response = await authFetch(`${baseURL}/api/payments/check?id=${id}`);
+      const response = await authFetch(
+        `${baseURL}/api/payments/check?id=${id}`,
+      );
       if (!response.ok) throw new Error("Payment check failed");
 
       const result = await response.json();
@@ -400,14 +403,18 @@
     }
     getDocLoading = false;
   }
-  function generateLetter(
+  async function generateLetter(
     fileId: string,
     letterType: ApplicationLetters,
     applicationId: string,
   ) {
-    window.open(
-      `${baseURL}/api/letters/generate?fileId=${fileId}&letterType=${letterType}&applicationId=${applicationId}`,
-    );
+    try {
+      await openLetter({ fileId, letterType, applicationId });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : LETTER_GENERIC_MESSAGE,
+      );
+    }
   }
   async function searchChangeOfAgent() {
     changeAgentError = null;
@@ -1306,7 +1313,9 @@
     <div class="mt-6 space-y-4">
       <div class="space-y-2">
         <!-- svelte-ignore a11y-label-has-associated-control -->
-        <label class="block text-sm font-medium text-gray-700">File Number</label>
+        <label class="block text-sm font-medium text-gray-700"
+          >File Number</label
+        >
         <input
           type="text"
           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -1329,24 +1338,52 @@
     {#if changeAgentResult && Array.isArray(changeAgentResult) && changeAgentResult.length > 0}
       {@const file = changeAgentResult[0]}
       <div class="mt-6 space-y-5">
-
         <!-- File Summary -->
         <div>
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">File Info</h3>
-          <div class="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-1 text-sm">
-            <p><span class="font-semibold text-gray-700">File Number:</span> {file.fileId}</p>
-            <p><span class="font-semibold text-gray-700">Type:</span> {fileTypeToString(file.fileTypes)}</p>
+          <h3
+            class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+          >
+            File Info
+          </h3>
+          <div
+            class="p-4 bg-gray-50 border border-gray-200 rounded-md space-y-1 text-sm"
+          >
+            <p>
+              <span class="font-semibold text-gray-700">File Number:</span>
+              {file.fileId}
+            </p>
+            <p>
+              <span class="font-semibold text-gray-700">Type:</span>
+              {fileTypeToString(file.fileTypes)}
+            </p>
             {#if file.titleOfTradeMark}
-              <p><span class="font-semibold text-gray-700">Title of Trade Mark:</span> {file.titleOfTradeMark}</p>
+              <p>
+                <span class="font-semibold text-gray-700"
+                  >Title of Trade Mark:</span
+                >
+                {file.titleOfTradeMark}
+              </p>
             {/if}
             {#if file.titleOfDesign}
-              <p><span class="font-semibold text-gray-700">Title of Design:</span> {file.titleOfDesign}</p>
+              <p>
+                <span class="font-semibold text-gray-700">Title of Design:</span
+                >
+                {file.titleOfDesign}
+              </p>
             {/if}
             {#if file.titleOfInvention}
-              <p><span class="font-semibold text-gray-700">Title of Invention:</span> {file.titleOfInvention}</p>
+              <p>
+                <span class="font-semibold text-gray-700"
+                  >Title of Invention:</span
+                >
+                {file.titleOfInvention}
+              </p>
             {/if}
             {#if file.fileStatus !== undefined}
-              <p><span class="font-semibold text-gray-700">Status:</span> {file.fileStatus}</p>
+              <p>
+                <span class="font-semibold text-gray-700">Status:</span>
+                {file.fileStatus}
+              </p>
             {/if}
           </div>
         </div>
@@ -1354,27 +1391,65 @@
         <!-- Applicant Details -->
         {#if file.applicants && Array.isArray(file.applicants) && file.applicants.length > 0}
           <div>
-            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">
-              Applicant{file.applicants.length > 1 ? "s" : ""} ({file.applicants.length})
+            <h3
+              class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+            >
+              Applicant{file.applicants.length > 1 ? "s" : ""} ({file.applicants
+                .length})
             </h3>
             {#each file.applicants as applicant, i}
-              <div class="p-4 bg-blue-50 border border-blue-200 rounded-md space-y-1 text-sm {i > 0 ? 'mt-2' : ''}">
+              <div
+                class="p-4 bg-blue-50 border border-blue-200 rounded-md space-y-1 text-sm {i >
+                0
+                  ? 'mt-2'
+                  : ''}"
+              >
                 {#if file.applicants.length > 1}
-                  <p class="font-semibold text-blue-800 mb-1">Applicant {i + 1}</p>
+                  <p class="font-semibold text-blue-800 mb-1">
+                    Applicant {i + 1}
+                  </p>
                 {/if}
-                {#if applicant.name}<p><span class="font-semibold text-gray-700">Name:</span> {applicant.name}</p>{/if}
-                {#if applicant.address}<p><span class="font-semibold text-gray-700">Address:</span> {applicant.address}</p>{/if}
-                {#if applicant.email}<p><span class="font-semibold text-gray-700">Email:</span> {applicant.email}</p>{/if}
-                {#if applicant.phone}<p><span class="font-semibold text-gray-700">Phone:</span> {applicant.phonePrefix ? applicant.phonePrefix + " " : ""}{applicant.phone}</p>{/if}
-                {#if applicant.country}<p><span class="font-semibold text-gray-700">Country / Nationality:</span> {applicant.country}</p>{/if}
-                {#if applicant.state}<p><span class="font-semibold text-gray-700">State:</span> {applicant.state}</p>{/if}
+                {#if applicant.name}<p>
+                    <span class="font-semibold text-gray-700">Name:</span>
+                    {applicant.name}
+                  </p>{/if}
+                {#if applicant.address}<p>
+                    <span class="font-semibold text-gray-700">Address:</span>
+                    {applicant.address}
+                  </p>{/if}
+                {#if applicant.email}<p>
+                    <span class="font-semibold text-gray-700">Email:</span>
+                    {applicant.email}
+                  </p>{/if}
+                {#if applicant.phone}<p>
+                    <span class="font-semibold text-gray-700">Phone:</span>
+                    {applicant.phonePrefix
+                      ? applicant.phonePrefix + " "
+                      : ""}{applicant.phone}
+                  </p>{/if}
+                {#if applicant.country}<p>
+                    <span class="font-semibold text-gray-700"
+                      >Country / Nationality:</span
+                    >
+                    {applicant.country}
+                  </p>{/if}
+                {#if applicant.state}<p>
+                    <span class="font-semibold text-gray-700">State:</span>
+                    {applicant.state}
+                  </p>{/if}
               </div>
             {/each}
           </div>
         {:else if file.fileApplicant}
           <div>
-            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Applicant</h3>
-            <div class="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm">
+            <h3
+              class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+            >
+              Applicant
+            </h3>
+            <div
+              class="p-4 bg-blue-50 border border-blue-200 rounded-md text-sm"
+            >
               <p>{file.fileApplicant}</p>
             </div>
           </div>
@@ -1384,22 +1459,52 @@
         {#if file.correspondence}
           {@const corr = file.correspondence}
           <div>
-            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Correspondence</h3>
-            <div class="p-4 bg-green-50 border border-green-200 rounded-md space-y-1 text-sm">
-              {#if corr.name}<p><span class="font-semibold text-gray-700">Name:</span> {corr.name}</p>{/if}
-              {#if corr.address}<p><span class="font-semibold text-gray-700">Address:</span> {corr.address}</p>{/if}
-              {#if corr.email}<p><span class="font-semibold text-gray-700">Email:</span> {corr.email}</p>{/if}
-              {#if corr.phone}<p><span class="font-semibold text-gray-700">Phone:</span> {corr.phone}</p>{/if}
-              {#if corr.nationality}<p><span class="font-semibold text-gray-700">Nationality:</span> {corr.nationality}</p>{/if}
-              {#if corr.state}<p><span class="font-semibold text-gray-700">State:</span> {corr.state}</p>{/if}
+            <h3
+              class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+            >
+              Correspondence
+            </h3>
+            <div
+              class="p-4 bg-green-50 border border-green-200 rounded-md space-y-1 text-sm"
+            >
+              {#if corr.name}<p>
+                  <span class="font-semibold text-gray-700">Name:</span>
+                  {corr.name}
+                </p>{/if}
+              {#if corr.address}<p>
+                  <span class="font-semibold text-gray-700">Address:</span>
+                  {corr.address}
+                </p>{/if}
+              {#if corr.email}<p>
+                  <span class="font-semibold text-gray-700">Email:</span>
+                  {corr.email}
+                </p>{/if}
+              {#if corr.phone}<p>
+                  <span class="font-semibold text-gray-700">Phone:</span>
+                  {corr.phone}
+                </p>{/if}
+              {#if corr.nationality}<p>
+                  <span class="font-semibold text-gray-700">Nationality:</span>
+                  {corr.nationality}
+                </p>{/if}
+              {#if corr.state}<p>
+                  <span class="font-semibold text-gray-700">State:</span>
+                  {corr.state}
+                </p>{/if}
             </div>
           </div>
         {/if}
 
         <!-- Power of Attorney Upload -->
         <div>
-          <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Power of Attorney</h3>
-          <div class="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-md">
+          <h3
+            class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2"
+          >
+            Power of Attorney
+          </h3>
+          <div
+            class="p-4 bg-gray-50 border border-dashed border-gray-300 rounded-md"
+          >
             <input
               type="file"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
@@ -1413,7 +1518,9 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2 text-sm text-green-700">
                   <Icon icon="lucide:file-check" class="w-4 h-4" />
-                  <span class="truncate max-w-[280px]">{changeAgentPoaFile.name}</span>
+                  <span class="truncate max-w-[280px]"
+                    >{changeAgentPoaFile.name}</span
+                  >
                 </div>
                 <button
                   type="button"
@@ -1421,8 +1528,8 @@
                   on:click={() => {
                     changeAgentPoaFile = null;
                     if (changeAgentPoaInput) changeAgentPoaInput.value = "";
-                  }}
-                >Remove</button>
+                  }}>Remove</button
+                >
               </div>
             {:else}
               <button
@@ -1433,13 +1540,18 @@
                 <Icon icon="lucide:upload" class="w-4 h-4" />
                 Attach Power of Attorney document
               </button>
-              <p class="text-xs text-gray-400 mt-1">Accepted: PDF, DOC, DOCX, JPG, PNG</p>
+              <p class="text-xs text-gray-400 mt-1">
+                Accepted: PDF, DOC, DOCX, JPG, PNG
+              </p>
             {/if}
           </div>
         </div>
 
         <!-- Update Button -->
-        <Button class="w-full bg-blue-600 hover:bg-blue-700 text-white" on:click={async () => await showOwnershipForm()}>
+        <Button
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white"
+          on:click={async () => await showOwnershipForm()}
+        >
           <Icon icon="lucide:user-check" class="w-4 h-4 mr-2" />
           Proceed to Change Agent
         </Button>

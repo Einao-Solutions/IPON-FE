@@ -2,6 +2,12 @@ import { baseURL, ApplicationStatuses } from "$lib/helpers";
 import { get } from "svelte/store";
 import type { Writable } from "svelte/store";
 import { authFetch } from "$lib/utils/authFetch";
+import {
+  getExistingPaymentCost,
+  getExistingPaymentFileNumber,
+  getResumePaymentResponseUrl,
+  readResumePaymentDetails,
+} from "$lib/utils/applicationPayment";
 
 /* ======================================================
    TYPES (INLINE)
@@ -69,6 +75,7 @@ export const paymentHandlers: Record<
   string,
   (ctx: PaymentContext) => Promise<void>
 > = {
+  resume,
   newapplication,
   update,
   opposition,
@@ -112,6 +119,22 @@ export const paymentHandlers: Record<
 /* ======================================================
    HANDLERS
 ====================================================== */
+
+async function resume(ctx: PaymentContext): Promise<void> {
+  const details = readResumePaymentDetails(ctx.page.url.searchParams);
+  const cost = await getExistingPaymentCost(details.rrr);
+  const fileNumber = await getExistingPaymentFileNumber(details.fileId);
+  const user = get(ctx.loggedInUser);
+  ctx.state.setTitle(details.title || "Complete Application Payment");
+  ctx.state.setCost(cost);
+  ctx.state.setPaymentId(details.rrr);
+  ctx.state.setFileNumber(fileNumber);
+  ctx.state.setApplicationId(details.appId);
+  ctx.state.setFileApplicant(
+    user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" "),
+  );
+  ctx.state.setResponseUrl(getResumePaymentResponseUrl(ctx.page.url.host, details));
+}
 
 async function newapplication(ctx: PaymentContext): Promise<void> {
   const appData = get(ctx.applicationData);

@@ -46,8 +46,8 @@
   let lateRenewalCost = "";
   let serviceFee = "";
 
-  let showRenewalErrorModal = false;
-  let renewalErrorMessage = "";
+  let showPaymentError = false;
+  let paymentErrorMessage = "";
   let clerical: string | null = null;
   let searchParams: {
     query: string;
@@ -71,8 +71,12 @@
 
   /* ---------------- INIT ---------------- */
 
-  onMount(async () => {
+  onMount(initializePayment);
+
+  async function initializePayment() {
     isLoading = true;
+    showPaymentError = false;
+    paymentErrorMessage = "";
 
     const $page = get(page);
     currentBaseurl = $page.url.host;
@@ -130,13 +134,16 @@
       freeApplication = cost === "0";
 
       await setHash();
-    } catch (err: any) {
-      renewalErrorMessage = err?.message ?? "Unable to initialize payment";
-      showRenewalErrorModal = true;
+    } catch (error) {
+      console.error("Failed to initialize payment", error);
+      paymentErrorMessage = error instanceof Error
+        ? error.message
+        : "Unable to load payment details. Please try again.";
+      showPaymentError = true;
     } finally {
       isLoading = false;
     }
-  });
+  }
 
   /* ---------------- REMITA HASH (UNCHANGED) ---------------- */
 
@@ -250,7 +257,7 @@
         <p class="text-gray-600 text-lg">Processing payment details...</p>
       </div>
     </div>
-  {:else if showRenewalErrorModal}
+  {:else if showPaymentError}
     <!-- Only show the modal, hide the rest of the page -->
     <div
       class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
@@ -265,11 +272,12 @@
           class="mx-auto text-yellow-500 mb-2"
         />
         <h2 class="text-lg font-semibold mb-2">
-          Your file is not yet due for Renewal
+          Unable to load payment details
         </h2>
-        <p class="mb-4">
-          Renewal is only available 90 days before the due date.
+        <p class="mb-4" role="alert">
+          {paymentErrorMessage}
         </p>
+        <Button on:click={initializePayment}>Retry</Button>
         <Button
           class="outline bg-red-500 text-white"
           on:click={() => goto("/home/dashboard")}>Back</Button
@@ -363,7 +371,7 @@
             </div>
             <!-- Other Payment Details -->
             <div class="grid gap-4">
-              {#if type && ["journal","oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
+              {#if type && (type !== "resume" || fileNumber) && ["journal","oppositionCounter", "oppositionResolution", "statussearch", "availabilitysearch", "merger", "registeredusers", "changedatarecordal"].includes(type) === false}
                 <div
                   class="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg"
                 >
@@ -483,7 +491,7 @@
             {:else}
               <Button
                 type="submit"
-                class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
+                class="flex-1 bg-gradient-to-r from-[#f58220] to-[#f15a24] hover:from-[#e87516] hover:to-[#d94d1d] text-white px-8 py-3 rounded-lg font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200"
               >
                 <div class="flex items-center justify-center gap-2">
                   <Icon
