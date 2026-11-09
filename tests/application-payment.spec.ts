@@ -177,6 +177,66 @@ test('resolves the file number when reopening an existing payment URL', async ({
 	expect(responseUrl.searchParams.get('fileId')).toBe('patent-file');
 });
 
+for (const failure of ['amount', 'file', 'network'] as const) {
+	test(`shows the real ${failure} lookup error and retries the same RRR`, async ({
+		page,
+		baseURL,
+	}) => {
+		let failing = true;
+		const endpoint =
+			failure === 'file'
+				? '**/api/files/patent-file'
+				: '**/api/files/GetRRRCost?*';
+		await page.route(endpoint, async (route) => {
+			if (failing && failure === 'network') {
+				await route.abort();
+				return;
+			}
+			await route.fulfill({
+				status: failing ? 503 : 200,
+				contentType: 'application/json',
+				headers: { 'Access-Control-Allow-Origin': '*' },
+				body: JSON.stringify(
+					failure === 'file'
+						? {
+								id: 'patent-file',
+								fileId: registeredFileNumbers['patent-file'],
+							}
+						: { cost: 1200 },
+				),
+			});
+		});
+		await page.goto(
+			`${baseURL ?? 'http://localhost:4173'}/payment/?type=resume&appId=patent-app&applicationType=5&fileId=patent-file&rrr=222222222222`,
+		);
+		await expect(
+			page.getByRole('heading', { name: 'Unable to load payment details' }),
+		).toBeVisible();
+		await expect(page.getByRole('alert')).toContainText(
+			failure === 'network'
+				? 'fetch'
+				: failure === 'file'
+					? 'file number (503)'
+					: 'payment amount (503)',
+		);
+		await expect(
+			page.getByText('Your file is not yet due for Renewal'),
+		).toHaveCount(0);
+		await expect(
+			page.getByRole('button', { name: 'Pay with Remita' }),
+		).toHaveCount(0);
+		failing = false;
+		await page.getByRole('button', { name: 'Retry', exact: true }).click();
+		await expect(
+			page.getByRole('button', { name: 'Pay with Remita' }),
+		).toBeVisible();
+		await expect(page.locator('input[name="rrr"]')).toHaveValue('222222222222');
+		await expect(
+			page.getByText(registeredFileNumbers['patent-file'], { exact: true }),
+		).toBeVisible();
+	});
+}
+
 test('does not offer Complete Payment for a paid application', async ({
 	page,
 	baseURL,

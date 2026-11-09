@@ -45,6 +45,8 @@ reuses the existing Remita RRR and retrieves its amount from `GetRRRCost`; it do
 not generate a new reference or rely on the original form's browser storage.
 The invoice resolves the registered file number from the existing file record;
 the internal file ID is retained separately for payment confirmation.
+If invoice loading fails, the page displays the actual error and offers Retry,
+which reloads the same payment reference without generating a new RRR.
 
 The shared resume handler returns to `/payment/complete`, verifies the RRR with
 the backend, and confirms the existing application using the applicable payment
