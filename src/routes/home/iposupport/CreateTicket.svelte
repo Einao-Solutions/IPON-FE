@@ -19,6 +19,7 @@ PatentDesignRecordalType
 import { authFetch } from '$lib/utils/authFetch';
 
 export let onExit: () => void = () => {};
+export let onCreated: () => void = () => {};
 export let open: boolean = false;
 export let technicalOnly: boolean = false;
 export let requireFileNumber: boolean = false;
@@ -405,7 +406,10 @@ body: JSON.stringify(body)
 isSavingTicket = false;
 statusMessage = response.ok ? 'success' : 'error';
 step = 7;
-if (response.ok) toast.success('Ticket submitted!', { position: 'top-right' });
+if (response.ok) {
+toast.success('Ticket submitted!', { position: 'top-right' });
+onCreated();
+}
 }
 
 function resetAndClose() {

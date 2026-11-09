@@ -2,12 +2,13 @@
   import {
     baseURL,
     type TicketInfo,
+    type TicketReadResponse,
     TicketStates,
     UserRoles,
     TicketCategory,
   } from "$lib/helpers";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
 
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
   import { Button } from "$lib/components/ui/button";
@@ -24,6 +25,11 @@
     canReplyToTicket,
     ticketReplyStatus,
     ticketSystemMessage,
+    ticketEscalationMessage,
+    orderedTicketMessages,
+    displayedMessageSequence,
+    applyTicketReadResponse,
+    ticketHasUnreadActivity,
   } from "./supportutils";
   import { authFetch } from "$lib/utils/authFetch";
 
@@ -31,6 +37,7 @@
   export let open: boolean = false;
   export let onExit: () => void = () => {};
   export let onChanged: () => void = () => {};
+  export let onRead: (result: TicketReadResponse) => void = () => {};
 
   let newText: string = "";
   let selectedFile: File | null = null;
@@ -43,17 +50,142 @@
   let isEscalatingToDev = false;
   let showDevConfirm = false;
   let now = Date.now();
+  let messageThread: HTMLDivElement;
+  let messageObserver: IntersectionObserver | undefined;
+  const messageElements = new Map<HTMLElement, number>();
+  let displayedSequence = 0;
+  let acknowledgedSequence = 0;
+  let isReading = false;
+  let isRefreshing = false;
+  let activityError = "";
+  let active = false;
+  let revision = 0;
+  let readTimer: ReturnType<typeof setTimeout> | undefined;
+
+  $: messages = orderedTicketMessages(data?.correspondences ?? []);
 
   onMount(() => {
+    active = true;
+    if (typeof IntersectionObserver !== "undefined") {
+      messageObserver = new IntersectionObserver(collectVisibleMessages, { root: messageThread });
+      messageElements.forEach((_, element) => messageObserver?.observe(element));
+    }
+    void tick().then(collectVisibleMessages);
     const timer = window.setInterval(() => { now = Date.now(); }, 1000);
-    return () => window.clearInterval(timer);
+    const poll = window.setInterval(() => { void refreshTicket(); }, 15000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") {
+        collectVisibleMessages();
+        void refreshTicket();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.clearInterval(poll);
+      if (readTimer) clearTimeout(readTimer);
+      messageObserver?.disconnect();
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
   });
+
+  function observeMessage(element: HTMLElement, sequence?: number) {
+    messageElements.set(element, sequence ?? 0);
+    messageObserver?.observe(element);
+    void tick().then(collectVisibleMessages);
+    return {
+      update(nextSequence?: number) {
+        messageElements.set(element, nextSequence ?? 0);
+        void tick().then(collectVisibleMessages);
+      },
+      destroy() {
+        messageObserver?.unobserve(element);
+        messageElements.delete(element);
+      },
+    };
+  }
+
+  function collectVisibleMessages() {
+    if (!active || !open || data.status !== TicketStates.inProgress || document.visibilityState !== "visible" || !messageThread) return;
+    const viewport = messageThread.getBoundingClientRect();
+    const sequences: number[] = [];
+    messageElements.forEach((sequence, element) => {
+      const bounds = element.getBoundingClientRect();
+      if (bounds.height > 0 && bounds.bottom > viewport.top && bounds.top < viewport.bottom && bounds.right > viewport.left && bounds.left < viewport.right) sequences.push(sequence);
+    });
+    displayedSequence = Math.max(displayedSequence, displayedMessageSequence(sequences));
+    if (displayedSequence > acknowledgedSequence && !readTimer) {
+      readTimer = setTimeout(() => {
+        readTimer = undefined;
+        void markDisplayedMessagesRead();
+      }, 250);
+    }
+  }
+
+  async function markDisplayedMessagesRead() {
+    if (!active || !open || data.status !== TicketStates.inProgress || document.visibilityState !== "visible" || isReading || isRefreshing || isUploading || isEscalating || isEscalatingToDev || displayedSequence <= acknowledgedSequence) return;
+    const ticketId = data.id;
+    const throughMessageSequence = displayedSequence;
+    const requestRevision = revision;
+    isReading = true;
+    try {
+      const response = await authFetch(`${baseURL}/api/tickets/${encodeURIComponent(ticketId)}/Read`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ throughMessageSequence }),
+      });
+      if (!response.ok) throw new Error(response.status === 404 ? "This ticket is no longer available." : "Unable to mark viewed messages as read. Retrying automatically.");
+      const result: TicketReadResponse = await response.json();
+      if (!active || data.id !== ticketId || revision !== requestRevision) return;
+      if ((result.latestMessageSequence ?? 0) < (data.latestMessageSequence ?? 0)) return;
+      acknowledgedSequence = Math.max(acknowledgedSequence, result.lastReadMessageSequence);
+      revision += 1;
+      data = applyTicketReadResponse(data, result);
+      activityError = "";
+      onRead(result);
+      onChanged();
+      window.dispatchEvent(new Event("ipo-support-activity"));
+    } catch (error) {
+      if (active) activityError = error instanceof Error ? error.message : "Unable to mark viewed messages as read.";
+    } finally {
+      isReading = false;
+    }
+  }
+
+  async function refreshTicket() {
+    if (!active || !open || document.visibilityState !== "visible" || isRefreshing || isReading || isUploading || isEscalating || isEscalatingToDev) return;
+    const ticketId = data.id;
+    const requestRevision = revision;
+    isRefreshing = true;
+    try {
+      const response = await authFetch(`${baseURL}/api/tickets/${encodeURIComponent(ticketId)}`);
+      if (!response.ok) throw new Error(response.status === 404 ? "This ticket is no longer available." : "Unable to refresh replies. Retrying automatically.");
+      const result: TicketInfo = await response.json();
+      if (!active || data.id !== ticketId || revision !== requestRevision || (result.latestMessageSequence ?? 0) < (data.latestMessageSequence ?? 0)) return;
+      const changed = result.latestMessageSequence !== data.latestMessageSequence || result.unreadCount !== data.unreadCount || result.hasUnreadMessages !== data.hasUnreadMessages || result.status !== data.status;
+      revision += 1;
+      data = result;
+      if (changed) {
+        onChanged();
+        window.dispatchEvent(new Event("ipo-support-activity"));
+      }
+    } catch (error) {
+      if (active) activityError = error instanceof Error ? error.message : "Unable to refresh replies.";
+    } finally {
+      isRefreshing = false;
+      await tick();
+      collectVisibleMessages();
+    }
+  }
 
   $: canReply = canReplyToTicket(data?.status, data?.resolvedAt, now);
   $: isActive = data?.status !== TicketStates.closed && data?.status !== TicketStates.resolved;
   $: canEscalateToDev = isTechSupport && data?.category === TicketCategory.TechnicalSupport && isActive && !data?.isEscalatedToDev;
 
-  const name =
+  $: name =
     ($loggedInUser?.firstName ?? "") + " " + ($loggedInUser?.lastName ?? "");
 
   $: isTrademarkSupport =
@@ -146,11 +278,12 @@
     }
 
     isEscalating = true;
+    revision += 1;
     try {
     const target = escalationTargets.find(
       (t) => t.value === selectedEscalationTarget,
     );
-    const autoMessage = `This ticket has been escalated to ${target?.label ?? "the appropriate team"} for further assistance.`;
+    const autoMessage = ticketEscalationMessage(name, target?.label ?? "the appropriate team");
     const response = await authFetch(`${baseURL}/api/tickets/Escalate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -177,6 +310,7 @@
   async function addCorrespondence() {
     if (isUploading || isEscalating || isEscalatingToDev || !canReplyToTicket(data.status, data.resolvedAt) || (!newText.trim() && !selectedFile)) return;
     isUploading = true;
+    revision += 1;
     try {
     let attachmenturl: any = null;
     if (selectedFile) {
@@ -200,7 +334,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ticketId: data.id,
-        newStatus: ticketReplyStatus(data.status, $loggedInUser?.creatorId === data.creatorId),
+        newStatus: ticketReplyStatus(data.status, $loggedInUser?.creatorId === data.creatorId, data.statusBeforeResolution ?? (data.isEscalatedToDev ? TicketStates.inProgress : undefined)),
         correspondence:
           attachmenturl !== null
             ? {
@@ -232,6 +366,7 @@
   async function escalateToDev() {
     if (!canEscalateToDev || isEscalatingToDev || isEscalating || isUploading) return;
     isEscalatingToDev = true;
+    revision += 1;
     try {
       const response = await authFetch(`${baseURL}/api/tickets/EscalateToDev`, {
         method: "POST",
@@ -240,7 +375,7 @@
           ticketId: data.id,
           escalatedById: $loggedInUser?.creatorId,
           escalatedByName: name,
-          autoMessage: "In Progress",
+          autoMessage: ticketEscalationMessage(name),
         }),
       });
       if (!response.ok) throw new Error(await response.text() || "Failed to escalate ticket.");
@@ -450,6 +585,9 @@
             </Button>
           {/if}
           <TicketTag state={data?.status ?? 2} />
+          {#if ticketHasUnreadActivity(data)}
+            <span class="rounded bg-red-100 px-2 py-1 text-xs font-semibold text-red-800" role="status">New replies{data.unreadCount ? ` (${data.unreadCount})` : ""}</span>
+          {/if}
         </div>
       </div>
 
@@ -666,11 +804,13 @@
         <!-- RIGHT: conversation + composer -->
         <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
           <!-- Message thread -->
-          <div class="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
+          {#if activityError}<p role="status" class="px-4 py-2 text-xs text-red-700">{activityError}</p>{/if}
+          <div bind:this={messageThread} on:scroll={collectVisibleMessages} class="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
             {#if data?.correspondences && data.correspondences.length > 0}
-              {#each data.correspondences as message, i}
+              {#each messages as message (message.id)}
                 {@const isCreator = message.senderId === data.creatorId}
                 {@const isSystem = message.senderId === "system"}
+                <div use:observeMessage={message.messageSequence}>
                 {#if isSystem}
                   <!-- System / escalation message -->
                   <div class="flex items-center justify-center gap-2 min-w-0">
@@ -754,6 +894,7 @@
                     </div>
                   </div>
                 {/if}
+                </div>
               {/each}
             {:else}
               <div
