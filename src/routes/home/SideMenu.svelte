@@ -8,7 +8,6 @@
     decodeUser,
     type NotificationsType,
     UserRoles,
-    TicketCategory,
     TicketStates,
   } from "$lib/helpers";
   import { goto } from "$app/navigation";
@@ -19,6 +18,8 @@
   import dayjs from "dayjs";
   import { User } from "lucide-svelte";
   import { authFetch } from "$lib/utils/authFetch";
+  import { canAccessSidebarItem } from "$lib/utils/moduleAccess";
+  import { supportSidebarCountConfig, supportSidebarIncludesUnread, supportSidebarTicketCount } from "./iposupport/supportutils";
 
   let notifications = writable<NotificationsType | null>(null);
   let notificationsLoading = false;
@@ -27,6 +28,11 @@
   let claimRequestsCount = 0;
   let oppsCount = 0;
   let ipoSupportCount = 0;
+  let ipoSupportRequestVersion = 0;
+  let supportCountsActive = true;
+  $: supportCountConfig = supportSidebarCountConfig($loggedInUser?.userRoles ?? []);
+  $: supportCountLabel = supportCountConfig.countKey === "staff" ? "Tickets awaiting staff" : "Tickets awaiting your reply";
+  $: supportCountTooltip = supportCountLabel + (supportSidebarIncludesUnread($loggedInUser?.userRoles ?? []) ? " or In Progress with unread replies" : "");
   let showSystemNotifications = false;
   // Journal modal state
   let showJournalModal: boolean = false;
@@ -240,7 +246,7 @@
     {
       icon: "mdi:account-group-outline",
       location: "Users",
-      roles: [UserRoles.Tech, UserRoles.SuperAdmin],
+      roles: [UserRoles.SuperAdmin],
     },
     {
       icon: "mdi:account-circle-outline",
@@ -249,7 +255,7 @@
     },
     {
       icon: "mdi:shield-crown-outline",
-      name: "Super Admin",
+      name: "Support Hub",
       location: "admin",
       roles: [UserRoles.SuperAdmin, UserRoles.Tech],
     },
@@ -262,12 +268,7 @@
   ];
 
   function hasAccess(item: MenuItem, userRoles: UserRoles[]): boolean {
-    const isHidden =
-      item.hiddenForRoles?.some((r) => userRoles.includes(r)) ?? false;
-    return (
-      !isHidden &&
-      (!item.roles || item.roles.some((r) => userRoles.includes(r)))
-    );
+    return canAccessSidebarItem(item, userRoles);
   }
 
   function filterMenus(items: MenuItem[], userRoles: UserRoles[]): MenuItem[] {
@@ -319,6 +320,7 @@
   }
 
   function handleMenuClick(menu: any, submenu: any = null) {
+    if (!hasAccess(menu, currentUserRoles) || (submenu && !hasAccess(submenu, currentUserRoles))) return;
     if (menu.location.toLowerCase() === "statistics" && !canViewStatistics) return;
     currentMenuView.set(submenu?.name || menu.location);
     if (submenu) {
@@ -411,51 +413,46 @@
     }
   }
   async function loadIpoSupportCount() {
+    const requestVersion = ++ipoSupportRequestVersion;
+    if (!$loggedInUser || !$loggedInToken) return;
     try {
-      const roles = $loggedInUser?.userRoles ?? [];
-      let url: string;
-      if (roles.includes(UserRoles.TrademarkSupport)) {
-        url = `${baseURL}/api/tickets/GetStats?category=0`;
-      } else if (roles.includes(UserRoles.PatentDesignSupport)) {
-        url = `${baseURL}/api/tickets/GetStats?category=1`;
-      } else if (
-        roles.includes(UserRoles.Tech) ||
-        roles.includes(UserRoles.SuperAdmin)
-      ) {
-        const response = await authFetch(`${baseURL}/api/tickets/TicketSummaries`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            creatorId: "null",
-            category: TicketCategory.TechnicalSupport,
-            status: TicketStates.awaitingStaff,
-            amount: 100000,
-            startIndex: 0,
-          }),
-        });
-        if (response.ok) {
-          const tickets = await response.json();
-          ipoSupportCount = Array.isArray(tickets) ? tickets.length : 0;
-        }
-        return;
-      } else {
-        const userId = ($loggedInUser as any)?.creatorId;
-        url = `${baseURL}/api/tickets/GetStats?userId=${userId}`;
-      }
-      const response = await authFetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        const isStaff =
-          roles.includes(UserRoles.Tech) ||
-          roles.includes(UserRoles.TrademarkSupport) ||
-          roles.includes(UserRoles.PatentDesignSupport) ||
-          roles.includes(UserRoles.SuperAdmin);
-        ipoSupportCount = isStaff ? (data?.staff ?? 0) : (data?.user ?? 0);
-      }
+      const roles = [...($loggedInUser.userRoles ?? [])];
+      const config = supportSidebarCountConfig(roles);
+      const params = new URLSearchParams();
+      if (config.category !== undefined) params.set("category", String(config.category));
+      const inProgressParams = new URLSearchParams(params);
+      inProgressParams.set("status", String(TicketStates.inProgress));
+      const [response, inProgressResponse] = await Promise.all([
+        authFetch(`${baseURL}/api/tickets/GetStats?${params}`),
+        supportSidebarIncludesUnread(roles) ? authFetch(`${baseURL}/api/tickets/GetStats?${inProgressParams}`) : Promise.resolve(null),
+      ]);
+      if (!response.ok || (inProgressResponse && !inProgressResponse.ok)) return;
+      const [data, inProgressStats] = await Promise.all([
+        response.json(),
+        inProgressResponse ? inProgressResponse.json() : Promise.resolve(undefined),
+      ]);
+      if (supportCountsActive && requestVersion === ipoSupportRequestVersion) ipoSupportCount = supportSidebarTicketCount(roles, data, inProgressStats);
     } catch {
-      ipoSupportCount = 0;
+      return;
     }
   }
+
+  onMount(() => {
+    const refreshSupportCount = () => {
+      if (document.visibilityState === "visible") void loadIpoSupportCount();
+    };
+    const timer = window.setInterval(refreshSupportCount, 30000);
+    window.addEventListener("ipo-support-activity", refreshSupportCount);
+    window.addEventListener("focus", refreshSupportCount);
+    document.addEventListener("visibilitychange", refreshSupportCount);
+    return () => {
+      supportCountsActive = false;
+      window.clearInterval(timer);
+      window.removeEventListener("ipo-support-activity", refreshSupportCount);
+      window.removeEventListener("focus", refreshSupportCount);
+      document.removeEventListener("visibilitychange", refreshSupportCount);
+    };
+  });
 
   async function loadOppositionsCount() {
     try {
@@ -600,6 +597,8 @@
               {#if menu.location === "iposupport"}
                 <span
                   class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
+                  title={supportCountTooltip}
+                  aria-label={`${ipoSupportCount} ${supportCountTooltip.toLowerCase()}`}
                 >
                   {ipoSupportCount}
                 </span>

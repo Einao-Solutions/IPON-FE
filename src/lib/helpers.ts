@@ -6,8 +6,8 @@ import { loggedInUser } from "$lib/store";
 import { goto } from "$app/navigation";
 import type { A } from "vitest/dist/chunks/environment.LoooBwUu.js";
 
-// export const baseURL = "http://localhost:5044";
-export const baseURL = "https://testbackend.iponigeria.com";
+export const baseURL = "http://localhost:5044";
+// export const baseURL = "https://testbackend.iponigeria.com";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
@@ -544,7 +544,7 @@ export enum UserRoles {
   TrademarkSupport,
   PatentDesignSupport,
   ActingTrademarkRegistrar,
-  ActingPatentDesignRegistrar,
+  ActingPatentDesignRegistrar,  
 }
 
 export enum FilingType {
@@ -819,7 +819,18 @@ export enum PatentDesignRecordalType {
   Renewal = 6,
 }
 
-export type TicketSummary = {
+export type TicketUnreadState = {
+  hasUnreadMessages?: boolean;
+  unreadCount?: number;
+  latestMessageSequence?: number;
+};
+
+export type TicketReadResponse = TicketUnreadState & {
+  ticketId: string;
+  lastReadMessageSequence: number;
+};
+
+export type TicketSummary = TicketUnreadState & {
   id: string;
   ticketId?: string;
   ticketNumber?: string;
@@ -834,6 +845,7 @@ export type TicketSummary = {
   raisedByRegistryStaff?: boolean;
   isEscalatedToDev?: boolean;
   escalatedToDevAt?: string | null;
+  statusBeforeResolution?: TicketStates | null;
   resolvedAt?: string | null;
   closedAt?: string | null;
   creator: {
@@ -851,7 +863,7 @@ export type TicketSummary = {
   } | null;
 };
 
-export type TicketInfo = {
+export type TicketInfo = TicketUnreadState & {
   id: string;
   ticketNumber?: string;
   category?: TicketCategory;
@@ -869,6 +881,7 @@ export type TicketInfo = {
   escalatedToDevAt?: string | null;
   escalatedToDevById?: string | null;
   escalatedToDevByName?: string | null;
+  statusBeforeResolution?: TicketStates | null;
   resolvedAt?: string | null;
   closedAt?: string | null;
   title: string;
@@ -876,6 +889,7 @@ export type TicketInfo = {
   creatorName: string;
   correspondences: {
     id: string;
+    messageSequence?: number;
     message: string;
     attachment: string | null;
     senderId: string;
