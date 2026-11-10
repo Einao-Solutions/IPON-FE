@@ -25,6 +25,7 @@
     canReplyToTicket,
     ticketReplyStatus,
     ticketSystemMessage,
+    canViewTicketMessage,
     ticketEscalationMessage,
     orderedTicketMessages,
     displayedMessageSequence,
@@ -62,7 +63,7 @@
   let revision = 0;
   let readTimer: ReturnType<typeof setTimeout> | undefined;
 
-  $: messages = orderedTicketMessages(data?.correspondences ?? []);
+  $: messages = orderedTicketMessages(data?.correspondences ?? []).filter((message) => canViewTicketMessage(message, $loggedInUser?.userRoles ?? []));
 
   onMount(() => {
     active = true;
@@ -694,7 +695,7 @@
               </div>
             {/if}
 
-            {#if data?.isEscalatedToDev}
+            {#if isTechSupport && data?.isEscalatedToDev}
               <div>
                 <p class="text-[10px] uppercase tracking-wide text-slate-400 mb-1">Developer Escalation</p>
                 <p class="text-xs text-slate-700 font-medium">Escalated to Dev</p>

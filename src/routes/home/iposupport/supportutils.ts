@@ -58,6 +58,12 @@ export function ticketSystemMessage(message: string): string {
 	return /^escalated to (?:developers|dev)\.?$/i.test(message.trim()) ? 'In Progress' : message;
 }
 
+export function canViewTicketMessage(message: { senderId: string; message: string }, roles: UserRoles[]): boolean {
+	const isDeveloperNotice = message.senderId === 'system' &&
+		(/^(?:escalated to (?:developers|dev)\.?|In Progress\s*-\s*.+ escalated this ticket\.)$/i.test(message.message.trim()));
+	return !isDeveloperNotice || roles.some((role) => role === UserRoles.Tech || role === UserRoles.SuperAdmin);
+}
+
 export function canReplyToTicket(status: TicketStates, resolvedAt: string | null | undefined, now = Date.now()): boolean {
 	if (status === TicketStates.closed) return false;
 	if (status !== TicketStates.resolved) return true;
