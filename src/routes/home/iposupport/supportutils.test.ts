@@ -4,6 +4,28 @@ import { createTable } from 'svelte-headless-table';
 import { addPagination } from 'svelte-headless-table/plugins';
 import { TicketStates, TicketCategory, UserRoles } from '$lib/helpers';
 import { canReplyToTicket, mapTicketStateToString, ticketReplyStatus, ticketSystemMessage, ticketEscalationMessage, orderedTicketMessages, displayedMessageSequence, ticketStatsQuery, applyTicketReadResponse, supportSidebarCountConfig, isNormalTicketUser, ticketHasUnreadActivity, supportSidebarIncludesUnread, supportSidebarTicketCount } from './supportutils';
+import { canViewTicketMessage } from './supportutils';
+
+describe('developer escalation notice visibility', () => {
+	it.each(['Escalated to developers.', 'Escalated to Dev', ticketEscalationMessage('Jane Doe'), ticketEscalationMessage('')])('keeps developer notice "%s" internal to Tech support', (text) => {
+		const message = { senderId: 'system', message: text };
+		expect(canViewTicketMessage(message, [UserRoles.User])).toBe(false);
+		expect(canViewTicketMessage(message, [UserRoles.TrademarkSupport])).toBe(false);
+		expect(canViewTicketMessage(message, [UserRoles.Tech])).toBe(true);
+		expect(canViewTicketMessage(message, [UserRoles.SuperAdmin])).toBe(true);
+		expect(canViewTicketMessage(message, [UserRoles.User, UserRoles.Tech])).toBe(true);
+	});
+
+	it('retains normal replies even when they mention developer escalation', () => {
+		expect(canViewTicketMessage({ senderId: 'officer-id', message: 'Escalated to Dev' }, [UserRoles.User])).toBe(true);
+	});
+
+	it('retains transfers between support teams and other system notices', () => {
+		for (const text of [ticketEscalationMessage('Jane Doe', 'Technical Support'), 'Ticket resolved.']) {
+			expect(canViewTicketMessage({ senderId: 'system', message: text }, [UserRoles.User])).toBe(true);
+		}
+	});
+});
 
 describe('combined sidebar attention counts', () => {
 	it('adds unread In Progress tickets to Awaiting User for a normal user', () => {
