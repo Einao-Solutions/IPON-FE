@@ -400,7 +400,8 @@
       return withFullSummaryPage(body);
     }
 
-		const body: Record<string, any> = {};
+		// Normal users only see their own tickets; scope by the same creatorId used on creation
+		const body: Record<string, any> = { creatorId: $loggedInUser?.creatorId };
 		if (status !== null) body.status = status;
 		return withFullSummaryPage(body);
 	}
