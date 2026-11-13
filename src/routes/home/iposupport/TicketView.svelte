@@ -28,6 +28,7 @@
     canViewTicketMessage,
     ticketEscalationMessage,
     orderedTicketMessages,
+    ticketMessageIsOwn,
     displayedMessageSequence,
     applyTicketReadResponse,
     ticketHasUnreadActivity,
@@ -809,7 +810,7 @@
           <div bind:this={messageThread} on:scroll={collectVisibleMessages} class="flex-1 min-h-0 overflow-y-auto px-6 py-5 space-y-5">
             {#if data?.correspondences && data.correspondences.length > 0}
               {#each messages as message (message.id)}
-                {@const isCreator = message.senderId === data.creatorId}
+                {@const isOwnMessage = ticketMessageIsOwn(message.senderId, $loggedInUser)}
                 {@const isSystem = message.senderId === "system"}
                 <div use:observeMessage={message.messageSequence}>
                 {#if isSystem}
@@ -835,13 +836,13 @@
                   </div>
                 {:else}
                   <div
-                    class="flex {isCreator
+                    class="flex w-full {isOwnMessage
                       ? 'flex-row-reverse'
                       : 'flex-row'} items-end gap-2 min-w-0"
                   >
                     <!-- Avatar -->
                     <div
-                      class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold {isCreator
+                      class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-white text-[10px] font-bold {isOwnMessage
                         ? 'bg-gradient-to-br from-green-500 to-green-800'
                         : 'bg-gradient-to-br from-slate-500 to-slate-700'}"
                     >
@@ -849,7 +850,7 @@
                     </div>
                     <!-- Bubble -->
                     <div
-                      class="max-w-[78%] min-w-0 flex flex-col {isCreator
+                      class="max-w-[78%] min-w-0 flex flex-col {isOwnMessage
                         ? 'items-end'
                         : 'items-start'}"
                     >
@@ -864,7 +865,7 @@
                       </div>
                       <div
                         class="px-4 py-3 rounded-2xl text-sm leading-relaxed break-words shadow-sm min-w-0
-{isCreator
+{isOwnMessage
                           ? 'bg-green-700 text-white rounded-br-sm'
                           : 'bg-white border border-slate-200 text-slate-800 rounded-bl-sm'}"
                       >
@@ -879,7 +880,7 @@
                             target="_blank"
                             rel="noopener noreferrer"
                             href={`${baseURL}${message.attachment}`}
-                            class="mt-2 inline-flex items-center gap-1 text-xs font-medium {isCreator
+                            class="mt-2 inline-flex items-center gap-1 text-xs font-medium {isOwnMessage
                               ? 'text-green-100 hover:text-white'
                               : 'text-blue-600 hover:underline'}"
                           >

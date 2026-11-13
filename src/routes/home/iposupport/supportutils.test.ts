@@ -4,7 +4,27 @@ import { createTable } from 'svelte-headless-table';
 import { addPagination } from 'svelte-headless-table/plugins';
 import { TicketStates, TicketCategory, UserRoles } from '$lib/helpers';
 import { canReplyToTicket, mapTicketStateToString, ticketReplyStatus, ticketSystemMessage, ticketEscalationMessage, orderedTicketMessages, displayedMessageSequence, ticketStatsQuery, applyTicketReadResponse, supportSidebarCountConfig, isNormalTicketUser, ticketHasUnreadActivity, supportSidebarIncludesUnread, supportSidebarTicketCount } from './supportutils';
-import { canViewTicketMessage } from './supportutils';
+import { canViewTicketMessage, ticketMessageIsOwn } from './supportutils';
+
+describe('ticket message alignment', () => {
+	const viewer = { id: 'account-id', creatorId: 'creator-id' };
+
+	it.each(['account-id', 'creator-id'])('places the current viewer message on the right for sender %s', (senderId) => {
+		expect(ticketMessageIsOwn(senderId, viewer)).toBe(true);
+	});
+
+	it('keeps other participants on the left regardless of who created the ticket', () => {
+		expect(ticketMessageIsOwn('another-officer', viewer)).toBe(false);
+		expect(ticketMessageIsOwn('ticket-creator', viewer)).toBe(false);
+	});
+
+	it('does not classify missing identities or system notices as the viewer', () => {
+		expect(ticketMessageIsOwn(undefined, {})).toBe(false);
+		expect(ticketMessageIsOwn('', viewer)).toBe(false);
+		expect(ticketMessageIsOwn('creator-id', null)).toBe(false);
+		expect(ticketMessageIsOwn('system', { id: 'system' })).toBe(false);
+	});
+});
 
 describe('developer escalation notice visibility', () => {
 	it.each(['Escalated to developers.', 'Escalated to Dev', ticketEscalationMessage('Jane Doe'), ticketEscalationMessage('')])('keeps developer notice "%s" internal to Tech support', (text) => {

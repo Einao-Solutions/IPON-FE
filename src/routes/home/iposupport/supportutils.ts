@@ -34,6 +34,10 @@ export function orderedTicketMessages<Message extends { messageSequence?: number
 	return [...messages].sort((first, second) => (first.messageSequence ?? 0) - (second.messageSequence ?? 0));
 }
 
+export function ticketMessageIsOwn(senderId: string | undefined, viewer?: { id?: string; creatorId?: string } | null): boolean {
+	return Boolean(senderId && senderId !== 'system' && (senderId === viewer?.creatorId || senderId === viewer?.id));
+}
+
 export function displayedMessageSequence(sequences: number[]): number {
 	return sequences.reduce((latest, sequence) => Number.isSafeInteger(sequence) && sequence >= 0 ? Math.max(latest, sequence) : latest, 0);
 }
