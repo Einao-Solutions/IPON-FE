@@ -5,9 +5,11 @@
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import {
+    ApplicationStatuses,
     baseURL,
     type DashBoardStats,
     FileTypes,
+    FormApplicationTypes,
     UserRoles,
     type UsersType,
   } from "$lib/helpers";
@@ -100,11 +102,21 @@
    * 3. Groups by application type (curr.type)
    * 4. Maps to final structure used by the accordion components
    */
+  // Status Search applications only surface these statuses in the breakdown
+  const STATUS_SEARCH_VISIBLE_STATUSES: number[] = [
+    ApplicationStatuses.AwaitingPayment,
+    ApplicationStatuses.AutoApproved,
+  ];
+
   function getType(fileType: FileTypes) {
     // Step 1: Filter statistics data for the specified file type
     const val =
-      userDashStats?.detailedStats?.filter((x) => x.fileType === fileType) ??
-      [];
+      userDashStats?.detailedStats?.filter(
+        (x) =>
+          x.fileType === fileType &&
+          (x.type !== FormApplicationTypes.StatusSearch ||
+            STATUS_SEARCH_VISIBLE_STATUSES.includes(x.status)),
+      ) ?? [];
 
     // Step 2: Sort by status for consistent display order
     val.sort((a, v) =>
