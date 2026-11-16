@@ -129,6 +129,21 @@
         const statusText = file?.statusText?.toLowerCase() || "";
         const isRenewalEligible = file?.isRenewalEligible;
 
+        // Trademark renewal is restricted to Active or Pending Renewal files only
+        if (serviceId === "renewal" && file?.fileTypes === FileTypes.Trademark) {
+          const trademarkRenewalStatuses = [
+            ApplicationStatuses.Active,
+            ApplicationStatuses.PendingRenewal,
+          ];
+          if (!trademarkRenewalStatuses.includes(fileStatus)) {
+            error =
+              fileStatus === ApplicationStatuses.Inactive
+                ? `Your file is currently Inactive. Please file for restoration before renewal.`
+                : `${serviceName} is only available for trademark files with status: Active or Pending Renewal. Current file status: ${file?.statusText || "Unknown"}`;
+            return;
+          }
+        }
+
         // Allow only specific statuses: Publication, AwaitingCertification, AwaitingCertificateConfirmation, and Active
         const allowedStatuses = [
           ApplicationStatuses.Publication,
