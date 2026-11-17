@@ -37,6 +37,14 @@ You can preview the production build with `npm run preview`.
 
 > To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
 
+## Browser page titles
+
+Pages without their own title use **IPO Nigeria Portal**. The root layout resets
+this fallback when the route changes, while preserving page-specific titles
+such as Resources. Query-string and hash changes keep the current page title.
+
+Regression coverage: `npx playwright test tests/page-titles.spec.ts`.
+
 ## Completing pending payments
 
 Applications with **Awaiting Payment** status offer **Complete Payment** in their
