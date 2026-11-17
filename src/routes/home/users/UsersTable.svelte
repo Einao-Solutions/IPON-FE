@@ -13,14 +13,19 @@
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import * as Sheet from "$lib/components/ui/sheet";
   import { addPagination } from "svelte-headless-table/plugins";
-  import { ChevronsUpDown, Search } from "lucide-svelte";
+  import { ChevronsUpDown, Search, Users, ArrowUpRight } from "lucide-svelte";
   import { Input } from "$lib/components/ui/input";
   import Icon from "@iconify/svelte";
   import { Label } from "$lib/components/ui/label";
-  import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
   import { loggedInUser } from "$lib/store";
   import { authFetch } from "$lib/utils/authFetch";
+  import {
+    roleDisplayName,
+    roleErrorMessage,
+    type RoleOption,
+  } from "$lib/utils/userRolesApi";
+  import UserRoleEditor from "./UserRoleEditor.svelte";
 
   interface UserTableRow {
     sn: number;
@@ -30,6 +35,7 @@
   }
 
   export let usersList: UserTableRow[] | null = [];
+  export let roles: RoleOption[] = [];
   let tableHeaderRows: any,
     tablePageRows: any,
     _tableAttrs: any,
@@ -38,7 +44,6 @@
     _hasPreviousPage: any,
     _pageIndex: any = 0;
   let _flatColumns: any;
-  let updatedRoles = writable<UserRoles[]>([]);
   export let currentDataPage: number = 0;
 
   $: {
@@ -51,48 +56,27 @@
 
   async function viewUser(id: string) {
     loadingUserId = id;
-    const result = await authFetch(`${baseURL}/api/users/GetUserById?id=${id}`);
-    selectedUser = await result.json();
-    updatedRoles.set([...(selectedUser?.userRoles ?? [])]);
-    loadingUserId = null;
-    viewUserDetails = true;
-  }
-
-  let isUpdatingUser = false;
-  async function saveRoles() {
-    if (!selectedUser) return;
-    isUpdatingUser = true;
-    const originalRoles = selectedUser.userRoles ?? [];
-    const newRoles = $updatedRoles;
-    const addRoles = newRoles.filter((r) => !originalRoles.includes(r));
-    const removeRoles = originalRoles.filter((r) => !newRoles.includes(r));
-    if (addRoles.length === 0 && removeRoles.length === 0) {
-      isUpdatingUser = false;
-      toast.info("No role changes to save", { position: "top-right" });
-      return;
+    try {
+      const result = await authFetch(
+        `${baseURL}/api/users/GetUserById?id=${encodeURIComponent(id)}`,
+      );
+      if (!result.ok) {
+        throw new Error(
+          result.status === 403
+            ? "Access denied."
+            : `Unable to load user (${result.status}). Please retry.`,
+        );
+      }
+      selectedUser = await result.json();
+      viewUserDetails = true;
+    } catch (error) {
+      toast.error(roleErrorMessage(error), { position: "top-right" });
+    } finally {
+      loadingUserId = null;
     }
-    const response = await authFetch(`${baseURL}/api/users/UpdateUserRoles`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: selectedUser.id,
-        addRoles: addRoles.length > 0 ? addRoles : null,
-        removeRoles: removeRoles.length > 0 ? removeRoles : null,
-      }),
-    });
-    selectedUser = { ...selectedUser, userRoles: [...newRoles] };
-    isUpdatingUser = false;
-    if (response.ok)
-      toast.info("Successfully updated user", {
-        position: "top-right",
-      });
-    else
-      toast.error("Failed to update user", {
-        position: "top-right",
-      });
   }
 
-  const resultLength = [10, 15, 20, 25, 30, 35, 40, 45, 50, 75, 100];
+  const resultLength = [10, 20, 50, 100];
   $: {
     const table = createTable(writable(usersList ?? []), {
       page: addPagination({ initialPageSize: $selectedResultList }),
@@ -177,27 +161,22 @@
     loadPage(0, 0);
   }
 
-  function getNumericRoles(): UserRoles[] {
-    return Object.values(UserRoles).filter(
-      (x): x is UserRoles => typeof x === "number",
-    );
-  }
 </script>
 
-<Toaster />
 <Sheet.Root bind:open={viewUserDetails}>
-  <Sheet.Content class="overflow-y-auto">
-    <Sheet.Header>
+  <Sheet.Content class="user-role-sheet">
+    <Sheet.Header class="users-sheet-header">
+      <div class="users-sheet-icon"><Users size={22} aria-hidden="true" /></div>
       <Sheet.Title class="text-lg font-semibold"
         >{selectedUser?.name ??
           `${selectedUser?.firstName} ${selectedUser?.lastName}`}</Sheet.Title
       >
-      <Sheet.Description class="text-muted-foreground"
-        >User ID: {selectedUser?.id}</Sheet.Description
+      <Sheet.Description class="text-muted-foreground break-all"
+        >{selectedUser?.email}</Sheet.Description
       >
     </Sheet.Header>
     <div class="mt-6 space-y-5">
-      <div class="rounded-md border border-border bg-muted/30 p-4 space-y-3">
+      <div class="users-profile-card space-y-4">
         <div>
           <Label
             class="text-xs font-medium text-muted-foreground uppercase tracking-wide"
@@ -223,58 +202,29 @@
           <div class="mt-2 flex flex-wrap gap-2">
             {#each selectedUser?.userRoles ?? [] as userRole}
               <span
-                class="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary border border-primary/20"
+                class="users-role-badge"
               >
-                {mapRoleToString(userRole)}
+                {$loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin)
+                  ? roleDisplayName(userRole, roles)
+                  : mapRoleToString(userRole)}
               </span>
             {/each}
           </div>
         </div>
       </div>
-      {#if $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin)}
-        <div>
-          <Label class="text-sm font-medium">Update Roles</Label>
-          <p class="text-xs text-muted-foreground mt-1 mb-3">
-            Select all that apply
-          </p>
-          <div class="grid grid-cols-2 gap-2">
-            {#each getNumericRoles() as role}
-              <Button
-                variant="outline"
-                size="sm"
-                class="justify-start text-xs {$updatedRoles.includes(role)
-                  ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                  : 'hover:bg-accent'}"
-                on:click={() => {
-                  if ($updatedRoles.includes(role)) {
-                    updatedRoles.update((x) => {
-                      x.splice(x.indexOf(role), 1);
-                      return [...x];
-                    });
-                  } else {
-                    updatedRoles.update((t) => {
-                      t.push(role);
-                      return [...t];
-                    });
-                  }
-                }}
-              >
-                {mapRoleToString(role)}
-              </Button>
-            {/each}
-          </div>
-          <Button class="w-full mt-4" on:click={() => saveRoles()}>
-            {#if isUpdatingUser}
-              <Icon
-                icon="line-md:loading-loop"
-                width="1rem"
-                height="1rem"
-                class="mr-2"
-              />
-            {/if}
-            Update User
-          </Button>
-        </div>
+      {#if $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin) && selectedUser && viewUserDetails}
+        {#key selectedUser.id}
+          <UserRoleEditor
+            userId={selectedUser.id}
+            originalRoles={selectedUser.userRoles ?? []}
+            {roles}
+            on:updated={(event) => {
+              if (selectedUser) {
+                selectedUser = { ...selectedUser, userRoles: event.detail };
+              }
+            }}
+          />
+        {/key}
       {/if}
     </div>
   </Sheet.Content>
@@ -290,32 +240,44 @@
     />
   </div>
 {:else}
-  <div class="space-y-4 p-4 md:p-6">
-    <div class="flex items-center gap-3">
-      <div class="relative flex-1">
+  <div class="users-panel space-y-5">
+    <div class="users-section-heading">
+      <div>
+        <h2>User Directory</h2>
+        <p class="users-section-description">Find an account and open its details to review profile information and roles.</p>
+      </div>
+      <span class="users-count-badge"><Users size={14} aria-hidden="true" />{count} total users</span>
+    </div>
+    <div class="flex flex-wrap items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 sm:p-4">
+      <div class="users-search-wrap min-w-[160px] flex-1">
         <Search
-          class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+          class="users-search-icon h-4 w-4"
+          aria-hidden="true"
         />
         <Input
           placeholder="Search for any user..."
           bind:value={searchName}
-          class="pl-9"
+          class="users-search-input"
+          aria-label="Search users"
           on:keydown={(e) => {
             if (e.key === "Enter") searchUsers();
           }}
         />
       </div>
-      <Button on:click={() => searchUsers()}>Search</Button>
+      <Button class="users-primary-action h-[42px] gap-2 rounded-lg px-5 text-xs" on:click={() => searchUsers()}><Search size={14} aria-hidden="true" />Search</Button>
       <DropdownMenu.Root bind:open={showResultLengthList}>
         <DropdownMenu.Trigger asChild let:builder>
-          <Button builders={[builder]} variant="outline" size="sm">
+          <Button builders={[builder]} variant="outline" size="sm" class="h-[42px] rounded-lg border-slate-200 bg-white text-xs">
             {$selectedResultList} per page
             <ChevronsUpDown class="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content class="w-fit p-1">
           {#each resultLength as rl}
-            <DropdownMenu.Item on:click={() => ($selectedResultList = rl)}>
+            <DropdownMenu.Item on:click={() => {
+              $selectedResultList = rl;
+              searchUsers();
+            }}>
               <span>{rl}</span>
             </DropdownMenu.Item>
           {/each}
@@ -323,7 +285,7 @@
       </DropdownMenu.Root>
     </div>
 
-    <div class="rounded-lg border border-border overflow-hidden">
+    <div class="users-table-wrap">
       <Table.Root {...$_tableAttrs}>
         <Table.Header class="bg-muted/50">
           {#each $tableHeaderRows as headerRow}
@@ -365,6 +327,7 @@
                         <Button
                           variant="outline"
                           size="sm"
+                          class="users-row-action"
                           on:click={() => viewUser(cell.render())}
                         >
                           {#if loadingUserId === cell.render()}
@@ -375,8 +338,15 @@
                               class="mr-1"
                             />
                           {/if}
-                          View
+                          View <ArrowUpRight size={13} aria-hidden="true" />
                         </Button>
+                      {:else if cell.id === "name"}
+                        <div class="users-person">
+                          <span class="users-avatar" aria-hidden="true">{String(cell.render() ?? "").trim().charAt(0).toUpperCase() || "U"}</span>
+                          <Render of={cell.render()} />
+                        </div>
+                      {:else if cell.id === "email"}
+                        <span class="users-secondary-text"><Render of={cell.render()} /></span>
                       {:else}
                         <Render of={cell.render()} />
                       {/if}
@@ -390,13 +360,14 @@
       </Table.Root>
     </div>
 
-    <div class="flex items-center justify-between py-2">
-      <p class="text-sm text-muted-foreground">
+    <div class="users-pagination">
+      <p>
         {count} total users
       </p>
       <Pagination.Root
         {count}
         perPage={$selectedResultList}
+        page={currentDataPage + 1}
         let:pages
         let:currentPage
       >
@@ -420,6 +391,7 @@
                 <Pagination.Link
                   {page}
                   isActive={_pageIndex + 1 === page.value}
+                  aria-current={_pageIndex + 1 === page.value ? "page" : undefined}
                   on:click={() => {
                     _pageIndex = page.value - 1;
                     loadPage(
