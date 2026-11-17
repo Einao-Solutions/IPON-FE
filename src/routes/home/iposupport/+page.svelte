@@ -218,7 +218,6 @@
   let ticketData: any = {};
   let filterData: any = {};
   let searchQuery: string = "";
-  let activeSearchTerm: string = "";
 
 	$: showTechSpecialQueues = isTechSupport() && activeTabId === 'tech';
 	$: showInProgressFilter = isNormalTicketUser($loggedInUser?.userRoles ?? []) || activeQueueMode !== 'normal' || tabs.some((tab) => tab.id === activeTabId && tab.category === TicketCategory.TechnicalSupport);
@@ -238,8 +237,9 @@
 		const table = createTable(tableTickets, {
 			page: addPagination({ initialPageSize: selectedResultList }),
 			filter: addTableFilter({
+				includeHiddenColumns: true,
 				fn: ({ filterValue, value }) =>
-					value.toLowerCase().includes(filterValue.toLowerCase())
+					value.toLowerCase().includes(filterValue.trim().toLowerCase())
 			}),
 			hide: addHiddenColumns(),
 			select: addSelectedRows()
@@ -261,9 +261,27 @@
       },
       plugins: { filter: { exclude: true } },
     }),
-    table.column({ accessor: "lastInteraction", header: "Last Activity" }),
-    table.column({ accessor: "creator", header: "Creator" }),
+    table.column({
+      accessor: "lastInteraction",
+      header: "Last Activity",
+      plugins: { filter: { exclude: true } },
+    }),
+    table.column({
+      accessor: "creator",
+      header: "Creator",
+      plugins: { filter: { getFilterValue: (creator: TicketSummary['creator'] | null) => creator?.name ?? '' } },
+    }),
     table.column({ accessor: "title", header: "Title" }),
+    table.column({
+      accessor: "ticketNumber",
+      header: "Ticket Number",
+      plugins: { filter: { getFilterValue: (value: string | null | undefined) => value ?? '' } },
+    }),
+    table.column({
+      accessor: "fileNumber",
+      header: "File Number",
+      plugins: { filter: { getFilterValue: (value: string | null | undefined) => value ?? '' } },
+    }),
     table.column({
       accessor: "category",
       header: "Category",
@@ -274,7 +292,11 @@
       header: "Ticket Type",
       plugins: { filter: { exclude: true } },
     }),
-    table.column({ accessor: "status", header: "Status" }),
+    table.column({
+      accessor: "status",
+      header: "Status",
+      plugins: { filter: { exclude: true } },
+    }),
     table.column({
       accessor: "id",
       header: "",
@@ -285,6 +307,7 @@
   const {
     headerRows: tableHeaderRows,
     pageRows: tablePageRows,
+    rows: filteredTableRows,
     tableAttrs: _tableAttrs,
     tableBodyAttrs: _tableBodyAttrs,
     flatColumns: _flatColumns,
@@ -294,10 +317,18 @@
   const { pageIndex: _pageIndex, pageSize: _pageSize } = pluginStates.page;
   const { hiddenColumnIds: _hiddenColumnIds } = pluginStates.hide;
   const { selectedDataIds: _selectedDataIds } = pluginStates.select;
+  const { filterValue: ticketSearchFilter } = pluginStates.filter;
+
+  $: if ($ticketSearchFilter !== undefined) {
+    currentPageNumber = 1;
+    $_selectedDataIds = {};
+  }
 
   hideForId = Object.fromEntries(
     (_flatColumns as any[]).map((col: any) => [col.id, true]),
   );
+  hideForId.ticketNumber = false;
+  hideForId.fileNumber = false;
 
   $: tableData.set(
     Array.isArray($ipoTicketsSummary) ? ($ipoTicketsSummary as any[]) : [],
@@ -329,7 +360,7 @@
 	}
 
 	function currentViewKey(): string {
-		return JSON.stringify([activeTabId, activeQueueMode, activeStatusFilter, activeCategoryPillFilter, activeSearchTerm, $loggedInUser?.creatorId]);
+		return JSON.stringify([activeTabId, activeQueueMode, activeStatusFilter, activeCategoryPillFilter, $loggedInUser?.creatorId]);
 	}
 
 	function currentQueueBody(status: number | null = activeStatusFilter): Record<string, any> {
@@ -435,55 +466,6 @@
     const data = await response.json();
     return Array.isArray(data) ? data : [];
   }
-
-	function summarizeTickets(tickets: any[]) {
-		return {
-			total: tickets.length,
-			staff: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingStaff).length,
-			user: tickets.filter((ticket) => ticket?.status === TicketStates.awaitingUser).length,
-			closed: tickets.filter((ticket) => ticket?.status === TicketStates.closed).length,
-			inProgress: tickets.filter((ticket) => ticket?.status === TicketStates.inProgress).length,
-			resolved: tickets.filter((ticket) => ticket?.status === TicketStates.resolved).length,
-			unreadTickets: tickets.filter(ticketHasUnreadActivity).length
-		};
-	}
-
-  function getSearchField(term: string): Record<string, string> {
-    return /^TKT[-\w]*/i.test(term)
-      ? { ticketNumber: term }
-      : { fileNumber: term };
-  }
-
-	function getSearchRequest(): Record<string, any> | null {
-		const term = activeSearchTerm.trim();
-		if (!term) return null;
-		return getSearchField(term);
-	}
-
-	async function fetchSearchTickets(status: number | null = activeStatusFilter): Promise<any[]> {
-		const body = getSearchRequest();
-		if (body === null) return [];
-		const response = await authFetch(`${baseURL}/api/tickets/Search`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(body)
-		});
-		if (!response.ok) throw new Error('Unable to search tickets.');
-		const data = await response.json();
-		const tickets = Array.isArray(data) ? data : [];
-		return status === null ? tickets : tickets.filter((ticket) => ticket?.status === status);
-	}
-
-	async function refreshSearchResults(status: number | null = activeStatusFilter) {
-		const requestVersion = ++listRequestVersion;
-		const viewKey = currentViewKey();
-		const allMatches = await fetchSearchTickets(null);
-		if (disposed || requestVersion !== listRequestVersion || viewKey !== currentViewKey()) return;
-		const matches = status === null ? allMatches : allMatches.filter((ticket) => ticket.status === status);
-		ipoTicketStats.set(summarizeTickets(allMatches));
-		unreadTicketCount = allMatches.filter(ticketHasUnreadActivity).length;
-		ipoTicketsSummary.set(sortTicketSummaries(matches));
-	}
 
 	async function fetchQueueStats(body: Record<string, any>): Promise<Record<string, number>> {
 		const params = ticketStatsQuery(body);
@@ -600,8 +582,7 @@
 		try {
 			do {
 				refreshPending = false;
-				if (activeSearchTerm.trim()) await refreshSearchResults();
-				else await Promise.all([getStats(), fetchTabTickets(activeTabId)]);
+				await Promise.all([getStats(), fetchTabTickets(activeTabId)]);
 			} while (refreshPending && !disposed);
 		} catch {
 			if (!disposed) refreshError = 'Unable to refresh ticket activity. Retrying automatically.';
@@ -620,9 +601,9 @@
 	}
 
 	async function onTabChange(tabId: string) {
+		$ticketSearchFilter = '';
 		activeTabId = tabId;
 		activeQueueMode = 'normal';
-		activeSearchTerm = '';
 		searchQuery = '';
 		activeStatusFilter = isTechSupport() || isAdmin ? 1 : null;
 		activeCategoryPillFilter = null;
@@ -631,8 +612,8 @@
 	}
 
 	async function setQueueMode(mode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical') {
+		$ticketSearchFilter = '';
 		activeQueueMode = mode;
-		activeSearchTerm = '';
 		searchQuery = '';
 		activeStatusFilter = null;
 		activeCategoryPillFilter = null;
@@ -649,13 +630,9 @@
 		$_pageIndex = 0;
 		$_selectedDataIds = {};
 		try {
-		if (activeSearchTerm.trim()) {
-			await refreshSearchResults(status);
-		} else {
 			await getSpecialQueueStats();
 			await getStats();
 			await fetchTabTickets(activeTabId);
-		}
 		} catch {
 			if (!disposed && requestVersion === loadingVersion) {
 				refreshError = 'Unable to refresh tickets. Retrying automatically.';
@@ -666,24 +643,13 @@
 		}
 	}
 
-	async function searchTickets() {
-		const term = searchQuery.trim();
-		if (!term) {
-			toast.error('Enter a ticket number or file number.', { position: 'top-right' });
-			return;
-		}
-		activeSearchTerm = term;
-		activeStatusFilter = null;
-		activeCategoryPillFilter = null;
-		ipoTicketsSummary.set(null);
-		await getSpecific(null);
+	function searchTickets() {
+		$ticketSearchFilter = searchQuery.trim();
 	}
 
-	async function clearSearch() {
-		activeSearchTerm = '';
+	function clearSearch() {
+		$ticketSearchFilter = '';
 		searchQuery = '';
-		ipoTicketsSummary.set(null);
-		await getSpecific(activeStatusFilter);
 	}
 
 	// ── Ticket view ───────────────────────────────────────────────────────────────
@@ -735,7 +701,7 @@
 			onExit: () => { showTicketCreation = false; },
 			onCreated: () => {
 				if (!hasSupportStaffRole()) {
-					activeSearchTerm = '';
+					$ticketSearchFilter = '';
 					searchQuery = '';
 					activeCategoryPillFilter = null;
 					void getSpecific(TicketStates.awaitingStaff);
@@ -922,7 +888,7 @@
 	<div class="mb-3 flex flex-wrap items-center gap-2" aria-live="polite">
 		<span
 			class="inline-flex min-h-7 items-center gap-2 rounded px-2 py-1 text-xs font-medium {unreadTicketCount > 0 ? 'bg-red-50 text-red-800' : 'text-slate-500'}"
-			title={activeSearchTerm.trim() ? 'Unread replies on In Progress tickets in these search results' : 'Unread replies on In Progress tickets in this queue'}
+			title="Unread replies on In Progress tickets in this queue"
 		>
 			<Icon icon="mdi:email-outline" width="1rem" height="1rem" aria-hidden="true" />
 			{#if unreadTicketCount > 0}
@@ -1074,11 +1040,6 @@
       </span>
     </button>
 
-    {#if activeSearchTerm.trim()}
-      <span class="self-center text-xs text-slate-500"
-        >Counts reflect up to 100 search matches.</span
-      >
-    {/if}
     {#if showTechSpecialQueues}
       <span class="h-6 border-l border-slate-300 mx-1"></span>
       <button
@@ -1166,13 +1127,14 @@
         />
         <Input
           class="pl-9"
-          placeholder="Search ticket number or file number"
+          aria-label="Search tickets"
+          placeholder="Search by ticket number, file number, creator name or title"
           bind:value={searchQuery}
         />
       </div>
       <div class="flex gap-2">
         <Button type="submit" size="sm">Search</Button>
-        {#if activeSearchTerm}
+        {#if $ticketSearchFilter}
           <Button
             type="button"
             variant="outline"
@@ -1181,11 +1143,12 @@
           >
         {/if}
       </div>
-      {#if activeSearchTerm}
+      {#if $ticketSearchFilter}
         <p class="text-xs text-slate-500 sm:ml-2">
           Showing search results for <span class="font-semibold text-slate-700"
-            >{activeSearchTerm}</span
+            >{$ticketSearchFilter}</span
           >
+          <span aria-live="polite"> · {$filteredTableRows.length} matching ticket(s) in this queue.</span>
         </p>
       {/if}
     </form>
@@ -1354,7 +1317,7 @@
     <!-- Pagination -->
     <div class="flex items-center justify-end space-x-4 py-4">
       <Pagination.Root
-        count={$ipoTicketsSummary?.length ?? 0}
+        count={$filteredTableRows.length}
         perPage={selectedResultList}
         bind:page={currentPageNumber}
         let:pages
