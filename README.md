@@ -73,6 +73,19 @@ Regression coverage: `npm run test:unit -- --run src/lib/utils/applicationPaymen
 and `npx playwright test tests/application-payment.spec.ts` (requires an installed
 Playwright browser).
 
+## Support ticket filtering
+
+IPO Support uses one search bar with placeholder hints for ticket numbers,
+file numbers, creator names and ticket titles, with no search-type dropdown.
+Search filters all loaded pages of the current queue using case-insensitive
+partial matching.
+It preserves the existing role/queue/status scope, resets pagination when changed,
+and does not fetch additional tickets or broaden access. All four fields are
+searched locally; search does not call the cross-queue Search endpoint.
+Backend authorization remains responsible for limiting API results.
+
+Regression coverage: `npx playwright test tests/support-search.spec.ts`.
+
 ## SuperAdmin role management
 
 The entire Users section, including direct and nested `/home/users` routes,
