@@ -57,6 +57,7 @@
   import OfflineRenewalDialog from "./Components/OfflineRenewalDialog.svelte";
   import AssignmentDocuments from "./AssignmentDocuments.svelte";
   import { authFetch } from "$lib/utils/authFetch";
+  import { MapTradeMarkClass } from "$lib/constants";
   import CompletePaymentAction from "$lib/components/CompletePaymentAction.svelte";
   import { openLetter, LETTER_GENERIC_MESSAGE } from "$lib/utils/openLetter";
   // import { au } from 'vitest/dist/chunks/reporters.nr4dxCkA.js';
@@ -251,6 +252,68 @@
       description: description || message,
       position: "top-right",
     });
+  }
+
+  function firstMeaningfulValue(...values: any[]): any {
+    return values.find(
+      (value) =>
+        value !== null && value !== undefined && String(value).trim() !== "",
+    );
+  }
+
+  function formatTrademarkClass(value: any, description?: string): string {
+    const classNumber = Number(value);
+    if (!Number.isFinite(classNumber) || classNumber <= 0) return "—";
+    const label = description || MapTradeMarkClass(classNumber);
+    return label ? `Class ${classNumber} — ${label}` : `Class ${classNumber}`;
+  }
+
+  // GetChangeDataRecordal returns a flat object (oldClass, newClass,
+  // oldClassDescription, newAdditionalDescription, ...) while history
+  // records nest values under oldValue/newValue, so check both.
+  function getReclassificationDetails(data: any) {
+    const oldValue = data?.oldValue ?? {};
+    const newValue = data?.newValue ?? {};
+
+    return {
+      currentClass: firstMeaningfulValue(
+        data?.oldClass,
+        oldValue.oldClass,
+        oldValue.productClass,
+        oldValue.class,
+        oldValue.trademarkClass,
+        fileData?.trademarkClass,
+      ),
+      currentClassDescription: firstMeaningfulValue(
+        data?.oldClassDescription,
+        oldValue.oldClassDescription,
+      ),
+      newClass: firstMeaningfulValue(
+        data?.newClass,
+        newValue.newClass,
+        newValue.class,
+        newValue.productClass,
+        newValue.trademarkClass,
+      ),
+      newClassDescription: firstMeaningfulValue(
+        data?.newClassDescription,
+        newValue.newClassDescription,
+      ),
+      currentSpecification: firstMeaningfulValue(
+        oldValue.additionalDescription,
+        oldValue.trademarkSpecification,
+        oldValue.specification,
+        fileData?.additionalDescription,
+        fileData?.trademarkSpecification,
+      ),
+      newSpecification: firstMeaningfulValue(
+        data?.newAdditionalDescription,
+        newValue.newAdditionalDescription,
+        newValue.additionalDescription,
+        newValue.specification,
+        newValue.trademarkSpecification,
+      ),
+    };
   }
 
   function normalizeAttachmentUrl(value: any): string | null {
@@ -2261,7 +2324,10 @@
                   : selectedApplication?.applicationType ===
                       FormApplicationTypes.Amendment
                     ? "mdi:file-edit-outline"
-                    : "mdi:file-document-outline"}
+                    : selectedApplication?.applicationType ===
+                        FormApplicationTypes.Reclassification
+                      ? "mdi:tag-multiple-outline"
+                      : "mdi:file-document-outline"}
             width="1.3em"
             class="text-white"
           />
@@ -2282,7 +2348,9 @@
                         ? "Amendment Information"
                         : selectedApplication?.applicationType === 5
                           ? "Assignment Information"
-                          : "Application Details"}
+                          : selectedApplication?.applicationType === 22
+                            ? "Reclassification Information"
+                            : "Application Details"}
           </Dialog.Title>
           <Dialog.Description class="text-xs text-slate-600 mt-1">
             {mapTypeToString(selectedApplication?.applicationType || 0)} • File ID:
@@ -2639,6 +2707,54 @@
                   </div>
                 </div>
               </div>
+            {:else if selectedApplication?.applicationType === FormApplicationTypes.Reclassification}
+              {@const reclassification =
+                getReclassificationDetails(recordalData)}
+              <div
+                class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2"
+              >
+                <p
+                  class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500"
+                >
+                  Reclassification Details
+                </p>
+                <div
+                  class="mt-4 grid gap-4 md:grid-cols-2 text-sm text-slate-900"
+                >
+                  <div>
+                    <div class="text-xs text-slate-500">Current Class</div>
+                    <div>
+                      {formatTrademarkClass(
+                        reclassification.currentClass,
+                        reclassification.currentClassDescription,
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">New Class</div>
+                    <div>
+                      {formatTrademarkClass(
+                        reclassification.newClass,
+                        reclassification.newClassDescription,
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">
+                      Current Specification
+                    </div>
+                    <div class="whitespace-pre-line">
+                      {reclassification.currentSpecification ?? "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <div class="text-xs text-slate-500">New Specification</div>
+                    <div class="whitespace-pre-line">
+                      {reclassification.newSpecification ?? "—"}
+                    </div>
+                  </div>
+                </div>
+              </div>
             {:else}
               <div
                 class="rounded-xl border border-slate-200 bg-slate-50 p-4 lg:col-span-2"
@@ -2711,7 +2827,7 @@
 
       <!-- Decision Reason -->
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-        {#if [5, 7, 8, 9, 10, 11, 17, 36].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.AwaitingApproval)}
+        {#if [5, 7, 8, 9, 10, 11, 17, 22, 36].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.AwaitingApproval)}
           <div class="mt-4 pt-4 border-t border-slate-200">
             <Label
               for="approval-reason"
@@ -2741,7 +2857,7 @@
       class="border-t border-slate-200 px-6 py-3 flex flex-wrap gap-2 justify-end"
     >
       {#if Array.isArray($loggedInUser?.userRoles) && [UserRoles.TrademarkCertification, UserRoles.SuperAdmin, UserRoles.Tech, UserRoles.TrademarkAcceptance].some( (r) => $loggedInUser.userRoles.includes(r), )}
-        {#if [5, 7, 8, 9, 10, 11, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.AwaitingApproval)}
+        {#if [5, 7, 8, 9, 10, 11, 22, 36, 17].includes(selectedApplication?.applicationType ?? -1) && (selectedApplication?.currentStatus == ApplicationStatuses.AwaitingRecordalProcess || selectedApplication?.currentStatus == ApplicationStatuses.AwaitingApproval)}
           <Button
             on:click={() => {
               if (!reason || reason.trim().length < 10) {
@@ -2767,6 +2883,7 @@
                 case 9:
                 case 36:
                 case 10:
+                case 22:
                   approveChangeDataRecordal(selectedApplication);
                   break;
                 case 11:

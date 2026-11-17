@@ -11,7 +11,7 @@ export const baseURL = "http://localhost:5044";
 // export const baseURL = "https://integration.iponigeria.com";
 export const localhost = "http://localhost:5044";
 
-export function normalizeImageUrl( 
+export function normalizeImageUrl(
   input: string | null | undefined,
   currentOrigin: string = typeof window !== "undefined"
     ? window.location.origin
@@ -544,7 +544,7 @@ export enum UserRoles {
   TrademarkSupport,
   PatentDesignSupport,
   ActingTrademarkRegistrar,
-  ActingPatentDesignRegistrar,  
+  ActingPatentDesignRegistrar,
 }
 
 export enum FilingType {
