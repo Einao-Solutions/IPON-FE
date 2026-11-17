@@ -23,9 +23,9 @@ describe('SuperAdmin Users access', () => {
 });
 
 describe('Tech module access', () => {
-	it.each(['Users', 'statistics'])('hides %s even on a mixed Tech/SuperAdmin account', (location) => {
+	it.each(['Users', 'statistics'])('hides %s from Tech but allows a mixed Tech/SuperAdmin account', (location) => {
 		expect(canAccessSidebarItem({ location }, [UserRoles.Tech])).toBe(false);
-		expect(canAccessSidebarItem({ location }, [UserRoles.Tech, UserRoles.SuperAdmin])).toBe(false);
+		expect(canAccessSidebarItem({ location }, [UserRoles.Tech, UserRoles.SuperAdmin])).toBe(true);
 	});
 
 	it.each(['Dashboard', 'Publications', 'journal', 'Resources', 'iposupport', 'Opposition', 'profile', 'admin', 'ClaimRequests'])('allows Tech to access sidebar item %s', (location) => {
@@ -34,7 +34,7 @@ describe('Tech module access', () => {
 
 	it.each(['/home/users', '/home/users/', '/home/users/add', '/statistics', '/statistics/performance/', '/statistics/techfee', '/home/statistics', '/HOME/USERS/roles'])('blocks direct and nested Tech route %s', (pathname) => {
 		expect(canAccessModulePath(pathname, [UserRoles.Tech])).toBe(false);
-		expect(canAccessModulePath(pathname, [UserRoles.Tech, UserRoles.SuperAdmin])).toBe(false);
+		expect(canAccessModulePath(pathname, [UserRoles.Tech, UserRoles.SuperAdmin])).toBe(true);
 		expect(canAccessModulePath(pathname, [UserRoles.SuperAdmin])).toBe(true);
 	});
 
