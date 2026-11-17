@@ -7,7 +7,9 @@ type SidebarAccessItem = {
 };
 
 export function isTechRestrictedModule(location: string, roles: UserRoles[]): boolean {
-	return roles.includes(UserRoles.Tech) && ['users', 'statistics'].includes(location.toLowerCase());
+	return roles.includes(UserRoles.Tech) &&
+		!roles.includes(UserRoles.SuperAdmin) &&
+		['users', 'statistics'].includes(location.toLowerCase());
 }
 
 export function canAccessSidebarItem(item: SidebarAccessItem, roles: UserRoles[]): boolean {
@@ -24,5 +26,7 @@ export function isRestrictedModulePath(pathname: string): boolean {
 }
 
 export function canAccessModulePath(pathname: string, roles: UserRoles[]): boolean {
-	return !roles.includes(UserRoles.Tech) || !isRestrictedModulePath(pathname);
+	return !roles.includes(UserRoles.Tech) ||
+		roles.includes(UserRoles.SuperAdmin) ||
+		!isRestrictedModulePath(pathname);
 }
