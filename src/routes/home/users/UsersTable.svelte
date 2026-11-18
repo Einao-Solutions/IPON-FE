@@ -26,6 +26,9 @@
     type RoleOption,
   } from "$lib/utils/userRolesApi";
   import UserRoleEditor from "./UserRoleEditor.svelte";
+  import UserAccountTypeEditor from "./UserAccountTypeEditor.svelte";
+  import { onMount } from "svelte";
+  import { userAccountTypesRefresh } from "$lib/utils/userAccountTypesRefresh";
 
   interface UserTableRow {
     sn: number;
@@ -161,6 +164,26 @@
     loadPage(0, 0);
   }
 
+  onMount(() => {
+    let initial = true;
+    return userAccountTypesRefresh.subscribe(() => {
+      if (initial) {
+        initial = false;
+        return;
+      }
+      void refreshAccountTypeUsers();
+    });
+  });
+
+  async function refreshAccountTypeUsers() {
+    try {
+      await loadPage($selectedResultList, currentDataPage * $selectedResultList);
+    } catch (error) {
+      toast.error(roleErrorMessage(error), { position: "top-right" });
+    } finally {
+      isLoading = false;
+    }
+  }
 </script>
 
 <Sheet.Root bind:open={viewUserDetails}>
@@ -214,6 +237,10 @@
       </div>
       {#if $loggedInUser?.userRoles?.includes(UserRoles.SuperAdmin) && selectedUser && viewUserDetails}
         {#key selectedUser.id}
+          <UserAccountTypeEditor
+            userId={selectedUser.id}
+            userName={selectedUser.name ?? `${selectedUser.firstName} ${selectedUser.lastName}`}
+          />
           <UserRoleEditor
             userId={selectedUser.id}
             originalRoles={selectedUser.userRoles ?? []}
