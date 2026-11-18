@@ -66,6 +66,10 @@ async function setup(page: Page, baseURL: string, userRoles = [21]) {
 		const take = Number(url.searchParams.get('take') ?? 20);
 		let body: unknown = {};
 		if (url.pathname === '/api/users/roles') body = roles;
+		else if (url.pathname === '/api/users/account-types')
+			body = [{ id: 0, name: 'Individual' }, { id: 1, name: 'Corporate' }, { id: 2, name: 'Officer' }, { id: 3, name: 'Tech' }];
+		else if (url.pathname.endsWith('/account-type'))
+			body = { userId: member.id, accountType: null, accountTypeName: null };
 		else if (/\/roles\/\d+\/users$/.test(url.pathname)) {
 			body = { items: [member], totalCount: 45, skip, take };
 		} else if (url.pathname === '/api/users/GetAllUsers')

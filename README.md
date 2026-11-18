@@ -96,7 +96,21 @@ User IDs are not displayed or offered as manual activity filters. Search uses
 names and emails; opening an assigner's activity keeps their ID scoped internally.
 
 The existing user-details sheet and role-member sheets share the role editor.
-Updates send only changed catalogue IDs as `addRoles` and `removeRoles` to
+Both sheets also offer a separate SuperAdmin-only account-type editor. It loads
+the catalogue from `GET /api/users/account-types` and the selected user's current
+value from `GET /api/users/{userId}/account-type`. Legacy null values display
+as **Not set**. Saving requires confirmation of the user and old/new types,
+then sends only `{ accountType: numericId }` to the corresponding PUT endpoint.
+Account types do not change roles or grant permissions, including the Tech type.
+Successful responses refresh the current user list without resetting its filters
+or pagination. A missing user refreshes the list; conflicts reload the latest
+type for review. Network/server save errors require reloading current state
+before another save, avoiding blind retries of a possibly completed update.
+Account-type audit recording/export retries are handled by the backend, which
+supports standalone MongoDB for this action. No account-type history screen is
+provided because there is no history read API.
+
+Role updates send only changed catalogue IDs as `addRoles` and `removeRoles` to
 `PUT /api/users/UpdateUserRoles`, without an actor ID. Failed saves preserve the
 original roles and pending selection. Successful saves notify open member,
 assigner, and history queries to refetch, even if the editor was closed while
@@ -111,11 +125,14 @@ displayed timestamps use the viewer's local timezone.
 Audit data starts when backend tracking was introduced; empty results do not
 establish that no earlier assignments occurred. Duplicate/no-op updates must
 not create backend audit entries. Backend build/test validation remains pending,
-and audited updates require a transaction-capable MongoDB deployment.
+and audited role updates require a transaction-capable MongoDB deployment.
 
 Regression coverage: `npm run test:unit -- --run src/lib/utils/userRolesApi.test.ts src/lib/utils/roleQuery.test.ts src/lib/utils/authFetch.test.ts`
 and `npx playwright test tests/user-roles.spec.ts` (requires an installed Playwright
 browser; API fixtures are confined to tests, not the application).
+
+Account-type regression coverage: `npm run test:unit -- --run src/lib/utils/userAccountTypesApi.test.ts`
+and `npx playwright test tests/user-account-types.spec.ts`.
 
 ## Support ticket filtering
 
