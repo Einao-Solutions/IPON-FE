@@ -553,14 +553,14 @@
       {#if menu.location.toLowerCase() !== "statistics" || canViewStatistics}
       <div class="mb-1">
         <button
-          class="w-full text-left px-2 focus:outline-none"
+          class="w-full text-left focus:outline-none"
           on:click={() =>
             menu.submenus
               ? toggleSubmenu(menu.location)
               : handleMenuClick(menu)}
         >
           <div
-            class={`flex items-center justify-between rounded-md py-2 px-3 ${activeMenu === menu.location ? "bg-green-800 text-white" : "hover:bg-gray-100"}`}
+            class={`flex items-center justify-between py-2 px-5 ${activeMenu === menu.location ? "bg-green-800 text-white" : "hover:bg-gray-100"}`}
           >
             <div class="flex items-center space-x-3">
               <Icon
@@ -614,10 +614,10 @@
           </div>
         </button>
         {#if menu.submenus && activeMenu === menu.location}
-          <div class="ml-10 mt-1 space-y-1">
+          <div class="mt-1 space-y-1">
             {#each menu.submenus as submenu}
               <button
-                class="w-full text-left flex items-center space-x-2 py-2 px-3 rounded-md text-base {activeSubmenu ===
+                class="w-full text-left flex items-center space-x-2 py-2 pl-[3.25rem] pr-3 text-base {activeSubmenu ===
                 submenu.name
                   ? 'font-medium text-[#287F71] bg-gray-50'
                   : 'text-slate-600 hover:bg-gray-50'}"

@@ -1807,12 +1807,15 @@
 {:else}
   <!-- Show marquee banner only for regular users (non-staff) -->
   {#if !isStaff}
-    <div class="relative">
+    <!-- On desktop the bar lines up with the first sidebar item: the sidebar
+         is pinned at 64px with 24px of top padding (88px), while this content
+         starts below the 81px header, so it needs 7px and the same 40px height. -->
+    <div class="relative lg:pt-[7px]">
       <div
-        class="w-full bg-green-800 text-white py-3 px-3 text-sm rounded overflow-hidden relative h-8"
+        class="w-full bg-green-800 text-white py-3 px-3 text-sm overflow-hidden relative h-8 lg:h-10"
       >
         <div
-          class="absolute whitespace-nowrap animate-marquee top-1.5 font-bold"
+          class="absolute whitespace-nowrap animate-marquee top-1/2 -translate-y-1/2 font-bold"
         >
           View your accepted marks under “Trademark Publication” in Trademark
           Services. <b>◆</b> File opposition via the “Opposition” feature in

@@ -262,7 +262,7 @@
 {:else}
   <!-- Professional Header -->
   <div
-    class="bg-white rounded-xl p-5 mb-8 border border-green-200/40 shadow-lg hover:shadow-xl transition-all duration-300 sticky top-0 z-10"
+    class="bg-white p-5 mb-8 border border-green-200/40 shadow-md hover:shadow-md transition-all duration-300 sticky top-0 z-10"
   >
     <div class="flex items-center justify-between space-x-6">
       <div class="flex-shrink-0">
@@ -324,7 +324,7 @@
   </div>
 
   <!-- ==================== TRADEMARK REGISTRY HUB ==================== -->
-  <div class={isTradeMarkRelated() ? "" : "hidden"}>
+  <div class="{isTradeMarkRelated() ? '' : 'hidden'} lg:pl-6">
     <div class="space-y-4">
       <Accordion.Root class="space-y-3">
         {#each getType(FileTypes.Trademark) as item}
@@ -412,7 +412,7 @@
   </div>
 
   <!-- ==================== PATENT REGISTRY HUB ==================== -->
-  <div class="{isPatentRelated() ? '' : 'hidden'} mt-3">
+  <div class="{isPatentRelated() ? '' : 'hidden'} mt-3 lg:pl-6">
     {#if isPatentRelated() && isDesignRelated()}
       <!-- PatentDesignRegistrar / SuperAdmin / Tech — wrap in outer accordion -->
       <Accordion.Root class="space-y-3 mb-3">
@@ -600,7 +600,7 @@
   </div>
 
   <!-- ==================== DESIGN REGISTRY HUB ==================== -->
-  <div class="{isDesignRelated() ? '' : 'hidden'} mt-3">
+  <div class="{isDesignRelated() ? '' : 'hidden'} mt-3 lg:pl-6">
     {#if isPatentRelated() && isDesignRelated()}
       <!-- PatentDesignRegistrar / SuperAdmin / Tech — wrap in outer accordion -->
       <Accordion.Root class="space-y-3 mb-3">
