@@ -45,5 +45,11 @@ export function isRestrictedModulePath(pathname: string): boolean {
 export function canAccessModulePath(pathname: string, roles: UserRoles[]): boolean {
 	const segments = pathname.toLowerCase().split('/').filter(Boolean);
 	if (segments[0] === 'home' && segments[1] === 'users' && !roles.includes(UserRoles.SuperAdmin)) return false;
-	return !roles.includes(UserRoles.Tech) || !isRestrictedModulePath(pathname);
+	// Tech alone is kept out of the restricted modules; SuperAdmin always
+	// overrides that, matching isTechRestrictedModule for the sidebar.
+	return (
+		!roles.includes(UserRoles.Tech) ||
+		roles.includes(UserRoles.SuperAdmin) ||
+		!isRestrictedModulePath(pathname)
+	);
 }

@@ -250,91 +250,108 @@
         return "IP Registry Hub";
     }
   }
+
+  // Application types stack edge to edge as the rows of one bordered table;
+  // only the first and last rows carry the outer rounding.
+  const appTypeRowClass =
+    "border-x border-b first:border-t border-slate-200/60 first:rounded-t-xl last:rounded-b-xl bg-white hover:bg-green-50/40 transition-colors duration-200";
+
+  // Statuses inside an application type follow the same joined-row pattern.
+  const statusRowClass =
+    "flex items-center justify-between p-2 border-x border-b first:border-t border-gray-300 first:rounded-t-md last:rounded-b-md hover:bg-gray-100 transition-colors duration-150";
 </script>
 
-{#if isLoading}
-  <Icon
-    class="flex items-center justify-center w-full"
-    icon="eos-icons:loading"
-    width="1.6rem"
-    height="1.6rem"
-  />
-{:else}
-  <!-- Professional Header -->
-  <div
-    class="bg-white p-5 mb-8 border border-green-200/40 shadow-md hover:shadow-md transition-all duration-300 sticky top-0 z-10"
-  >
-    <div class="flex items-center justify-between space-x-6">
-      <div class="flex-shrink-0">
-        <img
-          src={ministry}
-          alt="Ministry Logo"
-          class="h-16 w-16 md:h-20 md:w-20 object-contain hover:scale-105 transition-transform duration-300"
-        />
-      </div>
-      <div class="text-center flex-1">
-        <h1
-          class="text-xl md:text-2xl lg:text-3xl font-bold text-green-800 mb-1 leading-tight"
+<!-- Professional Header: needs no data, so it shows straight away -->
+<div
+  class="reveal-rise bg-white p-5 mb-8 border border-green-200/40 shadow-md hover:shadow-md transition-all duration-300 sticky top-0 z-10"
+>
+  <div class="flex items-center justify-between space-x-6">
+    <div class="flex-shrink-0">
+      <img
+        src={ministry}
+        alt="Ministry Logo"
+        class="h-16 w-16 md:h-20 md:w-20 object-contain hover:scale-105 transition-transform duration-300"
+      />
+    </div>
+    <div class="text-center flex-1">
+      <h1
+        class="text-xl md:text-2xl lg:text-3xl font-bold text-green-800 mb-1 leading-tight"
+      >
+        Intellectual Property Office Nigeria
+      </h1>
+      <p
+        class="text-green-800 font-semibold text-xs md:text-sm tracking-wide mb-2"
+      >
+        Commercial Law Department
+      </p>
+      <h2 class="text-lg md:text-xl font-bold text-gray-700">
+        {getRoleInfo().title}
+      </h2>
+      <p class="text-green-800 text-xs md:text-sm">
+        Manage {getRoleInfo().title} Applications
+      </p>
+    </div>
+    <div class="flex-shrink-0">
+      {#if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Trademark}
+        <div
+          class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-md border border-green-200/30 hover:scale-105"
         >
-          Intellectual Property Office Nigeria
-        </h1>
-        <p
-          class="text-green-800 font-semibold text-xs md:text-sm tracking-wide mb-2"
+          <Icon
+            icon="mdi:scale-balance"
+            class="w-12 h-12 md:w-16 md:h-16 text-green-800"
+          />
+        </div>
+      {:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Patent}
+        <div
+          class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105"
         >
-          Commercial Law Department
-        </p>
-        <h2 class="text-lg md:text-xl font-bold text-gray-700">
-          {getRoleInfo().title}
-        </h2>
-        <p class="text-green-800 text-xs md:text-sm">
-          Manage {getRoleInfo().title} Applications
-        </p>
-      </div>
-      <div class="flex-shrink-0">
-        {#if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Trademark}
-          <div
-            class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105"
-          >
-            <Icon
-              icon="mdi:scale-balance"
-              class="w-12 h-12 md:w-16 md:h-16 text-green-800"
-            />
-          </div>
-        {:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Patent}
-          <div
-            class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105"
-          >
-            <Icon
-              icon="mdi:lightbulb-outline"
-              class="w-12 h-12 md:w-16 md:h-16 text-green-800"
-            />
-          </div>
-        {:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Design}
-          <div
-            class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105"
-          >
-            <Icon
-              icon="mdi:palette-outline"
-              class="w-12 h-12 md:w-16 md:h-16 text-green-800"
-            />
-          </div>
-        {/if}
-      </div>
+          <Icon
+            icon="mdi:lightbulb-outline"
+            class="w-12 h-12 md:w-16 md:h-16 text-green-800"
+          />
+        </div>
+      {:else if getUserPrimaryFileType(user.userRoles || []) === FileTypes.Design}
+        <div
+          class="h-20 w-20 md:h-24 md:w-24 bg-gradient-to-br from-green-50 to-green-100 rounded-xl flex items-center justify-center transition-transform duration-300 shadow-lg hover:shadow-xl border border-green-200/30 hover:scale-105"
+        >
+          <Icon
+            icon="mdi:palette-outline"
+            class="w-12 h-12 md:w-16 md:h-16 text-green-800"
+          />
+        </div>
+      {/if}
     </div>
   </div>
+</div>
+
+{#if isLoading}
+  <!-- Placeholder rows shaped like the application-type table below -->
+  <div class="lg:px-6" role="status" aria-label="Loading applications">
+    <div class="motion-safe:animate-pulse">
+      {#each Array(4) as _}
+        <div
+          class="{appTypeRowClass} flex h-[89px] items-center space-x-3 px-3"
+        >
+          <div class="h-10 w-10 flex-shrink-0 rounded-lg bg-slate-200"></div>
+          <div class="space-y-2">
+            <div class="h-4 w-48 rounded bg-slate-200"></div>
+            <div class="h-3 w-28 rounded bg-slate-100"></div>
+          </div>
+        </div>
+      {/each}
+    </div>
+  </div>
+{:else}
 
   <!-- ==================== TRADEMARK REGISTRY HUB ==================== -->
-  <div class="{isTradeMarkRelated() ? '' : 'hidden'} lg:pl-6">
+  <div class="{isTradeMarkRelated() ? '' : 'hidden'} lg:px-6 reveal-fade">
     <div class="space-y-4">
-      <Accordion.Root class="space-y-3">
+      <Accordion.Root>
         {#each getType(FileTypes.Trademark) as item}
           {@const iconInfo = getApplicationTypeIcon(parseInt(item.type))}
-          <Accordion.Item
-            value="tm-{item.type}"
-            class="border border-slate-200/60 rounded-xl bg-gradient-to-r from-white via-slate-50/50 to-white mb-2 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60"
-          >
+          <Accordion.Item value="tm-{item.type}" class={appTypeRowClass}>
             <Accordion.Trigger
-              class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
+              class="pr-3 hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
             >
               <div class="flex items-center justify-between w-full px-3 py-2">
                 <div class="flex items-center space-x-3 flex-1">
@@ -384,14 +401,14 @@
               </div>
             </Accordion.Trigger>
             <Accordion.Content>
-              <div class="px-4 pb-3 space-y-1.5">
+              <div class="px-4 pb-3">
                 {#if item.items && item.items.length > 0}
                   {#each item.items as appInfo}
                     <a
                       href="/files?fileType=2&appType={parseInt(
                         item.type,
                       )}&status={appInfo.status}&titleType=custom"
-                      class="flex items-center justify-between p-2 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors duration-150"
+                      class={statusRowClass}
                       style="text-decoration: none;"
                     >
                       <AppStatusTag value={appInfo.status} />
@@ -412,7 +429,7 @@
   </div>
 
   <!-- ==================== PATENT REGISTRY HUB ==================== -->
-  <div class="{isPatentRelated() ? '' : 'hidden'} mt-3 lg:pl-6">
+  <div class="{isPatentRelated() ? '' : 'hidden'} mt-3 lg:px-6 reveal-fade">
     {#if isPatentRelated() && isDesignRelated()}
       <!-- PatentDesignRegistrar / SuperAdmin / Tech — wrap in outer accordion -->
       <Accordion.Root class="space-y-3 mb-3">
@@ -421,7 +438,7 @@
           class="border border-green-200/60 rounded-xl bg-gradient-to-r from-white via-green-50/30 to-white hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:border-green-300/60"
         >
           <Accordion.Trigger
-            class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
+            class="pr-3 hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
           >
             <div class="flex items-center justify-between w-full px-3 py-2">
               <div class="flex items-center space-x-3 flex-1">
@@ -448,17 +465,17 @@
           </Accordion.Trigger>
           <Accordion.Content>
             <div class="px-4 pb-4 space-y-3">
-              <Accordion.Root class="space-y-3">
+              <Accordion.Root>
                 {#each getType(FileTypes.Patent) as item}
                   {@const iconInfo = getApplicationTypeIcon(
                     parseInt(item.type),
                   )}
                   <Accordion.Item
                     value="patent-{item.type}"
-                    class="border border-slate-200/60 rounded-xl bg-gradient-to-r from-white via-slate-50/50 to-white mb-2 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60"
+                    class={appTypeRowClass}
                   >
                     <Accordion.Trigger
-                      class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
+                      class="pr-3 hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
                     >
                       <div
                         class="flex items-center justify-between w-full px-3 py-2"
@@ -495,14 +512,14 @@
                       </div>
                     </Accordion.Trigger>
                     <Accordion.Content>
-                      <div class="px-4 pb-3 space-y-1.5">
+                      <div class="px-4 pb-3">
                         {#if item.items && item.items.length > 0}
                           {#each item.items as appInfo}
                             <a
                               href="/files?fileType=0&appType={parseInt(
                                 item.type,
                               )}&status={appInfo.status}&titleType=custom"
-                              class="flex items-center justify-between p-2 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors duration-150"
+                              class={statusRowClass}
                               style="text-decoration: none;"
                             >
                               <AppStatusTag value={appInfo.status} />
@@ -528,15 +545,12 @@
     {:else}
       <!-- Single patent role — show directly without outer wrapper -->
       <div class="space-y-4">
-        <Accordion.Root class="space-y-3">
+        <Accordion.Root>
           {#each getType(FileTypes.Patent) as item}
             {@const iconInfo = getApplicationTypeIcon(parseInt(item.type))}
-            <Accordion.Item
-              value="p-{item.type}"
-              class="border border-slate-200/60 rounded-xl bg-gradient-to-r from-white via-slate-50/50 to-white mb-2 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60"
-            >
+            <Accordion.Item value="p-{item.type}" class={appTypeRowClass}>
               <Accordion.Trigger
-                class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
+                class="pr-3 hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
               >
                 <div class="flex items-center justify-between w-full px-3 py-2">
                   <div class="flex items-center space-x-3 flex-1">
@@ -571,14 +585,14 @@
                 </div>
               </Accordion.Trigger>
               <Accordion.Content>
-                <div class="px-4 pb-3 space-y-1.5">
+                <div class="px-4 pb-3">
                   {#if item.items && item.items.length > 0}
                     {#each item.items as appInfo}
                       <a
                         href="/files?fileType=0&appType={parseInt(
                           item.type,
                         )}&status={appInfo.status}&titleType=custom"
-                        class="flex items-center justify-between p-2 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors duration-150"
+                        class={statusRowClass}
                         style="text-decoration: none;"
                       >
                         <AppStatusTag value={appInfo.status} />
@@ -600,7 +614,7 @@
   </div>
 
   <!-- ==================== DESIGN REGISTRY HUB ==================== -->
-  <div class="{isDesignRelated() ? '' : 'hidden'} mt-3 lg:pl-6">
+  <div class="{isDesignRelated() ? '' : 'hidden'} mt-3 lg:px-6 reveal-fade">
     {#if isPatentRelated() && isDesignRelated()}
       <!-- PatentDesignRegistrar / SuperAdmin / Tech — wrap in outer accordion -->
       <Accordion.Root class="space-y-3 mb-3">
@@ -609,7 +623,7 @@
           class="border border-green-200/60 rounded-xl bg-gradient-to-r from-white via-green-50/30 to-white hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:border-green-300/60"
         >
           <Accordion.Trigger
-            class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
+            class="pr-3 hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
           >
             <div class="flex items-center justify-between w-full px-3 py-2">
               <div class="flex items-center space-x-3 flex-1">
@@ -636,17 +650,17 @@
           </Accordion.Trigger>
           <Accordion.Content>
             <div class="px-4 pb-4 space-y-3">
-              <Accordion.Root class="space-y-3">
+              <Accordion.Root>
                 {#each getType(FileTypes.Design) as item}
                   {@const iconInfo = getApplicationTypeIcon(
                     parseInt(item.type),
                   )}
                   <Accordion.Item
                     value="design-{item.type}"
-                    class="border border-slate-200/60 rounded-xl bg-gradient-to-r from-white via-slate-50/50 to-white mb-2 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60"
+                    class={appTypeRowClass}
                   >
                     <Accordion.Trigger
-                      class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
+                      class="pr-3 hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
                     >
                       <div
                         class="flex items-center justify-between w-full px-3 py-2"
@@ -683,14 +697,14 @@
                       </div>
                     </Accordion.Trigger>
                     <Accordion.Content>
-                      <div class="px-4 pb-3 space-y-1.5">
+                      <div class="px-4 pb-3">
                         {#if item.items && item.items.length > 0}
                           {#each item.items as appInfo}
                             <a
                               href="/files?fileType=1&appType={parseInt(
                                 item.type,
                               )}&status={appInfo.status}&titleType=custom"
-                              class="flex items-center justify-between p-2 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors duration-150"
+                              class={statusRowClass}
                               style="text-decoration: none;"
                             >
                               <AppStatusTag value={appInfo.status} />
@@ -716,15 +730,12 @@
     {:else}
       <!-- Single design role — show directly without outer wrapper -->
       <div class="space-y-4">
-        <Accordion.Root class="space-y-3">
+        <Accordion.Root>
           {#each getType(FileTypes.Design) as item}
             {@const iconInfo = getApplicationTypeIcon(parseInt(item.type))}
-            <Accordion.Item
-              value="d-{item.type}"
-              class="border border-slate-200/60 rounded-xl bg-gradient-to-r from-white via-slate-50/50 to-white mb-2 hover:shadow-lg hover:shadow-green-500/10 transition-all duration-300 hover:scale-[1.01] hover:border-green-300/60"
-            >
+            <Accordion.Item value="d-{item.type}" class={appTypeRowClass}>
               <Accordion.Trigger
-                class="hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
+                class="pr-3 hover:bg-transparent data-[state=open]:bg-transparent [&>div]:no-underline"
               >
                 <div class="flex items-center justify-between w-full px-3 py-2">
                   <div class="flex items-center space-x-3 flex-1">
@@ -759,14 +770,14 @@
                 </div>
               </Accordion.Trigger>
               <Accordion.Content>
-                <div class="px-4 pb-3 space-y-1.5">
+                <div class="px-4 pb-3">
                   {#if item.items && item.items.length > 0}
                     {#each item.items as appInfo}
                       <a
                         href="/files?fileType=1&appType={parseInt(
                           item.type,
                         )}&status={appInfo.status}&titleType=custom"
-                        class="flex items-center justify-between p-2 rounded-md border border-gray-300 hover:bg-gray-100 transition-colors duration-150"
+                        class={statusRowClass}
                         style="text-decoration: none;"
                       >
                         <AppStatusTag value={appInfo.status} />

@@ -19,7 +19,11 @@
   import { User } from "lucide-svelte";
   import { authFetch } from "$lib/utils/authFetch";
   import { canAccessSidebarItem } from "$lib/utils/moduleAccess";
-  import { supportSidebarCountConfig, supportSidebarIncludesUnread, supportSidebarTicketCount } from "./iposupport/supportutils";
+  import {
+    supportSidebarCountConfig,
+    supportSidebarIncludesUnread,
+    supportSidebarTicketCount,
+  } from "./iposupport/supportutils";
 
   let notifications = writable<NotificationsType | null>(null);
   let notificationsLoading = false;
@@ -30,9 +34,18 @@
   let ipoSupportCount = 0;
   let ipoSupportRequestVersion = 0;
   let supportCountsActive = true;
-  $: supportCountConfig = supportSidebarCountConfig($loggedInUser?.userRoles ?? []);
-  $: supportCountLabel = supportCountConfig.countKey === "staff" ? "Tickets awaiting staff" : "Tickets awaiting your reply";
-  $: supportCountTooltip = supportCountLabel + (supportSidebarIncludesUnread($loggedInUser?.userRoles ?? []) ? " or In Progress with unread replies" : "");
+  $: supportCountConfig = supportSidebarCountConfig(
+    $loggedInUser?.userRoles ?? [],
+  );
+  $: supportCountLabel =
+    supportCountConfig.countKey === "staff"
+      ? "Tickets awaiting staff"
+      : "Tickets awaiting your reply";
+  $: supportCountTooltip =
+    supportCountLabel +
+    (supportSidebarIncludesUnread($loggedInUser?.userRoles ?? [])
+      ? " or In Progress with unread replies"
+      : "");
   let showSystemNotifications = false;
   // Journal modal state
   let showJournalModal: boolean = false;
@@ -279,7 +292,9 @@
       );
   }
 
-  $: currentUserRoles = Array.isArray($loggedInUser?.userRoles) ? $loggedInUser.userRoles : [];
+  $: currentUserRoles = Array.isArray($loggedInUser?.userRoles)
+    ? $loggedInUser.userRoles
+    : [];
   $: canViewStatistics = currentUserRoles.includes(UserRoles.SuperAdmin);
   $: menus = $loggedInUser ? filterMenus(menuItems, currentUserRoles) : [];
 
@@ -320,8 +335,13 @@
   }
 
   function handleMenuClick(menu: any, submenu: any = null) {
-    if (!hasAccess(menu, currentUserRoles) || (submenu && !hasAccess(submenu, currentUserRoles))) return;
-    if (menu.location.toLowerCase() === "statistics" && !canViewStatistics) return;
+    if (
+      !hasAccess(menu, currentUserRoles) ||
+      (submenu && !hasAccess(submenu, currentUserRoles))
+    )
+      return;
+    if (menu.location.toLowerCase() === "statistics" && !canViewStatistics)
+      return;
     currentMenuView.set(submenu?.name || menu.location);
     if (submenu) {
       // Open journal modal instead of navigating
@@ -419,19 +439,30 @@
       const roles = [...($loggedInUser.userRoles ?? [])];
       const config = supportSidebarCountConfig(roles);
       const params = new URLSearchParams();
-      if (config.category !== undefined) params.set("category", String(config.category));
+      if (config.category !== undefined)
+        params.set("category", String(config.category));
       const inProgressParams = new URLSearchParams(params);
       inProgressParams.set("status", String(TicketStates.inProgress));
       const [response, inProgressResponse] = await Promise.all([
         authFetch(`${baseURL}/api/tickets/GetStats?${params}`),
-        supportSidebarIncludesUnread(roles) ? authFetch(`${baseURL}/api/tickets/GetStats?${inProgressParams}`) : Promise.resolve(null),
+        supportSidebarIncludesUnread(roles)
+          ? authFetch(`${baseURL}/api/tickets/GetStats?${inProgressParams}`)
+          : Promise.resolve(null),
       ]);
-      if (!response.ok || (inProgressResponse && !inProgressResponse.ok)) return;
+      if (!response.ok || (inProgressResponse && !inProgressResponse.ok))
+        return;
       const [data, inProgressStats] = await Promise.all([
         response.json(),
-        inProgressResponse ? inProgressResponse.json() : Promise.resolve(undefined),
+        inProgressResponse
+          ? inProgressResponse.json()
+          : Promise.resolve(undefined),
       ]);
-      if (supportCountsActive && requestVersion === ipoSupportRequestVersion) ipoSupportCount = supportSidebarTicketCount(roles, data, inProgressStats);
+      if (supportCountsActive && requestVersion === ipoSupportRequestVersion)
+        ipoSupportCount = supportSidebarTicketCount(
+          roles,
+          data,
+          inProgressStats,
+        );
     } catch {
       return;
     }
@@ -507,7 +538,8 @@
     const userId = user?.id ?? user?.creatorId;
     const batch = j.batch;
     if (!userId || !batch) {
-      journalFetchError = "Unable to start payment: missing user or journal batch.";
+      journalFetchError =
+        "Unable to start payment: missing user or journal batch.";
       return;
     }
 
@@ -520,7 +552,8 @@
         return;
       }
 
-      const applicantName = `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
+      const applicantName =
+        `${user?.firstName ?? ""} ${user?.lastName ?? ""}`.trim();
       sessionStorage.setItem(
         "journalPaymentData",
         JSON.stringify({
@@ -545,93 +578,93 @@
 </script>
 
 <div
-  class="w-64 h-full bg-white shadow-xl flex flex-col border-r border-slate-200/60"
+  class="w-64 h-full bg-white shadow-md flex flex-col border-r border-slate-200/60"
 >
   <!-- Menu items -->
   <div class="flex-1 overflow-y-auto pt-6 pb-2">
     {#each menus as menu}
       {#if menu.location.toLowerCase() !== "statistics" || canViewStatistics}
-      <div class="mb-1">
-        <button
-          class="w-full text-left focus:outline-none"
-          on:click={() =>
-            menu.submenus
-              ? toggleSubmenu(menu.location)
-              : handleMenuClick(menu)}
-        >
-          <div
-            class={`flex items-center justify-between py-2 px-5 ${activeMenu === menu.location ? "bg-green-800 text-white" : "hover:bg-gray-100"}`}
+        <div class="mb-1">
+          <button
+            class="w-full text-left focus:outline-none"
+            on:click={() =>
+              menu.submenus
+                ? toggleSubmenu(menu.location)
+                : handleMenuClick(menu)}
           >
-            <div class="flex items-center space-x-3">
-              <Icon
-                icon={menu.icon}
-                class={`text-xl ${activeMenu === menu.location ? "text-white" : "text-slate-500"}`}
-              />
-              <span
-                class={`text-base ${activeMenu === menu.location ? "text-white" : "text-slate-600"}`}
-                >{menu.name ?? menu.location}</span
-              >
-            </div>
-            <div class="flex items-center">
-              {#if menu.location === "Support" && !notificationsLoading}
-                <span
-                  class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
-                >
-                  {$notifications?.support ?? 0}
-                </span>
-              {/if}
-              {#if menu.location === "Opposition" && !notificationsLoading}
-                <span
-                  class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
-                >
-                  {oppsCount}
-                </span>
-              {/if}
-              {#if menu.location === "ClaimRequests" && claimRequestsCount > 0}
-                <span
-                  class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
-                >
-                  {claimRequestsCount}
-                </span>
-              {/if}
-              {#if menu.location === "iposupport"}
-                <span
-                  class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
-                  title={supportCountTooltip}
-                  aria-label={`${ipoSupportCount} ${supportCountTooltip.toLowerCase()}`}
-                >
-                  {ipoSupportCount}
-                </span>
-              {/if}
-              {#if menu.submenus}
+            <div
+              class={`flex items-center justify-between py-2 px-5 ${activeMenu === menu.location ? "bg-green-800 text-white" : "hover:bg-gray-100"}`}
+            >
+              <div class="flex items-center space-x-3">
                 <Icon
-                  icon="heroicons:chevron-down"
-                  class={`transition-transform duration-200 ${activeMenu === menu.location ? "rotate-180 text-white" : "text-slate-400"}`}
-                  width="16"
+                  icon={menu.icon}
+                  class={`text-xl ${activeMenu === menu.location ? "text-white" : "text-slate-500"}`}
                 />
-              {/if}
-            </div>
-          </div>
-        </button>
-        {#if menu.submenus && activeMenu === menu.location}
-          <div class="mt-1 space-y-1">
-            {#each menu.submenus as submenu}
-              <button
-                class="w-full text-left flex items-center space-x-2 py-2 pl-[3.25rem] pr-3 text-base {activeSubmenu ===
-                submenu.name
-                  ? 'font-medium text-[#287F71] bg-gray-50'
-                  : 'text-slate-600 hover:bg-gray-50'}"
-                on:click={() => handleMenuClick(menu, submenu)}
-              >
-                {#if submenu.icon}
-                  <Icon icon={submenu.icon} class="text-lg text-slate-500" />
+                <span
+                  class={`text-base ${activeMenu === menu.location ? "text-white" : "text-slate-600"}`}
+                  >{menu.name ?? menu.location}</span
+                >
+              </div>
+              <div class="flex items-center">
+                {#if menu.location === "Support" && !notificationsLoading}
+                  <span
+                    class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
+                  >
+                    {$notifications?.support ?? 0}
+                  </span>
                 {/if}
-                <span>{submenu.name}</span>
-              </button>
-            {/each}
-          </div>
-        {/if}
-      </div>
+                {#if menu.location === "Opposition" && !notificationsLoading}
+                  <span
+                    class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
+                  >
+                    {oppsCount}
+                  </span>
+                {/if}
+                {#if menu.location === "ClaimRequests" && claimRequestsCount > 0}
+                  <span
+                    class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
+                  >
+                    {claimRequestsCount}
+                  </span>
+                {/if}
+                {#if menu.location === "iposupport"}
+                  <span
+                    class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full mr-2"
+                    title={supportCountTooltip}
+                    aria-label={`${ipoSupportCount} ${supportCountTooltip.toLowerCase()}`}
+                  >
+                    {ipoSupportCount}
+                  </span>
+                {/if}
+                {#if menu.submenus}
+                  <Icon
+                    icon="heroicons:chevron-down"
+                    class={`transition-transform duration-200 ${activeMenu === menu.location ? "rotate-180 text-white" : "text-slate-400"}`}
+                    width="16"
+                  />
+                {/if}
+              </div>
+            </div>
+          </button>
+          {#if menu.submenus && activeMenu === menu.location}
+            <div class="mt-1 space-y-1">
+              {#each menu.submenus as submenu}
+                <button
+                  class="w-full text-left flex items-center space-x-2 py-2 pl-[3.25rem] pr-3 text-base {activeSubmenu ===
+                  submenu.name
+                    ? 'font-medium text-[#287F71] bg-gray-50'
+                    : 'text-slate-600 hover:bg-gray-50'}"
+                  on:click={() => handleMenuClick(menu, submenu)}
+                >
+                  {#if submenu.icon}
+                    <Icon icon={submenu.icon} class="text-lg text-slate-500" />
+                  {/if}
+                  <span>{submenu.name}</span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
       {/if}
     {/each}
   </div>

@@ -1803,14 +1803,25 @@
   </div>
 {/if}
 {#if isLoading}
-  <Icon icon="line-md:loading-loop" width="1.2rem" height="1.2rem" />
+  <!-- Held back briefly so a fast load never flashes a spinner -->
+  <div
+    class="reveal-fade flex justify-center py-24"
+    style="--reveal-delay: 300ms"
+    role="status"
+    aria-label="Loading dashboard"
+  >
+    <span
+      class="h-8 w-8 rounded-full border-2 border-green-700 border-t-transparent motion-safe:animate-spin"
+      aria-hidden="true"
+    ></span>
+  </div>
 {:else}
   <!-- Show marquee banner only for regular users (non-staff) -->
   {#if !isStaff}
     <!-- On desktop the bar lines up with the first sidebar item: the sidebar
          is pinned at 64px with 24px of top padding (88px), while this content
          starts below the 81px header, so it needs 7px and the same 40px height. -->
-    <div class="relative lg:pt-[7px]">
+    <div class="relative lg:pt-[7px] reveal-fade">
       <div
         class="w-full bg-green-800 text-white py-3 px-3 text-sm overflow-hidden relative h-8 lg:h-10"
       >
@@ -1834,11 +1845,11 @@
 <!-- NEW AGENT DASHBOARD - 3 IP CATEGORY STRUCTURE -->
 {#if !isLoading && $loggedInUser && canCreateApplication() && currentView === "main"}
   <div
-    class="bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-full rounded-xl p-6 shadow-xl border border-slate-200/60"
+    class="reveal-fade bg-gradient-to-br from-slate-50 via-white to-slate-100 min-h-full rounded-xl p-6 shadow-xl border border-slate-200/60"
   >
     <div class="max-w-7xl mx-auto flex flex-col">
       <!-- Header Section -->
-      <div class="mb-5 flex-shrink-0">
+      <div class="reveal-rise mb-5 flex-shrink-0">
         <div class="flex items-center space-x-3 mb-1">
           <!-- <div class="w-10 h-10 bg-gradient-to-br from-green-800 to-green-700 rounded-xl flex items-center justify-center shadow-lg">
 						<Icon icon="mdi:shield-crown-outline" class="text-white text-xl" />
@@ -1858,7 +1869,8 @@
       <!-- Three IP Category Cards -->
       <!-- this div  -->
       <div
-        class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
+        class="reveal-rise grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4 flex-shrink-0 bg-slate-50/40 backdrop-blur-sm rounded-lg border border-slate-100/50 p-4 shadow-sm"
+        style="--reveal-delay: 80ms"
       >
         <button
           class="text-left w-full group relative overflow-hidden"
@@ -2008,7 +2020,10 @@
       </div>
 
       <!-- Portfolio Summary Section -->
-      <div class="border-t border-slate-200/60 pt-6">
+      <div
+        class="reveal-rise border-t border-slate-200/60 pt-6"
+        style="--reveal-delay: 160ms"
+      >
         <div class="mb-6">
           <div class="flex items-center space-x-3 mb-4">
             <!-- <div class="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
@@ -2080,7 +2095,7 @@
 
 <!-- IP SERVICE VIEWS - WITH PROPER HEIGHT CONTAINER -->
 {#if currentView === "trademark" || currentView === "patent" || currentView === "design"}
-  <div class="h-full">
+  <div class="h-full reveal-rise">
     {#if currentView === "trademark"}
       <IPServiceView ipType="trademark" onBack={goBackToMain} />
     {:else if currentView === "patent"}
