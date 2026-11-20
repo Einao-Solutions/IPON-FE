@@ -41,7 +41,6 @@
   let showStatusHistory: boolean = false;
   let historyComponent: HistorySheet | null = null;
   let isNewStatusLoading: boolean = false;
-  vijoi;
   let historyData = {};
   let showDataComparison: boolean = false;
   let newStatus: ApplicationStatuses | null = null;

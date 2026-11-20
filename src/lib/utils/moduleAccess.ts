@@ -42,16 +42,8 @@ export function isRestrictedModulePath(pathname: string): boolean {
   );
 }
 
-export function canAccessModulePath(
-  pathname: string,
-  roles: UserRoles[],
-): boolean {
-  const segments = pathname.toLowerCase().split("/").filter(Boolean);
-  if (
-    segments[0] === "home" &&
-    segments[1] === "users" &&
-    !roles.includes(UserRoles.SuperAdmin)
-  )
-    return false;
-  return !roles.includes(UserRoles.Tech) || !isRestrictedModulePath(pathname);
+export function canAccessModulePath(pathname: string, roles: UserRoles[]): boolean {
+	const segments = pathname.toLowerCase().split('/').filter(Boolean);
+	if (segments[0] === 'home' && segments[1] === 'users' && !roles.includes(UserRoles.SuperAdmin)) return false;
+	return !roles.includes(UserRoles.Tech) || !isRestrictedModulePath(pathname);
 }

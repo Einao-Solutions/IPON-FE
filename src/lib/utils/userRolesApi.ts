@@ -89,7 +89,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-async function checkResponse(response: Response, updating = false) {
+export async function checkUserResponse(
+	response: Response,
+	updating = false,
+	validationMessage = 'Please check the supplied filters or roles.',
+) {
 	if (response.ok) return;
 	if (response.status === 401)
 		throw new RoleApiError(SESSION_EXPIRED_MESSAGE, 401);
@@ -126,7 +130,7 @@ async function checkResponse(response: Response, updating = false) {
 	throw new RoleApiError(
 		detail ||
 			(response.status === 400
-				? 'Please check the supplied filters or roles.'
+				? validationMessage
 				: `Request failed (${response.status}). Please retry.`),
 		response.status,
 	);
@@ -191,7 +195,7 @@ export function roleHistoryParams(
 
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 	const response = await authFetch(`${baseURL}/api/users/${path}`, { signal });
-	await checkResponse(response);
+	await checkUserResponse(response);
 	return response.json();
 }
 
@@ -264,7 +268,7 @@ export const userRolesApi = {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({ userId, ...changes }),
 		});
-		await checkResponse(response, true);
+		await checkUserResponse(response, true);
 		requestUserRolesRefresh();
 	},
 };

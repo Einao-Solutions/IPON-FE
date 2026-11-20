@@ -15,6 +15,8 @@
   } from "$lib/utils/userRolesApi";
   import RolePagination from "./RolePagination.svelte";
   import UserRoleEditor from "./UserRoleEditor.svelte";
+  import UserAccountTypeEditor from "./UserAccountTypeEditor.svelte";
+  import { userAccountTypesRefresh } from "$lib/utils/userAccountTypesRefresh";
   import {
     Search,
     ShieldCheck,
@@ -63,11 +65,21 @@
     timer = setTimeout(load, 300);
   }
 
-  onMount(() =>
-    userRolesRefresh.subscribe(() => {
+  onMount(() => {
+    const unsubscribeRoles = userRolesRefresh.subscribe(() => { void load(); });
+    let initial = true;
+    const unsubscribeAccountTypes = userAccountTypesRefresh.subscribe(() => {
+      if (initial) {
+        initial = false;
+        return;
+      }
       void load();
-    }),
-  );
+    });
+    return () => {
+      unsubscribeRoles();
+      unsubscribeAccountTypes();
+    };
+  });
   onDestroy(() => {
     clearTimeout(timer);
     members.cancel();
@@ -241,8 +253,9 @@
       >
     </Sheet.Header>
     {#if selectedUser && detailsOpen}
-      <div class="mt-6">
+      <div class="mt-6 space-y-6">
         {#key selectedUser.id}
+          <UserAccountTypeEditor userId={selectedUser.id} userName={selectedUser.name} />
           <UserRoleEditor
             userId={selectedUser.id}
             originalRoles={selectedUser.userRoles}
