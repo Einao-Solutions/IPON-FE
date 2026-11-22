@@ -2,13 +2,13 @@
   import SideMenu from "./SideMenu.svelte";
   import { Input } from "$lib/components/ui/input";
   import { Button } from "$lib/components/ui/button";
-  import { loggedInUser, loggedInToken } from "$lib/store";
+  import { loggedInUser } from "$lib/store";
   import { onMount } from "svelte";
   import FilterFile from "./FilterFile.svelte";
   import NotificationBell from "./NotificationBell.svelte";
   import { goto } from "$app/navigation";
   import { toast } from "svelte-sonner";
-  import { clearAuthCookies } from "$lib/auth-session";
+  import { isLoggingOut, logout as signOut } from "$lib/logout";
 
   $: userName = "";
   let filterFiles: any = null;
@@ -52,20 +52,8 @@
   let filterData = {};
 
   function logout() {
-    clearAuthCookies();
-    loggedInToken.set(null);
-    loggedInUser.set(null);
-    sessionStorage.clear();
-    // Preserve cookie consent choice across logout so the banner doesn't reappear on every login
-    const cookieConsent = localStorage.getItem("cookie_consent");
-    localStorage.clear();
-    if (cookieConsent) localStorage.setItem("cookie_consent", cookieConsent);
-    document.cookie.split(";").forEach((c) => {
-      const eqPos = c.indexOf("=");
-      const name = eqPos > -1 ? c.substr(0, eqPos).trim() : c.trim();
-      document.cookie = `${name}=;path=/;max-age=0`;
-    });
-    goto("/auth");
+    showUserMenu = false;
+    void signOut();
   }
 
   function toggleUserMenu() {
@@ -84,6 +72,22 @@
 
 {#if showFilterSheet && filterFiles}
   <svelte:component this={filterFiles} {...filterData} />
+{/if}
+
+<!-- Covers the page while signing out. The background matches the login page,
+     so the handoff to it reads as one continuous transition. -->
+{#if $isLoggingOut}
+  <div
+    class="logout-overlay fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-slate-50 to-slate-100"
+    role="status"
+    aria-live="polite"
+  >
+    <span
+      class="h-8 w-8 rounded-full border-2 border-green-700 border-t-transparent motion-safe:animate-spin"
+      aria-hidden="true"
+    ></span>
+    <p class="text-sm font-medium text-slate-600">Signing you out…</p>
+  </div>
 {/if}
 
 <div class="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100">
@@ -272,5 +276,15 @@
 
   .animate-in {
     animation: fade-in 0.2s ease-out, slide-in-from-top-2 0.2s ease-out;
+  }
+
+  .logout-overlay {
+    animation: fade-in 0.2s ease-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .logout-overlay {
+      animation: none;
+    }
   }
 </style>

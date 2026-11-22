@@ -370,13 +370,35 @@
 </script>
 
 <div class="dashboard-content">
-  {#if isLoading}
-    <Icon
-      class="flex items-center justify-center w-full"
-      icon="eos-icons:loading"
-      width="1.6rem"
-      height="1.6rem"
-    />
+  {#if isLoading && showOnlyStatistics}
+    <!-- Placeholders sized like the collapsed sections they stand in for, so
+         nothing moves when the statistics arrive. -->
+    <div
+      class="space-y-4 motion-safe:animate-pulse"
+      role="status"
+      aria-label="Loading portfolio analytics"
+    >
+      {#each Array(3) as _}
+        <div
+          class="flex h-[92px] items-center space-x-3 rounded-xl border border-slate-200/60 bg-white px-3"
+        >
+          <div class="h-10 w-10 flex-shrink-0 rounded-lg bg-slate-200"></div>
+          <div class="space-y-2">
+            <div class="h-4 w-44 rounded bg-slate-200"></div>
+            <div class="h-3 w-32 rounded bg-slate-100"></div>
+          </div>
+        </div>
+      {/each}
+      <div
+        class="flex h-[74px] items-center space-x-4 rounded-xl border border-orange-200/40 bg-white px-4"
+      >
+        <div class="h-10 w-10 flex-shrink-0 rounded-xl bg-orange-100"></div>
+        <div class="space-y-2">
+          <div class="h-4 w-36 rounded bg-slate-200"></div>
+          <div class="h-3 w-56 rounded bg-slate-100"></div>
+        </div>
+      </div>
+    </div>
   {:else}
     {#if !showOnlyStatistics}
       <div class="space-y-3">
@@ -407,7 +429,16 @@
             <p
               class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300"
             >
-              {getTotal(FileTypes.Trademark).toLocaleString()}
+              {#if isLoading}
+                <span
+                  class="inline-block h-6 w-10 rounded bg-slate-200 align-middle motion-safe:animate-pulse"
+                  aria-hidden="true"
+                ></span>
+              {:else}
+                <span class="reveal-fade"
+                  >{getTotal(FileTypes.Trademark).toLocaleString()}</span
+                >
+              {/if}
             </p>
             <div class="flex items-center justify-end mt-1">
               <Icon
@@ -447,7 +478,16 @@
             <p
               class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300"
             >
-              {getTotal(FileTypes.Patent).toLocaleString()}
+              {#if isLoading}
+                <span
+                  class="inline-block h-6 w-10 rounded bg-slate-200 align-middle motion-safe:animate-pulse"
+                  aria-hidden="true"
+                ></span>
+              {:else}
+                <span class="reveal-fade"
+                  >{getTotal(FileTypes.Patent).toLocaleString()}</span
+                >
+              {/if}
             </p>
             <div class="flex items-center justify-end mt-1">
               <Icon
@@ -485,7 +525,16 @@
             <p
               class="text-2xl font-bold text-slate-800 group-hover:text-green-700 transition-colors duration-300"
             >
-              {getTotal(FileTypes.Design).toLocaleString()}
+              {#if isLoading}
+                <span
+                  class="inline-block h-6 w-10 rounded bg-slate-200 align-middle motion-safe:animate-pulse"
+                  aria-hidden="true"
+                ></span>
+              {:else}
+                <span class="reveal-fade"
+                  >{getTotal(FileTypes.Design).toLocaleString()}</span
+                >
+              {/if}
             </p>
             <div class="flex items-center justify-end mt-1">
               <Icon
@@ -534,7 +583,7 @@
       </div>
     {/if}
 
-    {#if !showOnlyTotals && !showOnlyStatistics}
+    {#if !isLoading && !showOnlyTotals && !showOnlyStatistics}
       <Accordion.Root>
         <Accordion.Item value="pending" class="border rounded-md p-3 bg-white">
           <Accordion.Trigger>
@@ -751,7 +800,7 @@
 		Each accordion contains application type breakdowns with status counts and clickable links.
 	-->
     {#if showOnlyStatistics}
-      <Accordion.Root class="space-y-4">
+      <Accordion.Root class="space-y-4 reveal-fade">
         <!-- Trademark Applications Hub -->
         <Accordion.Item
           value="trademarks"
@@ -1112,7 +1161,7 @@
       <button
         type="button"
         on:click={openOtherAppsChoice}
-        class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden mt-4 w-full text-left"
+        class="group flex items-center justify-between p-4 bg-gradient-to-r from-orange-50 via-white to-orange-50 border border-orange-200/40 rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all duration-300 hover:scale-[1.01] hover:border-orange-300/60 relative overflow-hidden mt-4 w-full text-left reveal-fade"
       >
         <div class="flex items-center space-x-4">
           <div

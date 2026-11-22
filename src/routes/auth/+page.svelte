@@ -1,17 +1,18 @@
 <script lang="ts">
   import Input from "$lib/components/ui/input/input.svelte";
-  import ministry from "$lib/assets/ministry.png";
+  import ministry from "$lib/assets/ministry2.png";
   import cld from "$lib/assets/cld.png";
   import logo from "$lib/assets/logo.png";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Toaster } from "$lib/components/ui/sonner";
   import { toast } from "svelte-sonner";
-  import Icon from "@iconify/svelte";
+  import Icon, { loadIcons } from "@iconify/svelte";
   import { baseURL, type UsersType, UserRoles } from "$lib/helpers";
   import { goto } from "$app/navigation";
   import { loggedInUser, loggedInToken } from "$lib/store";
   import { onMount } from "svelte";
+  import { fly, slide } from "svelte/transition";
   import { setAuthCookies as persistAuthCookies } from "$lib/auth-session";
   // show a maintenance popup on page load
   let showMaintenance: boolean = false;
@@ -59,13 +60,54 @@
   let showPassword: boolean = false;
   let showConfirmPassword: boolean = false;
   let acceptedTerms: boolean = false;
+  let reduceMotion: boolean = false;
+
+  // Icons that only appear after an interaction; fetched up front so they
+  // render immediately instead of popping in a moment later.
+  const deferredIcons = [
+    "mdi:eye-off",
+    "mdi:check-circle",
+    "mdi:email-check-outline",
+    "line-md:loading-twotone-loop",
+  ];
+
+  $: screenIn = { y: reduceMotion ? 0 : 8, duration: reduceMotion ? 0 : 250 };
+  $: revealSlide = { duration: reduceMotion ? 0 : 200 };
+
   onMount(async () => {
+    reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
     const token = getTokenFromCookie();
 
     if (token) {
       await goto(getExistingUserRoute());
+    } else {
+      loadIcons(deferredIcons);
     }
   });
+
+  // Fades in an image that is still downloading when the page becomes
+  // interactive. Already-loaded images are left alone.
+  function fadeInOnLoad(node: HTMLImageElement) {
+    if (node.complete) return;
+
+    node.style.opacity = "0";
+    const reveal = () => {
+      node.style.transition = "opacity 400ms ease-out";
+      node.style.opacity = "1";
+    };
+    node.addEventListener("load", reveal);
+    node.addEventListener("error", reveal);
+
+    return {
+      destroy() {
+        node.removeEventListener("load", reveal);
+        node.removeEventListener("error", reveal);
+      },
+    };
+  }
 
   function hideImage(e: Event) {
     const target = e.currentTarget as HTMLImageElement | null;
@@ -88,7 +130,10 @@
 
   function shouldOpenIpoSupport(user: UsersType | null | undefined): boolean {
     const roles = user?.userRoles ?? [];
-    return roles.includes(UserRoles.TrademarkSupport) || roles.includes(UserRoles.PatentDesignSupport);
+    return (
+      roles.includes(UserRoles.TrademarkSupport) ||
+      roles.includes(UserRoles.PatentDesignSupport)
+    );
   }
 
   function getLoginRoute(user: UsersType): string {
@@ -102,7 +147,9 @@
     if (!userCookie) return "/home/dashboard";
 
     try {
-      const user = JSON.parse(decodeURIComponent(userCookie.trim().slice(5))) as UsersType;
+      const user = JSON.parse(
+        decodeURIComponent(userCookie.trim().slice(5)),
+      ) as UsersType;
       return getLoginRoute(user);
     } catch {
       return "/home/dashboard";
@@ -209,7 +256,8 @@
 
         toast.success("Registration Successful", {
           position: "top-right",
-          description: "Account created successfully. Please verify your email.",
+          description:
+            "Account created successfully. Please verify your email.",
         });
 
         currentScreen = 3;
@@ -253,11 +301,14 @@
     }
 
     try {
-      const response = await fetch(`${baseURL}/api/auth/ResendVerificationEmail`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: emailToVerify }),
-      });
+      const response = await fetch(
+        `${baseURL}/api/auth/ResendVerificationEmail`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailToVerify }),
+        },
+      );
 
       if (response.ok) {
         toast.success("Verification email resent", {
@@ -451,27 +502,34 @@
     <!-- Left side - Information -->
     <div class="hidden lg:flex lg:w-1/2 space-y-8 pr-12">
       <div class="space-y-6">
-        <div class="flex items-center gap-4 md:gap-6">
+        <div class="reveal flex items-center gap-4 md:gap-6">
           <img
             src={ministry}
             alt="Nigerian Coat of Arms"
+            width="1105"
+            height="264"
             class="h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105 md:h-24"
+            use:fadeInOnLoad
             on:error={hideImage}
           />
           <div class="h-20 w-px bg-gray-300 md:h-24"></div>
           <img
             src={cld}
             alt="Commercial Law Department"
+            width="1221"
+            height="1221"
             class="h-16 w-auto object-contain transition-transform duration-300 group-hover:scale-105 md:h-20"
             loading="lazy"
+            use:fadeInOnLoad
             on:error={hideImage}
           />
         </div>
         <div class="space-y-6 text-slate-700">
           <div
-            class="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm"
+            class="reveal flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm"
+            style="--reveal-delay: 100ms"
           >
-            <div class="flex-shrink-0 mt-1">
+            <div class="icon-slot h-6 w-6 flex-shrink-0 mt-1">
               <Icon
                 icon="hugeicons:file-add"
                 class="text-green-600"
@@ -491,9 +549,10 @@
           </div>
 
           <div
-            class="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm"
+            class="reveal flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm"
+            style="--reveal-delay: 180ms"
           >
-            <div class="flex-shrink-0 mt-1">
+            <div class="icon-slot h-6 w-6 flex-shrink-0 mt-1">
               <Icon
                 icon="ant-design:file-done-outlined"
                 class="text-blue-600"
@@ -511,9 +570,10 @@
           </div>
 
           <div
-            class="flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm"
+            class="reveal flex items-start space-x-4 p-4 bg-white rounded-lg shadow-sm"
+            style="--reveal-delay: 260ms"
           >
-            <div class="flex-shrink-0 mt-1">
+            <div class="icon-slot h-6 w-6 flex-shrink-0 mt-1">
               <Icon
                 icon="ic:baseline-sync"
                 class="text-purple-600"
@@ -535,24 +595,31 @@
 
     <!-- Right side - Authentication Form -->
     <div class="w-full lg:w-1/2 max-w-md mx-auto">
-      <div class="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+      <div class="reveal bg-white rounded-2xl shadow-xl p-8 space-y-6">
         {#if currentScreen === 0}
           <!-- Login Form -->
-          <div class="space-y-6">
+          <div class="space-y-6" in:fly={screenIn}>
             <div class="text-center">
               <h2 class="text-3xl font-bold text-slate-900">Welcome Back</h2>
               <p class="mt-2 text-sm text-slate-600">Sign in to your account</p>
             </div>
 
             {#if showVerificationEmail}
-              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+              <div
+                class="bg-green-50 border border-green-200 rounded-lg p-4"
+                transition:slide={revealSlide}
+              >
                 <div class="flex items-start">
-                  <Icon
-                    icon="mdi:check-circle"
-                    class="text-green-600 mt-0.5 mr-2"
-                    width="1.2rem"
-                    height="1.2rem"
-                  />
+                  <span
+                    class="icon-slot mt-0.5 mr-2 block h-[1.2rem] w-[1.2rem] flex-shrink-0"
+                  >
+                    <Icon
+                      icon="mdi:check-circle"
+                      class="text-green-600"
+                      width="1.2rem"
+                      height="1.2rem"
+                    />
+                  </span>
                   <div class="text-sm text-green-800">
                     <p class="font-medium">Verification email sent</p>
                     <p class="mt-1">
@@ -600,11 +667,13 @@
                       ? "Hide password"
                       : "Show password"}
                   >
-                    <Icon
-                      icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
-                      width="1.2rem"
-                      height="1.2rem"
-                    />
+                    <span class="icon-slot block h-[1.2rem] w-[1.2rem]">
+                      <Icon
+                        icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                        width="1.2rem"
+                        height="1.2rem"
+                      />
+                    </span>
                   </button>
                 </div>
               </div>
@@ -659,7 +728,7 @@
           </div>
         {:else if currentScreen === 2}
           <!-- Sign Up Form -->
-          <div class="space-y-6">
+          <div class="space-y-6" in:fly={screenIn}>
             <div class="text-center">
               <h2 class="text-3xl font-bold text-slate-900">Create Account</h2>
               <p class="mt-2 text-sm text-slate-600">Join IPONigeria today</p>
@@ -699,7 +768,7 @@
                 </select>
               </div>
               {#if String(createUser.accountType) === "1"}
-                <div>
+                <div transition:slide={revealSlide}>
                   <Label class="text-slate-700">Company Name</Label>
                   <Input
                     bind:value={createUser.businessName}
@@ -749,11 +818,13 @@
                       ? "Hide password"
                       : "Show password"}
                   >
-                    <Icon
-                      icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
-                      width="1.2rem"
-                      height="1.2rem"
-                    />
+                    <span class="icon-slot block h-[1.2rem] w-[1.2rem]">
+                      <Icon
+                        icon={showPassword ? "mdi:eye-off" : "mdi:eye"}
+                        width="1.2rem"
+                        height="1.2rem"
+                      />
+                    </span>
                   </button>
                 </div>
                 <p class="mt-1 text-xs text-slate-500">
@@ -780,11 +851,13 @@
                       ? "Hide confirm password"
                       : "Show confirm password"}
                   >
-                    <Icon
-                      icon={showConfirmPassword ? "mdi:eye-off" : "mdi:eye"}
-                      width="1.2rem"
-                      height="1.2rem"
-                    />
+                    <span class="icon-slot block h-[1.2rem] w-[1.2rem]">
+                      <Icon
+                        icon={showConfirmPassword ? "mdi:eye-off" : "mdi:eye"}
+                        width="1.2rem"
+                        height="1.2rem"
+                      />
+                    </span>
                   </button>
                 </div>
               </div>
@@ -851,7 +924,7 @@
           </div>
         {:else if currentScreen === 4}
           <!-- Reset Password Form -->
-          <div class="space-y-6">
+          <div class="space-y-6" in:fly={screenIn}>
             <div class="text-center">
               <h2 class="text-3xl font-bold text-slate-900">Reset Password</h2>
               <p class="mt-2 text-sm text-slate-600">
@@ -898,8 +971,10 @@
           </div>
         {:else if currentScreen === 3}
           <!-- Verify Email Prompt -->
-          <div class="space-y-6 text-center">
-            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+          <div class="space-y-6 text-center" in:fly={screenIn}>
+            <div
+              class="icon-slot mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-50"
+            >
               <Icon
                 icon="mdi:email-check-outline"
                 class="text-green-700"
@@ -908,7 +983,9 @@
               />
             </div>
             <div>
-              <h2 class="text-2xl font-bold text-slate-900">Verify your email</h2>
+              <h2 class="text-2xl font-bold text-slate-900">
+                Verify your email
+              </h2>
               <p class="mt-2 text-sm text-slate-600">
                 We sent a verification link to
                 <span class="font-semibold text-slate-800">{signupEmail}</span>.
@@ -934,7 +1011,7 @@
           </div>
         {:else if currentScreen === 1}
           <!-- Verifying User -->
-          <div class="space-y-6 text-center py-8">
+          <div class="space-y-6 text-center py-8" in:fly={screenIn}>
             <Icon
               icon="line-md:loading-loop"
               class="mx-auto text-green-600"
@@ -954,9 +1031,54 @@
       </div>
 
       <!-- Mobile logo -->
-      <div class="lg:hidden mt-8 text-center">
-        <img alt="logo" src={logo} class="object-contain h-16 mx-auto" />
+      <div
+        class="reveal lg:hidden mt-8 text-center"
+        style="--reveal-delay: 150ms"
+      >
+        <img
+          alt="logo"
+          src={logo}
+          width="541"
+          height="461"
+          class="object-contain h-16 w-auto mx-auto"
+          loading="lazy"
+          use:fadeInOnLoad
+        />
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  /* Entrance animations are plain CSS so they run from the first paint of the
+     prerendered HTML rather than waiting for hydration. */
+  .reveal {
+    animation: auth-rise-in 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+
+  /* Icons are fetched at runtime, so fade each one in when it arrives. */
+  .icon-slot :global(svg) {
+    animation: auth-fade-in 300ms ease-out;
+  }
+
+  @keyframes auth-rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+  }
+
+  @keyframes auth-fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal,
+    .icon-slot :global(svg) {
+      animation: none;
+    }
+  }
+</style>
