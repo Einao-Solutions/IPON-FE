@@ -76,3 +76,37 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Entrances for content that appears once it has loaded. Stagger siblings by
+   setting --reveal-delay on each one. */
+@layer utilities {
+  .reveal-rise {
+    animation: reveal-rise 500ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+
+  .reveal-fade {
+    animation: reveal-fade 300ms ease-out backwards;
+    animation-delay: var(--reveal-delay, 0ms);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .reveal-rise,
+    .reveal-fade {
+      animation: none;
+    }
+  }
+}
+
+@keyframes reveal-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@keyframes reveal-fade {
+  from {
+    opacity: 0;
+  }
+}

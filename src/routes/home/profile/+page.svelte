@@ -31,7 +31,7 @@
   import * as valid from "validator";
   import { mapAccountTypeToString } from "$lib/helpers";
   import type { User } from "lucide-svelte";
-  import { clearAuthCookies } from "$lib/auth-session";
+  import { logout as signOut } from "$lib/logout";
   import { authFetch } from "$lib/utils/authFetch";
 
   let selectedSignature: File | undefined = undefined;
@@ -70,10 +70,7 @@
   });
 
   function logout() {
-    clearAuthCookies();
-    loggedInToken.set(null);
-    loggedInUser.set(null);
-    goto("/auth");
+    void signOut();
   }
 
   function userIsExaminer(): boolean {

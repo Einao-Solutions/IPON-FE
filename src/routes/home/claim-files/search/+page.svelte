@@ -55,6 +55,9 @@
   let results: SearchResult[] = [];
   let isLoading = true;
   let error: string | null = null;
+  let errorTitle = "Something went wrong";
+  let errorHint: string | null = null;
+  let canRetry = true;
   let searchParams: {
     query: string;
     classId?: number;
@@ -92,6 +95,37 @@
     address: "",
   };
 
+  // Business-rule responses (e.g. the file is already on the portal) are
+  // not transient, so they get a specific title/hint and no retry button.
+  function setSearchError(rawMessage: string | null | undefined, status?: number) {
+    const text = rawMessage?.trim() || "";
+    const lower = text.toLowerCase();
+
+    error = text || "An error occurred while fetching search results";
+    errorHint = null;
+    canRetry = true;
+    errorTitle = "Something went wrong";
+
+    if (lower.includes("already exists")) {
+      errorTitle = "File already on the current system";
+      errorHint =
+        "This file has already been migrated, so it cannot be claimed here. If it belongs to you, check your dashboard or contact IPO support.";
+      canRetry = false;
+    } else if (status === 404 || lower.includes("not found")) {
+      errorTitle = "File not found";
+      errorHint = "Check the file number and try searching again.";
+      canRetry = false;
+    } else if (status === 400) {
+      errorTitle = "Invalid search";
+      errorHint = "Check the file number format and try searching again.";
+      canRetry = false;
+    } else if (status === 401 || status === 403) {
+      errorTitle = "Access denied";
+      errorHint = "Your session may have expired. Please sign in again.";
+      canRetry = false;
+    }
+  }
+
   let mark = onMount(async () => {
     try {
       // Retrieve search parameters from sessionStorage
@@ -124,6 +158,21 @@
           } else {
             try {
               const fileRecords = JSON.parse(responseText);
+              const isMessageOnly =
+                fileRecords &&
+                !Array.isArray(fileRecords) &&
+                typeof fileRecords.message === "string" &&
+                !(
+                  fileRecords.fileNumber ??
+                  fileRecords.fileId ??
+                  fileRecords.title ??
+                  fileRecords.titleOfTradeMark
+                );
+              if (isMessageOnly) {
+                message = fileRecords.message;
+                setSearchError(fileRecords.message, response.status);
+                return;
+              }
               const files = Array.isArray(fileRecords)
                 ? fileRecords
                 : [fileRecords];
@@ -147,30 +196,37 @@
             } catch (parseError) {
               console.error("Failed to parse JSON response:", parseError);
               console.log("Response text:", responseText);
-              error = "Invalid response format from server";
+              setSearchError("Invalid response format from server");
             }
           }
         } else {
           // Handle error response
           if (!responseText.trim()) {
-            error = `Server error: ${response.status} ${response.statusText}`;
+            setSearchError(
+              "The server could not complete your search. Please try again.",
+              response.status,
+            );
           } else {
             try {
               const errorBody = JSON.parse(responseText);
               message = errorBody.message || "Unknown error occurred";
-              error = message;
+              setSearchError(message, response.status);
             } catch (parseError) {
               console.error("Failed to parse error response:", parseError);
-              error = `Server error: ${response.status} - ${responseText}`;
+              setSearchError(
+                "The server could not complete your search. Please try again.",
+                response.status,
+              );
             }
           }
         }
       } else {
-        error = "Search parameters are missing";
+        setSearchError("Search parameters are missing");
+        canRetry = false;
       }
     } catch (err) {
       console.error("Error fetching search results:", err);
-      error = "An error occurred while fetching search results";
+      setSearchError("An error occurred while fetching search results");
     } finally {
       isLoading = false;
     }
@@ -519,33 +575,56 @@
     </div>
   {:else if error}
     <div
-      class="bg-red-50 border border-red-200 p-6 rounded-md flex flex-col items-center text-center gap-3"
+      class="{canRetry
+        ? 'bg-red-50 border-red-200'
+        : 'bg-amber-50 border-amber-200'} border p-6 rounded-md flex flex-col items-center text-center gap-3"
     >
       <Icon
-        icon="lucide:alert-triangle"
+        icon={canRetry ? "lucide:alert-triangle" : "lucide:info"}
         width="2rem"
         height="2rem"
-        class="text-red-500"
+        class={canRetry ? "text-red-500" : "text-amber-600"}
       />
       <div class="space-y-1">
-        <h3 class="text-base font-semibold text-red-700">
-          Something went wrong
+        <h3
+          class="text-base font-semibold {canRetry
+            ? 'text-red-700'
+            : 'text-amber-800'}"
+        >
+          {errorTitle}
         </h3>
-        <!-- <p class="text-sm text-red-600">{error}</p> -->
+        <p class="text-sm {canRetry ? 'text-red-600' : 'text-amber-700'}">
+          {error}
+        </p>
+        {#if errorHint}
+          <p class="text-xs text-gray-600 max-w-md">{errorHint}</p>
+        {/if}
       </div>
-      <Button
-        variant="outline"
-        on:click={() => window.location.reload()}
-        class="mt-1"
-      >
-        <Icon
-          icon="lucide:refresh-cw"
-          width="1rem"
-          height="1rem"
-          class="mr-2"
-        />
-        Try Again
-      </Button>
+      {#if canRetry}
+        <Button
+          variant="outline"
+          on:click={() => window.location.reload()}
+          class="mt-1"
+        >
+          <Icon
+            icon="lucide:refresh-cw"
+            width="1rem"
+            height="1rem"
+            class="mr-2"
+          />
+          Try Again
+        </Button>
+      {:else}
+        <Button variant="outline" on:click={goBack} class="mt-1">
+          <Icon
+            icon="lucide:arrow-left"
+            width="1rem"
+            height="1rem"
+            class="mr-2"
+          />
+          Back to search
+        </Button>
+      {/if}
     </div>
   {:else if results.length === 0}
     <div class="bg-yellow-50 p-8 rounded-md text-center">
