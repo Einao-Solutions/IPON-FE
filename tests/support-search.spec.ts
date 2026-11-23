@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-for (const role of [0, 21]) {
+for (const role of [0, 20, 21, 28, 29]) {
 	test(`single-bar search preserves authorized scope for role ${role}`, async ({
 		context,
 		page,
@@ -41,19 +41,43 @@ for (const role of [0, 21]) {
 				name: index === 11 ? 'Mary Example' : 'Other Creator',
 			},
 			status: 1,
-			category: 2,
+			category: role === 28 ? 0 : role === 29 ? 1 : 2,
 			ticketType: 0,
 			resolution: null,
 			lastInteraction: `2026-03-${String(index + 1).padStart(2, '0')}T12:00:00Z`,
 		}));
 		const summaryRequests: Record<string, unknown>[] = [];
+		const crossQueueTicket = {
+			...summaries[11],
+			id: 'cross-queue',
+			ticketId: 'cross-queue',
+			ticketNumber: 'TKT-CROSS',
+			fileNumber: 'TM-CROSS',
+			creator: { id: 'different-creator', name: 'Cross Queue Creator' },
+			title: 'Closed registry technical issue',
+			category: role === 20 || role === 21 ? 0 : 2,
+			registryCategory: role === 29 ? 1 : 0,
+			raisedByRegistryStaff: true,
+			status: 2,
+		};
 		let searchRequests = 0;
 		await page.route('**/api/**', async (route) => {
 			const path = new URL(route.request().url()).pathname;
 			let body: unknown = {};
 			if (path.endsWith('/TicketSummaries')) {
-				summaryRequests.push(route.request().postDataJSON());
-				body = summaries;
+				const filters = route.request().postDataJSON();
+				summaryRequests.push(filters);
+				const authorized =
+					role === 0 ? summaries : [...summaries, crossQueueTicket];
+				body = authorized.filter(
+					(ticket) =>
+						(filters.creatorId === 'null' ||
+							filters.creatorId === ticket.creator.id) &&
+						(filters.status === undefined ||
+							filters.status === ticket.status) &&
+						(filters.category === undefined ||
+							filters.category === ticket.category),
+				);
 			} else if (path.endsWith('/GetStats')) {
 				body = {
 					total: 12,
@@ -130,14 +154,13 @@ for (const role of [0, 21]) {
 			page.getByRole('cell', { name: 'General inquiry 0', exact: true }),
 		).toBeVisible();
 		expect(searchRequests).toBe(0);
-		expect(summaryRequests).toHaveLength(1);
+		expect(summaryRequests).toHaveLength(role === 0 ? 1 : 3);
 		expect(summaryRequests[0]).toMatchObject(
 			role === 0
 				? { creatorId: 'support-search-user' }
 				: {
 						creatorId: 'null',
-						category: 2,
-						raisedByRegistryStaff: false,
+						category: role === 28 ? 0 : role === 29 ? 1 : 2,
 						status: 1,
 					},
 		);
@@ -163,7 +186,22 @@ for (const role of [0, 21]) {
 			page.getByText('0 matching ticket(s)', { exact: false }),
 		).toBeVisible();
 		expect(searchRequests).toBe(0);
-		expect(summaryRequests).toHaveLength(1);
+		expect(summaryRequests).toHaveLength(role === 0 ? 1 : 4);
+		if (role !== 0) {
+			await filter.fill('Cross Queue Creator');
+			await filter.press('Enter');
+			await expect(
+				page.getByRole('cell', {
+					name: 'Closed registry technical issue',
+					exact: true,
+				}),
+			).toBeVisible();
+			const broadRequest = summaryRequests[summaryRequests.length - 1];
+			expect(broadRequest).toMatchObject({ creatorId: 'null', startIndex: 0 });
+			expect(broadRequest).not.toHaveProperty('status');
+			expect(broadRequest).not.toHaveProperty('category');
+			expect(broadRequest).not.toHaveProperty('raisedByRegistryStaff');
+		}
 		await expect(page.getByRole('textbox')).toHaveCount(1);
 	});
 }

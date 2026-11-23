@@ -218,6 +218,7 @@
   let ticketData: any = {};
   let filterData: any = {};
   let searchQuery: string = "";
+  let searchingStaffTickets = false;
 
 	$: showTechSpecialQueues = isTechSupport() && activeTabId === 'tech';
 	$: showInProgressFilter = isNormalTicketUser($loggedInUser?.userRoles ?? []) || activeQueueMode !== 'normal' || tabs.some((tab) => tab.id === activeTabId && tab.category === TicketCategory.TechnicalSupport);
@@ -360,10 +361,16 @@
 	}
 
 	function currentViewKey(): string {
-		return JSON.stringify([activeTabId, activeQueueMode, activeStatusFilter, activeCategoryPillFilter, $loggedInUser?.creatorId]);
+		return JSON.stringify([activeTabId, activeQueueMode, activeStatusFilter, activeCategoryPillFilter, searchingStaffTickets, $loggedInUser?.creatorId]);
 	}
 
 	function currentQueueBody(status: number | null = activeStatusFilter): Record<string, any> {
+		if (searchingStaffTickets && hasSupportStaffRole()) {
+			// The backend applies the signed-in staff member's ticket access rules.
+			const body: Record<string, unknown> = { creatorId: 'null' };
+			if (status !== null) body.status = status;
+			return withFullSummaryPage(body);
+		}
 		const body = getTicketSummaryBody(status);
 		if (activeCategoryPillFilter !== null) body.category = activeCategoryPillFilter;
 		return body;
@@ -601,6 +608,7 @@
 	}
 
 	async function onTabChange(tabId: string) {
+		searchingStaffTickets = false;
 		$ticketSearchFilter = '';
 		activeTabId = tabId;
 		activeQueueMode = 'normal';
@@ -612,6 +620,7 @@
 	}
 
 	async function setQueueMode(mode: 'normal' | 'trademarkTechnical' | 'patentDesignTechnical') {
+		searchingStaffTickets = false;
 		$ticketSearchFilter = '';
 		activeQueueMode = mode;
 		searchQuery = '';
@@ -643,13 +652,31 @@
 		}
 	}
 
-	function searchTickets() {
+	async function searchTickets() {
+		if (!searchQuery.trim()) {
+			await clearSearch();
+			return;
+		}
 		$ticketSearchFilter = searchQuery.trim();
+		if (hasSupportStaffRole() && !searchingStaffTickets) {
+			searchingStaffTickets = true;
+			activeCategoryPillFilter = null;
+			currentPageNumber = 1;
+			ipoTicketsSummary.set(null);
+			await getSpecific(null);
+		}
 	}
 
-	function clearSearch() {
+	async function clearSearch() {
+		const restoreQueue = searchingStaffTickets;
+		searchingStaffTickets = false;
 		$ticketSearchFilter = '';
 		searchQuery = '';
+		if (restoreQueue) {
+			currentPageNumber = 1;
+			ipoTicketsSummary.set(null);
+			await getSpecific(null);
+		}
 	}
 
 	// ── Ticket view ───────────────────────────────────────────────────────────────
@@ -1148,7 +1175,7 @@
           Showing search results for <span class="font-semibold text-slate-700"
             >{$ticketSearchFilter}</span
           >
-          <span aria-live="polite"> · {$filteredTableRows.length} matching ticket(s) in this queue.</span>
+          <span aria-live="polite"> · {$filteredTableRows.length} matching ticket(s) {searchingStaffTickets ? 'in your authorized tickets' : 'in this queue'}.</span>
         </p>
       {/if}
     </form>
