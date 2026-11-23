@@ -138,12 +138,15 @@ and `npx playwright test tests/user-account-types.spec.ts`.
 
 IPO Support uses one search bar with placeholder hints for ticket numbers,
 file numbers, creator names and ticket titles, with no search-type dropdown.
-Search filters all loaded pages of the current queue using case-insensitive
-partial matching.
-It preserves the existing role/queue/status scope, resets pagination when changed,
-and does not fetch additional tickets or broaden access. All four fields are
-searched locally; search does not call the cross-queue Search endpoint.
-Backend authorization remains responsible for limiting API results.
+Search uses case-insensitive partial matching and resets pagination when changed.
+Regular users and unit officers search only their own loaded tickets.
+Staff searches first load authorized ticket summaries across queues and statuses,
+instead of being limited to the default Awaiting Staff / Technical queue.
+The backend limits these results using the signed-in user's roles: Tech and
+SuperAdmin can access all tickets; registry support can access its registry,
+related registry-staff technical tickets, and its own tickets.
+The four fields are matched locally; no new backend endpoint is required.
+Clearing a staff search returns to the selected queue.
 
 Regression coverage: `npx playwright test tests/support-search.spec.ts`.
 
